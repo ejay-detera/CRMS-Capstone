@@ -1,0 +1,87 @@
+services:
+
+  # ── Databases ──────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  elasticsearch:
+    image: elasticsearch:8.13.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
+  # ── Laravel Services ───────────────────────────
+  vendor-management:
+    build: ./services/vendor-management
+    volumes:
+      - ./services/vendor-management:/var/www/html
+    ports:
+      - "8001:8000"
+    depends_on:
+      - mysql
+      - mongodb
+      - redis
+
+  contract-management:
+    build: ./services/contract-management
+    volumes:
+      - ./services/contract-management:/var/www/html
+    ports:
+      - "8002:8000"
+    depends_on:
+      - mysql
+      - mongodb
+      - redis
+
+  search:
+    build: ./services/search
+    volumes:
+      - ./services/search:/var/www/html
+    ports:
+      - "8003:8000"
+    depends_on:
+      - elasticsearch
+
+  notification:
+    build: ./services/notification
+    volumes:
+      - ./services/notification:/var/www/html
+    ports:
+      - "8004:8000"
+    depends_on:
+      - mysql
+      - redis
+
+  # ── Vue Frontend ───────────────────────────────
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend/web:/app
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev -- --host"
+
+volumes:
+  mysql_data:
+  mongo_data:
+  es_data:
