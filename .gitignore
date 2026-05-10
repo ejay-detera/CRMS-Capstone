@@ -1,0 +1,7 @@
+services/**/vendor/
+services/**/.env
+services/**/storage/logs/*.log
+services/**/bootstrap/cache/*.php
+frontend/web/node_modules/
+frontend/web/dist/
+frontend/web/.env
