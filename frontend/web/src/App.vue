@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { Button } from '@/components/ui/button'
 </script>
 
 <template>
-  <div class="p-10">
-    <Button>Hello</Button>
+  <div class="min-h-screen bg-gray-50">
+    <!-- Main content area -->
+    <main>
+      <router-view />
+    </main>
   </div>
 </template>
