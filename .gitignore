@@ -36,3 +36,10 @@ Thumbs.db
 docker/mysql_data/
 docker/mongo_data/
 docker/es_data/
+
+# Root Environment File
+.env
+
+# Ai context
+context/
+.context/
