@@ -4,6 +4,7 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -39,47 +40,30 @@ import logoUrl from "@/assets/sbsi logo.png";
 
 const route = useRoute();
 
-// ── Nav Items with individual icon colors ──
-const navItems = [
+// ── Nav groups ──────────────────────────────────────────────────────
+const navGroups = [
   {
-    title: "Dashboard",
-    url: "/admin/dashboard",
-    icon: LayoutDashboard,
+    label: "Main",
+    items: [
+      { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
+      { title: "Contracts", url: "/admin/contracts",  icon: FileText        },
+    ],
   },
   {
-    title: "Contracts",
-    url: "/admin/contracts",
-    icon: FileText,
+    label: "Management",
+    items: [
+      { title: "User Management",    url: "/admin/users",    icon: Users     },
+      { title: "Roles & Permission", url: "/admin/roles",    icon: Shield    },
+      { title: "Business & Suppliers", url: "/admin/partners", icon: Handshake },
+    ],
   },
   {
-    title: "User Management",
-    url: "/admin/users",
-    icon: Users,
-  },
-  {
-    title: "Roles & Permission",
-    url: "/admin/roles",
-    icon: Shield,
-  },
-  {
-    title: "Business & Suppliers",
-    url: "/admin/partners",
-    icon: Handshake,
-  },
-  {
-    title: "Notifications",
-    url: "/admin/notifications",
-    icon: Bell,
-  },
-  {
-    title: "Audit Log",
-    url: "/admin/audit-log",
-    icon: ClipboardList,
-  },
-  {
-    title: "System Configuration",
-    url: "/admin/system-config",
-    icon: Settings2,
+    label: "System",
+    items: [
+      { title: "Notifications",      url: "/admin/notifications", icon: Bell         },
+      { title: "Audit Log",          url: "/admin/audit-log",     icon: ClipboardList },
+      { title: "System Configuration", url: "/admin/system-config", icon: Settings2  },
+    ],
   },
 ];
 
@@ -120,36 +104,41 @@ const searchQuery = ref("");
       </SidebarHeader>
 
       <!-- Navigation -->
-      <SidebarContent class="px-3 py-4">
-        <SidebarGroup>
+      <SidebarContent class="px-3 py-3">
+        <SidebarGroup
+          v-for="group in navGroups"
+          :key="group.label"
+          class="mb-1 p-0"
+        >
+          <SidebarGroupLabel
+            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"
+          >
+            {{ group.label }}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu class="gap-1.5">
-              <SidebarMenuItem v-for="item in navItems" :key="item.title">
+            <SidebarMenu class="gap-0.5">
+              <SidebarMenuItem v-for="item in group.items" :key="item.title">
                 <SidebarMenuButton
                   as-child
                   :is-active="route.path === item.url"
-                  class="h-auto p-0 rounded-xl"
+                  class="h-auto p-0 rounded-lg"
                 >
                   <component
-                    :is="item.url ? 'router-link' : 'button'"
+                    :is="'router-link'"
                     :to="item.url"
-                    class="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all duration-200 group group-data-[collapsible=icon]:justify-center"
-                    :class="
-                      route.path === item.url
-                        ? 'bg-[#2F2F73] text-white'
-                        : 'text-white/45 hover:text-white/85 hover:bg-white/15'
-                    "
+                    class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 group-data-[collapsible=icon]:justify-center"
+                    :class="route.path === item.url
+                      ? 'bg-[#2F2F73] text-white'
+                      : 'text-white/45 hover:text-white/80 hover:bg-white/10'"
                   >
                     <component
                       :is="item.icon"
-                      class="w-4 h-4 group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5"
+                      class="w-4 h-4 shrink-0 group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5"
                       :class="route.path === item.url ? 'text-white' : 'text-white/45'"
                     />
                     <span
                       class="text-sm font-medium flex-1 text-left group-data-[collapsible=icon]:hidden"
-                      :class="
-                        route.path === item.url ? 'text-white' : 'text-white/45'
-                      "
+                      :class="route.path === item.url ? 'text-white' : 'text-white/45'"
                     >
                       {{ item.title }}
                     </span>
