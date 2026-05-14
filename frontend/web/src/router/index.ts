@@ -32,6 +32,16 @@ const routes: Array<RouteRecordRaw> = [
         path: 'partners',
         name: 'admin-partners',
         component: () => import('@/views/admin/Partners.vue')
+      },
+      {
+        path: 'audit-log',
+        name: 'admin-audit-log',
+        component: () => import('@/views/admin/AuditLog.vue')
+      },
+      {
+        path: 'system-config',
+        name: 'admin-system-config',
+        component: () => import('@/views/admin/SystemConfig.vue')
       }
     ]
   },

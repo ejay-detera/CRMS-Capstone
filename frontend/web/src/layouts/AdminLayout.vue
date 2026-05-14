@@ -24,6 +24,8 @@ import {
   Users,
   Shield,
   Handshake,
+  ClipboardList,
+  Settings2,
   LogOut,
   Search,
   Bell,
@@ -63,6 +65,16 @@ const navItems = [
     title: "Business & Suppliers",
     url: "/admin/partners",
     icon: Handshake,
+  },
+  {
+    title: "Audit Log",
+    url: "/admin/audit-log",
+    icon: ClipboardList,
+  },
+  {
+    title: "System Configuration",
+    url: "/admin/system-config",
+    icon: Settings2,
   },
 ];
 
