@@ -95,7 +95,7 @@ const roleBadge: Record<Role, string> = {
 }
 
 // ── Avatar helpers ─────────────────────────────────────────────────
-const palette = ['#252578','#2E85D8','#2F2F73','#7C3AED','#0D9488','#DB2777','#D97706','#059669']
+const palette = ['#252578', '#2E85D8', '#2F2F73']
 function getInitials(name: string) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
@@ -274,14 +274,12 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
               </Badge>
             </TableCell>
             <TableCell class="py-3.5">
-              <div class="flex items-center gap-2">
-                <span class="w-1.5 h-1.5 rounded-full shrink-0"
-                  :class="user.status === 'Active' ? 'bg-emerald-500' : 'bg-black/15'" />
-                <span class="text-sm"
-                  :class="user.status === 'Active' ? 'text-emerald-600' : 'text-black/30'">
-                  {{ user.status }}
-                </span>
-              </div>
+              <span class="text-xs font-medium px-2.5 py-0.5 rounded-full border"
+                :class="user.status === 'Active'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-black/4 text-black/35 border-black/8'">
+                {{ user.status }}
+              </span>
             </TableCell>
           </TableRow>
         </TableBody>
