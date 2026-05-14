@@ -14,7 +14,7 @@ const config = {
 
 <template>
   <Teleport to="body">
-    <div class="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none" aria-live="polite">
+    <div class="fixed bottom-5 right-5 z-9999 flex flex-col gap-2 pointer-events-none" aria-live="polite">
       <TransitionGroup
         enter-active-class="transition duration-250 ease-out"
         enter-from-class="translate-y-2 opacity-0 scale-95"

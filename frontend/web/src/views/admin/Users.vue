@@ -421,8 +421,8 @@ function confirmDelete() {
     <!-- ── Page Header ─────────────────────────────────────────── -->
     <div class="flex items-start justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-black">User management</h1>
-        <p class="text-sm text-black/45 mt-0.5">
+        <h1 class="text-xl font-semibold text-black">User management</h1>
+        <p class="text-sm text-black/40 mt-0.5">
           Manage your team members and their account permissions here.
         </p>
       </div>
@@ -447,11 +447,11 @@ function confirmDelete() {
         :key="card.label"
         class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm"
       >
-        <p class="text-sm font-medium text-black/45 mb-3">{{ card.label }}</p>
+        <p class="text-xs font-medium text-black/40 mb-3 uppercase tracking-wide">{{ card.label }}</p>
         <div class="flex items-end justify-between gap-2">
-          <span class="text-4xl font-bold text-black tabular-nums">{{ card.value }}</span>
+          <span class="text-3xl font-semibold text-black tabular-nums">{{ card.value }}</span>
           <span
-            class="text-xs font-semibold px-2 py-0.5 rounded-md mb-0.5 shrink-0"
+            class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
             :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'"
           >
             {{ card.change }}
@@ -465,9 +465,9 @@ function confirmDelete() {
 
       <!-- Section heading -->
       <div class="px-6 pt-5 pb-4 border-b border-black/5">
-        <h2 class="text-base font-bold text-black">
+        <h2 class="text-sm font-semibold text-black">
           All users
-          <span class="text-black/30 font-semibold">({{ filteredUsers.length }})</span>
+          <span class="text-black/30 font-normal">({{ filteredUsers.length }})</span>
         </h2>
       </div>
 
@@ -555,8 +555,8 @@ function confirmDelete() {
                   {{ getInitials(user.name) }}
                 </div>
                 <div>
-                  <p class="text-sm font-semibold text-black leading-snug">{{ user.name }}</p>
-                  <p class="text-xs text-black/38 mt-0.5">{{ user.email }}</p>
+                  <p class="text-sm font-medium text-black leading-snug">{{ user.name }}</p>
+                  <p class="text-xs text-black/35 mt-0.5">{{ user.email }}</p>
                 </div>
               </div>
             </TableCell>
@@ -565,7 +565,7 @@ function confirmDelete() {
             <TableCell class="py-4">
               <Badge
                 variant="outline"
-                class="text-xs font-semibold rounded-full px-2.5 py-0.5"
+                class="text-xs font-medium rounded-full px-2.5 py-0.5"
                 :class="roleBadge[user.role]"
               >
                 {{ user.role }}
@@ -580,7 +580,7 @@ function confirmDelete() {
                   :class="user.status === 'Active' ? 'bg-emerald-500' : 'bg-black/15'"
                 />
                 <span
-                  class="text-sm font-medium"
+                  class="text-sm"
                   :class="user.status === 'Active' ? 'text-emerald-600' : 'text-black/30'"
                 >
                   {{ user.status }}
@@ -589,7 +589,7 @@ function confirmDelete() {
             </TableCell>
 
             <!-- Date added -->
-            <TableCell class="text-sm text-black/50 py-4 font-medium">
+            <TableCell class="text-sm text-black/40 py-4">
               {{ user.dateAdded }}
             </TableCell>
 
