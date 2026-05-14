@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import Toaster from '@/components/ui/toast/Toaster.vue'
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Main content area -->
     <main>
       <router-view />
     </main>
+    <Toaster />
   </div>
 </template>
