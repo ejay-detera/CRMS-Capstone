@@ -25,6 +25,7 @@ const emailValid = computed(() => !form.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.te
 const pwRules    = computed(() => ({
   minLength:  form.password.length >= 8,
   hasUpper:   /[A-Z]/.test(form.password),
+  hasNumber:  /\d/.test(form.password),
   hasSpecial: /[!@#$%^&*()\-_=+\[\]{};:'",.<>?/\\|`~]/.test(form.password),
 }))
 const passwordValid    = computed(() => Object.values(pwRules.value).every(Boolean))
@@ -131,6 +132,9 @@ function submit() {
             </span>
             <span class="flex items-center gap-1 text-[11px]" :class="pwRules.hasUpper ? 'text-emerald-600' : 'text-black/35'">
               <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="pwRules.hasUpper ? 'bg-emerald-500' : 'bg-black/20'" /> One uppercase
+            </span>
+            <span class="flex items-center gap-1 text-[11px]" :class="pwRules.hasNumber ? 'text-emerald-600' : 'text-black/35'">
+              <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="pwRules.hasNumber ? 'bg-emerald-500' : 'bg-black/20'" /> One number
             </span>
             <span class="flex items-center gap-1 text-[11px]" :class="pwRules.hasSpecial ? 'text-emerald-600' : 'text-black/35'">
               <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="pwRules.hasSpecial ? 'bg-emerald-500' : 'bg-black/20'" /> One special character

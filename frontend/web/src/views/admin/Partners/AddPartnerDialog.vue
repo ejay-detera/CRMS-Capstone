@@ -21,6 +21,17 @@ const touched = reactive({
 const emailValid = computed(() =>
   !form.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
 )
+const phoneValid = computed(() =>
+  !form.phone || /^[+]?[\d\s\-(). ]{7,}$/.test(form.phone)
+)
+
+function onNameInput(field: 'contactPerson', e: Event) {
+  const el = e.target as HTMLInputElement
+  const clean = el.value.replace(/[^a-zA-Z\s\-'.]/g, '')
+  form[field] = clean
+  el.value = clean
+  touched[field] = true
+}
 
 function reset() {
   Object.assign(form, { name: '', industry: '', region: '', status: 'Active', contactPerson: '', email: '', phone: '', address: '' })
@@ -31,7 +42,7 @@ watch(() => props.open, open => { if (!open) reset() })
 
 function submit() {
   Object.keys(touched).forEach(k => ((touched as Record<string, boolean>)[k] = true))
-  if (!form.name || !form.industry || !form.region || !form.contactPerson || !form.email || !emailValid.value || !form.phone || !form.address) return
+  if (!form.name || !form.industry || !form.region || !form.contactPerson || !form.email || !emailValid.value || !form.phone || !phoneValid.value || !form.address) return
   emit('submit', { id: '', name: form.name, industry: form.industry, region: form.region as any, status: form.status, contactPerson: form.contactPerson, email: form.email, phone: form.phone, address: form.address })
   emit('update:open', false)
 }
@@ -102,15 +113,17 @@ function err(field: keyof typeof touched, extra = true) {
         <div class="grid grid-cols-2 gap-4">
           <div class="space-y-1.5">
             <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Contact Person <span class="text-red-500">*</span></label>
-            <input v-model="form.contactPerson" @blur="touched.contactPerson = true" type="text" placeholder="Full name"
+            <input :value="form.contactPerson" @input="onNameInput('contactPerson', $event)" @blur="touched.contactPerson = true"
+              type="text" placeholder="Full name"
               :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', err('contactPerson', !form.contactPerson)]" />
             <p v-if="touched.contactPerson && !form.contactPerson" class="text-xs text-red-500">Required.</p>
           </div>
           <div class="space-y-1.5">
             <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Phone <span class="text-red-500">*</span></label>
             <input v-model="form.phone" @blur="touched.phone = true" type="text" placeholder="+63 2 8xxx xxxx"
-              :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', err('phone', !form.phone)]" />
+              :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', err('phone', !form.phone || !phoneValid)]" />
             <p v-if="touched.phone && !form.phone" class="text-xs text-red-500">Required.</p>
+            <p v-else-if="touched.phone && !phoneValid" class="text-xs text-red-500">Enter a valid phone number.</p>
           </div>
         </div>
 

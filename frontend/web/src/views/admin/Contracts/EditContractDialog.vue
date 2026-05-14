@@ -28,13 +28,16 @@ const form = reactive({
 const touched = reactive({
   businessPartner: false, category: false, itemCode: false,
   description: false, serialNo: false, region: false,
-  startDate: false, endDate: false, status: false,
+  startDate: false, endDate: false, status: false, contractLink: false,
 })
 
 const dateError = computed(() =>
   touched.startDate && touched.endDate && form.startDate && form.endDate
     ? form.endDate <= form.startDate ? 'End date must be after start date.' : ''
     : ''
+)
+const urlValid = computed(() =>
+  !form.contractLink || /^https?:\/\/.+\..+/.test(form.contractLink)
 )
 
 watch(() => props.contract, c => {
@@ -64,7 +67,7 @@ function submit() {
   Object.keys(touched).forEach(k => ((touched as Record<string, boolean>)[k] = true))
   if (!form.businessPartner || !form.category || !form.itemCode || !form.description ||
       !form.serialNo || !form.region || !form.startDate || !form.endDate ||
-      !form.status || dateError.value) return
+      !form.status || dateError.value || !urlValid.value) return
   emit('submit', {
     businessPartner: form.businessPartner,
     category:        form.category,
@@ -241,9 +244,11 @@ function submit() {
             Contract Link
             <span class="normal-case font-normal text-black/30 ml-1">(optional)</span>
           </label>
-          <input v-model="form.contractLink"
-            type="url" placeholder="https://drive.google.com/..."
-            class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
+          <input v-model="form.contractLink" @blur="touched.contractLink = true"
+            type="text" placeholder="https://drive.google.com/..."
+            :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
+              touched.contractLink && !urlValid ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
+          <p v-if="touched.contractLink && !urlValid" class="text-xs text-red-500">Enter a valid URL (must start with http:// or https://).</p>
         </div>
 
         <!-- Footer -->

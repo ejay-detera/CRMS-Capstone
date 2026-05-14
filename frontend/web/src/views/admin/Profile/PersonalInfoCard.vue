@@ -21,6 +21,15 @@ const touched = reactive({
 })
 
 const emailValid = computed(() => !form.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+const phoneValid = computed(() => !form.phone || /^[+]?[\d\s\-(). ]{7,}$/.test(form.phone))
+
+function onNameInput(field: 'firstName' | 'lastName' | 'middleName', e: Event) {
+  const el = e.target as HTMLInputElement
+  const clean = el.value.replace(/[^a-zA-Z\s\-'.]/g, '')
+  form[field] = clean
+  el.value = clean
+  if (field !== 'middleName') touched[field as keyof typeof touched] = true
+}
 
 function fieldCls(field: keyof typeof touched, invalid: boolean) {
   return touched[field] && invalid
@@ -30,7 +39,7 @@ function fieldCls(field: keyof typeof touched, invalid: boolean) {
 
 function save() {
   Object.assign(touched, { firstName: true, lastName: true, email: true, phone: true })
-  if (!form.firstName || !form.lastName || !form.email || !emailValid.value || !form.phone) return
+  if (!form.firstName || !form.lastName || !form.email || !emailValid.value || !form.phone || !phoneValid.value) return
   emit('save', { ...form })
 }
 </script>
@@ -53,13 +62,15 @@ function save() {
       <div class="grid grid-cols-2 gap-4">
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">First name <span class="text-red-500">*</span></label>
-          <input v-model="form.firstName" @blur="touched.firstName = true" type="text" placeholder="e.g. Shadrack"
+          <input :value="form.firstName" @input="onNameInput('firstName', $event)" @blur="touched.firstName = true"
+            type="text" placeholder="e.g. Shadrack"
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', fieldCls('firstName', !form.firstName)]" />
           <p v-if="touched.firstName && !form.firstName" class="text-xs text-red-500">Required.</p>
         </div>
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Last name <span class="text-red-500">*</span></label>
-          <input v-model="form.lastName" @blur="touched.lastName = true" type="text" placeholder="e.g. Castro"
+          <input :value="form.lastName" @input="onNameInput('lastName', $event)" @blur="touched.lastName = true"
+            type="text" placeholder="e.g. Castro"
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', fieldCls('lastName', !form.lastName)]" />
           <p v-if="touched.lastName && !form.lastName" class="text-xs text-red-500">Required.</p>
         </div>
@@ -69,7 +80,7 @@ function save() {
         <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">
           Middle name <span class="normal-case font-normal text-black/30 ml-1">(optional)</span>
         </label>
-        <input v-model="form.middleName" type="text" placeholder="e.g. Miguel"
+        <input :value="form.middleName" @input="onNameInput('middleName', $event)" type="text" placeholder="e.g. Miguel"
           class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
       </div>
 
@@ -85,8 +96,9 @@ function save() {
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Phone <span class="text-red-500">*</span></label>
           <input v-model="form.phone" @blur="touched.phone = true" type="text" placeholder="+63 2 8xxx xxxx"
-            :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', fieldCls('phone', !form.phone)]" />
+            :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', fieldCls('phone', !form.phone || !phoneValid)]" />
           <p v-if="touched.phone && !form.phone" class="text-xs text-red-500">Required.</p>
+          <p v-else-if="touched.phone && !phoneValid" class="text-xs text-red-500">Enter a valid phone number.</p>
         </div>
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Department</label>
@@ -105,7 +117,7 @@ function save() {
       <div class="space-y-1.5">
         <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Role</label>
         <input :value="form.role" disabled type="text"
-          class="w-full h-9 rounded-md border border-black/8 bg-black/[0.025] px-3 text-sm text-black/40 cursor-not-allowed" />
+          class="w-full h-9 rounded-md border border-black/8 bg-black/2.5 px-3 text-sm text-black/40 cursor-not-allowed" />
         <p class="text-[11px] text-black/30">Role is managed by system administrators.</p>
       </div>
 

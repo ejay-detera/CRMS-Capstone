@@ -14,6 +14,7 @@ const showConfirm = ref(false)
 const pwRules = computed(() => ({
   minLength:  form.next.length >= 8,
   hasUpper:   /[A-Z]/.test(form.next),
+  hasNumber:  /\d/.test(form.next),
   hasSpecial: /[!@#$%^&*()\-_=+\[\]{};:'",.<>?/\\|`~]/.test(form.next),
 }))
 const passwordValid    = computed(() => Object.values(pwRules.value).every(Boolean))
@@ -82,7 +83,7 @@ function save() {
             <span v-for="(ok, rule) in pwRules" :key="rule"
               class="flex items-center gap-1 text-[10px]" :class="ok ? 'text-emerald-600' : 'text-black/35'">
               <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="ok ? 'bg-emerald-500' : 'bg-black/20'" />
-              {{ rule === 'minLength' ? '8+ chars' : rule === 'hasUpper' ? 'Uppercase' : 'Special char' }}
+              {{ rule === 'minLength' ? '8+ chars' : rule === 'hasUpper' ? 'Uppercase' : rule === 'hasNumber' ? 'One number' : 'Special char' }}
             </span>
           </div>
         </div>
