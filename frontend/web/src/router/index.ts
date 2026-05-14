@@ -48,6 +48,11 @@ const routes: Array<RouteRecordRaw> = [
         name: 'admin-system-config',
         component: () => import('@/views/admin/SystemConfig/index.vue'),
       },
+      {
+        path: 'profile',
+        name: 'admin-profile',
+        component: () => import('@/views/admin/Profile/index.vue'),
+      },
     ],
   },
 

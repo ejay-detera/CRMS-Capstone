@@ -30,15 +30,14 @@ import {
   LogOut,
   Search,
   Bell,
-  Mail,
   User,
-  Settings,
 } from "lucide-vue-next";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { ref } from "vue";
 import logoUrl from "@/assets/sbsi logo.png";
 
-const route = useRoute();
+const route  = useRoute();
+const router = useRouter();
 
 // ── Nav groups ──────────────────────────────────────────────────────
 const navGroups = [
@@ -224,13 +223,10 @@ const searchQuery = ref("");
                   <p class="text-sm font-semibold text-black">{{ user.name }}</p>
                   <p class="text-xs text-black/50">{{ user.email }}</p>
                 </div>
-                <button class="w-full flex items-center gap-3 px-2 py-2 text-sm text-black hover:bg-black/5 rounded-lg transition-colors text-left">
+                <button @click="router.push('/admin/profile')"
+                  class="w-full flex items-center gap-3 px-2 py-2 text-sm text-black hover:bg-black/5 rounded-lg transition-colors text-left">
                   <User class="w-4 h-4 text-black/60" />
                   <span>My Profile</span>
-                </button>
-                <button class="w-full flex items-center gap-3 px-2 py-2 text-sm text-black hover:bg-black/5 rounded-lg transition-colors text-left">
-                  <Settings class="w-4 h-4 text-black/60" />
-                  <span>Settings</span>
                 </button>
                 <div class="border-t border-black/5 my-1"></div>
                 <button class="w-full flex items-center gap-3 px-2 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors text-left">
