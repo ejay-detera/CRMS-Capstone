@@ -66,7 +66,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'dashboard',
         name: 'manager-dashboard',
-        component: () => import('@/views/manager/ManagerDashboard.vue'),
+        component: () => import('@/views/manager/Dashboard/index.vue'),
       },
       {
         path: 'contracts',
