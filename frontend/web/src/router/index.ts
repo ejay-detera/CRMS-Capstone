@@ -83,6 +83,11 @@ const routes: Array<RouteRecordRaw> = [
         name: 'manager-notifications',
         component: () => import('@/views/manager/Notifications/index.vue'),
       },
+      {
+        path: 'profile',
+        name: 'manager-profile',
+        component: () => import('@/views/manager/Profile/index.vue'),
+      },
     ],
   },
 
