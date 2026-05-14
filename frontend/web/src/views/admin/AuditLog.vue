@@ -279,40 +279,40 @@ function exportXLSX() {
       </Table>
 
       <!-- ── Pagination ────────────────────────────────────────────── -->
-      <div v-if="totalPages > 1" class="px-6 py-3 border-t border-black/5 flex items-center justify-center">
-        <Pagination v-model:page="currentPage" :total="filtered.length" :items-per-page="PAGE_SIZE" :sibling-count="1">
-          <PaginationContent class="flex items-center gap-1">
-            <PaginationItem>
-              <PaginationPrevious
-                class="h-8 w-8 p-0 text-black/40 hover:text-black hover:bg-black/5 border-black/10 disabled:opacity-30"
-                @click="currentPage = Math.max(1, currentPage - 1)"
-              />
-            </PaginationItem>
-            <template v-for="page in totalPages" :key="page">
-              <PaginationItem v-if="page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1">
-                <button
-                  @click="currentPage = page"
-                  class="h-8 w-8 text-xs rounded-md font-medium transition-colors"
-                  :class="currentPage === page
-                    ? 'bg-[#252578] text-white'
+      <Pagination
+        v-if="totalPages > 1"
+        :total="filtered.length"
+        :sibling-count="1"
+        :items-per-page="PAGE_SIZE"
+        v-model:page="currentPage"
+      >
+        <div class="grid grid-cols-3 items-center px-6 py-4 border-t border-black/5">
+          <div class="flex justify-start">
+            <PaginationPrevious />
+          </div>
+          <div class="flex justify-center">
+            <PaginationContent v-slot="{ items }" class="flex items-center gap-1">
+              <template v-for="(item, index) in items">
+                <PaginationItem
+                  v-if="item.type === 'page'"
+                  :key="index"
+                  :value="item.value"
+                  :is-active="item.value === currentPage"
+                  :class="item.value === currentPage
+                    ? 'bg-[#252578] text-white hover:bg-[#2F2F73] hover:text-white border-transparent font-semibold'
                     : 'text-black/50 hover:bg-black/5'"
                 >
-                  {{ page }}
-                </button>
-              </PaginationItem>
-              <PaginationItem v-else-if="Math.abs(page - currentPage) === 2">
-                <PaginationEllipsis class="text-black/30" />
-              </PaginationItem>
-            </template>
-            <PaginationItem>
-              <PaginationNext
-                class="h-8 w-8 p-0 text-black/40 hover:text-black hover:bg-black/5 border-black/10 disabled:opacity-30"
-                @click="currentPage = Math.min(totalPages, currentPage + 1)"
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      </div>
+                  {{ item.value }}
+                </PaginationItem>
+                <PaginationEllipsis v-else :key="item.type" :index="index" />
+              </template>
+            </PaginationContent>
+          </div>
+          <div class="flex justify-end">
+            <PaginationNext />
+          </div>
+        </div>
+      </Pagination>
 
     </div>
   </div>
