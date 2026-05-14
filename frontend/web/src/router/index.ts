@@ -60,13 +60,28 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/manager',
     name: 'manager',
-    component: () => import('@/layouts/AdminLayout.vue'),
+    component: () => import('@/layouts/ManagerLayout.vue'),
     redirect: '/manager/dashboard',
     children: [
       {
         path: 'dashboard',
         name: 'manager-dashboard',
         component: () => import('@/views/manager/ManagerDashboard.vue'),
+      },
+      {
+        path: 'contracts',
+        name: 'manager-contracts',
+        component: () => import('@/views/manager/Contracts/index.vue'),
+      },
+      {
+        path: 'contract-requests',
+        name: 'manager-contract-requests',
+        component: () => import('@/views/manager/ContractRequests/index.vue'),
+      },
+      {
+        path: 'notifications',
+        name: 'manager-notifications',
+        component: () => import('@/views/manager/Notifications/index.vue'),
       },
     ],
   },
