@@ -21,32 +21,32 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'users',
         name: 'admin-users',
-        component: () => import('@/views/admin/Users.vue'),
+        component: () => import('@/views/admin/Users/index.vue'),
       },
       {
         path: 'roles',
         name: 'admin-roles',
-        component: () => import('@/views/admin/Roles.vue'),
+        component: () => import('@/views/admin/Roles/index.vue'),
       },
       {
         path: 'partners',
         name: 'admin-partners',
-        component: () => import('@/views/admin/Partners.vue'),
+        component: () => import('@/views/admin/Partners/index.vue'),
       },
       {
         path: 'notifications',
         name: 'admin-notifications',
-        component: () => import('@/views/admin/Notifications.vue'),
+        component: () => import('@/views/admin/Notifications/index.vue'),
       },
       {
         path: 'audit-log',
         name: 'admin-audit-log',
-        component: () => import('@/views/admin/AuditLog.vue'),
+        component: () => import('@/views/admin/AuditLog/index.vue'),
       },
       {
         path: 'system-config',
         name: 'admin-system-config',
-        component: () => import('@/views/admin/SystemConfig.vue'),
+        component: () => import('@/views/admin/SystemConfig/index.vue'),
       },
     ],
   },
