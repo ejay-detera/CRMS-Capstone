@@ -5,11 +5,33 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/admin',
     name: 'admin',
+    component: () => import('@/layouts/AdminLayout.vue'),
+    redirect: '/admin/dashboard',
     children: [
       {
         path: 'dashboard',
         name: 'admin-dashboard',
         component: () => import('@/views/admin/AdminDashboard.vue')
+      },
+      {
+        path: 'contracts',
+        name: 'admin-contracts',
+        component: () => import('@/views/admin/Contracts.vue')
+      },
+      {
+        path: 'users',
+        name: 'admin-users',
+        component: () => import('@/views/admin/Users.vue')
+      },
+      {
+        path: 'roles',
+        name: 'admin-roles',
+        component: () => import('@/views/admin/Roles.vue')
+      },
+      {
+        path: 'partners',
+        name: 'admin-partners',
+        component: () => import('@/views/admin/Partners.vue')
       }
     ]
   },
