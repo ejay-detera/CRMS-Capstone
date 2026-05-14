@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { inject } from 'vue'
 import { UserPlus, Lock } from 'lucide-vue-next'
 import type { SystemCfg } from './index.vue'
@@ -13,7 +13,7 @@ const cfg = inject<SystemCfg>('cfg')!
 
     <SettingCard title="Registration & Onboarding" description="Control how new users join the system."
       :icon="UserPlus" icon-bg="bg-[#2E85D8]/8" icon-color="text-[#2E85D8]">
-      <div class="divide-y divide-black/[0.04]">
+      <div class="divide-y divide-black/4">
         <ToggleRow v-model="cfg.allowSelfReg"       label="Allow Self-Registration"    description="Users can create their own accounts without admin invite." />
         <ToggleRow v-model="cfg.requireEmailVerify" label="Require Email Verification" description="New accounts must verify their email before access." />
       </div>
@@ -50,7 +50,7 @@ const cfg = inject<SystemCfg>('cfg')!
           </div>
         </div>
 
-        <div class="divide-y divide-black/[0.04] border border-black/[0.06] rounded-lg overflow-hidden">
+        <div class="divide-y divide-black/4 border border-black/6 rounded-lg overflow-hidden">
           <ToggleRow v-model="cfg.requireStrongPass" label="Require Strong Password"       description="Enforce uppercase, numbers, and special characters." />
           <ToggleRow v-model="cfg.twoFactorAdmins"   label="Two-Factor Auth for Admins"    description="Require 2FA for all admin accounts." />
           <ToggleRow v-model="cfg.twoFactorAll"      label="Two-Factor Auth for All Users" description="Require 2FA for every account in the system." />

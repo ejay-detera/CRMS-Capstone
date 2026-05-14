@@ -1,11 +1,10 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight } from 'lucide-vue-next'
 
 const router = useRouter()
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
@@ -155,8 +154,8 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
         </div>
 
         <Table>
-          <TableHeader class="bg-black/[0.018]">
-            <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
+          <TableHeader class="bg-black/1.8">
+            <TableRow class="border-b border-black/4 hover:bg-transparent">
               <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider pl-6 py-3">Contract ID</TableHead>
               <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Partner</TableHead>
               <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Category</TableHead>
@@ -168,7 +167,7 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
             <TableRow
               v-for="contract in allContracts"
               :key="contract.id"
-              class="border-b border-black/4 last:border-0 hover:bg-black/[0.012] transition-colors"
+              class="border-b border-black/4 last:border-0 hover:bg-black/1.2 transition-colors"
             >
               <TableCell class="pl-6 py-3.5 text-xs font-medium text-[#252578]/70">{{ contract.id }}</TableCell>
               <TableCell class="py-3.5 text-sm text-black">{{ contract.partner }}</TableCell>
@@ -240,8 +239,8 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
       </div>
 
       <Table>
-        <TableHeader class="bg-black/[0.018]">
-          <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
+        <TableHeader class="bg-black/1.8">
+          <TableRow class="border-b border-black/4 hover:bg-transparent">
             <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider pl-6 py-3">Name</TableHead>
             <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Role</TableHead>
             <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
@@ -251,7 +250,7 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
           <TableRow
             v-for="(user, index) in filteredUsers.slice(0, 5)"
             :key="user.id"
-            class="border-b border-black/4 last:border-0 hover:bg-black/[0.012] transition-colors"
+            class="border-b border-black/4 last:border-0 hover:bg-black/1.2 transition-colors"
           >
             <TableCell class="pl-6 py-3.5">
               <div class="flex items-center gap-3">

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { Clock, ArrowRight } from 'lucide-vue-next'
 
@@ -39,11 +39,11 @@ const urgentCount = contracts.filter(c => c.daysLeft <= 14).length
       </button>
     </div>
 
-    <div class="divide-y divide-black/[0.04]">
+    <div class="divide-y divide-black/4">
       <div
         v-for="c in contracts"
         :key="c.id"
-        class="px-6 py-3.5 hover:bg-black/[0.012] transition-colors cursor-pointer"
+        class="px-6 py-3.5 hover:bg-black/1.2 transition-colors cursor-pointer"
         @click="router.push('/manager/contracts')"
       >
         <div class="flex items-start gap-3">

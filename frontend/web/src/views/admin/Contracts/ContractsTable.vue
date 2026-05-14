@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { Search, MoreHorizontal, Eye, Pencil, Trash2, AlertTriangle, Clock } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
@@ -84,8 +84,8 @@ function daysLabel(days: number) {
 
     <!-- Table -->
     <Table>
-      <TableHeader class="bg-black/[0.018]">
-        <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
+      <TableHeader class="bg-black/1.8">
+        <TableRow class="border-b border-black/4 hover:bg-transparent">
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3 pl-6 w-56">Contract</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Category</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Region</TableHead>
@@ -98,7 +98,7 @@ function daysLabel(days: number) {
 
       <TableBody>
         <TableRow v-for="c in paginated" :key="c.id"
-          class="border-b border-black/[0.04] last:border-0 transition-colors hover:bg-black/[0.012] cursor-pointer"
+          class="border-b border-black/4 last:border-0 transition-colors hover:bg-black/1.2 cursor-pointer"
           @click="emit('openDetail', c)">
 
           <!-- Contract ID + Partner -->

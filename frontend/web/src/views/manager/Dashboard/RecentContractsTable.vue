@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { ArrowRight } from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
@@ -39,8 +39,8 @@ const statusBadge: Record<Status, string> = {
     </div>
 
     <Table>
-      <TableHeader class="bg-black/[0.018]">
-        <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
+      <TableHeader class="bg-black/1.8">
+        <TableRow class="border-b border-black/4 hover:bg-transparent">
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider pl-6 py-3">Contract</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Category</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
@@ -51,7 +51,7 @@ const statusBadge: Record<Status, string> = {
         <TableRow
           v-for="c in contracts"
           :key="c.id"
-          class="border-b border-black/4 last:border-0 hover:bg-black/[0.012] transition-colors cursor-pointer"
+          class="border-b border-black/4 last:border-0 hover:bg-black/1.2 transition-colors cursor-pointer"
           @click="router.push('/manager/contracts')"
         >
           <TableCell class="pl-6 py-3.5">

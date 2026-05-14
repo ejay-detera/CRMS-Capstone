@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { inject } from 'vue'
 import { Globe, Database, Mail } from 'lucide-vue-next'
 import type { SystemCfg } from './index.vue'
@@ -62,12 +62,12 @@ const cfg = inject<SystemCfg>('cfg')!
 
     <SettingCard title="Maintenance & Logging" description="System health, audit trails, and data management."
       :icon="Database">
-      <div class="divide-y divide-black/[0.04]">
+      <div class="divide-y divide-black/4">
         <ToggleRow v-model="cfg.auditLogging" label="Audit Logging" description="Record all user actions and system events." />
 
         <div class="px-6 py-4 space-y-3">
           <ToggleRow v-model="cfg.autoBackups" label="Automatic Backups" description="Schedule regular database backups." />
-          <div v-if="cfg.autoBackups" class="bg-black/[0.02] rounded-lg border border-black/[0.06] p-4 space-y-4">
+          <div v-if="cfg.autoBackups" class="bg-black/2 rounded-lg border border-black/6 p-4 space-y-4">
             <div>
               <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Backup frequency</label>
               <div class="relative mt-2">

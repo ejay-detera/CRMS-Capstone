@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { FileText, ExternalLink, MapPin, Hash, Cpu, Barcode, CalendarDays, Clock, AlertTriangle } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -62,7 +62,7 @@ function daysDisplay(days: number) {
         </div>
 
         <!-- Detail rows -->
-        <div class="px-5 py-1 divide-y divide-black/[0.04]">
+        <div class="px-5 py-1 divide-y divide-black/4">
 
           <div class="flex items-center gap-3 py-2.5">
             <Hash class="w-3.5 h-3.5 text-black/25 shrink-0" />

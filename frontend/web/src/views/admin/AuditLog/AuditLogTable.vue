@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
@@ -31,8 +31,8 @@ const emit = defineEmits<{ 'update:currentPage': [page: number] }>()
     </div>
 
     <Table>
-      <TableHeader class="bg-black/[0.018]">
-        <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
+      <TableHeader class="bg-black/1.8">
+        <TableRow class="border-b border-black/4 hover:bg-transparent">
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider pl-6 py-3 w-56">User</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Email</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Action</TableHead>
@@ -50,7 +50,7 @@ const emit = defineEmits<{ 'update:currentPage': [page: number] }>()
         </TableRow>
 
         <TableRow v-for="log in paginated" :key="log.id"
-          class="border-b border-black/[0.04] last:border-0 hover:bg-black/[0.012] transition-colors">
+          class="border-b border-black/4 last:border-0 hover:bg-black/1.2 transition-colors">
 
           <TableCell class="pl-6 py-4">
             <div class="flex items-center gap-3">

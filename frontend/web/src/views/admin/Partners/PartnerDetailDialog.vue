@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { Building2, Truck, Phone, Mail, User, MapPin, Hash, Briefcase } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import type { Partner, TabKey } from '@/types/partner'
@@ -54,7 +54,7 @@ defineEmits<{ 'update:open': [v: boolean] }>()
         </div>
 
         <!-- ── Contact info ───────────────────────────────────────── -->
-        <div class="px-5 py-4 space-y-0 divide-y divide-black/[0.04]">
+        <div class="px-5 py-4 space-y-0 divide-y divide-black/4">
           <div class="flex items-center gap-3 py-2.5">
             <User class="w-3.5 h-3.5 text-black/25 shrink-0" />
             <div class="flex-1 min-w-0 flex items-baseline justify-between gap-4">
