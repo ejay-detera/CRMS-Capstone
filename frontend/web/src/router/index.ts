@@ -34,6 +34,11 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/admin/Partners.vue'),
       },
       {
+        path: 'notifications',
+        name: 'admin-notifications',
+        component: () => import('@/views/admin/Notifications.vue'),
+      },
+      {
         path: 'audit-log',
         name: 'admin-audit-log',
         component: () => import('@/views/admin/AuditLog.vue'),

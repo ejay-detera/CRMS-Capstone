@@ -155,8 +155,8 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
         </div>
 
         <Table>
-          <TableHeader class="bg-black/2.5">
-            <TableRow class="border-b border-black/6 hover:bg-transparent">
+          <TableHeader class="bg-black/[0.018]">
+            <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
               <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider pl-6 py-3">Contract ID</TableHead>
               <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Partner</TableHead>
               <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Category</TableHead>
@@ -240,8 +240,8 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
       </div>
 
       <Table>
-        <TableHeader class="bg-black/2.5">
-          <TableRow class="border-b border-black/6 hover:bg-transparent">
+        <TableHeader class="bg-black/[0.018]">
+          <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
             <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider pl-6 py-3">Name</TableHead>
             <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Role</TableHead>
             <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>

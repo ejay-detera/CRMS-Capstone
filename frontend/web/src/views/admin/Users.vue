@@ -497,8 +497,8 @@ function confirmDelete() {
 
       <!-- Table -->
       <Table>
-        <TableHeader class="bg-black/2.5">
-          <TableRow class="border-b border-black/6 hover:bg-transparent">
+        <TableHeader class="bg-black/[0.018]">
+          <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
             <TableHead class="w-12 pl-6 py-3">
               <input
                 type="checkbox"

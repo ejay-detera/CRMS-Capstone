@@ -369,8 +369,8 @@ function exportXLSX() {
       </div>
 
       <Table>
-        <TableHeader class="bg-black/2.5">
-          <TableRow class="border-b border-black/6 hover:bg-transparent">
+        <TableHeader class="bg-black/[0.018]">
+          <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
             <TableHead class="w-12 pl-6 py-3">
               <input type="checkbox" :checked="allPageSelected" @change="toggleSelectAll"
                 class="w-4 h-4 rounded border-black/20 accent-[#252578] cursor-pointer" />

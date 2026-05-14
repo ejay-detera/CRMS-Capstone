@@ -67,6 +67,11 @@ const navItems = [
     icon: Handshake,
   },
   {
+    title: "Notifications",
+    url: "/admin/notifications",
+    icon: Bell,
+  },
+  {
     title: "Audit Log",
     url: "/admin/audit-log",
     icon: ClipboardList,
