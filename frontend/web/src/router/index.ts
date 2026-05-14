@@ -40,6 +40,8 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/manager',
     name: 'manager',
+    component: () => import('@/layouts/AdminLayout.vue'),
+    redirect: '/manager/dashboard',
     children: [
       {
         path: 'dashboard',
@@ -53,6 +55,8 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/sales',
     name: 'sales',
+    component: () => import('@/layouts/AdminLayout.vue'),
+    redirect: '/sales/dashboard',
     children: [
       {
         path: 'dashboard',
