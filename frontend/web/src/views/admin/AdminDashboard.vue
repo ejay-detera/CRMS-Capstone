@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ArrowRight } from 'lucide-vue-next'
+
+const router = useRouter()
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -182,7 +185,7 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
         </Table>
 
         <div class="px-6 py-3 border-t border-black/5">
-          <button class="flex items-center gap-1.5 text-xs font-semibold text-[#2E85D8] hover:text-[#252578] transition-colors">
+          <button @click="router.push('/admin/contracts')" class="flex items-center gap-1.5 text-xs font-semibold text-[#2E85D8] hover:text-[#252578] transition-colors">
             View all contracts <ArrowRight class="w-3.5 h-3.5" />
           </button>
         </div>
@@ -192,7 +195,7 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
       <div class="xl:col-span-2 bg-white rounded-lg border border-black/8 shadow-sm overflow-hidden">
         <div class="px-6 pt-5 pb-4 border-b border-black/5 flex items-center justify-between">
           <h2 class="text-sm font-semibold text-black">Audit log</h2>
-          <button class="text-xs font-semibold text-[#2E85D8] hover:text-[#252578] transition-colors">
+          <button @click="router.push('/admin/audit-log')" class="text-xs font-semibold text-[#2E85D8] hover:text-[#252578] transition-colors">
             See all
           </button>
         </div>
@@ -285,7 +288,7 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
       </Table>
 
       <div class="px-6 py-3 border-t border-black/5">
-        <button class="flex items-center gap-1.5 text-xs font-semibold text-[#2E85D8] hover:text-[#252578] transition-colors">
+        <button @click="router.push('/admin/users')" class="flex items-center gap-1.5 text-xs font-semibold text-[#2E85D8] hover:text-[#252578] transition-colors">
           View all users <ArrowRight class="w-3.5 h-3.5" />
         </button>
       </div>
