@@ -10,7 +10,9 @@
       "PowerShell(\"Deleted 3 old flat files\")",
       "Bash(find /mnt/c/Users/Shad/Desktop/Project-worthy/CRMS-Capstone/frontend/web/src/views/admin -name \"*.vue\" | sort)",
       "Read(//mnt/c/Users/Shad/Desktop/Project-worthy/CRMS-Capstone/frontend/web/src/views/**)",
-      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\Shad\\\\Desktop\\\\Project-worthy\\\\CRMS-Capstone\\\\frontend\\\\web\\\\src\\\\views\\\\admin\\\\Notifications.vue\", \"c:\\\\Users\\\\Shad\\\\Desktop\\\\Project-worthy\\\\CRMS-Capstone\\\\frontend\\\\web\\\\src\\\\views\\\\admin\\\\Roles.vue\", \"c:\\\\Users\\\\Shad\\\\Desktop\\\\Project-worthy\\\\CRMS-Capstone\\\\frontend\\\\web\\\\src\\\\views\\\\admin\\\\AuditLog.vue\", \"c:\\\\Users\\\\Shad\\\\Desktop\\\\Project-worthy\\\\CRMS-Capstone\\\\frontend\\\\web\\\\src\\\\views\\\\admin\\\\Contracts.vue\" | Select-Object Name, @{N='Lines';E={\\(Get-Content $_.FullName\\).Count}})"
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\Shad\\\\Desktop\\\\Project-worthy\\\\CRMS-Capstone\\\\frontend\\\\web\\\\src\\\\views\\\\admin\\\\Notifications.vue\", \"c:\\\\Users\\\\Shad\\\\Desktop\\\\Project-worthy\\\\CRMS-Capstone\\\\frontend\\\\web\\\\src\\\\views\\\\admin\\\\Roles.vue\", \"c:\\\\Users\\\\Shad\\\\Desktop\\\\Project-worthy\\\\CRMS-Capstone\\\\frontend\\\\web\\\\src\\\\views\\\\admin\\\\AuditLog.vue\", \"c:\\\\Users\\\\Shad\\\\Desktop\\\\Project-worthy\\\\CRMS-Capstone\\\\frontend\\\\web\\\\src\\\\views\\\\admin\\\\Contracts.vue\" | Select-Object Name, @{N='Lines';E={\\(Get-Content $_.FullName\\).Count}})",
+      "PowerShell(Remove-Item \"c:\\\\Users\\\\Shad\\\\Desktop\\\\Project-worthy\\\\CRMS-Capstone\\\\frontend\\\\web\\\\src\\\\views\\\\admin\\\\Contracts.vue\" -Force -Confirm:$false)",
+      "PowerShell(\"Done\")"
     ]
   }
 }
