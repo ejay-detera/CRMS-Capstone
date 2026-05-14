@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { CheckCheck } from 'lucide-vue-next'
-import NotificationList from './NotificationList.vue'
+import NotificationList from '@/components/shared/NotificationList.vue'
 import type { Notification, TabKey } from '@/types/notification'
 
 const rawNotifications = ref<Notification[]>([
