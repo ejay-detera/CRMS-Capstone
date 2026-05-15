@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { FileText, Clock, AlertTriangle, CheckCircle } from 'lucide-vue-next'
 import { remainingDays } from '@/types/contract'
 import type { Contract } from '@/types/contract'
 import type { ContractRequest } from '@/types/contractRequest'
@@ -54,50 +53,10 @@ const recentRequests = ref<ContractRequest[]>([
 const withDays = computed(() => contracts.value.map(c => ({ ...c, days: remainingDays(c.endDate) })))
 
 const statCards = computed(() => [
-  {
-    label: 'My Contracts',
-    value: withDays.value.length,
-    sub: 'Total contracts owned',
-    icon: FileText,
-    iconBg: 'bg-[#252578]/8',
-    iconColor: 'text-[#252578]',
-    valueClass: 'text-black',
-    change: '+2 this month',
-    positive: true,
-  },
-  {
-    label: 'Pending Approval',
-    value: recentRequests.value.filter(r => r.status === 'Pending' || r.status === 'Under Review').length,
-    sub: 'Awaiting manager review',
-    icon: Clock,
-    iconBg: 'bg-amber-50',
-    iconColor: 'text-amber-500',
-    valueClass: 'text-amber-500',
-    change: 'Needs attention',
-    positive: false,
-  },
-  {
-    label: 'Expiring Soon',
-    value: withDays.value.filter(c => c.days >= 0 && c.days <= 30).length,
-    sub: 'Within the next 30 days',
-    icon: AlertTriangle,
-    iconBg: 'bg-red-50',
-    iconColor: 'text-red-400',
-    valueClass: 'text-red-500',
-    change: 'Action required',
-    positive: false,
-  },
-  {
-    label: 'Approved',
-    value: recentRequests.value.filter(r => r.status === 'Approved').length,
-    sub: 'Requests approved',
-    icon: CheckCircle,
-    iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
-    valueClass: 'text-emerald-600',
-    change: '+2 this month',
-    positive: true,
-  },
+  { label: 'My Contracts',    value: withDays.value.length },
+  { label: 'Pending',         value: recentRequests.value.filter(r => r.status === 'Pending' || r.status === 'Under Review').length },
+  { label: 'Expiring Soon',   value: withDays.value.filter(c => c.days >= 0 && c.days <= 30).length },
+  { label: 'Approved',        value: recentRequests.value.filter(r => r.status === 'Approved').length },
 ])
 </script>
 
@@ -117,22 +76,12 @@ const statCards = computed(() => [
       </div>
     </div>
 
-    <!-- KPI stat cards -->
+    <!-- Stat cards -->
     <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
       <div v-for="card in statCards" :key="card.label"
-        class="bg-white rounded-lg border border-black/8 px-5 py-4 shadow-sm flex items-start gap-4">
-        <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" :class="card.iconBg">
-          <component :is="card.icon" class="w-4 h-4" :class="card.iconColor" />
-        </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-xs font-medium text-black/40 uppercase tracking-wide leading-none mb-1.5">{{ card.label }}</p>
-          <p class="text-2xl font-semibold tabular-nums leading-none" :class="card.valueClass">{{ card.value }}</p>
-          <p class="text-[11px] text-black/35 mt-1.5 leading-none">{{ card.sub }}</p>
-        </div>
-        <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 mt-0.5"
-          :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
-          {{ card.change }}
-        </span>
+        class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
+        <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
+        <p class="text-3xl font-semibold tabular-nums text-black">{{ card.value }}</p>
       </div>
     </div>
 
@@ -142,7 +91,7 @@ const statCards = computed(() => [
         <RecentRequestsTable :requests="recentRequests" />
       </div>
       <div>
-        <ContractStatusPanel :contracts="withDays" :requests="recentRequests" />
+        <ContractStatusPanel :contracts="withDays" />
       </div>
     </div>
 

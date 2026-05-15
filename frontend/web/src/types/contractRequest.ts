@@ -20,16 +20,16 @@ export interface ContractRequest {
 }
 
 export const requestStatusBadge: Record<RequestStatus, string> = {
-  'Pending':      'bg-amber-50 text-amber-700 border-amber-200',
+  'Pending':      'bg-black/5 text-black/50 border-black/10',
   'Under Review': 'bg-[#2E85D8]/8 text-[#2E85D8] border-[#2E85D8]/20',
-  'Approved':     'bg-emerald-50 text-emerald-700 border-emerald-200',
-  'Rejected':     'bg-red-50 text-red-600 border-red-200',
+  'Approved':     'bg-[#252578]/8 text-[#252578] border-[#252578]/20',
+  'Rejected':     'bg-black/5 text-black/40 border-black/8',
 }
 
 export const priorityBadge: Record<RequestPriority, string> = {
-  'High':   'bg-red-50 text-red-600 border-red-200',
-  'Medium': 'bg-amber-50 text-amber-700 border-amber-200',
-  'Low':    'bg-black/4 text-black/50 border-black/10',
+  'High':   'bg-black/8 text-black border-black/15',
+  'Medium': 'bg-black/4 text-black/60 border-black/10',
+  'Low':    'bg-transparent text-black/35 border-black/8',
 }
 
 export function fmtReqDate(iso: string): string {

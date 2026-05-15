@@ -47,10 +47,10 @@ const statCards = computed(() => ({
 }))
 
 const statCardList = computed(() => [
-  { label: 'Total Contracts', value: statCards.value.total,    valueClass: 'text-black',     change: '+2.1%', positive: true  },
-  { label: 'Active',          value: statCards.value.active,   valueClass: 'text-[#2E85D8]', change: '+4.0%', positive: true  },
-  { label: 'Expiring Soon',   value: statCards.value.expiring, valueClass: 'text-amber-500', change: '+5.2%', positive: true  },
-  { label: 'Expired',         value: statCards.value.expired,  valueClass: 'text-red-500',   change: '-1.3%', positive: false },
+  { label: 'Total Contracts', value: statCards.value.total,    valueClass: 'text-black', change: '+2.1%', positive: true  },
+  { label: 'Active',          value: statCards.value.active,   valueClass: 'text-black', change: '+4.0%', positive: true  },
+  { label: 'Expiring Soon',   value: statCards.value.expiring, valueClass: 'text-black', change: '+5.2%', positive: true  },
+  { label: 'Expired',         value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false },
 ])
 
 const filtered = computed(() => {
