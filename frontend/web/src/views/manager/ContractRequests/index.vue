@@ -39,10 +39,10 @@ const statCards = computed(() => ({
 }))
 
 const statCardList = computed(() => [
-  { label: 'Total Requests',  value: statCards.value.total,     valueClass: 'text-black',       change: '+3.2%', positive: true  },
-  { label: 'Pending',         value: statCards.value.pending,   valueClass: 'text-amber-500',   change: '+1.8%', positive: true  },
-  { label: 'Under Review',    value: statCards.value.reviewing, valueClass: 'text-[#2E85D8]',   change: '+2.5%', positive: true  },
-  { label: 'Approved',        value: statCards.value.approved,  valueClass: 'text-emerald-600', change: '+4.1%', positive: true  },
+  { label: 'Total Requests', value: statCards.value.total,     valueClass: 'text-black', change: '+3.2%', positive: true },
+  { label: 'Pending',        value: statCards.value.pending,   valueClass: 'text-black', change: '+1.8%', positive: true },
+  { label: 'Under Review',   value: statCards.value.reviewing, valueClass: 'text-black', change: '+2.5%', positive: true },
+  { label: 'Approved',       value: statCards.value.approved,  valueClass: 'text-black', change: '+4.1%', positive: true },
 ])
 
 const filtered = computed(() => {
