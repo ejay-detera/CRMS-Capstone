@@ -95,13 +95,33 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/sales',
     name: 'sales',
-    component: () => import('@/layouts/AdminLayout.vue'),
+    component: () => import('@/layouts/SalesLayout.vue'),
     redirect: '/sales/dashboard',
     children: [
       {
         path: 'dashboard',
         name: 'sales-dashboard',
-        component: () => import('@/views/sales/SalesDashboard.vue'),
+        component: () => import('@/views/sales/Dashboard/index.vue'),
+      },
+      {
+        path: 'contracts',
+        name: 'sales-contracts',
+        component: () => import('@/views/sales/Contracts/index.vue'),
+      },
+      {
+        path: 'contract-requests',
+        name: 'sales-contract-requests',
+        component: () => import('@/views/sales/ContractRequests/index.vue'),
+      },
+      {
+        path: 'notifications',
+        name: 'sales-notifications',
+        component: () => import('@/views/sales/Notifications/index.vue'),
+      },
+      {
+        path: 'profile',
+        name: 'sales-profile',
+        component: () => import('@/views/sales/Profile/index.vue'),
       },
     ],
   },
