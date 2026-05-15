@@ -37,9 +37,9 @@ const allContracts: Contract[] = [
 ]
 
 const contractStatusBadge: Record<ContractStatus, string> = {
-  'Notarized':   'bg-emerald-50 text-emerald-700 border-emerald-200',
-  'Draft Client': 'bg-amber-50  text-amber-700   border-amber-200',
-  'Draft SBSI':  'bg-[#2E85D8]/8 text-[#2E85D8] border-[#2E85D8]/20',
+  'Notarized':    'bg-[#252578]/8 text-[#252578] border-[#252578]/20',
+  'Draft Client': 'bg-[#2E85D8]/8 text-[#2E85D8] border-[#2E85D8]/20',
+  'Draft SBSI':   'bg-black/5 text-black/50 border-black/10',
 }
 
 // ── Audit logs ─────────────────────────────────────────────────────
@@ -58,10 +58,10 @@ const auditLogs: AuditLog[] = [
 ]
 
 const logDot: Record<LogType, string> = {
-  create:  'bg-emerald-500',
-  update:  'bg-[#2E85D8]',
+  create:  'bg-[#2E85D8]',
+  update:  'bg-[#2F2F73]',
   approve: 'bg-[#252578]',
-  delete:  'bg-red-400',
+  delete:  'bg-black/30',
 }
 
 // ── User list ──────────────────────────────────────────────────────
@@ -89,9 +89,9 @@ const filteredUsers = computed(() =>
 )
 
 const roleBadge: Record<Role, string> = {
-  Admin:   'bg-emerald-50  text-emerald-700 border-emerald-200',
-  Manager: 'bg-[#2E85D8]/8 text-[#2E85D8]  border-[#2E85D8]/20',
-  Sales:   'bg-[#252578]/6 text-[#252578]  border-[#252578]/20',
+  Admin:   'bg-[#252578]/8 text-[#252578] border-[#252578]/20',
+  Manager: 'bg-[#2F2F73]/8 text-[#2F2F73] border-[#2F2F73]/20',
+  Sales:   'bg-[#2E85D8]/8 text-[#2E85D8] border-[#2E85D8]/20',
 }
 
 // ── Avatar helpers ─────────────────────────────────────────────────
@@ -123,7 +123,7 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
           <span class="text-3xl font-semibold text-black tabular-nums">{{ card.value }}</span>
           <span
             class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
-            :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'"
+            :class="card.positive ? 'bg-black/5 text-black/50' : 'bg-black/5 text-black/40'"
           >
             {{ card.change }}
           </span>
@@ -156,7 +156,7 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
 
         <Table>
           <TableHeader class="bg-black/[0.018]">
-            <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
+            <TableRow class="border-b border-black/4 hover:bg-transparent">
               <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider pl-6 py-3">Contract ID</TableHead>
               <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Partner</TableHead>
               <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Category</TableHead>
@@ -241,7 +241,7 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
 
       <Table>
         <TableHeader class="bg-black/[0.018]">
-          <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
+          <TableRow class="border-b border-black/4 hover:bg-transparent">
             <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider pl-6 py-3">Name</TableHead>
             <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Role</TableHead>
             <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>

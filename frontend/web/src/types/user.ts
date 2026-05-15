@@ -11,9 +11,9 @@ export interface User {
 }
 
 export const roleBadge: Record<Role, string> = {
-  Admin:   'bg-emerald-50  text-emerald-700 border-emerald-200',
-  Manager: 'bg-[#2E85D8]/8 text-[#2E85D8]   border-[#2E85D8]/20',
-  Sales:   'bg-[#252578]/6 text-[#252578]   border-[#252578]/20',
+  Admin:   'bg-[#252578]/8 text-[#252578] border-[#252578]/20',
+  Manager: 'bg-[#2F2F73]/8 text-[#2F2F73] border-[#2F2F73]/20',
+  Sales:   'bg-[#2E85D8]/8 text-[#2E85D8] border-[#2E85D8]/20',
 }
 
 export const palette = ['#252578', '#2E85D8', '#2F2F73']
