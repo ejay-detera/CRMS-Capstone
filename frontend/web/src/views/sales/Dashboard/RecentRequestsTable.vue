@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ArrowRight } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
-import { requestStatusBadge, priorityBadge, fmtReqDate } from '@/types/contractRequest'
+import { requestStatusBadge, fmtReqDate } from '@/types/contractRequest'
 import type { ContractRequest } from '@/types/contractRequest'
 
 defineProps<{ requests: ContractRequest[] }>()
@@ -24,13 +24,13 @@ const router = useRouter()
       </button>
     </div>
 
-    <!-- Table -->
+    <!-- List -->
     <div class="divide-y divide-black/4">
       <div v-for="r in requests" :key="r.id"
-        class="px-6 py-3.5 flex items-center gap-4 hover:bg-black/1.5 transition-colors cursor-default">
+        class="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-black/1.5 transition-colors cursor-default">
 
-        <!-- Partner + ID -->
-        <div class="flex-1 min-w-0">
+        <!-- Partner + meta -->
+        <div class="min-w-0 flex-1">
           <p class="text-sm font-medium text-black truncate leading-snug">{{ r.businessPartner }}</p>
           <div class="flex items-center gap-2 mt-0.5">
             <span class="text-[10px] font-mono text-black/30 bg-black/4 px-1.5 py-0.5 rounded">{{ r.id }}</span>
@@ -38,23 +38,14 @@ const router = useRouter()
           </div>
         </div>
 
-        <!-- Submitted date -->
-        <div class="text-right shrink-0 hidden sm:block">
-          <p class="text-xs text-black/50">{{ fmtReqDate(r.requestDate) }}</p>
-          <p class="text-[10px] text-black/30 mt-0.5">{{ r.region }}</p>
+        <!-- Status + date -->
+        <div class="shrink-0 text-right">
+          <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full border whitespace-nowrap"
+            :class="requestStatusBadge[r.status]">
+            {{ r.status }}
+          </span>
+          <p class="text-[10px] text-black/35 mt-1 tabular-nums">{{ fmtReqDate(r.requestDate) }}</p>
         </div>
-
-        <!-- Priority -->
-        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border shrink-0"
-          :class="priorityBadge[r.priority]">
-          {{ r.priority }}
-        </span>
-
-        <!-- Status -->
-        <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0"
-          :class="requestStatusBadge[r.status]">
-          {{ r.status }}
-        </span>
 
       </div>
 
