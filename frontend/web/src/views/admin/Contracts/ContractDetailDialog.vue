@@ -10,7 +10,7 @@ defineEmits<{ 'update:open': [v: boolean] }>()
 
 function daysDisplay(days: number) {
   if (days < 0)   return { text: `Expired ${Math.abs(days)}d ago`, cls: 'bg-red-50 text-red-600 border-red-200', icon: AlertTriangle }
-  if (days <= 15) return { text: `${days} days left`,              cls: 'bg-amber-50 text-amber-600 border-amber-200', icon: Clock }
+  if (days <= 30) return { text: `${days} days left`,              cls: 'bg-amber-50 text-amber-600 border-amber-200', icon: Clock }
   return                 { text: `${days} days left`,              cls: 'bg-black/4 text-black/55 border-black/10', icon: Clock }
 }
 
@@ -86,7 +86,7 @@ function avatarColor(name: string) {
             <Cpu class="w-3.5 h-3.5 text-black/25 shrink-0" />
             <div class="flex-1 min-w-0 flex items-baseline justify-between gap-4">
               <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider shrink-0">Description</span>
-              <span class="text-sm font-medium text-black text-right truncate max-w-[200px]">{{ contract.description }}</span>
+              <span class="text-sm font-medium text-black text-right truncate max-w-50">{{ contract.description }}</span>
             </div>
           </div>
 

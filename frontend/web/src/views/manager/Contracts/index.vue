@@ -41,8 +41,8 @@ const withDays = computed(() =>
 
 const statCards = computed(() => ({
   total:    withDays.value.length,
-  active:   withDays.value.filter(c => c.days > 15).length,
-  expiring: withDays.value.filter(c => c.days >= 0 && c.days <= 15).length,
+  active:   withDays.value.filter(c => c.days > 30).length,
+  expiring: withDays.value.filter(c => c.days >= 0 && c.days <= 30).length,
   expired:  withDays.value.filter(c => c.days < 0).length,
 }))
 
@@ -61,8 +61,8 @@ const filtered = computed(() => {
       || c.category.toLowerCase().includes(q)
     const byFilter =
       activeFilter.value === 'all'      ? true :
-      activeFilter.value === 'active'   ? c.days > 15 :
-      activeFilter.value === 'expiring' ? c.days >= 0 && c.days <= 15 :
+      activeFilter.value === 'active'   ? c.days > 30 :
+      activeFilter.value === 'expiring' ? c.days >= 0 && c.days <= 30 :
       c.days < 0
     return bySearch && byFilter
   })
@@ -82,7 +82,7 @@ const showEdit   = ref(false)
 const editTarget = ref<Contract | null>(null)
 function openEdit(c: Contract & { days: number }) { editTarget.value = c; showEdit.value = true }
 
-function handleEdit(data: Omit<Contract, 'id'>) {
+function handleEdit(data: Omit<Contract, 'id' | 'createdBy'>) {
   if (!editTarget.value) return
   const idx = contracts.value.findIndex(c => c.id === editTarget.value!.id)
   if (idx < 0) return

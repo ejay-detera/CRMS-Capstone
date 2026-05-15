@@ -41,8 +41,8 @@ const withDays = computed(() =>
 
 const statCards = computed(() => ({
   total:    withDays.value.length,
-  active:   withDays.value.filter(c => c.days > 15).length,
-  expiring: withDays.value.filter(c => c.days >= 0 && c.days <= 15).length,
+  active:   withDays.value.filter(c => c.days > 30).length,
+  expiring: withDays.value.filter(c => c.days >= 0 && c.days <= 30).length,
   expired:  withDays.value.filter(c => c.days < 0).length,
 }))
 
@@ -59,8 +59,8 @@ const filtered = computed(() => {
     const bySearch = !q || c.id.toLowerCase().includes(q) || c.businessPartner.toLowerCase().includes(q) || c.category.toLowerCase().includes(q)
     const byFilter =
       activeFilter.value === 'all'      ? true :
-      activeFilter.value === 'active'   ? c.days > 15 :
-      activeFilter.value === 'expiring' ? c.days >= 0 && c.days <= 15 :
+      activeFilter.value === 'active'   ? c.days > 30 :
+      activeFilter.value === 'expiring' ? c.days >= 0 && c.days <= 30 :
       c.days < 0
     return bySearch && byFilter
   })

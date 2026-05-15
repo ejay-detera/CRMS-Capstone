@@ -44,7 +44,7 @@ const filterTabs: { label: string; value: FilterTab }[] = [
 
 function daysLabel(days: number) {
   if (days < 0)   return { text: 'Expired',       cls: 'text-red-500' }
-  if (days <= 15) return { text: `${days}d left`, cls: 'text-amber-500' }
+  if (days <= 30) return { text: `${days}d left`, cls: 'text-amber-500' }
   return                 { text: `${days}d left`, cls: 'text-black/45' }
 }
 
@@ -79,8 +79,6 @@ function avatarColor(name: string) {
             ? 'bg-white text-black shadow-sm'
             : 'text-black/40 hover:text-black/60'">
           {{ tab.label }}
-          <span v-if="tab.value === 'expiring'"
-            class="text-[10px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full leading-none">&lt;15d</span>
         </button>
       </div>
       <div class="relative w-56">
