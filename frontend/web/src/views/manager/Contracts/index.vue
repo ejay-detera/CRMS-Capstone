@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Upload } from 'lucide-vue-next'
+import { Upload, Plus } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
@@ -120,10 +120,15 @@ function exportXLSX() {
         <h1 class="text-xl font-semibold text-black">All Contracts</h1>
         <p class="text-sm text-black/40 mt-0.5">View and manage all contract agreements.</p>
       </div>
-      <Button @click="exportXLSX" variant="outline"
-        class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
-        <Upload class="w-4 h-4" /> Export XLSX
-      </Button>
+      <div class="flex items-center gap-2">
+        <Button @click="exportXLSX" variant="outline"
+          class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
+          <Upload class="w-4 h-4" /> Export XLSX
+        </Button>
+        <Button class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+          <Plus class="w-5 h-5" />
+        </Button>
+      </div>
     </div>
 
     <!-- Stat cards -->
