@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Plus, Upload } from 'lucide-vue-next'
+import { Upload, Plus } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
-import ContractsTable       from './ContractsTable.vue'
-import ContractDetailDialog  from './ContractDetailDialog.vue'
-import EditContractDialog    from './EditContractDialog.vue'
+import ContractsTable      from '@/views/admin/Contracts/ContractsTable.vue'
+import ContractDetailDialog from '@/views/admin/Contracts/ContractDetailDialog.vue'
+import EditContractDialog   from '@/views/admin/Contracts/EditContractDialog.vue'
 import { remainingDays } from '@/types/contract'
 import type { Contract, FilterTab } from '@/types/contract'
 
@@ -47,16 +47,18 @@ const statCards = computed(() => ({
 }))
 
 const statCardList = computed(() => [
-  { label: 'Total Contracts', value: statCards.value.total,    valueClass: 'text-black',      change: '+2.1%', positive: true  },
-  { label: 'Active',          value: statCards.value.active,   valueClass: 'text-[#2E85D8]',  change: '+4.0%', positive: true  },
-  { label: 'Expiring Soon',   value: statCards.value.expiring, valueClass: 'text-amber-500',  change: '+5.2%', positive: true  },
-  { label: 'Expired',         value: statCards.value.expired,  valueClass: 'text-red-500',    change: '-1.3%', positive: false },
+  { label: 'Total Contracts', value: statCards.value.total,    valueClass: 'text-black',     change: '+2.1%', positive: true  },
+  { label: 'Active',          value: statCards.value.active,   valueClass: 'text-[#2E85D8]', change: '+4.0%', positive: true  },
+  { label: 'Expiring Soon',   value: statCards.value.expiring, valueClass: 'text-amber-500', change: '+5.2%', positive: true  },
+  { label: 'Expired',         value: statCards.value.expired,  valueClass: 'text-red-500',   change: '-1.3%', positive: false },
 ])
 
 const filtered = computed(() => {
   const q = searchQuery.value.toLowerCase()
   return withDays.value.filter(c => {
-    const bySearch = !q || c.id.toLowerCase().includes(q) || c.businessPartner.toLowerCase().includes(q) || c.category.toLowerCase().includes(q)
+    const bySearch = !q || c.id.toLowerCase().includes(q)
+      || c.businessPartner.toLowerCase().includes(q)
+      || c.category.toLowerCase().includes(q)
     const byFilter =
       activeFilter.value === 'all'      ? true :
       activeFilter.value === 'active'   ? c.days > 30 :
@@ -104,7 +106,7 @@ function exportXLSX() {
   const ws = XLSX.utils.json_to_sheet(rows)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Contracts')
-  XLSX.writeFile(wb, 'sbsi-contracts.xlsx')
+  XLSX.writeFile(wb, 'contracts.xlsx')
   success('Export complete', `${filtered.value.length} contracts exported.`)
 }
 </script>
@@ -115,11 +117,12 @@ function exportXLSX() {
     <!-- Header -->
     <div class="flex items-start justify-between">
       <div>
-        <h1 class="text-xl font-semibold text-black">Contracts</h1>
-        <p class="text-sm text-black/40 mt-0.5">Manage and monitor all contract agreements.</p>
+        <h1 class="text-xl font-semibold text-black">All Contracts</h1>
+        <p class="text-sm text-black/40 mt-0.5">View and manage all contract agreements.</p>
       </div>
       <div class="flex items-center gap-2">
-        <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
+        <Button @click="exportXLSX" variant="outline"
+          class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
         <Button class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">

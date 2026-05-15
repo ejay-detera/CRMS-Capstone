@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { Bell, Search } from 'lucide-vue-next'
 import NotificationItem from './NotificationItem.vue'
 import type { Notification, TabKey } from '@/types/notification'
@@ -33,9 +33,9 @@ const emit = defineEmits<{
       </div>
       <div class="relative w-64">
         <Search class="w-3.5 h-3.5 text-black/35 absolute left-3 top-1/2 -translate-y-1/2" />
-        <input :value="searchQuery" @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
+        <input :value="searchQuery" @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"
           type="text" placeholder="Search notifications..."
-          class="w-full rounded-lg border border-black/10 bg-black/[0.02] py-2 pl-8 pr-3 text-sm text-black placeholder:text-black/35 focus:border-[#2E85D8] focus:outline-none transition-colors" />
+          class="w-full rounded-lg border border-black/10 bg-black/2 py-2 pl-8 pr-3 text-sm text-black placeholder:text-black/35 focus:border-[#2E85D8] focus:outline-none transition-colors" />
       </div>
     </div>
 
@@ -46,7 +46,7 @@ const emit = defineEmits<{
           class="flex items-center gap-1.5 px-3 py-1 text-xs rounded transition-all font-medium"
           :class="activeTab === tab.key ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'">
           {{ tab.label }}
-          <span class="text-[10px] font-semibold tabular-nums px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+          <span class="text-[10px] font-semibold tabular-nums px-1.5 py-0.5 rounded-full min-w-4.5 text-center"
             :class="activeTab === tab.key ? 'bg-[#252578]/8 text-[#252578]' : 'bg-black/8 text-black/40'">
             {{ tab.count }}
           </span>
@@ -55,7 +55,7 @@ const emit = defineEmits<{
       <p class="text-xs text-black/35">{{ filtered.length }} notification{{ filtered.length !== 1 ? 's' : '' }}</p>
     </div>
 
-    <div class="divide-y divide-black/[0.04]">
+    <div class="divide-y divide-black/4">
       <div v-if="filtered.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
         <div class="w-12 h-12 rounded-full bg-black/4 flex items-center justify-center mb-3">
           <Bell class="w-5 h-5 text-black/30" />

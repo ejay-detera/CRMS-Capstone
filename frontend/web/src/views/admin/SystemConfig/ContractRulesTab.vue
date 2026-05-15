@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { inject } from 'vue'
 import { FileText, ShieldCheck } from 'lucide-vue-next'
 import type { SystemCfg } from './index.vue'
@@ -13,7 +13,7 @@ const cfg = inject<SystemCfg>('cfg')!
 
     <SettingCard title="Contract Lifecycle" description="Control how contracts move through the approval pipeline."
       :icon="FileText" icon-bg="bg-[#2E85D8]/8" icon-color="text-[#2E85D8]">
-      <div class="divide-y divide-black/[0.04]">
+      <div class="divide-y divide-black/4">
         <ToggleRow v-model="cfg.autoRenew"           label="Auto-Renew Contracts"    description="Automatically renew contracts before they expire." />
         <ToggleRow v-model="cfg.dualApproval"         label="Require Dual Approval"   description="Contracts must be approved by two authorized users." />
         <ToggleRow v-model="cfg.allowDraftSubmit"     label="Allow Draft Submissions" description="Users can save contracts as drafts before submitting." />

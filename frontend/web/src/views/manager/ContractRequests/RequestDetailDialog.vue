@@ -1,0 +1,227 @@
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+import {
+  ClipboardList, MapPin, CalendarDays, FileText,
+  CheckCircle, XCircle, RefreshCw, AlertCircle, ExternalLink, User,
+} from 'lucide-vue-next'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { requestStatusBadge, priorityBadge, fmtReqDate } from '@/types/contractRequest'
+import type { ContractRequest } from '@/types/contractRequest'
+import { safeHref } from '@/utils/sanitize'
+
+const props = defineProps<{ open: boolean; request: ContractRequest | null }>()
+const emit  = defineEmits<{
+  'update:open': [v: boolean]
+  approve:       [id: string]
+  reject:        [id: string, reason: string]
+  setReviewing:  [id: string]
+}>()
+
+const palette = ['#252578', '#2E85D8', '#2F2F73']
+function initials(name: string) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+}
+function avatarColor(name: string) {
+  let h = 0
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
+  return palette[h % palette.length]
+}
+
+const showRejectInput = ref(false)
+const rejectReason    = ref('')
+
+watch(() => props.open, open => {
+  if (!open) { showRejectInput.value = false; rejectReason.value = '' }
+})
+
+function confirmReject() {
+  if (!props.request || !rejectReason.value.trim()) return
+  emit('reject', props.request.id, rejectReason.value.trim())
+  emit('update:open', false)
+}
+</script>
+
+<template>
+  <Dialog :open="open" @update:open="$emit('update:open', $event)">
+    <DialogContent class="max-w-md p-0 overflow-hidden gap-0" @pointer-down-outside="$emit('update:open', false)">
+      <template v-if="request">
+
+        <!-- Header -->
+        <div class="px-5 pt-5 pb-4 border-b border-black/6">
+          <div class="flex items-start gap-3.5">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 bg-[#252578]">
+              <ClipboardList class="w-5 h-5" />
+            </div>
+            <div class="flex-1 min-w-0 pr-6">
+              <DialogTitle class="text-sm font-bold text-black leading-snug truncate">{{ request.businessPartner }}</DialogTitle>
+              <p class="text-xs text-black/45 mt-0.5">{{ request.category }}</p>
+              <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                <span class="text-[10px] font-mono text-black/30 bg-black/4 px-1.5 py-0.5 rounded">{{ request.id }}</span>
+                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border"
+                  :class="requestStatusBadge[request.status]">
+                  {{ request.status }}
+                </span>
+                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border"
+                  :class="priorityBadge[request.priority]">
+                  {{ request.priority }} priority
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats strip -->
+        <div class="grid grid-cols-3 divide-x divide-black/6 border-b border-black/6">
+          <div class="px-4 py-3">
+            <p class="text-[9px] font-bold text-black/30 uppercase tracking-widest mb-1">Region</p>
+            <p class="text-sm font-bold text-black">{{ request.region }}</p>
+          </div>
+          <div class="px-4 py-3">
+            <p class="text-[9px] font-bold text-black/30 uppercase tracking-widest mb-1">Requested</p>
+            <p class="text-xs font-bold text-black tabular-nums">{{ fmtReqDate(request.requestDate) }}</p>
+          </div>
+          <div class="px-4 py-3">
+            <p class="text-[9px] font-bold text-black/30 uppercase tracking-widest mb-1">Duration</p>
+            <p class="text-sm font-bold text-black tabular-nums">
+              {{ Math.round((new Date(request.endDate).getTime() - new Date(request.startDate).getTime()) / 86_400_000 / 30) }}mo
+            </p>
+          </div>
+        </div>
+
+        <!-- Detail rows -->
+        <div class="px-5 py-1 divide-y divide-black/4">
+
+          <div class="flex items-start gap-3 py-2.5">
+            <FileText class="w-3.5 h-3.5 text-black/25 shrink-0 mt-0.5" />
+            <div class="flex-1 min-w-0">
+              <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider block mb-0.5">Description</span>
+              <span class="text-sm text-black">{{ request.description }}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 py-2.5">
+            <CalendarDays class="w-3.5 h-3.5 text-black/25 shrink-0" />
+            <div class="flex-1 min-w-0 flex items-baseline justify-between gap-4">
+              <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider shrink-0">Proposed Start</span>
+              <span class="text-sm font-medium text-black tabular-nums">{{ fmtReqDate(request.startDate) }}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 py-2.5">
+            <CalendarDays class="w-3.5 h-3.5 text-black/25 shrink-0" />
+            <div class="flex-1 min-w-0 flex items-baseline justify-between gap-4">
+              <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider shrink-0">Proposed End</span>
+              <span class="text-sm font-medium text-black tabular-nums">{{ fmtReqDate(request.endDate) }}</span>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3 py-2.5">
+            <MapPin class="w-3.5 h-3.5 text-black/25 shrink-0 mt-0.5" />
+            <div class="flex-1 min-w-0 flex items-baseline justify-between gap-4">
+              <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider shrink-0">Region</span>
+              <span class="text-sm font-medium text-black">{{ request.region }}</span>
+            </div>
+          </div>
+
+          <div v-if="request.notes" class="flex items-start gap-3 py-2.5">
+            <ClipboardList class="w-3.5 h-3.5 text-black/25 shrink-0 mt-0.5" />
+            <div class="flex-1 min-w-0">
+              <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider block mb-0.5">Notes</span>
+              <span class="text-sm text-black/70">{{ request.notes }}</span>
+            </div>
+          </div>
+
+          <!-- Rejection reason (read-only if already rejected) -->
+          <div v-if="request.status === 'Rejected' && request.rejectionReason"
+            class="flex items-start gap-3 py-2.5">
+            <AlertCircle class="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+            <div class="flex-1 min-w-0">
+              <span class="text-[10px] font-semibold text-red-400 uppercase tracking-wider block mb-0.5">Rejection Reason</span>
+              <span class="text-sm text-red-600">{{ request.rejectionReason }}</span>
+            </div>
+          </div>
+
+          <!-- Sales Rep -->
+          <div class="flex items-center gap-3 py-2.5">
+            <User class="w-3.5 h-3.5 text-black/25 shrink-0" />
+            <div class="flex-1 min-w-0 flex items-center justify-between gap-4">
+              <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider shrink-0">Sales Rep</span>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0 select-none"
+                  :style="{ backgroundColor: avatarColor(request.createdBy) }">
+                  {{ initials(request.createdBy) }}
+                </div>
+                <span class="text-sm font-medium text-black">{{ request.createdBy }}</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Reject reason input (shown when about to reject) -->
+        <div v-if="showRejectInput" class="px-5 pb-3">
+          <label class="text-xs font-semibold text-black/50 mb-1.5 block">Reason for rejection</label>
+          <textarea v-model="rejectReason" rows="2" placeholder="Provide a reason..."
+            class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition resize-none" />
+        </div>
+
+        <!-- Footer: contract link left, actions right -->
+        <div class="px-5 py-4 border-t border-black/6">
+
+          <!-- Contract link -->
+          <a :href="safeHref(request.contractLink)" target="_blank" rel="noopener noreferrer"
+            class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2E85D8] hover:underline mb-3">
+            <ExternalLink class="w-3.5 h-3.5" /> View Contract PDF
+          </a>
+
+          <!-- Action buttons -->
+          <div class="flex items-center justify-between gap-2">
+
+            <div v-if="request.status === 'Pending' || request.status === 'Under Review'"
+              class="flex items-center gap-2">
+
+              <Button v-if="!showRejectInput" variant="outline"
+                @click="showRejectInput = true"
+                class="h-8 px-3.5 text-xs font-semibold border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 gap-1.5">
+                <XCircle class="w-3.5 h-3.5" /> Reject
+              </Button>
+
+              <template v-if="showRejectInput">
+                <Button variant="outline" @click="showRejectInput = false; rejectReason = ''"
+                  class="h-8 px-3.5 text-xs font-semibold border-black/15 text-black/60 hover:text-black">
+                  Cancel
+                </Button>
+                <Button @click="confirmReject" :disabled="!rejectReason.trim()"
+                  class="h-8 px-3.5 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white gap-1.5 disabled:opacity-40">
+                  <XCircle class="w-3.5 h-3.5" /> Confirm Reject
+                </Button>
+              </template>
+
+              <template v-if="!showRejectInput">
+                <Button v-if="request.status === 'Pending'" variant="outline"
+                  @click="emit('setReviewing', request.id); $emit('update:open', false)"
+                  class="h-8 px-3.5 text-xs font-semibold border-[#2E85D8]/30 text-[#2E85D8] hover:bg-[#2E85D8]/8 gap-1.5">
+                  <RefreshCw class="w-3.5 h-3.5" /> Set Reviewing
+                </Button>
+                <Button
+                  @click="emit('approve', request.id); $emit('update:open', false)"
+                  class="h-8 px-3.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5">
+                  <CheckCircle class="w-3.5 h-3.5" /> Approve
+                </Button>
+              </template>
+            </div>
+
+            <div v-else class="flex-1" />
+
+            <Button variant="outline" @click="$emit('update:open', false)"
+              class="h-8 px-4 text-sm border-black/15 text-black/60 hover:text-black ml-auto">
+              Close
+            </Button>
+          </div>
+        </div>
+
+      </template>
+    </DialogContent>
+  </Dialog>
+</template>

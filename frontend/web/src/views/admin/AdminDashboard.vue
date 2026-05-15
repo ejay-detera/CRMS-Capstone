@@ -1,14 +1,32 @@
-<script setup lang="ts">
-import { computed, ref } from 'vue'
+﻿<script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight } from 'lucide-vue-next'
 
 const router = useRouter()
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
+
+// ── Live clock ─────────────────────────────────────────────────────
+const now = ref(new Date())
+let timer: ReturnType<typeof setInterval>
+onMounted(() => { timer = setInterval(() => { now.value = new Date() }, 1000) })
+onUnmounted(() => clearInterval(timer))
+
+const greeting = computed(() => {
+  const h = now.value.getHours()
+  if (h < 12) return 'Good morning'
+  if (h < 17) return 'Good afternoon'
+  return 'Good evening'
+})
+const formattedDate = computed(() =>
+  now.value.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+)
+const formattedTime = computed(() =>
+  now.value.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+)
 
 // ── Stat cards ─────────────────────────────────────────────────────
 const statCards = [
@@ -106,9 +124,16 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
   <div class="p-8 space-y-6">
 
     <!-- ── Header ─────────────────────────────────────────────────── -->
-    <div>
-      <h1 class="text-xl font-semibold text-black">Dashboard</h1>
-      <p class="text-sm text-black/40 mt-0.5">Welcome back — here's what's happening at SBSI today.</p>
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold text-black/35 uppercase tracking-widest mb-0.5">Admin Portal</p>
+        <h1 class="text-xl font-semibold text-black">{{ greeting }}, Shadrack.</h1>
+        <p class="text-sm text-black/40 mt-0.5">Here's what's happening at SBSI today.</p>
+      </div>
+      <div class="text-right hidden sm:block">
+        <p class="text-sm font-semibold text-black tabular-nums">{{ formattedTime }}</p>
+        <p class="text-xs text-black/40 mt-0.5">{{ formattedDate }}</p>
+      </div>
     </div>
 
     <!-- ── Stat Cards ─────────────────────────────────────────────── -->
@@ -155,8 +180,8 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
         </div>
 
         <Table>
-          <TableHeader class="bg-black/[0.018]">
-            <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
+          <TableHeader class="bg-black/1.8">
+            <TableRow class="border-b border-black/4 hover:bg-transparent">
               <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider pl-6 py-3">Contract ID</TableHead>
               <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Partner</TableHead>
               <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Category</TableHead>
@@ -168,7 +193,7 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
             <TableRow
               v-for="contract in allContracts"
               :key="contract.id"
-              class="border-b border-black/4 last:border-0 hover:bg-black/[0.012] transition-colors"
+              class="border-b border-black/4 last:border-0 hover:bg-black/1.2 transition-colors"
             >
               <TableCell class="pl-6 py-3.5 text-xs font-medium text-[#252578]/70">{{ contract.id }}</TableCell>
               <TableCell class="py-3.5 text-sm text-black">{{ contract.partner }}</TableCell>
@@ -240,8 +265,8 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
       </div>
 
       <Table>
-        <TableHeader class="bg-black/[0.018]">
-          <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
+        <TableHeader class="bg-black/1.8">
+          <TableRow class="border-b border-black/4 hover:bg-transparent">
             <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider pl-6 py-3">Name</TableHead>
             <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Role</TableHead>
             <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
@@ -251,7 +276,7 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
           <TableRow
             v-for="(user, index) in filteredUsers.slice(0, 5)"
             :key="user.id"
-            class="border-b border-black/4 last:border-0 hover:bg-black/[0.012] transition-colors"
+            class="border-b border-black/4 last:border-0 hover:bg-black/1.2 transition-colors"
           >
             <TableCell class="pl-6 py-3.5">
               <div class="flex items-center gap-3">

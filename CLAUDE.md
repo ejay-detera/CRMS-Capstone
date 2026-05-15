@@ -53,3 +53,14 @@ docker compose exec web npm install <package>
 ## Dummy Data
 
 All views use local `ref<T[]>([...])` dummy data until backend integration. No API calls yet.
+
+## Task Workflow
+
+**For every task the user gives, always come up with a plan first before executing.**
+
+1. State what files will be created or modified.
+2. List the specific changes per file (types, props, emits, template additions, etc.).
+3. Call out any potential gotchas (TypeScript constraints, overflow clipping, shared component impact, etc.).
+4. Wait for implicit or explicit user confirmation, then execute.
+
+Do not write any code until the plan is laid out.

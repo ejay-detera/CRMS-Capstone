@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { Star, Trash2, FileText, UserPlus, Handshake, ShieldCheck, AlertCircle } from 'lucide-vue-next'
 import { typeColor } from '@/types/notification'
 import type { Notification, NotifType } from '@/types/notification'
@@ -17,8 +17,8 @@ const typeIcon: Record<NotifType, Component> = {
 </script>
 
 <template>
-  <div class="flex items-center gap-4 px-6 py-4 hover:bg-black/[0.012] transition-colors group"
-    :class="!notif.isRead ? 'bg-[#2E85D8]/[0.025]' : ''">
+  <div class="flex items-center gap-4 px-6 py-4 hover:bg-black/1.2 transition-colors group"
+    :class="!notif.isRead ? 'bg-[#2E85D8]/2.5' : ''">
 
     <div class="w-2 shrink-0 flex justify-center">
       <div class="w-2 h-2 rounded-full transition-colors"

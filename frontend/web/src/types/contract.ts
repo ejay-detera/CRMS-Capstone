@@ -14,6 +14,7 @@ export interface Contract {
   endDate:         string
   status:          ContractStatus
   contractLink:    string
+  createdBy:       string
 }
 
 export const statusBadge: Record<ContractStatus, string> = {

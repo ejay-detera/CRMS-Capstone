@@ -1,17 +1,28 @@
-<script setup lang="ts">
-import { FileText, ExternalLink, MapPin, Hash, Cpu, Barcode, CalendarDays, Clock, AlertTriangle } from 'lucide-vue-next'
+﻿<script setup lang="ts">
+import { FileText, ExternalLink, MapPin, Hash, Cpu, Barcode, CalendarDays, Clock, AlertTriangle, User } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { statusBadge, fmtDate } from '@/types/contract'
 import type { Contract } from '@/types/contract'
+import { safeHref } from '@/utils/sanitize'
 
 defineProps<{ open: boolean; contract: (Contract & { days: number }) | null }>()
 defineEmits<{ 'update:open': [v: boolean] }>()
 
 function daysDisplay(days: number) {
   if (days < 0)   return { text: `Expired ${Math.abs(days)}d ago`, cls: 'bg-red-50 text-red-600 border-red-200', icon: AlertTriangle }
-  if (days <= 15) return { text: `${days} days left`,              cls: 'bg-amber-50 text-amber-600 border-amber-200', icon: Clock }
-  return               { text: `${days} days left`,                cls: 'bg-black/4 text-black/55 border-black/10', icon: Clock }
+  if (days <= 30) return { text: `${days} days left`,              cls: 'bg-amber-50 text-amber-600 border-amber-200', icon: Clock }
+  return                 { text: `${days} days left`,              cls: 'bg-black/4 text-black/55 border-black/10', icon: Clock }
+}
+
+const palette = ['#252578', '#2E85D8', '#2F2F73']
+function initials(name: string) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+}
+function avatarColor(name: string) {
+  let h = 0
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
+  return palette[h % palette.length]
 }
 </script>
 
@@ -62,7 +73,7 @@ function daysDisplay(days: number) {
         </div>
 
         <!-- Detail rows -->
-        <div class="px-5 py-1 divide-y divide-black/[0.04]">
+        <div class="px-5 py-1 divide-y divide-black/4">
 
           <div class="flex items-center gap-3 py-2.5">
             <Hash class="w-3.5 h-3.5 text-black/25 shrink-0" />
@@ -76,7 +87,7 @@ function daysDisplay(days: number) {
             <Cpu class="w-3.5 h-3.5 text-black/25 shrink-0" />
             <div class="flex-1 min-w-0 flex items-baseline justify-between gap-4">
               <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider shrink-0">Description</span>
-              <span class="text-sm font-medium text-black text-right truncate max-w-[200px]">{{ contract.description }}</span>
+              <span class="text-sm font-medium text-black text-right truncate max-w-50">{{ contract.description }}</span>
             </div>
           </div>
 
@@ -112,11 +123,25 @@ function daysDisplay(days: number) {
             </div>
           </div>
 
+          <div class="flex items-center gap-3 py-2.5">
+            <User class="w-3.5 h-3.5 text-black/25 shrink-0" />
+            <div class="flex-1 min-w-0 flex items-center justify-between gap-4">
+              <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider shrink-0">Sales Rep</span>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0 select-none"
+                  :style="{ backgroundColor: avatarColor(contract.createdBy) }">
+                  {{ initials(contract.createdBy) }}
+                </div>
+                <span class="text-sm font-medium text-black">{{ contract.createdBy }}</span>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <!-- Contract link + footer -->
         <div class="px-5 py-4 border-t border-black/6 flex items-center justify-between gap-3">
-          <a :href="contract.contractLink" target="_blank" rel="noopener"
+          <a :href="safeHref(contract.contractLink)" target="_blank" rel="noopener noreferrer"
             class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2E85D8] hover:underline">
             <ExternalLink class="w-3.5 h-3.5" /> View Contract PDF
           </a>

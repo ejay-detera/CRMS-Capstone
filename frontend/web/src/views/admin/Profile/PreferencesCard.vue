@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { reactive, watch } from 'vue'
 import { SlidersHorizontal } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
@@ -37,7 +37,7 @@ watch(() => props.preferences, p => Object.assign(form, p), { deep: true })
     <div class="px-6 pt-4 pb-1">
       <p class="text-[10px] font-bold text-black/35 uppercase tracking-widest mb-1">Notifications</p>
     </div>
-    <div class="divide-y divide-black/[0.04]">
+    <div class="divide-y divide-black/4">
       <ToggleRow label="Email notifications" description="Receive alerts via email"
         :model-value="form.emailNotifications" @update:model-value="form.emailNotifications = $event" />
       <ToggleRow label="System alerts" description="In-app notifications and banners"

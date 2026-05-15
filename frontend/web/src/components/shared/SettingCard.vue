@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { Component } from 'vue'
 
 defineProps<{
@@ -12,7 +12,7 @@ defineProps<{
 
 <template>
   <div class="bg-white rounded-lg border border-black/8 shadow-sm overflow-hidden">
-    <div class="px-6 py-4 border-b border-black/[0.04] flex items-center gap-3">
+    <div class="px-6 py-4 border-b border-black/4 flex items-center gap-3">
       <div
         class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
         :class="iconBg ?? 'bg-[#252578]/8'"

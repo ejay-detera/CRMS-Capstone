@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { Building2, Truck, MoreHorizontal, Eye, Trash2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
@@ -44,8 +44,8 @@ const emit = defineEmits<{
     </div>
 
     <Table>
-      <TableHeader class="bg-black/[0.018]">
-        <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
+      <TableHeader class="bg-black/1.8">
+        <TableRow class="border-b border-black/4 hover:bg-transparent">
           <TableHead class="w-12 pl-6 py-3">
             <input type="checkbox" :checked="allPageSelected" @change="emit('toggleSelectAll')"
               class="w-4 h-4 rounded border-black/20 accent-[#252578] cursor-pointer" />
@@ -64,8 +64,8 @@ const emit = defineEmits<{
         <TableRow
           v-for="partner in paginated"
           :key="partner.id"
-          class="border-b border-black/[0.04] last:border-0 transition-colors"
-          :class="selectedIds.includes(partner.id) ? 'bg-[#252578]/[0.025]' : 'hover:bg-black/[0.012]'"
+          class="border-b border-black/4 last:border-0 transition-colors"
+          :class="selectedIds.includes(partner.id) ? 'bg-[#252578]/2.5' : 'hover:bg-black/1.2'"
         >
           <TableCell class="pl-6 py-4">
             <input type="checkbox" :checked="selectedIds.includes(partner.id)"

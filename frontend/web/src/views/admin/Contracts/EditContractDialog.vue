@@ -9,7 +9,7 @@ import type { Contract, ContractStatus, ContractRegion } from '@/types/contract'
 const props = defineProps<{ open: boolean; contract: Contract | null }>()
 const emit  = defineEmits<{
   'update:open': [v: boolean]
-  submit: [data: Omit<Contract, 'id'>]
+  submit: [data: Omit<Contract, 'id' | 'createdBy'>]
 }>()
 
 const form = reactive({
@@ -112,7 +112,7 @@ function submit() {
             Business Partner <span class="text-red-500">*</span>
           </label>
           <input v-model="form.businessPartner" @blur="touched.businessPartner = true"
-            type="text" placeholder="e.g. Philippine National Bank"
+            type="text" placeholder="e.g. Philippine National Bank" maxlength="100"
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
               fieldCls('businessPartner', !form.businessPartner)]" />
           <p v-if="touched.businessPartner && !form.businessPartner" class="text-xs text-red-500">Required.</p>
@@ -165,7 +165,7 @@ function submit() {
               Item Code <span class="text-red-500">*</span>
             </label>
             <input v-model="form.itemCode" @blur="touched.itemCode = true"
-              type="text" placeholder="e.g. ITM-0041"
+              type="text" placeholder="e.g. ITM-0041" maxlength="20"
               :class="['w-full h-9 rounded-md border bg-white px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
                 fieldCls('itemCode', !form.itemCode)]" />
             <p v-if="touched.itemCode && !form.itemCode" class="text-xs text-red-500">Required.</p>
@@ -175,7 +175,7 @@ function submit() {
               Serial No <span class="text-red-500">*</span>
             </label>
             <input v-model="form.serialNo" @blur="touched.serialNo = true"
-              type="text" placeholder="e.g. SN-2024-0041"
+              type="text" placeholder="e.g. SN-2024-0041" maxlength="30"
               :class="['w-full h-9 rounded-md border bg-white px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
                 fieldCls('serialNo', !form.serialNo)]" />
             <p v-if="touched.serialNo && !form.serialNo" class="text-xs text-red-500">Required.</p>
@@ -188,7 +188,7 @@ function submit() {
             Description / Machine <span class="text-red-500">*</span>
           </label>
           <input v-model="form.description" @blur="touched.description = true"
-            type="text" placeholder="e.g. ATM Maintenance Unit"
+            type="text" placeholder="e.g. ATM Maintenance Unit" maxlength="200"
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
               fieldCls('description', !form.description)]" />
           <p v-if="touched.description && !form.description" class="text-xs text-red-500">Required.</p>
@@ -245,7 +245,7 @@ function submit() {
             <span class="normal-case font-normal text-black/30 ml-1">(optional)</span>
           </label>
           <input v-model="form.contractLink" @blur="touched.contractLink = true"
-            type="text" placeholder="https://drive.google.com/..."
+            type="url" placeholder="https://drive.google.com/..." maxlength="500"
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
               touched.contractLink && !urlValid ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
           <p v-if="touched.contractLink && !urlValid" class="text-xs text-red-500">Enter a valid URL (must start with http:// or https://).</p>

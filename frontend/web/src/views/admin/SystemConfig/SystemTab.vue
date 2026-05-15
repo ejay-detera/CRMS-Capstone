@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { inject } from 'vue'
 import { Globe, Database, Mail } from 'lucide-vue-next'
 import type { SystemCfg } from './index.vue'
@@ -17,7 +17,7 @@ const cfg = inject<SystemCfg>('cfg')!
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
             <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">System name</label>
-            <input v-model="cfg.systemName" type="text"
+            <input v-model="cfg.systemName" type="text" maxlength="100"
               class="w-full mt-2 rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors" />
           </div>
           <div>
@@ -62,12 +62,12 @@ const cfg = inject<SystemCfg>('cfg')!
 
     <SettingCard title="Maintenance & Logging" description="System health, audit trails, and data management."
       :icon="Database">
-      <div class="divide-y divide-black/[0.04]">
+      <div class="divide-y divide-black/4">
         <ToggleRow v-model="cfg.auditLogging" label="Audit Logging" description="Record all user actions and system events." />
 
         <div class="px-6 py-4 space-y-3">
           <ToggleRow v-model="cfg.autoBackups" label="Automatic Backups" description="Schedule regular database backups." />
-          <div v-if="cfg.autoBackups" class="bg-black/[0.02] rounded-lg border border-black/[0.06] p-4 space-y-4">
+          <div v-if="cfg.autoBackups" class="bg-black/2 rounded-lg border border-black/6 p-4 space-y-4">
             <div>
               <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Backup frequency</label>
               <div class="relative mt-2">
@@ -84,7 +84,7 @@ const cfg = inject<SystemCfg>('cfg')!
             <div>
               <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Data retention period</label>
               <div class="relative mt-2">
-                <input v-model.number="cfg.dataRetentionDays" type="number" min="30"
+                <input v-model.number="cfg.dataRetentionDays" type="number" min="30" max="3650"
                   class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-12 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors" />
                 <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/35 pointer-events-none">days</span>
               </div>

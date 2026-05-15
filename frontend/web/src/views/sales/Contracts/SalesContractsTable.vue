@@ -1,5 +1,5 @@
-﻿<script setup lang="ts">
-import { Search, MoreHorizontal, Eye, Pencil, Trash2, AlertTriangle, Clock } from 'lucide-vue-next'
+<script setup lang="ts">
+import { Search, MoreHorizontal, Eye, Pencil, AlertTriangle, Clock } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -29,7 +29,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   openDetail:            [c: ContractWithDays]
   openEdit:              [c: ContractWithDays]
-  delete:                [id: string]
   'update:activeFilter': [v: FilterTab]
   'update:searchQuery':  [v: string]
   'update:currentPage':  [v: number]
@@ -47,16 +46,6 @@ function daysLabel(days: number) {
   if (days <= 30) return { text: `${days}d left`, cls: 'text-amber-500' }
   return                 { text: `${days}d left`, cls: 'text-black/45' }
 }
-
-const palette = ['#252578', '#2E85D8', '#2F2F73']
-function initials(name: string) {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-}
-function avatarColor(name: string) {
-  let h = 0
-  for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
-  return palette[h % palette.length]
-}
 </script>
 
 <template>
@@ -65,7 +54,7 @@ function avatarColor(name: string) {
     <!-- Section heading -->
     <div class="px-6 pt-5 pb-4 border-b border-black/5">
       <h2 class="text-sm font-semibold text-black">
-        All Contracts <span class="text-black/30 font-normal">({{ filtered.length }})</span>
+        My Contracts <span class="text-black/30 font-normal">({{ filtered.length }})</span>
       </h2>
     </div>
 
@@ -86,6 +75,7 @@ function avatarColor(name: string) {
         <input :value="searchQuery"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"
           type="text" placeholder="Search contracts..."
+          maxlength="100"
           class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
       </div>
     </div>
@@ -100,7 +90,6 @@ function avatarColor(name: string) {
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">End Date</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Remaining</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
-          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Sales Rep</TableHead>
           <TableHead class="w-12 py-3" />
         </TableRow>
       </TableHeader>
@@ -145,17 +134,6 @@ function avatarColor(name: string) {
             </span>
           </TableCell>
 
-          <!-- Sales Rep -->
-          <TableCell class="py-4" @click.stop>
-            <div class="flex items-center gap-2">
-              <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 select-none"
-                :style="{ backgroundColor: avatarColor(c.createdBy) }">
-                {{ initials(c.createdBy) }}
-              </div>
-              <span class="text-xs font-medium text-black/70 leading-snug">{{ c.createdBy }}</span>
-            </div>
-          </TableCell>
-
           <!-- Actions -->
           <TableCell class="py-4 pr-4" @click.stop>
             <DropdownMenu>
@@ -174,18 +152,13 @@ function avatarColor(name: string) {
                 <DropdownMenuItem @click="emit('openEdit', c)" class="gap-2.5 text-sm cursor-pointer">
                   <Pencil class="w-3.5 h-3.5 text-black/40" /> Edit contract
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem @click="emit('delete', c.id)"
-                  class="gap-2.5 text-sm cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
-                  <Trash2 class="w-3.5 h-3.5" /> Delete
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </TableCell>
         </TableRow>
 
         <TableRow v-if="paginated.length === 0">
-          <TableCell colspan="8" class="text-center py-16">
+          <TableCell colspan="7" class="text-center py-16">
             <p class="text-sm font-semibold text-black/28">No contracts found</p>
             <p class="text-xs text-black/20 mt-1">Try a different filter or search term</p>
           </TableCell>
