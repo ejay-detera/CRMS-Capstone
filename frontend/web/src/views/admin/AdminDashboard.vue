@@ -37,9 +37,9 @@ const allContracts: Contract[] = [
 ]
 
 const contractStatusBadge: Record<ContractStatus, string> = {
-  'Notarized':    'bg-[#252578]/8 text-[#252578] border-[#252578]/20',
-  'Draft Client': 'bg-[#2E85D8]/8 text-[#2E85D8] border-[#2E85D8]/20',
-  'Draft SBSI':   'bg-black/5 text-black/50 border-black/10',
+  'Notarized':    'bg-black/5 text-black/60 border-black/12',
+  'Draft Client': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Draft SBSI':   'bg-red-50 text-red-600 border-red-200',
 }
 
 // ── Audit logs ─────────────────────────────────────────────────────
