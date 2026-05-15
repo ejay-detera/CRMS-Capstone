@@ -41,6 +41,16 @@ const filterTabs: { label: string; value: RequestFilterTab }[] = [
   { label: 'Approved',     value: 'approved'  },
   { label: 'Rejected',     value: 'rejected'  },
 ]
+
+const palette = ['#252578', '#2E85D8', '#2F2F73']
+function initials(name: string) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+}
+function avatarColor(name: string) {
+  let h = 0
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
+  return palette[h % palette.length]
+}
 </script>
 
 <template>
@@ -84,6 +94,7 @@ const filterTabs: { label: string; value: RequestFilterTab }[] = [
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Requested</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Priority</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Sales Rep</TableHead>
           <TableHead class="w-12 py-3" />
         </TableRow>
       </TableHeader>
@@ -115,6 +126,17 @@ const filterTabs: { label: string; value: RequestFilterTab }[] = [
               :class="requestStatusBadge[r.status]">
               {{ r.status }}
             </span>
+          </TableCell>
+
+          <!-- Sales Rep -->
+          <TableCell class="py-4" @click.stop>
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 select-none"
+                :style="{ backgroundColor: avatarColor(r.createdBy) }">
+                {{ initials(r.createdBy) }}
+              </div>
+              <span class="text-xs font-medium text-black/70">{{ r.createdBy }}</span>
+            </div>
           </TableCell>
 
           <TableCell class="py-4 pr-4" @click.stop>
@@ -152,7 +174,7 @@ const filterTabs: { label: string; value: RequestFilterTab }[] = [
         </TableRow>
 
         <TableRow v-if="paginated.length === 0">
-          <TableCell colspan="7" class="text-center py-16">
+          <TableCell colspan="8" class="text-center py-16">
             <p class="text-sm font-semibold text-black/28">No requests found</p>
             <p class="text-xs text-black/20 mt-1">Try a different filter or search term</p>
           </TableCell>

@@ -16,6 +16,7 @@ export interface ContractRequest {
   notes:            string
   rejectionReason:  string
   contractLink:     string
+  createdBy:        string
 }
 
 export const requestStatusBadge: Record<RequestStatus, string> = {

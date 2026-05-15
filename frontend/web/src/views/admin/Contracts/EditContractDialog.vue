@@ -9,7 +9,7 @@ import type { Contract, ContractStatus, ContractRegion } from '@/types/contract'
 const props = defineProps<{ open: boolean; contract: Contract | null }>()
 const emit  = defineEmits<{
   'update:open': [v: boolean]
-  submit: [data: Omit<Contract, 'id'>]
+  submit: [data: Omit<Contract, 'id' | 'createdBy'>]
 }>()
 
 const form = reactive({

@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import {
   ClipboardList, MapPin, CalendarDays, FileText,
-  CheckCircle, XCircle, RefreshCw, AlertCircle, ExternalLink,
+  CheckCircle, XCircle, RefreshCw, AlertCircle, ExternalLink, User,
 } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,16 @@ const emit  = defineEmits<{
   reject:        [id: string, reason: string]
   setReviewing:  [id: string]
 }>()
+
+const palette = ['#252578', '#2E85D8', '#2F2F73']
+function initials(name: string) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+}
+function avatarColor(name: string) {
+  let h = 0
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
+  return palette[h % palette.length]
+}
 
 const showRejectInput = ref(false)
 const rejectReason    = ref('')
@@ -128,6 +138,21 @@ function confirmReject() {
             <div class="flex-1 min-w-0">
               <span class="text-[10px] font-semibold text-red-400 uppercase tracking-wider block mb-0.5">Rejection Reason</span>
               <span class="text-sm text-red-600">{{ request.rejectionReason }}</span>
+            </div>
+          </div>
+
+          <!-- Sales Rep -->
+          <div class="flex items-center gap-3 py-2.5">
+            <User class="w-3.5 h-3.5 text-black/25 shrink-0" />
+            <div class="flex-1 min-w-0 flex items-center justify-between gap-4">
+              <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider shrink-0">Sales Rep</span>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0 select-none"
+                  :style="{ backgroundColor: avatarColor(request.createdBy) }">
+                  {{ initials(request.createdBy) }}
+                </div>
+                <span class="text-sm font-medium text-black">{{ request.createdBy }}</span>
+              </div>
             </div>
           </div>
 

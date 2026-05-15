@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { FileText, ExternalLink, MapPin, Hash, Cpu, Barcode, CalendarDays, Clock, AlertTriangle } from 'lucide-vue-next'
+import { FileText, ExternalLink, MapPin, Hash, Cpu, Barcode, CalendarDays, Clock, AlertTriangle, User } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { statusBadge, fmtDate } from '@/types/contract'
@@ -11,7 +11,17 @@ defineEmits<{ 'update:open': [v: boolean] }>()
 function daysDisplay(days: number) {
   if (days < 0)   return { text: `Expired ${Math.abs(days)}d ago`, cls: 'bg-red-50 text-red-600 border-red-200', icon: AlertTriangle }
   if (days <= 15) return { text: `${days} days left`,              cls: 'bg-amber-50 text-amber-600 border-amber-200', icon: Clock }
-  return               { text: `${days} days left`,                cls: 'bg-black/4 text-black/55 border-black/10', icon: Clock }
+  return                 { text: `${days} days left`,              cls: 'bg-black/4 text-black/55 border-black/10', icon: Clock }
+}
+
+const palette = ['#252578', '#2E85D8', '#2F2F73']
+function initials(name: string) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+}
+function avatarColor(name: string) {
+  let h = 0
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
+  return palette[h % palette.length]
 }
 </script>
 
@@ -109,6 +119,20 @@ function daysDisplay(days: number) {
             <div class="flex-1 min-w-0 flex items-baseline justify-between gap-4">
               <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider shrink-0">Region</span>
               <span class="text-sm font-medium text-black">{{ contract.region }}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 py-2.5">
+            <User class="w-3.5 h-3.5 text-black/25 shrink-0" />
+            <div class="flex-1 min-w-0 flex items-center justify-between gap-4">
+              <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider shrink-0">Sales Rep</span>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0 select-none"
+                  :style="{ backgroundColor: avatarColor(contract.createdBy) }">
+                  {{ initials(contract.createdBy) }}
+                </div>
+                <span class="text-sm font-medium text-black">{{ contract.createdBy }}</span>
+              </div>
             </div>
           </div>
 

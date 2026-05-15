@@ -43,9 +43,19 @@ const filterTabs: { label: string; value: FilterTab }[] = [
 ]
 
 function daysLabel(days: number) {
-  if (days < 0)  return { text: 'Expired',             cls: 'bg-red-50 text-red-600 border-red-200' }
-  if (days <= 15) return { text: `${days}d left`,       cls: 'bg-amber-50 text-amber-600 border-amber-200' }
-  return               { text: `${days}d left`,         cls: 'bg-black/4 text-black/50 border-black/10' }
+  if (days < 0)   return { text: 'Expired',       cls: 'text-red-500' }
+  if (days <= 15) return { text: `${days}d left`, cls: 'text-amber-500' }
+  return                 { text: `${days}d left`, cls: 'text-black/45' }
+}
+
+const palette = ['#252578', '#2E85D8', '#2F2F73']
+function initials(name: string) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+}
+function avatarColor(name: string) {
+  let h = 0
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
+  return palette[h % palette.length]
 }
 </script>
 
@@ -92,6 +102,7 @@ function daysLabel(days: number) {
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">End Date</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Remaining</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Sales Rep</TableHead>
           <TableHead class="w-12 py-3" />
         </TableRow>
       </TableHeader>
@@ -121,10 +132,9 @@ function daysLabel(days: number) {
 
           <!-- Remaining Days -->
           <TableCell class="py-4">
-            <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border"
-              :class="daysLabel(c.days).cls">
-              <AlertTriangle v-if="c.days < 0"   class="w-3 h-3" />
-              <Clock         v-else-if="c.days <= 15" class="w-3 h-3" />
+            <span class="inline-flex items-center gap-1 text-sm font-medium" :class="daysLabel(c.days).cls">
+              <AlertTriangle v-if="c.days < 0"        class="w-3.5 h-3.5 shrink-0" />
+              <Clock         v-else-if="c.days <= 15" class="w-3.5 h-3.5 shrink-0" />
               {{ daysLabel(c.days).text }}
             </span>
           </TableCell>
@@ -135,6 +145,17 @@ function daysLabel(days: number) {
               :class="statusBadge[c.status]">
               {{ c.status }}
             </span>
+          </TableCell>
+
+          <!-- Sales Rep -->
+          <TableCell class="py-4" @click.stop>
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 select-none"
+                :style="{ backgroundColor: avatarColor(c.createdBy) }">
+                {{ initials(c.createdBy) }}
+              </div>
+              <span class="text-xs font-medium text-black/70 leading-snug">{{ c.createdBy }}</span>
+            </div>
           </TableCell>
 
           <!-- Actions -->
@@ -166,7 +187,7 @@ function daysLabel(days: number) {
         </TableRow>
 
         <TableRow v-if="paginated.length === 0">
-          <TableCell colspan="7" class="text-center py-16">
+          <TableCell colspan="8" class="text-center py-16">
             <p class="text-sm font-semibold text-black/28">No contracts found</p>
             <p class="text-xs text-black/20 mt-1">Try a different filter or search term</p>
           </TableCell>
