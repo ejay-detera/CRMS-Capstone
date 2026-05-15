@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
+import { statusBadge } from '@/types/contract'
+import type { ContractStatus } from '@/types/contract'
 
 // ── Live clock ─────────────────────────────────────────────────────
 const now = ref(new Date())
@@ -37,28 +39,20 @@ const statCards = [
 ]
 
 // ── Recent contracts ───────────────────────────────────────────────
-type ContractStatus = 'Notarized' | 'Draft Client' | 'Draft SBSI'
-
-interface Contract {
+interface DashContract {
   id: string; partner: string; category: string
   status: ContractStatus; endDate: string
 }
 
 const timeFilter = ref<'1D' | '1W' | '1M' | 'All'>('All')
 
-const allContracts: Contract[] = [
-  { id: 'CNT-2023-001', partner: 'Medical Supplies Co.',   category: 'Supply',         status: 'Notarized',   endDate: 'Dec 12, 2024' },
-  { id: 'CNT-2023-042', partner: 'Bio-Tech Logistics',     category: 'Logistics',      status: 'Draft Client', endDate: 'Dec 11, 2024' },
-  { id: 'CNT-2023-089', partner: 'Global Pharma Inc.',     category: 'Pharmaceutical', status: 'Draft SBSI',  endDate: 'Dec 10, 2024' },
-  { id: 'CNT-2023-112', partner: 'Stellar Lab Equipment',  category: 'Equipment',      status: 'Notarized',   endDate: 'Dec 09, 2024' },
-  { id: 'CNT-2023-134', partner: 'BioGenesis Research',    category: 'Research',       status: 'Draft Client', endDate: 'Dec 08, 2024' },
+const allContracts: DashContract[] = [
+  { id: 'CNT-2023-001', partner: 'Medical Supplies Co.',   category: 'Supply',         status: 'Notarized PDF', endDate: 'Dec 12, 2024' },
+  { id: 'CNT-2023-042', partner: 'Bio-Tech Logistics',     category: 'Logistics',      status: 'Client Review', endDate: 'Dec 11, 2024' },
+  { id: 'CNT-2023-089', partner: 'Global Pharma Inc.',     category: 'Pharmaceutical', status: 'SBSI Review',   endDate: 'Dec 10, 2024' },
+  { id: 'CNT-2023-112', partner: 'Stellar Lab Equipment',  category: 'Equipment',      status: 'Notarized PDF', endDate: 'Dec 09, 2024' },
+  { id: 'CNT-2023-134', partner: 'BioGenesis Research',    category: 'Research',       status: 'Client Review', endDate: 'Dec 08, 2024' },
 ]
-
-const contractStatusBadge: Record<ContractStatus, string> = {
-  'Notarized':    'bg-[#252578]/8 text-[#252578] border-[#252578]/20',
-  'Draft Client': 'bg-[#2E85D8]/8 text-[#2E85D8] border-[#2E85D8]/20',
-  'Draft SBSI':   'bg-black/5 text-black/50 border-black/10',
-}
 
 // ── Audit logs ─────────────────────────────────────────────────────
 type LogType = 'create' | 'update' | 'approve' | 'delete'
@@ -200,7 +194,7 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
               <TableCell class="py-3.5 text-sm text-black/40">{{ contract.category }}</TableCell>
               <TableCell class="py-3.5">
                 <Badge variant="outline" class="text-xs font-medium rounded-full px-2.5 py-0.5"
-                  :class="contractStatusBadge[contract.status]">
+                  :class="statusBadge[contract.status]">
                   {{ contract.status }}
                 </Badge>
               </TableCell>
