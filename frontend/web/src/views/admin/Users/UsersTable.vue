@@ -75,7 +75,7 @@ const tabs: { label: string; value: TabValue }[] = [
     </div>
 
     <Table>
-      <TableHeader class="bg-black/1.8">
+      <TableHeader class="bg-black/[0.018]">
         <TableRow class="border-b border-black/4 hover:bg-transparent">
           <TableHead class="w-12 pl-6 py-3">
             <input type="checkbox" :checked="allPageSelected" @change="emit('toggleSelectAll')"
