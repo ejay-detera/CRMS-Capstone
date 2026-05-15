@@ -79,7 +79,7 @@ function err(field: keyof typeof touched, extra = true) {
         <!-- Name -->
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Name <span class="text-red-500">*</span></label>
-          <input v-model="form.name" @blur="touched.name = true" type="text" placeholder="Organisation name"
+          <input v-model="form.name" @blur="touched.name = true" type="text" placeholder="Organisation name" maxlength="100"
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', err('name', !form.name)]" />
           <p v-if="touched.name && !form.name" class="text-xs text-red-500">Name is required.</p>
         </div>
@@ -88,7 +88,7 @@ function err(field: keyof typeof touched, extra = true) {
         <div class="grid grid-cols-2 gap-4">
           <div class="space-y-1.5">
             <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Industry <span class="text-red-500">*</span></label>
-            <input v-model="form.industry" @blur="touched.industry = true" type="text" placeholder="e.g. Healthcare"
+            <input v-model="form.industry" @blur="touched.industry = true" type="text" placeholder="e.g. Healthcare" maxlength="50"
               :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', err('industry', !form.industry)]" />
             <p v-if="touched.industry && !form.industry" class="text-xs text-red-500">Required.</p>
           </div>
@@ -114,13 +114,13 @@ function err(field: keyof typeof touched, extra = true) {
           <div class="space-y-1.5">
             <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Contact Person <span class="text-red-500">*</span></label>
             <input :value="form.contactPerson" @input="onNameInput('contactPerson', $event)" @blur="touched.contactPerson = true"
-              type="text" placeholder="Full name"
+              type="text" placeholder="Full name" maxlength="100"
               :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', err('contactPerson', !form.contactPerson)]" />
             <p v-if="touched.contactPerson && !form.contactPerson" class="text-xs text-red-500">Required.</p>
           </div>
           <div class="space-y-1.5">
             <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Phone <span class="text-red-500">*</span></label>
-            <input v-model="form.phone" @blur="touched.phone = true" type="text" placeholder="+63 2 8xxx xxxx"
+            <input v-model="form.phone" @blur="touched.phone = true" type="tel" placeholder="+63 2 8xxx xxxx" maxlength="20"
               :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', err('phone', !form.phone || !phoneValid)]" />
             <p v-if="touched.phone && !form.phone" class="text-xs text-red-500">Required.</p>
             <p v-else-if="touched.phone && !phoneValid" class="text-xs text-red-500">Enter a valid phone number.</p>
@@ -138,7 +138,7 @@ function err(field: keyof typeof touched, extra = true) {
         <!-- Address -->
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Address <span class="text-red-500">*</span></label>
-          <input v-model="form.address" @blur="touched.address = true" type="text" placeholder="Street, City"
+          <input v-model="form.address" @blur="touched.address = true" type="text" placeholder="Street, City" maxlength="200"
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', err('address', !form.address)]" />
           <p v-if="touched.address && !form.address" class="text-xs text-red-500">Required.</p>
         </div>

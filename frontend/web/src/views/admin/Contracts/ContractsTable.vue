@@ -84,7 +84,7 @@ function avatarColor(name: string) {
       <div class="relative w-56">
         <Search class="w-3.5 h-3.5 text-black/30 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input :value="searchQuery"
-          @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
+          @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"
           type="text" placeholder="Search contracts..."
           class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
       </div>

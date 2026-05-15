@@ -63,14 +63,14 @@ function save() {
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">First name <span class="text-red-500">*</span></label>
           <input :value="form.firstName" @input="onNameInput('firstName', $event)" @blur="touched.firstName = true"
-            type="text" placeholder="e.g. Shadrack"
+            type="text" placeholder="e.g. Shadrack" maxlength="50"
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', fieldCls('firstName', !form.firstName)]" />
           <p v-if="touched.firstName && !form.firstName" class="text-xs text-red-500">Required.</p>
         </div>
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Last name <span class="text-red-500">*</span></label>
           <input :value="form.lastName" @input="onNameInput('lastName', $event)" @blur="touched.lastName = true"
-            type="text" placeholder="e.g. Castro"
+            type="text" placeholder="e.g. Castro" maxlength="50"
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', fieldCls('lastName', !form.lastName)]" />
           <p v-if="touched.lastName && !form.lastName" class="text-xs text-red-500">Required.</p>
         </div>
@@ -80,13 +80,13 @@ function save() {
         <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">
           Middle name <span class="normal-case font-normal text-black/30 ml-1">(optional)</span>
         </label>
-        <input :value="form.middleName" @input="onNameInput('middleName', $event)" type="text" placeholder="e.g. Miguel"
+        <input :value="form.middleName" @input="onNameInput('middleName', $event)" type="text" placeholder="e.g. Miguel" maxlength="50"
           class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
       </div>
 
       <div class="space-y-1.5">
         <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Email <span class="text-red-500">*</span></label>
-        <input v-model="form.email" @blur="touched.email = true" type="text" placeholder="you@sbsi.com"
+        <input v-model="form.email" @blur="touched.email = true" type="email" placeholder="you@sbsi.com" maxlength="254"
           :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', fieldCls('email', !form.email || !emailValid)]" />
         <p v-if="touched.email && !form.email" class="text-xs text-red-500">Required.</p>
         <p v-else-if="touched.email && !emailValid" class="text-xs text-red-500">Enter a valid email address.</p>
@@ -95,7 +95,7 @@ function save() {
       <div class="grid grid-cols-2 gap-4">
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Phone <span class="text-red-500">*</span></label>
-          <input v-model="form.phone" @blur="touched.phone = true" type="text" placeholder="+63 2 8xxx xxxx"
+          <input v-model="form.phone" @blur="touched.phone = true" type="tel" placeholder="+63 2 8xxx xxxx" maxlength="20"
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', fieldCls('phone', !form.phone || !phoneValid)]" />
           <p v-if="touched.phone && !form.phone" class="text-xs text-red-500">Required.</p>
           <p v-else-if="touched.phone && !phoneValid" class="text-xs text-red-500">Enter a valid phone number.</p>

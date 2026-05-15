@@ -80,7 +80,7 @@ function submit() {
           <div class="space-y-1.5">
             <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">First name <span class="text-red-500">*</span></label>
             <input :value="form.firstName" @input="onNameInput('firstName', $event)" @blur="touched.firstName = true"
-              type="text" placeholder="e.g. Sarah"
+              type="text" placeholder="e.g. Sarah" maxlength="50"
               :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
                 touched.firstName && !form.firstName ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
             <p v-if="touched.firstName && !form.firstName" class="text-xs text-red-500">Required.</p>
@@ -88,7 +88,7 @@ function submit() {
           <div class="space-y-1.5">
             <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Last name <span class="text-red-500">*</span></label>
             <input :value="form.lastName" @input="onNameInput('lastName', $event)" @blur="touched.lastName = true"
-              type="text" placeholder="e.g. Jenkins"
+              type="text" placeholder="e.g. Jenkins" maxlength="50"
               :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
                 touched.lastName && !form.lastName ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
             <p v-if="touched.lastName && !form.lastName" class="text-xs text-red-500">Required.</p>
@@ -100,14 +100,14 @@ function submit() {
             Middle name <span class="normal-case font-normal text-black/30 ml-1">(optional)</span>
           </label>
           <input :value="form.middleName" @input="onNameInput('middleName', $event)"
-            type="text" placeholder="e.g. Anne"
+            type="text" placeholder="e.g. Anne" maxlength="50"
             class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
           <p class="text-[11px] text-black/30">Letters only — no numbers or special characters.</p>
         </div>
 
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Email address <span class="text-red-500">*</span></label>
-          <input v-model="form.email" @blur="touched.email = true" type="text" placeholder="e.g. sarah.j@sbsi.com"
+          <input v-model="form.email" @blur="touched.email = true" type="email" placeholder="e.g. sarah.j@sbsi.com" maxlength="254"
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
               touched.email && (!form.email || !emailValid) ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
           <p v-if="touched.email && !form.email" class="text-xs text-red-500">Required.</p>
@@ -118,7 +118,7 @@ function submit() {
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Password <span class="text-red-500">*</span></label>
           <div class="relative">
             <input v-model="form.password" @blur="touched.password = true"
-              :type="showPassword ? 'text' : 'password'" placeholder="Min. 8 characters"
+              :type="showPassword ? 'text' : 'password'" placeholder="Min. 8 characters" maxlength="128"
               :class="['w-full h-9 rounded-md border bg-white pl-3 pr-10 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
                 touched.password && !passwordValid ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
             <button type="button" @click="showPassword = !showPassword" tabindex="-1"
@@ -146,7 +146,7 @@ function submit() {
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Confirm password <span class="text-red-500">*</span></label>
           <div class="relative">
             <input v-model="form.confirmPassword" @blur="touched.confirmPassword = true"
-              :type="showConfirmPassword ? 'text' : 'password'" placeholder="Repeat password"
+              :type="showConfirmPassword ? 'text' : 'password'" placeholder="Repeat password" maxlength="128"
               :class="['w-full h-9 rounded-md border bg-white pl-3 pr-10 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
                 passwordMismatch ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
             <button type="button" @click="showConfirmPassword = !showConfirmPassword" tabindex="-1"

@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { statusBadge, fmtDate } from '@/types/contract'
 import type { Contract } from '@/types/contract'
+import { safeHref } from '@/utils/sanitize'
 
 defineProps<{ open: boolean; contract: (Contract & { days: number }) | null }>()
 defineEmits<{ 'update:open': [v: boolean] }>()
@@ -140,7 +141,7 @@ function avatarColor(name: string) {
 
         <!-- Contract link + footer -->
         <div class="px-5 py-4 border-t border-black/6 flex items-center justify-between gap-3">
-          <a :href="contract.contractLink" target="_blank" rel="noopener"
+          <a :href="safeHref(contract.contractLink)" target="_blank" rel="noopener noreferrer"
             class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2E85D8] hover:underline">
             <ExternalLink class="w-3.5 h-3.5" /> View Contract PDF
           </a>

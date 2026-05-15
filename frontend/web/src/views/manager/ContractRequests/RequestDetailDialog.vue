@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { requestStatusBadge, priorityBadge, fmtReqDate } from '@/types/contractRequest'
 import type { ContractRequest } from '@/types/contractRequest'
+import { safeHref } from '@/utils/sanitize'
 
 const props = defineProps<{ open: boolean; request: ContractRequest | null }>()
 const emit  = defineEmits<{
@@ -169,7 +170,7 @@ function confirmReject() {
         <div class="px-5 py-4 border-t border-black/6">
 
           <!-- Contract link -->
-          <a :href="request.contractLink" target="_blank" rel="noopener"
+          <a :href="safeHref(request.contractLink)" target="_blank" rel="noopener noreferrer"
             class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2E85D8] hover:underline mb-3">
             <ExternalLink class="w-3.5 h-3.5" /> View Contract PDF
           </a>

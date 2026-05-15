@@ -33,7 +33,7 @@ const emit = defineEmits<{
       </div>
       <div class="relative w-64">
         <Search class="w-3.5 h-3.5 text-black/35 absolute left-3 top-1/2 -translate-y-1/2" />
-        <input :value="searchQuery" @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
+        <input :value="searchQuery" @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"
           type="text" placeholder="Search notifications..."
           class="w-full rounded-lg border border-black/10 bg-black/2 py-2 pl-8 pr-3 text-sm text-black placeholder:text-black/35 focus:border-[#2E85D8] focus:outline-none transition-colors" />
       </div>

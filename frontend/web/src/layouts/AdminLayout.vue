@@ -172,7 +172,7 @@ const searchQuery = ref("");
           <div class="relative w-full max-w-md">
             <Search class="w-4 h-4 text-black/40 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
-              v-model="searchQuery"
+              v-model.trim="searchQuery"
               type="text"
               placeholder="Search data..."
               class="w-full rounded-lg border border-black/10 bg-white py-2 pl-9 pr-3 text-sm text-black placeholder:text-black/40 focus:border-[#2E85D8] focus:outline-none"
