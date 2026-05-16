@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
-import { UserPlus, Eye, EyeOff } from 'lucide-vue-next'
+import { computed, reactive, watch } from 'vue'
+import { UserPlus } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -11,25 +11,16 @@ const emit  = defineEmits<{ 'update:open': [v: boolean]; submit: [data: any] }>(
 
 const form = reactive({
   firstName: '', lastName: '', middleName: '',
-  email: '', password: '', confirmPassword: '',
-  role: '' as Role | '', department: '',
+  email: '', role: '' as Role | '', department: 'Finance',
 })
 const touched = reactive({
-  firstName: false, lastName: false,
-  email: false, password: false, confirmPassword: false,
+  firstName: false, lastName: false, email: false,
 })
-const showPassword        = ref(false)
-const showConfirmPassword = ref(false)
 
-const emailValid = computed(() => !form.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-const pwRules    = computed(() => ({
-  minLength:  form.password.length >= 8,
-  hasUpper:   /[A-Z]/.test(form.password),
-  hasNumber:  /\d/.test(form.password),
-  hasSpecial: /[!@#$%^&*()\-_=+\[\]{};:'",.<>?/\\|`~]/.test(form.password),
-}))
-const passwordValid    = computed(() => Object.values(pwRules.value).every(Boolean))
-const passwordMismatch = computed(() => form.confirmPassword.length > 0 && form.password !== form.confirmPassword)
+const ALLOWED_DOMAIN = 'sbsi.com'
+const emailFormatValid = computed(() => !form.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+const emailDomainValid = computed(() => !form.email || form.email.toLowerCase().endsWith(`@${ALLOWED_DOMAIN}`))
+const emailValid       = computed(() => emailFormatValid.value && emailDomainValid.value)
 
 function onNameInput(field: 'firstName' | 'lastName' | 'middleName', e: Event) {
   const el = e.target as HTMLInputElement
@@ -40,18 +31,16 @@ function onNameInput(field: 'firstName' | 'lastName' | 'middleName', e: Event) {
 }
 
 function reset() {
-  Object.assign(form, { firstName: '', lastName: '', middleName: '', email: '', password: '', confirmPassword: '', role: '', department: '' })
-  Object.assign(touched, { firstName: false, lastName: false, email: false, password: false, confirmPassword: false })
-  showPassword.value = false
-  showConfirmPassword.value = false
+  Object.assign(form, { firstName: '', lastName: '', middleName: '', email: '', role: '', department: 'Finance' })
+  Object.assign(touched, { firstName: false, lastName: false, email: false })
 }
 
 watch(() => props.open, open => { if (!open) reset() })
 
 function submit() {
-  Object.assign(touched, { firstName: true, lastName: true, email: true, password: true, confirmPassword: true })
-  if (!form.firstName || !form.lastName || !form.email || !emailValid.value ||
-      !passwordValid.value || passwordMismatch.value || !form.role || !form.department) return
+  Object.assign(touched, { firstName: true, lastName: true, email: true })
+  if (!form.firstName || !form.lastName || !form.email || !emailFormatValid.value || !emailDomainValid.value ||
+      !form.role || !form.department) return
   
   emit('submit', {
     first_name: form.firstName,
@@ -113,54 +102,22 @@ function submit() {
 
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Email address <span class="text-red-500">*</span></label>
-          <input v-model="form.email" @blur="touched.email = true" type="email" placeholder="e.g. sarah.j@sbsi.com" maxlength="254"
+          <input v-model="form.email" @blur="touched.email = true" type="text" placeholder="e.g. sarah.j@sbsi.com" maxlength="254"
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
               touched.email && (!form.email || !emailValid) ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
           <p v-if="touched.email && !form.email" class="text-xs text-red-500">Required.</p>
-          <p v-else-if="touched.email && !emailValid" class="text-xs text-red-500">Enter a valid email address.</p>
+          <p v-else-if="touched.email && !emailFormatValid" class="text-xs text-red-500">Enter a valid email address.</p>
+          <p v-else-if="touched.email && !emailDomainValid" class="text-xs text-red-500">Email must use the company domain <span class="font-semibold">@sbsi.com</span></p>
         </div>
 
-        <div class="space-y-1.5">
-          <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Password <span class="text-red-500">*</span></label>
-          <div class="relative">
-            <input v-model="form.password" @blur="touched.password = true"
-              :type="showPassword ? 'text' : 'password'" placeholder="Min. 8 characters" maxlength="128"
-              :class="['w-full h-9 rounded-md border bg-white pl-3 pr-10 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
-                touched.password && !passwordValid ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
-            <button type="button" @click="showPassword = !showPassword" tabindex="-1"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-black/30 hover:text-black/60 transition-colors">
-              <EyeOff v-if="showPassword" class="w-4 h-4" /><Eye v-else class="w-4 h-4" />
-            </button>
+        <div class="bg-blue-50 border border-blue-100 rounded-md p-3.5 flex gap-3 text-blue-800">
+          <div class="w-5 h-5 shrink-0 mt-0.5 opacity-80">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
           </div>
-          <div v-if="touched.password || form.password.length > 0" class="flex flex-wrap gap-x-4 gap-y-1 pt-1">
-            <span class="flex items-center gap-1 text-[11px]" :class="pwRules.minLength ? 'text-emerald-600' : 'text-black/35'">
-              <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="pwRules.minLength ? 'bg-emerald-500' : 'bg-black/20'" /> 8+ characters
-            </span>
-            <span class="flex items-center gap-1 text-[11px]" :class="pwRules.hasUpper ? 'text-emerald-600' : 'text-black/35'">
-              <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="pwRules.hasUpper ? 'bg-emerald-500' : 'bg-black/20'" /> One uppercase
-            </span>
-            <span class="flex items-center gap-1 text-[11px]" :class="pwRules.hasNumber ? 'text-emerald-600' : 'text-black/35'">
-              <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="pwRules.hasNumber ? 'bg-emerald-500' : 'bg-black/20'" /> One number
-            </span>
-            <span class="flex items-center gap-1 text-[11px]" :class="pwRules.hasSpecial ? 'text-emerald-600' : 'text-black/35'">
-              <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="pwRules.hasSpecial ? 'bg-emerald-500' : 'bg-black/20'" /> One special character
-            </span>
+          <div class="text-sm">
+            <p class="font-medium mb-0.5">Automated Credentials</p>
+            <p class="text-blue-700/80 leading-relaxed">A secure temporary password will be automatically generated and sent to this employee's email address upon creation. They will be prompted to change it when they first log in.</p>
           </div>
-        </div>
-
-        <div class="space-y-1.5">
-          <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Confirm password <span class="text-red-500">*</span></label>
-          <div class="relative">
-            <input v-model="form.confirmPassword" @blur="touched.confirmPassword = true"
-              :type="showConfirmPassword ? 'text' : 'password'" placeholder="Repeat password" maxlength="128"
-              :class="['w-full h-9 rounded-md border bg-white pl-3 pr-10 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
-                passwordMismatch ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
-            <button type="button" @click="showConfirmPassword = !showConfirmPassword" tabindex="-1"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-black/30 hover:text-black/60 transition-colors">
-              <EyeOff v-if="showConfirmPassword" class="w-4 h-4" /><Eye v-else class="w-4 h-4" />
-            </button>
-          </div>
-          <p v-if="passwordMismatch" class="text-xs text-red-500">Passwords do not match.</p>
         </div>
 
         <div class="grid grid-cols-2 gap-4">

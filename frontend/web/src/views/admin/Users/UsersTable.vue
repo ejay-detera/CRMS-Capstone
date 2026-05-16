@@ -1,5 +1,5 @@
-﻿<script setup lang="ts">
-import { Building2, MoreHorizontal, Pencil, Trash2, Eye, Search } from 'lucide-vue-next'
+<script setup lang="ts">
+import { MoreHorizontal, Pencil, Trash2, Eye, Search } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -16,7 +16,7 @@ import {
 import { getInitials, avatarColor, roleBadge } from '@/types/user'
 import type { User } from '@/types/user'
 
-type TabValue = 'all' | 'Admin' | 'Manager' | 'Sales'
+type TabValue = 'all' | 'Admin' | 'Manager' | 'Employee'
 
 const props = defineProps<{
   paginatedUsers:  User[]
@@ -44,7 +44,7 @@ const tabs: { label: string; value: TabValue }[] = [
   { label: 'View all', value: 'all'     },
   { label: 'Admin',    value: 'Admin'   },
   { label: 'Manager',  value: 'Manager' },
-  { label: 'Sales',    value: 'Sales'   },
+  { label: 'Employee', value: 'Employee'},
 ]
 </script>
 
@@ -108,7 +108,7 @@ const tabs: { label: string; value: TabValue }[] = [
               </div>
               <div>
                 <p class="text-sm font-medium text-black leading-snug">{{ user.name }}</p>
-                <p class="text-xs text-black/35 mt-0.5">{{ user.email }}</p>
+                <p class="text-xs text-black/35 mt-0.5">{{ user.email }} &bull; <span class="font-medium opacity-75">{{ user.department }}</span></p>
               </div>
             </div>
           </TableCell>

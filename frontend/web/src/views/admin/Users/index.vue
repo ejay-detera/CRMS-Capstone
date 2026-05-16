@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { Plus, Upload } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
+import { useLoader } from '@/composables/useLoader'
 import UsersTable       from './UsersTable.vue'
 import ViewProfileDialog from './ViewProfileDialog.vue'
 import AddUserDialog    from './AddUserDialog.vue'
@@ -13,27 +14,53 @@ import DeleteUserDialog from './DeleteUserDialog.vue'
 import type { User, Role, Status } from '@/types/user'
 
 const { success, error } = useToast()
+const { withLoading }    = useLoader()
 
-const users = ref<User[]>([
-  { id: 'USR-001', name: 'Sarah Jenkins',    email: 'sarah.j@sbsi.com',    role: 'Admin',   status: 'Active',   dateAdded: 'June 23, 2026'  },
-  { id: 'USR-002', name: 'Marcus Chen',      email: 'm.chen@sbsi.com',      role: 'Manager', status: 'Active',   dateAdded: 'June 23, 2026'  },
-  { id: 'USR-003', name: 'Elena Rodriguez',  email: 'e.rodriguez@sbsi.com', role: 'Sales',   status: 'Inactive', dateAdded: 'May 10, 2026'   },
-  { id: 'USR-004', name: 'David Kim',        email: 'd.kim@sbsi.com',       role: 'Admin',   status: 'Active',   dateAdded: 'May 4, 2026'    },
-  { id: 'USR-005', name: 'Jessica Williams', email: 'j.williams@sbsi.com',  role: 'Sales',   status: 'Active',   dateAdded: 'Apr 18, 2026'   },
-  { id: 'USR-006', name: 'Michael Brown',    email: 'm.brown@sbsi.com',     role: 'Manager', status: 'Active',   dateAdded: 'Apr 1, 2026'    },
-  { id: 'USR-007', name: 'Anna Reyes',       email: 'a.reyes@sbsi.com',     role: 'Sales',   status: 'Active',   dateAdded: 'Mar 15, 2026'   },
-  { id: 'USR-008', name: 'James Torres',     email: 'j.torres@sbsi.com',    role: 'Manager', status: 'Active',   dateAdded: 'Mar 2, 2026'    },
-  { id: 'USR-009', name: 'Patricia Lim',     email: 'p.lim@sbsi.com',       role: 'Sales',   status: 'Inactive', dateAdded: 'Feb 20, 2026'   },
-  { id: 'USR-010', name: 'Robert Navarro',   email: 'r.navarro@sbsi.com',   role: 'Admin',   status: 'Active',   dateAdded: 'Jan 8, 2026'    },
-  { id: 'USR-011', name: 'Lydia Santos',     email: 'l.santos@sbsi.com',    role: 'Sales',   status: 'Active',   dateAdded: 'Jan 3, 2026'    },
-  { id: 'USR-012', name: 'Kevin Park',       email: 'k.park@sbsi.com',      role: 'Manager', status: 'Active',   dateAdded: 'Dec 12, 2025'   },
-])
+// true while the initial table fetch is in flight
+const isFetching = ref(false)
+
+const users = ref<User[]>([])
+
+async function fetchUsers() {
+  const { state } = useAuth()
+  isFetching.value = true
+  try {
+    const res = await fetch('http://localhost:8000/api/admin/users?per_page=100', {
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'X-Session-ID': localStorage.getItem('session_id') || '',
+        'Accept': 'application/json'
+      }
+    })
+    const data = await res.json()
+    if (res.ok && data.data) {
+      users.value = data.data.map((u: any) => ({
+        id: u.id.toString(),
+        name: `${u.profile?.first_name} ${u.profile?.last_name}`,
+        email: u.email,
+        role: u.profile?.role?.name || 'Unknown',
+        department: u.profile?.department?.name || 'Unknown',
+        status: (u.is_active ? 'Active' : 'Inactive') as Status,
+        dateAdded: new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      }))
+    }
+  } catch (err) {
+    console.error('Failed to fetch users:', err)
+    error('Fetch failed', 'Could not load users from the server.')
+  } finally {
+    isFetching.value = false
+  }
+}
+
+onMounted(() => {
+  fetchUsers()
+})
 
 const statCards = computed(() => [
   { label: 'All users', value: users.value.length,                                   change: '+4.0%', positive: true  },
   { label: 'Admins',    value: users.value.filter(u => u.role === 'Admin').length,    change: '+2.1%', positive: true  },
   { label: 'Managers',  value: users.value.filter(u => u.role === 'Manager').length,  change: '-0.3%', positive: false },
-  { label: 'Sales',     value: users.value.filter(u => u.role === 'Sales').length,    change: '+5.2%', positive: true  },
+  { label: 'Employees', value: users.value.filter(u => u.role === 'Employee').length, change: '+5.2%', positive: true  },
 ])
 
 type TabValue = 'all' | Role
@@ -94,37 +121,44 @@ function avatarIndex(id: string) {
 async function handleAdd(data: any) {
   const { state } = useAuth()
 
-  try {
-    const response = await fetch('http://localhost:8001/api/admin/users', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${state.token}`,
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(data)
-    })
+  await withLoading('creating', async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${state.token}`,
+          'X-Session-ID': localStorage.getItem('session_id') || '',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
 
-    const result = await response.json()
+      const result = await response.json()
 
-    if (response.ok) {
-      const newUser = {
-        id: result.user.id || `USR-${Math.random().toString(36).substr(2, 3).toUpperCase()}`,
-        name: `${data.first_name} ${data.last_name}`,
-        email: data.email,
-        role: data.role_name as Role,
-        status: 'Active',
-        dateAdded: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      if (response.ok) {
+        const newUser: User = {
+          id: result.user.id || `USR-${Math.random().toString(36).substr(2, 3).toUpperCase()}`,
+          name: `${data.first_name} ${data.last_name}`,
+          email: data.email,
+          role: data.role_name as Role,
+          department: data.department_name,
+          status: 'Active' as Status,
+          dateAdded: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        }
+        users.value.push(newUser)
+        success('User created', `${newUser.name} has been added successfully.`)
+      } else if (response.status === 422 && result.errors) {
+        const firstError = Object.values(result.errors as Record<string, string[]>)[0]?.[0]
+        error('Validation Error', firstError || result.message || 'Please check the form fields.')
+      } else {
+        error('Creation failed', result.message || 'Failed to create user.')
       }
-      users.value.push(newUser)
-      success('User created', `${newUser.name} has been added successfully.`)
-    } else {
-      error('Creation failed', result.message || 'Failed to create user.')
+    } catch (err) {
+      console.error('Network error creating user:', err)
+      error('Network Error', 'Could not connect to the server.')
     }
-  } catch (err) {
-    console.error('Network error creating user:', err)
-    error('Network Error', 'Could not connect to the server.')
-  }
+  })
 }
 
 function handleEdit(data: { id: string; name: string; email: string; role: Role; status: Status }) {
@@ -134,14 +168,17 @@ function handleEdit(data: { id: string; name: string; email: string; role: Role;
   success('User updated', `${data.name}'s details have been saved.`)
 }
 
-function confirmDelete() {
+async function confirmDelete() {
   if (!deleteTarget.value) return
   const { id, name } = deleteTarget.value
-  users.value       = users.value.filter(u => u.id !== id)
-  selectedIds.value = selectedIds.value.filter(s => s !== id)
   showDeleteConfirm.value = false
   deleteTarget.value      = null
-  success('User deleted', `${name} has been removed.`)
+  await withLoading('deleting', async () => {
+    await new Promise(r => setTimeout(r, 400)) // brief visual
+    users.value       = users.value.filter(u => u.id !== id)
+    selectedIds.value = selectedIds.value.filter(s => s !== id)
+    success('User deleted', `${name} has been removed.`)
+  })
 }
 
 function exportXLSX() {
@@ -180,17 +217,26 @@ function exportXLSX() {
       </div>
     </div>
 
+    <!-- Stat cards: skeleton while loading, real values after -->
     <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      <div v-for="card in statCards" :key="card.label" class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
-        <p class="text-xs font-medium text-black/40 mb-3 uppercase tracking-wide">{{ card.label }}</p>
-        <div class="flex items-end justify-between gap-2">
-          <span class="text-3xl font-semibold text-black tabular-nums">{{ card.value }}</span>
-          <span class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
-            :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
-            {{ card.change }}
-          </span>
+      <template v-if="isFetching">
+        <div v-for="i in 4" :key="i" class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm animate-pulse">
+          <div class="h-2.5 w-20 bg-black/8 rounded mb-4"></div>
+          <div class="h-8 w-12 bg-black/8 rounded"></div>
         </div>
-      </div>
+      </template>
+      <template v-else>
+        <div v-for="card in statCards" :key="card.label" class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
+          <p class="text-xs font-medium text-black/40 mb-3 uppercase tracking-wide">{{ card.label }}</p>
+          <div class="flex items-end justify-between gap-2">
+            <span class="text-3xl font-semibold text-black tabular-nums">{{ card.value }}</span>
+            <span class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
+              :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
+              {{ card.change }}
+            </span>
+          </div>
+        </div>
+      </template>
     </div>
 
     <UsersTable

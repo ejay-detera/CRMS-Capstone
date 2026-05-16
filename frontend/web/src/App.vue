@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Toaster from '@/components/ui/toast/Toaster.vue'
+import LoaderOverlay from '@/components/shared/LoaderOverlay.vue'
 </script>
 
 <template>
@@ -8,5 +9,6 @@ import Toaster from '@/components/ui/toast/Toaster.vue'
       <router-view />
     </main>
     <Toaster />
+    <LoaderOverlay />
   </div>
 </template>
