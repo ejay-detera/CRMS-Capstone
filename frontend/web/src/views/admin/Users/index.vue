@@ -4,6 +4,7 @@ import { Plus, Upload } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
 import UsersTable       from './UsersTable.vue'
 import ViewProfileDialog from './ViewProfileDialog.vue'
 import AddUserDialog    from './AddUserDialog.vue'
@@ -11,7 +12,7 @@ import EditUserDialog   from './EditUserDialog.vue'
 import DeleteUserDialog from './DeleteUserDialog.vue'
 import type { User, Role, Status } from '@/types/user'
 
-const { success } = useToast()
+const { success, error } = useToast()
 
 const users = ref<User[]>([
   { id: 'USR-001', name: 'Sarah Jenkins',    email: 'sarah.j@sbsi.com',    role: 'Admin',   status: 'Active',   dateAdded: 'June 23, 2026'  },
@@ -90,17 +91,40 @@ function avatarIndex(id: string) {
   return users.value.findIndex(u => u.id === id)
 }
 
-function handleAdd(data: { name: string; email: string; role: Role }) {
-  const pad = String(users.value.length + 1).padStart(3, '0')
-  users.value.push({
-    id:        `USR-${pad}`,
-    name:      data.name,
-    email:     data.email,
-    role:      data.role,
-    status:    'Active',
-    dateAdded: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-  })
-  success('User created', `${data.name} has been added successfully.`)
+async function handleAdd(data: any) {
+  const { state } = useAuth()
+
+  try {
+    const response = await fetch('http://localhost:8001/api/admin/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`,
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+
+    const result = await response.json()
+
+    if (response.ok) {
+      const newUser = {
+        id: result.user.id || `USR-${Math.random().toString(36).substr(2, 3).toUpperCase()}`,
+        name: `${data.first_name} ${data.last_name}`,
+        email: data.email,
+        role: data.role_name as Role,
+        status: 'Active',
+        dateAdded: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      }
+      users.value.push(newUser)
+      success('User created', `${newUser.name} has been added successfully.`)
+    } else {
+      error('Creation failed', result.message || 'Failed to create user.')
+    }
+  } catch (err) {
+    console.error('Network error creating user:', err)
+    error('Network Error', 'Could not connect to the server.')
+  }
 }
 
 function handleEdit(data: { id: string; name: string; email: string; role: Role; status: Status }) {

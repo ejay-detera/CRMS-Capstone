@@ -6,6 +6,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
+    networks:
+      - shared-capstone-network
 
   mongodb:
     image: mongo:7
@@ -13,11 +15,15 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    networks:
+      - shared-capstone-network
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    networks:
+      - shared-capstone-network
 
   elasticsearch:
     image: elasticsearch:8.13.0
@@ -28,6 +34,8 @@ services:
       - "9200:9200"
     volumes:
       - es_data:/usr/share/elasticsearch/data
+    networks:
+      - shared-capstone-network
 
   # ── Laravel Services ───────────────────────────
   vendor-management:
@@ -41,6 +49,8 @@ services:
       - mysql
       - mongodb
       - redis
+    networks:
+      - shared-capstone-network
 
   contract-management:
     build: ./services/contract-management
@@ -53,6 +63,8 @@ services:
       - mysql
       - mongodb
       - redis
+    networks:
+      - shared-capstone-network
 
   search:
     build: ./services/search
@@ -63,6 +75,8 @@ services:
       - "8003:8000"
     depends_on:
       - elasticsearch
+    networks:
+      - shared-capstone-network
 
   notification:
     build: ./services/notification
@@ -74,6 +88,8 @@ services:
     depends_on:
       - mysql
       - redis
+    networks:
+      - shared-capstone-network
 
   # ── Vue Frontend ───────────────────────────────
   web:
@@ -81,9 +97,16 @@ services:
     working_dir: /app
     volumes:
       - ./frontend/web:/app
-    ports:
-      - "5173:5173"
-    command: sh -c "npm install && npm run dev -- --host"
+    container_name: crms-web
+    expose:
+      - "5001"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5001"
+    networks:
+      - shared-capstone-network
+
+networks:
+  shared-capstone-network:
+    external: true
 
 volumes:
   mysql_data:

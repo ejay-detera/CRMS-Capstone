@@ -1,4 +1,6 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw, type RouteLocationNormalized } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@/composables/useToast'
 
 const routes: Array<RouteRecordRaw> = [
   // Admin Route Group
@@ -129,13 +131,73 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
-    redirect: '/admin/dashboard',
+    redirect: () => {
+      const { role } = useAuth()
+      if (role.value === 'Admin') return '/admin/dashboard'
+      if (role.value === 'Manager') return '/manager/dashboard'
+      if (role.value === 'Sales' || role.value === 'Employee') return '/sales/dashboard'
+      
+      // Fallback: escape CRMS router entirely and go to auth-module login
+      window.location.href = '/'
+      return '/'
+    },
   },
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/crms/'),
   routes,
+})
+
+router.beforeEach((to: RouteLocationNormalized) => {
+  const { isAuthenticated, role } = useAuth()
+  const { error } = useToast()
+
+  const requiresAuth = to.path.startsWith('/admin') ||
+    to.path.startsWith('/manager') ||
+    to.path.startsWith('/sales')
+
+  if (requiresAuth && !isAuthenticated.value) {
+    try {
+      throw new Error('Not authenticated')
+    } catch (err) {
+      error('Access Denied', 'You must log in to access this system.')
+      console.warn('User not authenticated, redirecting to auth-service:', to.path)
+      
+      // Delay redirection slightly so the user can see the error toast
+      setTimeout(() => {
+        window.location.href = '/'
+      }, 1500)
+      
+      return false
+    }
+  }
+
+  // Role-based access control (Strict Role Isolation)
+  // CRMS-capstone only supports 3 roles: Admin, Manager, and Sales (or Employee)
+  const allowedRoles = ['Admin', 'Manager', 'Sales', 'Employee']
+
+  // If the user's role isn't recognized by CRMS (e.g., IT Admin, Super Admin), block them entirely
+  if (!allowedRoles.includes(role.value || '')) {
+    return { name: 'not-found' }
+  }
+
+  // Admin can ONLY access /admin
+  if (to.path.startsWith('/admin') && role.value !== 'Admin') {
+    return { name: 'not-found' }
+  }
+
+  // Manager can ONLY access /manager
+  if (to.path.startsWith('/manager') && role.value !== 'Manager') {
+    return { name: 'not-found' }
+  }
+
+  // Sales/Employee can ONLY access /sales
+  if (to.path.startsWith('/sales') && !['Sales', 'Employee'].includes(role.value || '')) {
+    return { name: 'not-found' }
+  }
+
+  return true
 })
 
 export default router

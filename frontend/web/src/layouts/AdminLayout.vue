@@ -34,10 +34,12 @@ import {
 } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
 import { ref } from "vue";
+import { useAuth } from "@/composables/useAuth";
 import logoUrl from "@/assets/sbsi logo.png";
 
 const route  = useRoute();
 const router = useRouter();
+const { logout } = useAuth();
 
 // ── Nav groups ──────────────────────────────────────────────────────
 const navGroups = [
@@ -152,6 +154,7 @@ const searchQuery = ref("");
       <!-- Footer: Settings + Logout -->
       <SidebarFooter class="border-t border-white/10 p-3 space-y-1">
         <div
+          @click="logout"
           class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 cursor-pointer transition-colors group-data-[collapsible=icon]:justify-center"
         >
           <LogOut class="w-4 h-4 text-white group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5" />
@@ -229,7 +232,7 @@ const searchQuery = ref("");
                   <span>My Profile</span>
                 </button>
                 <div class="border-t border-black/5 my-1"></div>
-                <button class="w-full flex items-center gap-3 px-2 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors text-left">
+                <button @click="logout" class="w-full flex items-center gap-3 px-2 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors text-left">
                   <LogOut class="w-4 h-4" />
                   <span>Logout</span>
                 </button>
