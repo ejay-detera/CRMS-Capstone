@@ -11,6 +11,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Services\EncryptionService::class, function ($app) {
             return new \App\Services\EncryptionService();
         });
+        $this->app->singleton(\App\Services\DuplicateDetectionService::class, function ($app) {
+            return new \App\Services\DuplicateDetectionService();
+        });
+        $this->app->singleton(\App\Services\AuditLogService::class, function ($app) {
+            return new \App\Services\AuditLogService();
+        });
     }
 
     /**
