@@ -18,7 +18,7 @@ class AdminUserProxyTest extends TestCase
                 ['id' => 10, 'name' => 'Employee'],
                 ['id' => 11, 'name' => 'Manager']
             ]),
-            'http://auth-service:8000/api/admin/departments' => Http::response([
+            'http://auth-service:8000/api/admin/department-options' => Http::response([
                 ['id' => 50, 'name' => 'Finance']
             ]),
             'http://auth-service:8000/api/admin/users' => Http::response([

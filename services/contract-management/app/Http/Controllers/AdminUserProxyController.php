@@ -40,7 +40,7 @@ class AdminUserProxyController extends Controller
         // Resolve IDs
         $baseUrl = env('AUTH_SERVICE_URL', 'http://auth-service:8000/api');
         $roles = Http::withToken($token)->get("{$baseUrl}/admin/role-options")->json();
-        $depts = Http::withToken($token)->get("{$baseUrl}/admin/departments")->json();
+        $depts = Http::withToken($token)->get("{$baseUrl}/admin/department-options")->json();
 
         $roleId = collect($roles)->firstWhere('name', ucfirst(strtolower($request->role_name)))['id'] ?? null;
         $deptId = collect($depts)->firstWhere('name', 'Finance')['id'] ?? null;

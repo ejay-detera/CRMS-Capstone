@@ -55,7 +55,7 @@ class AdminUserProxyController extends Controller
         // We fetch current roles/depts from auth-service to get the correct IDs
         $token = $request->bearerToken();
         $roles = HttpProxy::get('admin/role-options', $token);
-        $depts = HttpProxy::get('admin/departments', $token);
+        $depts = HttpProxy::get('admin/department-options', $token);
 
         $roleId = $this->findIdByName($roles, $request->role_name);
         $deptId = $this->findIdByName($depts, $request->department_name);

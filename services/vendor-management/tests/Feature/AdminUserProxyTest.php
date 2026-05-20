@@ -24,7 +24,7 @@ class AdminUserProxyTest extends TestCase
                 ['id' => 11, 'name' => 'Manager']
             ]),
             // Mock fetching departments
-            'http://auth-service:8000/api/admin/departments' => Http::response([
+            'http://auth-service:8000/api/admin/department-options' => Http::response([
                 ['id' => 50, 'name' => 'Finance'],
                 ['id' => 51, 'name' => 'Marketing']
             ]),
