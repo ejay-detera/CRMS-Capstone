@@ -5,7 +5,7 @@ import {
 } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { requestStatusBadge, priorityBadge, fmtReqDate } from '@/types/contractRequest'
+import { requestStatusBadge, fmtReqDate } from '@/types/contractRequest'
 import type { ContractRequest } from '@/types/contractRequest'
 import { safeHref } from '@/utils/sanitize'
 
@@ -41,10 +41,7 @@ const emit = defineEmits<{
                   :class="requestStatusBadge[request.status]">
                   {{ request.status }}
                 </span>
-                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border"
-                  :class="priorityBadge[request.priority]">
-                  {{ request.priority }} priority
-                </span>
+
               </div>
             </div>
           </div>

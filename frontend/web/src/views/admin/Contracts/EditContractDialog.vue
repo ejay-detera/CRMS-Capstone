@@ -82,6 +82,7 @@ function submit() {
     approvalStatus:  form.approvalStatus as ContractApprovalStatus,
     workflowStatus:  form.workflowStatus,
     contractLink:    form.contractLink,
+    docs:            props.contract?.docs || [],
   })
   emit('update:open', false)
 }

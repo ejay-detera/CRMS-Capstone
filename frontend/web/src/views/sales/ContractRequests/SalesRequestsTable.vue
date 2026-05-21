@@ -12,7 +12,7 @@ import {
   Pagination, PaginationContent, PaginationEllipsis,
   PaginationItem, PaginationNext, PaginationPrevious,
 } from '@/components/ui/pagination'
-import { requestStatusBadge, priorityBadge, fmtReqDate } from '@/types/contractRequest'
+import { requestStatusBadge, fmtReqDate } from '@/types/contractRequest'
 import type { ContractRequest, RequestFilterTab } from '@/types/contractRequest'
 
 const props = defineProps<{
@@ -83,7 +83,7 @@ const filterTabs: { label: string; value: RequestFilterTab }[] = [
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Category</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Region</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Requested</TableHead>
-          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Priority</TableHead>
+
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
           <TableHead class="w-12 py-3" />
         </TableRow>
@@ -113,10 +113,7 @@ const filterTabs: { label: string; value: RequestFilterTab }[] = [
               <div class="h-4 w-20 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
 
-            <!-- Priority -->
-            <TableCell class="py-4">
-              <div class="h-5 w-16 bg-black/5 animate-pulse rounded-full"></div>
-            </TableCell>
+
 
             <!-- Status -->
             <TableCell class="py-4">
@@ -145,11 +142,7 @@ const filterTabs: { label: string; value: RequestFilterTab }[] = [
 
             <TableCell class="py-4 text-sm text-black/60 tabular-nums">{{ fmtReqDate(r.requestDate) }}</TableCell>
 
-            <TableCell class="py-4" @click.stop>
-              <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border" :class="priorityBadge[r.priority]">
-                {{ r.priority }}
-              </span>
-            </TableCell>
+
 
             <!-- Status + follow-up indicator -->
             <TableCell class="py-4" @click.stop>
@@ -196,7 +189,7 @@ const filterTabs: { label: string; value: RequestFilterTab }[] = [
           </TableRow>
 
           <TableRow v-if="paginated.length === 0">
-            <TableCell colspan="7" class="text-center py-16">
+            <TableCell colspan="6" class="text-center py-16">
               <p class="text-sm font-semibold text-black/28">No requests found</p>
               <p class="text-xs text-black/20 mt-1">Try a different filter or search term</p>
             </TableCell>

@@ -5,6 +5,7 @@ import { FileX } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
+import { useApiCache } from '@/composables/useApiCache'
 import { remainingDays } from '@/types/contract'
 import type { ContractApprovalStatus, ContractWorkflowStatus, ContractRegion, UploadedDoc } from '@/types/contract'
 import type { StoredContract } from '@/composables/useContractStore'
@@ -16,6 +17,7 @@ const route  = useRoute()
 const router = useRouter()
 const { state: authState } = useAuth()
 const { success, error } = useToast()
+const { state: cacheState, fetchContracts, updateContractInCache } = useApiCache()
 
 const id = route.params.id as string
 
@@ -62,23 +64,31 @@ function mapApiToContract(data: any): StoredContract {
   }
 }
 
+function loadLocalContract() {
+  const c = (cacheState.contracts || []).find(item => item.id === id)
+  if (c) {
+    contract.value = c as StoredContract
+  }
+}
+
 async function loadContract() {
-  loadingContract.value = true
+  loadLocalContract()
+  if (contract.value) {
+    loadingContract.value = false
+  } else {
+    loadingContract.value = true
+  }
+
   try {
-    const res = await fetch(`${apiBase}/contracts/${id}`, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${authState.token}`,
-      },
-    })
-    if (!res.ok) {
-      contract.value = null
-      return
-    }
-    const json = await res.json()
-    contract.value = mapApiToContract(json.data)
+    const isAdmin = route.path.startsWith('/admin')
+    const isManager = route.path.startsWith('/manager')
+    const userId = (isAdmin || isManager) ? undefined : authState.user?.id
+    await fetchContracts(userId)
+    loadLocalContract()
   } catch {
-    contract.value = null
+    if (!contract.value) {
+      contract.value = null
+    }
   } finally {
     loadingContract.value = false
   }
@@ -193,6 +203,7 @@ async function saveEdit() {
     }
 
     contract.value = mapApiToContract(data.data)
+    updateContractInCache(id, contract.value)
     isEditing.value = false
     success('Contract updated', 'Changes have been saved.')
   } catch {

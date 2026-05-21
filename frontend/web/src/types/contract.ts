@@ -26,6 +26,7 @@ export interface Contract {
   workflowStatus:  ContractWorkflowStatus | null
   contractLink:    string
   createdBy:       string
+  docs:            UploadedDoc[]
 }
 
 export const approvalStatusBadge: Record<ContractApprovalStatus, string> = {

@@ -1,7 +1,7 @@
 import { reactive, watch } from 'vue'
 import { useAuth } from './useAuth'
 import type { Contract, ContractRegion, ContractApprovalStatus, ContractWorkflowStatus } from '@/types/contract'
-import type { ContractRequest, RequestStatus, RequestPriority } from '@/types/contractRequest'
+import type { ContractRequest, RequestStatus } from '@/types/contractRequest'
 
 interface CacheState {
   contracts: Contract[] | null
@@ -93,6 +93,11 @@ function mapApiContract(d: any, currentUserId: number | null, firstName?: string
     workflowStatus:  (d.workflow_status ?? null)       as ContractWorkflowStatus | null,
     contractLink:    '',
     createdBy,
+    docs: (d.documents ?? []).map((doc: any) => ({
+      name: doc.file_name,
+      type: doc.file_type as 'pdf' | 'docx',
+      size: doc.file_size ?? 0,
+    })),
   }
 }
 
@@ -118,12 +123,19 @@ function mapApiToRequest(d: any, currentUserId: number | null, firstName?: strin
     requestDate:     d.created_at     ?? '',
     startDate:       d.start_date     ?? '',
     endDate:         d.end_date       ?? '',
-    priority:        'Medium' as RequestPriority,
     status:          d.workflow_status ? 'Under Review' : (STATUS_MAP[d.approval_status ?? 'Pending'] ?? 'Pending'),
     notes:           '',
     rejectionReason: '',
     contractLink:    '',
     createdBy,
+    docs: (d.documents ?? []).map((doc: any) => ({
+      name: doc.file_name,
+      type: doc.file_type as 'pdf' | 'docx',
+      size: doc.file_size ?? 0,
+    })),
+    itemCode:        d.item_code      ?? '',
+    serialNo:        d.serial_number  ?? '',
+    sbuNumber:       d.sbu_number     ?? '',
   }
 }
 
@@ -264,6 +276,15 @@ function updateRequestStatusInCache(id: string, status: RequestStatus, patch: Pa
   }
 }
 
+function updateRequestInCache(id: string, patch: Partial<ContractRequest>) {
+  if (state.requests) {
+    const idx = state.requests.findIndex(r => r.id === id)
+    if (idx !== -1) {
+      state.requests[idx] = { ...state.requests[idx], ...patch }
+    }
+  }
+}
+
 export function useApiCache() {
   validateCacheCredentials()
 
@@ -277,5 +298,6 @@ export function useApiCache() {
     updateContractInCache,
     deleteContractFromCache,
     updateRequestStatusInCache,
+    updateRequestInCache,
   }
 }

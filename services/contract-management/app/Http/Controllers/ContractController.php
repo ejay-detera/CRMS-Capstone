@@ -58,7 +58,7 @@ class ContractController extends Controller
      */
     public function indexRequests(Request $request)
     {
-        $query = Contract::with(['category', 'approvalStatus', 'workflowStatus']);
+        $query = Contract::with(['documents', 'category', 'approvalStatus', 'workflowStatus']);
 
         // Uses index on created_by (and composite idx_contracts_owner_approval when status is filtered)
         if ($request->filled('created_by')) {
@@ -94,6 +94,13 @@ class ContractController extends Controller
                 'end_date'         => $c->end_date?->toDateString(),
                 'created_at'       => $c->created_at?->toDateString(),
                 'created_by'       => $c->created_by,
+                'documents'        => $c->documents->map(fn ($d) => [
+                    'document_id'  => $d->document_id,
+                    'file_name'    => $d->file_name,
+                    'file_type'    => $d->file_type,
+                    'file_size'    => $d->file_size,
+                    'document_url' => $d->document_url,
+                ])->values(),
             ])->values(),
         ]);
     }
