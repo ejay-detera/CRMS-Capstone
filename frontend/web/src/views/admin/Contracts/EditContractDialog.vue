@@ -4,7 +4,7 @@ import { FilePenLine } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import type { Contract, ContractStatus, ContractRegion } from '@/types/contract'
+import type { Contract, ContractWorkflowStatus, ContractApprovalStatus, ContractRegion } from '@/types/contract'
 
 const props = defineProps<{ open: boolean; contract: Contract | null }>()
 const emit  = defineEmits<{
@@ -21,14 +21,15 @@ const form = reactive({
   region:          '' as ContractRegion | '',
   startDate:       '',
   endDate:         '',
-  status:          '' as ContractStatus | '',
+  approvalStatus:  '' as ContractApprovalStatus | '',
+  workflowStatus:  null as ContractWorkflowStatus | null,
   contractLink:    '',
 })
 
 const touched = reactive({
   businessPartner: false, category: false, itemCode: false,
   description: false, serialNo: false, region: false,
-  startDate: false, endDate: false, status: false, contractLink: false,
+  startDate: false, endDate: false, workflowStatus: false, contractLink: false,
 })
 
 const dateError = computed(() =>
@@ -51,7 +52,8 @@ watch(() => props.contract, c => {
     region:          c.region,
     startDate:       c.startDate,
     endDate:         c.endDate,
-    status:          c.status,
+    approvalStatus:  c.approvalStatus,
+    workflowStatus:  c.workflowStatus,
     contractLink:    c.contractLink,
   })
   Object.keys(touched).forEach(k => ((touched as Record<string, boolean>)[k] = false))
@@ -67,7 +69,7 @@ function submit() {
   Object.keys(touched).forEach(k => ((touched as Record<string, boolean>)[k] = true))
   if (!form.businessPartner || !form.category || !form.itemCode || !form.description ||
       !form.serialNo || !form.region || !form.startDate || !form.endDate ||
-      !form.status || dateError.value || !urlValid.value) return
+      dateError.value || !urlValid.value) return
   emit('submit', {
     businessPartner: form.businessPartner,
     category:        form.category,
@@ -77,7 +79,8 @@ function submit() {
     region:          form.region  as ContractRegion,
     startDate:       form.startDate,
     endDate:         form.endDate,
-    status:          form.status  as ContractStatus,
+    approvalStatus:  form.approvalStatus as ContractApprovalStatus,
+    workflowStatus:  form.workflowStatus,
     contractLink:    form.contractLink,
   })
   emit('update:open', false)
@@ -219,23 +222,23 @@ function submit() {
           </div>
         </div>
 
-        <!-- Status -->
+        <!-- Workflow Status -->
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">
-            Status <span class="text-red-500">*</span>
+            Workflow Status
+            <span class="normal-case font-normal text-black/30 ml-1">(optional)</span>
           </label>
-          <Select v-model="form.status" @update:model-value="touched.status = true">
-            <SelectTrigger class="h-9 rounded-md text-sm"
-              :class="touched.status && !form.status ? 'border-red-400' : 'border-black/12 focus:border-[#2E85D8]'">
-              <SelectValue placeholder="Select status" />
+          <Select v-model="form.workflowStatus" @update:model-value="touched.workflowStatus = true">
+            <SelectTrigger class="h-9 rounded-md text-sm border-black/12 focus:border-[#2E85D8]">
+              <SelectValue placeholder="No workflow status yet" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem :value="null">— None (Pending) —</SelectItem>
               <SelectItem value="Notarized PDF">Notarized PDF</SelectItem>
               <SelectItem value="Client Review">Client Review</SelectItem>
               <SelectItem value="SBSI Review">SBSI Review</SelectItem>
             </SelectContent>
           </Select>
-          <p v-if="touched.status && !form.status" class="text-xs text-red-500">Required.</p>
         </div>
 
         <!-- Contract Link -->
