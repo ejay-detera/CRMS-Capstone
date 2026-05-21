@@ -18,7 +18,8 @@ class Contract extends Model
     protected $fillable = [
         'category_id',
         'supplier_id',
-        'status_id',
+        'approval_status_id',
+        'workflow_status_id',
         'bp_name',
         'sbu_number',
         'item_code',
@@ -47,8 +48,13 @@ class Contract extends Model
         return $this->belongsTo(ContractCategory::class, 'category_id', 'category_id');
     }
 
-    public function status(): BelongsTo
+    public function approvalStatus(): BelongsTo
     {
-        return $this->belongsTo(ContractStatus::class, 'status_id', 'status_id');
+        return $this->belongsTo(ContractApprovalStatus::class, 'approval_status_id', 'approval_status_id');
+    }
+
+    public function workflowStatus(): BelongsTo
+    {
+        return $this->belongsTo(ContractStatus::class, 'workflow_status_id', 'status_id');
     }
 }

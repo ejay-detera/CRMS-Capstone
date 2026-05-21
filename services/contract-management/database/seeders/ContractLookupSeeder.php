@@ -36,5 +36,14 @@ class ContractLookupSeeder extends Seeder
                 $status
             );
         }
+
+        $approvalStatuses = ['Pending', 'Approved', 'Rejected'];
+
+        foreach ($approvalStatuses as $name) {
+            DB::table('contract_approval_statuses')->updateOrInsert(
+                ['status_name' => $name],
+                ['status_name' => $name]
+            );
+        }
     }
 }

@@ -1,4 +1,5 @@
-export type ContractStatus = 'Notarized PDF' | 'Client Review' | 'SBSI Review'
+export type ContractWorkflowStatus  = 'Notarized PDF' | 'Client Review' | 'SBSI Review'
+export type ContractApprovalStatus  = 'Pending' | 'Approved' | 'Rejected'
 
 export interface UploadedDoc {
   file?:       File
@@ -21,12 +22,19 @@ export interface Contract {
   region:          ContractRegion
   startDate:       string
   endDate:         string
-  status:          ContractStatus
+  approvalStatus:  ContractApprovalStatus
+  workflowStatus:  ContractWorkflowStatus | null
   contractLink:    string
   createdBy:       string
 }
 
-export const statusBadge: Record<ContractStatus, string> = {
+export const approvalStatusBadge: Record<ContractApprovalStatus, string> = {
+  'Pending':  'bg-amber-50 text-amber-600 border-amber-200',
+  'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Rejected': 'bg-red-50 text-red-600 border-red-200',
+}
+
+export const workflowStatusBadge: Record<ContractWorkflowStatus, string> = {
   'Notarized PDF': 'bg-black/5 text-black/60 border-black/12',
   'Client Review': 'bg-emerald-50 text-emerald-700 border-emerald-200',
   'SBSI Review':   'bg-red-50 text-red-600 border-red-200',

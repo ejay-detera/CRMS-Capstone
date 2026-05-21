@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { remainingDays } from '@/types/contract'
-import type { ContractStatus, ContractRegion, UploadedDoc } from '@/types/contract'
+import type { ContractApprovalStatus, ContractWorkflowStatus, ContractRegion, UploadedDoc } from '@/types/contract'
 import type { StoredContract } from '@/composables/useContractStore'
 import ContractDetailHeader     from './ContractDetailHeader.vue'
 import ContractInfoSection      from './ContractInfoSection.vue'
@@ -44,7 +44,8 @@ function mapApiToContract(data: any): StoredContract {
     region:          (data.region ?? '') as ContractRegion,
     startDate:       data.start_date ?? '',
     endDate:         data.end_date ?? '',
-    status:          (data.status ?? 'Notarized PDF') as ContractStatus,
+    approvalStatus:  (data.approval_status ?? 'Pending') as ContractApprovalStatus,
+    workflowStatus:  (data.workflow_status ?? null) as ContractWorkflowStatus | null,
     contractLink:    '',
     createdBy,
     docs: (data.documents ?? []).map((d: any): UploadedDoc => ({

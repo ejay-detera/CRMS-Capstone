@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, FileText, FilePenLine, Clock, AlertTriangle, Loader2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import { statusBadge } from '@/types/contract'
+import { approvalStatusBadge, workflowStatusBadge } from '@/types/contract'
 import type { StoredContract } from '@/composables/useContractStore'
 
 const props = defineProps<{
@@ -39,8 +39,11 @@ function daysDisplay(days: number) {
         <p class="text-sm text-black/45 mt-0.5">{{ contract.category }}</p>
         <div class="flex items-center gap-2 mt-2 flex-wrap">
           <span class="text-[10px] font-mono text-black/30 bg-black/4 px-1.5 py-0.5 rounded">{{ contract.id }}</span>
-          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" :class="statusBadge[contract.status]">
-            {{ contract.status }}
+          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" :class="approvalStatusBadge[contract.approvalStatus]">
+            {{ contract.approvalStatus }}
+          </span>
+          <span v-if="contract.workflowStatus" class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" :class="workflowStatusBadge[contract.workflowStatus]">
+            {{ contract.workflowStatus }}
           </span>
           <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border"
             :class="daysDisplay(days).cls">

@@ -2,7 +2,7 @@
 import { FileText, ExternalLink, MapPin, Hash, Cpu, Barcode, CalendarDays, Clock, AlertTriangle, User } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { statusBadge, fmtDate } from '@/types/contract'
+import { approvalStatusBadge, fmtDate } from '@/types/contract'
 import type { Contract } from '@/types/contract'
 import { safeHref } from '@/utils/sanitize'
 

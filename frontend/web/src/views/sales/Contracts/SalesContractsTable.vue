@@ -12,7 +12,7 @@ import {
   Pagination, PaginationContent, PaginationEllipsis,
   PaginationItem, PaginationNext, PaginationPrevious,
 } from '@/components/ui/pagination'
-import { statusBadge, fmtDate } from '@/types/contract'
+import { approvalStatusBadge, fmtDate } from '@/types/contract'
 import type { Contract, FilterTab } from '@/types/contract'
 
 type ContractWithDays = Contract & { days: number }
@@ -129,8 +129,8 @@ function daysLabel(days: number) {
           <!-- Status -->
           <TableCell class="py-4" @click.stop>
             <span class="text-xs font-medium px-2.5 py-0.5 rounded-full border whitespace-nowrap"
-              :class="statusBadge[c.status]">
-              {{ c.status }}
+              :class="approvalStatusBadge[c.approvalStatus]">
+              {{ c.approvalStatus }}
             </span>
           </TableCell>
 

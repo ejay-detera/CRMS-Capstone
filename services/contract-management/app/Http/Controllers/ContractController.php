@@ -12,19 +12,20 @@ class ContractController extends Controller
     private function formatContract(Contract $contract): array
     {
         return [
-            'contract_id'   => $contract->contract_id,
-            'bp_name'       => $contract->bp_name,
-            'category'      => $contract->category?->category_name,
-            'status'        => $contract->status?->status_name,
-            'item_code'     => $contract->item_code,
-            'description'   => $contract->description,
-            'serial_number' => $contract->serial_number,
-            'sbu_number'    => $contract->sbu_number,
-            'region'        => $contract->region,
-            'start_date'    => $contract->start_date?->toDateString(),
-            'end_date'      => $contract->end_date?->toDateString(),
-            'created_by'    => $contract->created_by,
-            'documents'     => $contract->documents->map(fn ($d) => [
+            'contract_id'     => $contract->contract_id,
+            'bp_name'         => $contract->bp_name,
+            'category'        => $contract->category?->category_name,
+            'approval_status' => $contract->approvalStatus?->status_name,
+            'workflow_status' => $contract->workflowStatus?->status_name,
+            'item_code'       => $contract->item_code,
+            'description'     => $contract->description,
+            'serial_number'   => $contract->serial_number,
+            'sbu_number'      => $contract->sbu_number,
+            'region'          => $contract->region,
+            'start_date'      => $contract->start_date?->toDateString(),
+            'end_date'        => $contract->end_date?->toDateString(),
+            'created_by'      => $contract->created_by,
+            'documents'       => $contract->documents->map(fn ($d) => [
                 'document_id'  => $d->document_id,
                 'file_name'    => $d->file_name,
                 'file_type'    => $d->file_type,
@@ -36,7 +37,7 @@ class ContractController extends Controller
 
     public function show(int $id)
     {
-        $contract = Contract::with(['documents', 'category', 'status'])->findOrFail($id);
+        $contract = Contract::with(['documents', 'category', 'approvalStatus', 'workflowStatus'])->findOrFail($id);
 
         return response()->json([
             'data' => $this->formatContract($contract),
@@ -69,14 +70,14 @@ class ContractController extends Controller
             return response()->json(['message' => 'Invalid category.'], 422);
         }
 
-        $statusId = DB::table('contract_statuses')
-            ->where('status_name', 'Notarized PDF')
-            ->value('status_id');
+        $approvalStatusId = DB::table('contract_approval_statuses')
+            ->where('status_name', 'Pending')
+            ->value('approval_status_id');
 
         $contract = Contract::create([
-            'category_id'   => $categoryId,
-            'status_id'     => $statusId,
-            'bp_name'       => $request->bp_name,
+            'category_id'        => $categoryId,
+            'approval_status_id' => $approvalStatusId,
+            'bp_name'            => $request->bp_name,
             'item_code'     => $request->item_code,
             'description'   => $request->description,
             'serial_number' => $request->serial_number,
@@ -142,7 +143,7 @@ class ContractController extends Controller
             'end_date'      => $request->end_date,
         ]);
 
-        $contract->load(['documents', 'category', 'status']);
+        $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus']);
 
         return response()->json([
             'message' => 'Contract updated.',
