@@ -1,0 +1,40 @@
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Tests\TestCase;
+
+class AuthCommunicationTest extends TestCase
+{
+    public function test_it_communicates_with_auth_service_for_search()
+    {
+        Http::fake([
+            'http://auth-service:8000/api/internal/verify-token' => Http::response([
+                'valid' => true,
+                'user' => [
+                    'id' => 1,
+                    'email' => 'user@example.com',
+                    'role' => 'Sales',
+                    'permissions' => []
+                ]
+            ], 200)
+        ]);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer user-token',
+            'Accept' => 'application/json',
+        ])->getJson('/api/search?q=test');
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('message', 'Search results retrieved');
+    }
+
+    public function test_it_blocks_search_without_token()
+    {
+        $response = $this->getJson('/api/search');
+
+        $response->assertStatus(401);
+    }
+}

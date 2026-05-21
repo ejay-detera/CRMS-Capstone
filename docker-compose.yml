@@ -6,6 +6,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
+    networks:
+      - shared-capstone-network
 
   mongodb:
     image: mongo:7
@@ -13,11 +15,15 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    networks:
+      - shared-capstone-network
 
   redis:
-    image: redis:7-alpine
+    image: redis:7
     ports:
       - "6379:6379"
+    networks:
+      - shared-capstone-network
 
   elasticsearch:
     image: elasticsearch:8.13.0
@@ -28,6 +34,8 @@ services:
       - "9200:9200"
     volumes:
       - es_data:/usr/share/elasticsearch/data
+    networks:
+      - shared-capstone-network
 
   # ── Laravel Services ───────────────────────────
   vendor-management:
@@ -36,10 +44,13 @@ services:
       - ./services/vendor-management:/var/www/html
     ports:
       - "8001:8000"
+    command: sh -c "export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       - mysql
       - mongodb
       - redis
+    networks:
+      - shared-capstone-network
 
   contract-management:
     build: ./services/contract-management
@@ -47,10 +58,13 @@ services:
       - ./services/contract-management:/var/www/html
     ports:
       - "8002:8000"
+    command: sh -c "export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       - mysql
       - mongodb
       - redis
+    networks:
+      - shared-capstone-network
 
   search:
     build: ./services/search
@@ -58,8 +72,11 @@ services:
       - ./services/search:/var/www/html
     ports:
       - "8003:8000"
+    command: sh -c "export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       - elasticsearch
+    networks:
+      - shared-capstone-network
 
   notification:
     build: ./services/notification
@@ -67,9 +84,12 @@ services:
       - ./services/notification:/var/www/html
     ports:
       - "8004:8000"
+    command: sh -c "export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       - mysql
       - redis
+    networks:
+      - shared-capstone-network
 
   # ── Vue Frontend ───────────────────────────────
   web:
@@ -77,9 +97,17 @@ services:
     working_dir: /app
     volumes:
       - ./frontend/web:/app
-    ports:
-      - "5173:5173"
-    command: sh -c "npm install && npm run dev -- --host"
+      - /app/node_modules
+    container_name: crms-web
+    expose:
+      - "5001"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5001"
+    networks:
+      - shared-capstone-network
+
+networks:
+  shared-capstone-network:
+    external: true
 
 volumes:
   mysql_data:

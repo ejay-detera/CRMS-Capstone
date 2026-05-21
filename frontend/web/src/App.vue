@@ -1,7 +1,14 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import Toaster from '@/components/ui/toast/Toaster.vue'
+import LoaderOverlay from '@/components/shared/LoaderOverlay.vue'
 </script>
 
 <template>
-  <HelloWorld />
+  <div class="min-h-screen bg-gray-50">
+    <main>
+      <router-view />
+    </main>
+    <Toaster />
+    <LoaderOverlay />
+  </div>
 </template>

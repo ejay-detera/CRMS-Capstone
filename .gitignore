@@ -36,3 +36,13 @@ Thumbs.db
 docker/mysql_data/
 docker/mongo_data/
 docker/es_data/
+
+# Root Environment File
+.env
+
+# Ai context
+context/
+.context/
+
+# Claude Code local settings (per-developer, not shared)
+.claude/settings.local.json
