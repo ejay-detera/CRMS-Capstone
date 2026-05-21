@@ -1,29 +1,66 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
+import { Loader2 } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
 import RequestsTable      from './RequestsTable.vue'
 import RequestDetailDialog from './RequestDetailDialog.vue'
-import type { ContractRequest, RequestFilterTab } from '@/types/contractRequest'
+import type { ContractRequest, RequestFilterTab, RequestStatus, RequestPriority } from '@/types/contractRequest'
 
-const { success } = useToast()
+const { success, error } = useToast()
+const { state: authState } = useAuth()
 
-const requests = ref<ContractRequest[]>([
-  { id: 'REQ-001', businessPartner: 'Philippine National Bank', category: 'Service Agreement',     description: 'ATM maintenance unit for Luzon region branches.',               region: 'Luzon',    requestDate: '2026-01-15', startDate: '2026-03-01', endDate: '2027-02-28', priority: 'High',   status: 'Pending',      notes: 'Urgent — required before Q1 audit.', rejectionReason: '', contractLink: '#', createdBy: 'Maria Santos'  },
-  { id: 'REQ-002', businessPartner: 'Globe Telecom',            category: 'Partnership Agreement', description: 'Network infrastructure expansion across Luzon corridors.',      region: 'Luzon',    requestDate: '2026-01-18', startDate: '2026-04-01', endDate: '2027-03-31', priority: 'High',   status: 'Under Review', notes: 'Awaiting technical review from IT.', rejectionReason: '', contractLink: '#', createdBy: 'Alex Rivera'   },
-  { id: 'REQ-003', businessPartner: 'MedLine Philippines',      category: 'Supply Contract',       description: 'Surgical supply agreement for Luzon hospitals.',                region: 'Luzon',    requestDate: '2025-12-10', startDate: '2026-02-01', endDate: '2027-01-31', priority: 'Medium', status: 'Approved',     notes: '', rejectionReason: '', contractLink: '#', createdBy: 'John Doe'      },
-  { id: 'REQ-004', businessPartner: 'BDO Unibank',              category: 'Equipment Lease',       description: 'Vault security system lease for Makati branch.',                region: 'Luzon',    requestDate: '2025-11-28', startDate: '2026-01-15', endDate: '2026-07-15', priority: 'Low',    status: 'Rejected',     notes: '', rejectionReason: 'Budget constraints for this fiscal year. Please resubmit next quarter.', contractLink: '#', createdBy: 'Sarah Jenkins' },
-  { id: 'REQ-005', businessPartner: 'PLDT',                     category: 'Service Agreement',     description: 'Fiber optic maintenance contract for Mindanao operations.',     region: 'Mindanao', requestDate: '2026-02-01', startDate: '2026-05-01', endDate: '2027-04-30', priority: 'Medium', status: 'Pending',      notes: 'Renewal of previous contract.', rejectionReason: '', contractLink: '#', createdBy: 'Emma Wilson'   },
-  { id: 'REQ-006', businessPartner: 'Bio-Tech Logistics',       category: 'Supply Contract',       description: 'Cold chain equipment supply for vaccine distribution.',          region: 'Luzon',    requestDate: '2026-01-22', startDate: '2026-03-15', endDate: '2026-09-15', priority: 'High',   status: 'Under Review', notes: 'Temperature-sensitive logistics required.', rejectionReason: '', contractLink: '#', createdBy: 'Maria Santos'  },
-  { id: 'REQ-007', businessPartner: 'Cebu Pacific Air',         category: 'Service Agreement',     description: 'Cargo handling equipment services for Visayas routes.',          region: 'Visayas',  requestDate: '2025-12-20', startDate: '2026-02-15', endDate: '2026-08-15', priority: 'Low',    status: 'Approved',     notes: '', rejectionReason: '', contractLink: '#', createdBy: 'Alex Rivera'   },
-  { id: 'REQ-008', businessPartner: 'SM Prime Holdings',        category: 'Equipment Lease',       description: 'HVAC system lease for SM Mall of Asia expansion units.',         region: 'Luzon',    requestDate: '2026-02-05', startDate: '2026-04-01', endDate: '2027-03-31', priority: 'Medium', status: 'Pending',      notes: 'Property management approved on their end.', rejectionReason: '', contractLink: '#', createdBy: 'John Doe'      },
-  { id: 'REQ-009', businessPartner: 'Global Pharma Inc.',       category: 'Supply Contract',       description: 'Pharmaceutical dispenser units for Visayas distribution.',       region: 'Visayas',  requestDate: '2026-01-30', startDate: '2026-03-20', endDate: '2026-09-20', priority: 'High',   status: 'Under Review', notes: 'Compliance documents submitted.', rejectionReason: '', contractLink: '#', createdBy: 'Sarah Jenkins' },
-  { id: 'REQ-010', businessPartner: 'BioGenesis Research',      category: 'Equipment Maintenance', description: 'PCR machine maintenance agreement for Mindanao labs.',           region: 'Mindanao', requestDate: '2025-11-15', startDate: '2026-01-01', endDate: '2026-12-31', priority: 'Medium', status: 'Approved',     notes: '', rejectionReason: '', contractLink: '#', createdBy: 'Emma Wilson'   },
-  { id: 'REQ-011', businessPartner: 'Stellar Lab Equipment',    category: 'Equipment Lease',       description: 'Centrifuge model X200 lease for clinical laboratory.',            region: 'Luzon',    requestDate: '2025-10-30', startDate: '2026-01-01', endDate: '2026-06-30', priority: 'Low',    status: 'Rejected',     notes: '', rejectionReason: 'Vendor not on approved supplier list. Procurement review required.', contractLink: '#', createdBy: 'Maria Santos'  },
-  { id: 'REQ-012', businessPartner: 'PharmaCare Dist.',         category: 'Supply Contract',       description: 'IV fluid supply for hospital network across Luzon.',             region: 'Luzon',    requestDate: '2026-02-10', startDate: '2026-04-15', endDate: '2027-04-14', priority: 'High',   status: 'Pending',      notes: 'Critical supply — stock running low.', rejectionReason: '', contractLink: '#', createdBy: 'Alex Rivera'   },
-  { id: 'REQ-013', businessPartner: 'Metrobank',                category: 'Service Agreement',     description: 'Cash counting machine service agreement for Mindanao offices.',  region: 'Mindanao', requestDate: '2025-12-05', startDate: '2026-02-01', endDate: '2027-01-31', priority: 'Medium', status: 'Approved',     notes: '', rejectionReason: '', contractLink: '#', createdBy: 'John Doe'      },
-  { id: 'REQ-014', businessPartner: 'LabTech Solutions',        category: 'Equipment Maintenance', description: 'Spectrophotometer SPX-5 calibration and maintenance.',           region: 'Visayas',  requestDate: '2026-02-12', startDate: '2026-05-01', endDate: '2027-04-30', priority: 'Medium', status: 'Under Review', notes: 'ISO certification review in progress.', rejectionReason: '', contractLink: '#', createdBy: 'Sarah Jenkins' },
-  { id: 'REQ-015', businessPartner: 'Philippine Airlines',      category: 'Partnership Agreement', description: 'Ground support equipment partnership for Visayas airports.',      region: 'Visayas',  requestDate: '2026-01-25', startDate: '2026-04-01', endDate: '2026-10-01', priority: 'High',   status: 'Pending',      notes: 'Board approval pending.', rejectionReason: '', contractLink: '#', createdBy: 'Emma Wilson'   },
-])
+const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+
+const requests = ref<ContractRequest[]>([])
+const loading  = ref(true)
+
+// Map contract API approval_status → request status label
+const STATUS_MAP: Record<string, RequestStatus> = {
+  'Pending':  'Pending',
+  'Approved': 'Approved',
+  'Rejected': 'Rejected',
+}
+
+function mapApiToRequest(d: any): ContractRequest {
+  return {
+    id:              `CTR-${String(d.contract_id).padStart(3, '0')}`,
+    businessPartner: d.bp_name        ?? '',
+    category:        d.category       ?? '',
+    description:     d.description    ?? '',
+    region:          (d.region        ?? 'Luzon') as ContractRequest['region'],
+    requestDate:     d.created_at     ?? '',
+    startDate:       d.start_date     ?? '',
+    endDate:         d.end_date       ?? '',
+    priority:        'Medium' as RequestPriority,   // priority not yet in DB; default
+    status:          STATUS_MAP[d.approval_status ?? 'Pending'] ?? 'Pending',
+    notes:           '',
+    rejectionReason: '',
+    contractLink:    '',
+    createdBy:       d.created_by ? `User #${d.created_by}` : '—',
+  }
+}
+
+async function fetchRequests() {
+  loading.value = true
+  try {
+    const res = await fetch(`${apiBase}/contract-requests`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+    })
+    if (!res.ok) { error('Failed to load', 'Could not fetch contract requests.'); return }
+    const json = await res.json()
+    requests.value = (json.data ?? []).map(mapApiToRequest)
+  } catch {
+    error('Network error', 'Could not reach the server.')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchRequests)
 
 const activeFilter = ref<RequestFilterTab>('all')
 const searchQuery  = ref('')
@@ -72,6 +109,7 @@ const showDetail    = ref(false)
 const detailTarget  = ref<ContractRequest | null>(null)
 function openDetail(r: ContractRequest) { detailTarget.value = r; showDetail.value = true }
 
+// Optimistic local-state updates — PATCH endpoints can be wired later
 function handleApprove(id: string) {
   const r = requests.value.find(x => x.id === id)
   if (!r) return
@@ -119,8 +157,13 @@ function handleSetReviewing(id: string) {
       </div>
     </div>
 
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center py-24 text-black/30">
+      <Loader2 class="w-8 h-8 animate-spin" />
+    </div>
+
     <!-- Table -->
-    <RequestsTable
+    <RequestsTable v-else
       :paginated="paginated"
       :filtered="filtered"
       :active-filter="activeFilter"

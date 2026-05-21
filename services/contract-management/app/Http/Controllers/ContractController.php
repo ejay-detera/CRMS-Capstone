@@ -39,15 +39,58 @@ class ContractController extends Controller
     {
         $query = Contract::with(['documents', 'category', 'approvalStatus', 'workflowStatus']);
 
-        // If caller passes created_by (sales rep filtering own contracts)
+        // Uses idx_contracts_owner_approval composite index when filtering by sales rep
         if ($request->filled('created_by')) {
             $query->where('created_by', $request->created_by);
         }
 
-        $contracts = $query->orderByDesc('contract_id')->get();
+        // Order newest-first; MySQL can use idx_contracts_approval_created or idx_contracts_owner_approval
+        $contracts = $query->orderByDesc('created_at')->get();
 
         return response()->json([
             'data' => $contracts->map(fn ($c) => $this->formatContract($c))->values(),
+        ]);
+    }
+
+    /**
+     * Contract Requests view — returns contracts grouped by approval status.
+     * Hits idx_contracts_approval_created composite index for fast ordered scans.
+     */
+    public function indexRequests(Request $request)
+    {
+        $query = Contract::with(['category', 'approvalStatus', 'workflowStatus'])
+            ->orderByDesc('created_at'); // uses idx_contracts_approval_created index
+
+        // Optional: filter to a single approval status
+        if ($request->filled('approval_status')) {
+            $approvalStatusId = \DB::table('contract_approval_statuses')
+                ->where('status_name', $request->approval_status)
+                ->value('approval_status_id');
+
+            if ($approvalStatusId) {
+                $query->where('approval_status_id', $approvalStatusId);
+            }
+        }
+
+        $contracts = $query->get();
+
+        return response()->json([
+            'data' => $contracts->map(fn ($c) => [
+                'contract_id'      => $c->contract_id,
+                'bp_name'          => $c->bp_name,
+                'category'         => $c->category?->category_name,
+                'approval_status'  => $c->approvalStatus?->status_name,
+                'workflow_status'  => $c->workflowStatus?->status_name,
+                'item_code'        => $c->item_code,
+                'description'      => $c->description,
+                'serial_number'    => $c->serial_number,
+                'sbu_number'       => $c->sbu_number,
+                'region'           => $c->region,
+                'start_date'       => $c->start_date?->toDateString(),
+                'end_date'         => $c->end_date?->toDateString(),
+                'created_at'       => $c->created_at?->toDateString(),
+                'created_by'       => $c->created_by,
+            ])->values(),
         ]);
     }
 

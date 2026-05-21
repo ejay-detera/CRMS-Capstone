@@ -6,7 +6,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth.internal'])->group(function () {
     
-    Route::get('/contracts', [ContractController::class, 'index']);
+    Route::get('/contracts',          [ContractController::class, 'index']);
+    Route::get('/contract-requests',  [ContractController::class, 'indexRequests']);
+
 
     // TODO: restore permission middleware once create-contracts/view-contracts are seeded in auth-service
     Route::post('/contracts', [ContractController::class, 'store']);
