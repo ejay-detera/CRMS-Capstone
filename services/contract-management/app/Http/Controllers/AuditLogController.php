@@ -24,7 +24,7 @@ class AuditLogController extends Controller
             $usersResponse = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Authorization' => 'Bearer ' . $token,
-                'X-Internal-Service' => 'vendor-management',
+                'X-Internal-Service' => 'contract-management',
             ])->timeout(3)->get(env('AUTH_SERVICE_URL', 'http://auth-service:8000/api') . '/admin/users', [
                 'per_page' => 100
             ]);
@@ -90,7 +90,6 @@ class AuditLogController extends Controller
             $userEmail = $emailMap[$log->user_id] ?? '';
             $userRole = $roleMap[$log->user_id] ?? 'Finance';
 
-            // Clean action names for readability if needed, but keep original for code logic
             $description = '';
             if ($log->action === 'created') {
                 $description = "Created {$log->entity_type} #{$log->entity_id}";

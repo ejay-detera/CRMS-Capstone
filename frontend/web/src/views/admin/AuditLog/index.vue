@@ -42,7 +42,7 @@ async function fetchAuditLogs() {
       params.append('search', searchQuery.value.trim())
     }
 
-    const res = await fetch(`http://localhost:8001/api/audit-logs?${params.toString()}`, {
+    const res = await fetch(`http://localhost:8002/api/audit-logs?${params.toString()}`, {
       headers: {
         'Authorization': `Bearer ${state.token}`,
         'X-Session-ID': localStorage.getItem('session_id') || '',
@@ -60,7 +60,7 @@ async function fetchAuditLogs() {
     }
   } catch (err) {
     console.error('Failed to fetch audit logs:', err)
-    showError('Network Error', 'Could not connect to the vendor management service.')
+    showError('Network Error', 'Could not connect to the contract management service.')
   } finally {
     isFetching.value = false
   }
@@ -113,7 +113,7 @@ async function exportXLSX() {
       params.append('search', searchQuery.value.trim())
     }
 
-    const res = await fetch(`http://localhost:8001/api/audit-logs?${params.toString()}`, {
+    const res = await fetch(`http://localhost:8002/api/audit-logs?${params.toString()}`, {
       headers: {
         'Authorization': `Bearer ${state.token}`,
         'X-Session-ID': localStorage.getItem('session_id') || '',

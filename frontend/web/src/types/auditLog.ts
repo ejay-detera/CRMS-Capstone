@@ -4,8 +4,8 @@ export type ActionType =
   | 'User Deleted'      | 'Partner Added'    | 'Partner Updated'
   | 'Role Updated'      | 'Settings Changed' | 'Login'
   | 'created'           | 'updated'          | 'deleted'
-  | 'user_created'      | 'LOGIN_SUCCESS'    | 'LOGIN_FAILED'
-  | 'LOGOUT'
+  | 'user_created'      | 'Login Success'    | 'Login Failed'
+  | 'Logout'
 
 export interface LogEntry {
   id: string
@@ -26,9 +26,9 @@ export const actionOptions: Array<ActionType | 'All'> = [
   'updated',
   'deleted',
   'user_created',
-  'LOGIN_SUCCESS',
-  'LOGIN_FAILED',
-  'LOGOUT',
+  'Login Success',
+  'Login Failed',
+  'Logout',
   'Contract Created',
   'Contract Updated',
   'Contract Approved',
@@ -60,8 +60,7 @@ export const actionBadge: Record<ActionType, string> = {
   'updated':           'bg-[#2E85D8]/8 text-[#2E85D8] border-[#2E85D8]/20',
   'deleted':           'bg-red-50 text-red-600 border-red-200',
   'user_created':      'bg-indigo-50 text-indigo-700 border-indigo-200',
-  'LOGIN_SUCCESS':     'bg-teal-50 text-teal-700 border-teal-200',
-  'LOGIN_FAILED':      'bg-rose-50 text-rose-700 border-rose-200',
-  'LOGOUT':            'bg-slate-50 text-slate-700 border-slate-200',
+  'Login Success':     'bg-teal-50 text-teal-700 border-teal-200',
+  'Login Failed':      'bg-rose-50 text-rose-700 border-rose-200',
+  'Logout':            'bg-slate-50 text-slate-700 border-slate-200',
 }
-
