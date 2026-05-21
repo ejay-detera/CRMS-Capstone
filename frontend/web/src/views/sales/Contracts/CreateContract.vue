@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import { reactive, computed } from 'vue'
+import { reactive, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft } from 'lucide-vue-next'
+import { ArrowLeft, ScanLine } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
-import type { ContractStatus, ContractRegion } from '@/types/contract'
+import OCRUploadDialog from './OCRUploadDialog.vue'
+import DocumentUpload  from './DocumentUpload.vue'
+import type { UploadedDoc } from './DocumentUpload.vue'
+import type { ContractRegion } from '@/types/contract'
 
 const router = useRouter()
 const { success } = useToast()
+
+const showOCR     = ref(false)
+const contractDocs = ref<UploadedDoc[]>([])
 
 interface FormState {
   businessPartner: string
@@ -18,8 +24,6 @@ interface FormState {
   region:          ContractRegion | ''
   startDate:       string
   endDate:         string
-  status:          ContractStatus | ''
-  contractLink:    string
 }
 
 const form = reactive<FormState>({
@@ -31,8 +35,6 @@ const form = reactive<FormState>({
   region:          '',
   startDate:       '',
   endDate:         '',
-  status:          '',
-  contractLink:    '',
 })
 
 const touched = reactive<Record<keyof FormState, boolean>>({
@@ -44,8 +46,6 @@ const touched = reactive<Record<keyof FormState, boolean>>({
   region:          false,
   startDate:       false,
   endDate:         false,
-  status:          false,
-  contractLink:    false,
 })
 
 const errors = computed(() => ({
@@ -61,10 +61,6 @@ const errors = computed(() => ({
     : touched.endDate && form.startDate && form.endDate && form.endDate <= form.startDate
     ? 'End date must be after start date.'
     : '',
-  status:          touched.status          && !form.status                    ? 'Status is required.' : '',
-  contractLink:    touched.contractLink && form.contractLink && !/^https?:\/\/.+/.test(form.contractLink)
-    ? 'Must be a valid URL (http:// or https://).'
-    : '',
 }))
 
 const categories = [
@@ -75,8 +71,7 @@ const categories = [
   'Equipment Maintenance',
 ]
 
-const regions: ContractRegion[]       = ['Luzon', 'Visayas', 'Mindanao']
-const statuses: ContractStatus[]      = ['Notarized PDF', 'Client Review', 'SBSI Review']
+const regions: ContractRegion[] = ['Luzon', 'Visayas', 'Mindanao']
 
 function touchAll() {
   (Object.keys(touched) as (keyof FormState)[]).forEach(k => { touched[k] = true })
@@ -92,9 +87,7 @@ function isValid() {
     form.region &&
     form.startDate &&
     form.endDate &&
-    form.endDate > form.startDate &&
-    form.status &&
-    (!form.contractLink || /^https?:\/\/.+/.test(form.contractLink))
+    form.endDate > form.startDate
   )
 }
 
@@ -115,10 +108,15 @@ function handleSubmit() {
         class="flex items-center justify-center w-9 h-9 rounded-lg border border-black/10 bg-white hover:bg-black/4 text-black/50 hover:text-black transition shrink-0">
         <ArrowLeft class="w-4 h-4" />
       </button>
-      <div>
+      <div class="flex-1">
         <h1 class="text-xl font-semibold text-black">Create New Contract</h1>
         <p class="text-sm text-black/40 mt-0.5">Fill in the details below to create a new contract.</p>
       </div>
+      <Button @click="showOCR = true" variant="outline"
+        class="h-9 gap-2 text-sm font-medium border-[#252578]/25 text-[#252578] hover:bg-[#252578]/5 hover:border-[#252578]/40 shrink-0">
+        <ScanLine class="w-4 h-4" />
+        Autofill with OCR
+      </Button>
     </div>
 
     <!-- Form card -->
@@ -223,7 +221,7 @@ function handleSubmit() {
         </div>
       </div>
 
-      <!-- Section: Schedule -->
+      <!-- Section: Schedule & Location -->
       <div class="px-6 py-5 border-b border-black/6">
         <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Schedule & Location</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -280,47 +278,11 @@ function handleSubmit() {
         </div>
       </div>
 
-      <!-- Section: Status -->
+      <!-- Section: Documents -->
       <div class="px-6 py-5 border-b border-black/6">
-        <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Status & Document</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-          <!-- Status -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-semibold text-black/55">Status <span class="text-red-500">*</span></label>
-            <select
-              v-model="form.status"
-              @blur="touched.status = true"
-              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition"
-              :class="[
-                !form.status ? 'text-black/30' : 'text-black',
-                errors.status
-                  ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                  : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
-              ]">
-              <option value="" disabled>Select status</option>
-              <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
-            </select>
-            <p v-if="errors.status" class="text-xs text-red-500">{{ errors.status }}</p>
-          </div>
-
-          <!-- Contract Link -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-semibold text-black/55">Contract Link <span class="text-black/30 font-normal">(optional)</span></label>
-            <input
-              v-model="form.contractLink"
-              @blur="touched.contractLink = true"
-              type="url"
-              placeholder="https://drive.google.com/..."
-              class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="errors.contractLink
-                ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
-            />
-            <p v-if="errors.contractLink" class="text-xs text-red-500">{{ errors.contractLink }}</p>
-          </div>
-
-        </div>
+        <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-1">Documents</h2>
+        <p class="text-xs text-black/35 mb-4">Attach all documents. Accepted formats: PDF, DOCX · Max 10 MB per file.</p>
+        <DocumentUpload v-model="contractDocs" />
       </div>
 
       <!-- Footer -->
@@ -337,4 +299,6 @@ function handleSubmit() {
 
     </div>
   </div>
+
+  <OCRUploadDialog v-model:open="showOCR" />
 </template>
