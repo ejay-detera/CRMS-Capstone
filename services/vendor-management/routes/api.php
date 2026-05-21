@@ -55,4 +55,11 @@ Route::middleware(['auth.internal'])->group(function () {
         ->middleware('permission:manage-partners');
     Route::delete('/partners/{id}', [\App\Http\Controllers\BusinessPartnerController::class, 'destroy'])
         ->middleware('permission:manage-partners');
+
+    // Aggregated Audit Logs Route
+    Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])
+        ->middleware('permission:manage-users');
 });
+
+// Internal webhook for login/logout events from auth-service
+Route::post('/internal/audit-event', [\App\Http\Controllers\InternalAuditController::class, 'receive']);

@@ -3,21 +3,44 @@ export type ActionType =
   | 'Contract Deleted'  | 'User Created'     | 'User Updated'
   | 'User Deleted'      | 'Partner Added'    | 'Partner Updated'
   | 'Role Updated'      | 'Settings Changed' | 'Login'
+  | 'created'           | 'updated'          | 'deleted'
+  | 'user_created'      | 'LOGIN_SUCCESS'    | 'LOGIN_FAILED'
+  | 'LOGOUT'
 
 export interface LogEntry {
-  id:        string
-  user:      string
-  email:     string
-  role:      string
-  action:    ActionType
-  target:    string
-  timestamp: string
+  id: string
+  source: 'crms' | 'auth'
+  user_id: number
+  user_name: string
+  action: ActionType
+  entity_type: string
+  description: string
+  performed_at: string
+  old_data?: any
+  new_data?: any
 }
 
 export const actionOptions: Array<ActionType | 'All'> = [
-  'All', 'Contract Created', 'Contract Updated', 'Contract Approved',
-  'Contract Deleted', 'User Created', 'User Updated', 'User Deleted',
-  'Partner Added', 'Partner Updated', 'Role Updated', 'Settings Changed', 'Login',
+  'All',
+  'created',
+  'updated',
+  'deleted',
+  'user_created',
+  'LOGIN_SUCCESS',
+  'LOGIN_FAILED',
+  'LOGOUT',
+  'Contract Created',
+  'Contract Updated',
+  'Contract Approved',
+  'Contract Deleted',
+  'User Created',
+  'User Updated',
+  'User Deleted',
+  'Partner Added',
+  'Partner Updated',
+  'Role Updated',
+  'Settings Changed',
+  'Login',
 ]
 
 export const actionBadge: Record<ActionType, string> = {
@@ -33,4 +56,12 @@ export const actionBadge: Record<ActionType, string> = {
   'Role Updated':      'bg-amber-50 text-amber-700 border-amber-200',
   'Settings Changed':  'bg-amber-50 text-amber-700 border-amber-200',
   'Login':             'bg-black/4 text-black/45 border-black/10',
+  'created':           'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'updated':           'bg-[#2E85D8]/8 text-[#2E85D8] border-[#2E85D8]/20',
+  'deleted':           'bg-red-50 text-red-600 border-red-200',
+  'user_created':      'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'LOGIN_SUCCESS':     'bg-teal-50 text-teal-700 border-teal-200',
+  'LOGIN_FAILED':      'bg-rose-50 text-rose-700 border-rose-200',
+  'LOGOUT':            'bg-slate-50 text-slate-700 border-slate-200',
 }
+
