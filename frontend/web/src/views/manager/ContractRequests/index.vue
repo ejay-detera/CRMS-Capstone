@@ -79,7 +79,7 @@ function handleApprove(id: string) {
   success('Request approved', `${r.businessPartner}'s contract request has been approved.`)
 }
 
-function handleReject(id: string, reason: string) {
+function handleReject(id: string, reason: string = '') {
   const r = requests.value.find(x => x.id === id)
   if (!r) return
   r.status = 'Rejected'

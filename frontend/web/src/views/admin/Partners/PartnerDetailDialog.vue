@@ -1,5 +1,5 @@
-﻿<script setup lang="ts">
-import { Building2, Truck, Phone, Mail, User, MapPin, Hash, Briefcase } from 'lucide-vue-next'
+<script setup lang="ts">
+import { Building2, Truck, Phone, Mail, User, MapPin } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import type { Partner, TabKey } from '@/types/partner'
 

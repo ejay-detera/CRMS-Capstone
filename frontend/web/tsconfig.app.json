@@ -7,12 +7,14 @@
     "paths": {
       "@/*": ["./src/*"]
     },
+    "moduleResolution": "bundler",
+    "module": "ESNext",
 
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "ignoreDeprecations": "5.0",
+    "ignoreDeprecations": "6.0",
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]

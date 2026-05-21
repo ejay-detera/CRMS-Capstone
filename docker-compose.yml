@@ -19,7 +19,7 @@ services:
       - shared-capstone-network
 
   redis:
-    image: redis:7-alpine
+    image: redis:7
     ports:
       - "6379:6379"
     networks:
@@ -42,9 +42,9 @@ services:
     build: ./services/vendor-management
     volumes:
       - ./services/vendor-management:/var/www/html
-      - /var/www/html/vendor
     ports:
       - "8001:8000"
+    command: sh -c "export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       - mysql
       - mongodb
@@ -56,9 +56,9 @@ services:
     build: ./services/contract-management
     volumes:
       - ./services/contract-management:/var/www/html
-      - /var/www/html/vendor
     ports:
       - "8002:8000"
+    command: sh -c "export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       - mysql
       - mongodb
@@ -70,9 +70,9 @@ services:
     build: ./services/search
     volumes:
       - ./services/search:/var/www/html
-      - /var/www/html/vendor
     ports:
       - "8003:8000"
+    command: sh -c "export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       - elasticsearch
     networks:
@@ -82,9 +82,9 @@ services:
     build: ./services/notification
     volumes:
       - ./services/notification:/var/www/html
-      - /var/www/html/vendor
     ports:
       - "8004:8000"
+    command: sh -c "export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       - mysql
       - redis
@@ -97,6 +97,7 @@ services:
     working_dir: /app
     volumes:
       - ./frontend/web:/app
+      - /app/node_modules
     container_name: crms-web
     expose:
       - "5001"
