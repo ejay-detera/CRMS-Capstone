@@ -23,6 +23,7 @@ interface FormState {
   itemCode:        string
   description:     string
   serialNo:        string
+  sbuNumber:       string
   region:          ContractRegion | ''
   startDate:       string
   endDate:         string
@@ -34,6 +35,7 @@ const form = reactive<FormState>({
   itemCode:        '',
   description:     '',
   serialNo:        '',
+  sbuNumber:       '',
   region:          '',
   startDate:       '',
   endDate:         '',
@@ -45,6 +47,7 @@ const touched = reactive<Record<keyof FormState, boolean>>({
   itemCode:        false,
   description:     false,
   serialNo:        false,
+  sbuNumber:       false,
   region:          false,
   startDate:       false,
   endDate:         false,
@@ -56,6 +59,7 @@ const errors = computed(() => ({
   itemCode:        touched.itemCode        && !form.itemCode.trim()           ? 'Item code is required.' : '',
   description:     touched.description     && !form.description.trim()        ? 'Description is required.' : '',
   serialNo:        touched.serialNo        && !form.serialNo.trim()           ? 'Serial number is required.' : '',
+  sbuNumber:       touched.sbuNumber       && !form.sbuNumber.trim()          ? 'SBU number is required.' : '',
   region:          touched.region          && !form.region                    ? 'Region is required.' : '',
   startDate:       touched.startDate       && !form.startDate                 ? 'Start date is required.' : '',
   endDate:         touched.endDate && !form.endDate
@@ -86,6 +90,7 @@ function isValid() {
     form.itemCode.trim() &&
     form.description.trim() &&
     form.serialNo.trim() &&
+    form.sbuNumber.trim() &&
     form.region &&
     form.startDate &&
     form.endDate &&
@@ -105,6 +110,7 @@ async function handleSubmit() {
       item_code:     form.itemCode,
       description:   form.description,
       serial_number: form.serialNo,
+      sbu_number:    form.sbuNumber,
       region:        form.region,
       start_date:    form.startDate,
       end_date:      form.endDate,
@@ -212,7 +218,7 @@ async function handleSubmit() {
       <!-- Section: Item Details -->
       <div class="px-6 py-5 border-b border-black/6">
         <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Item Details</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
 
           <!-- Item Code -->
           <div class="flex flex-col gap-1.5">
@@ -260,6 +266,22 @@ async function handleSubmit() {
                 : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
             />
             <p v-if="errors.serialNo" class="text-xs text-red-500">{{ errors.serialNo }}</p>
+          </div>
+
+          <!-- SBU Number -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-black/55">SBU Number <span class="text-red-500">*</span></label>
+            <input
+              v-model="form.sbuNumber"
+              @blur="touched.sbuNumber = true"
+              type="text"
+              placeholder="e.g. SBU-001"
+              class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
+              :class="errors.sbuNumber
+                ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
+                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+            />
+            <p v-if="errors.sbuNumber" class="text-xs text-red-500">{{ errors.sbuNumber }}</p>
           </div>
 
         </div>

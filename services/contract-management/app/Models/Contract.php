@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\EncryptedCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Contract extends Model
@@ -39,5 +40,15 @@ class Contract extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class, 'contract_id', 'contract_id');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(ContractCategory::class, 'category_id', 'category_id');
+    }
+
+    public function status(): BelongsTo
+    {
+        return $this->belongsTo(ContractStatus::class, 'status_id', 'status_id');
     }
 }

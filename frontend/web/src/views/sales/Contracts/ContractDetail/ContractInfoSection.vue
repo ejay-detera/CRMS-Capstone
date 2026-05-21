@@ -12,6 +12,7 @@ const props = defineProps<{
     itemCode:        string
     description:     string
     serialNo:        string
+    sbuNumber:       string
     region:          ContractRegion | ''
     startDate:       string
     endDate:         string
@@ -102,7 +103,7 @@ const categories = [
     <!-- Section: Item Details -->
     <div class="px-6 py-5 border-b border-black/6">
       <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Item Details</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
 
         <!-- Item Code -->
         <div class="flex flex-col gap-1.5">
@@ -158,6 +159,25 @@ const categories = [
               :class="fieldCls('serialNo', !editForm.serialNo)"
             />
             <p v-if="touched.serialNo && !editForm.serialNo" class="text-xs text-red-500">Serial number is required.</p>
+          </template>
+        </div>
+
+        <!-- SBU Number -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-black/55">
+            SBU Number <span v-if="isEditing" class="text-red-500">*</span>
+          </label>
+          <p v-if="!isEditing" class="text-sm font-mono text-black py-1">{{ contract.sbuNumber || '—' }}</p>
+          <template v-else>
+            <input
+              v-model="editForm.sbuNumber"
+              @blur="touched.sbuNumber = true"
+              type="text"
+              placeholder="e.g. SBU-001"
+              class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
+              :class="fieldCls('sbuNumber', !editForm.sbuNumber)"
+            />
+            <p v-if="touched.sbuNumber && !editForm.sbuNumber" class="text-xs text-red-500">SBU number is required.</p>
           </template>
         </div>
 
