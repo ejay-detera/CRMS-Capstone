@@ -111,6 +111,11 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/sales/Contracts/index.vue'),
       },
       {
+        path: 'contracts/create',
+        name: 'sales-contracts-create',
+        component: () => import('@/views/sales/Contracts/CreateContract.vue'),
+      },
+      {
         path: 'contract-requests',
         name: 'sales-contract-requests',
         component: () => import('@/views/sales/ContractRequests/index.vue'),

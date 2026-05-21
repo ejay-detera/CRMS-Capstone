@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { Upload, Plus } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
@@ -9,6 +10,7 @@ import ContractDetailDialog from '@/views/admin/Contracts/ContractDetailDialog.v
 import { remainingDays } from '@/types/contract'
 import type { Contract, FilterTab } from '@/types/contract'
 
+const router = useRouter()
 const { success } = useToast()
 
 const contracts = ref<Contract[]>([
@@ -107,7 +109,7 @@ function exportXLSX() {
           class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
-        <Button class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+        <Button @click="router.push('/sales/contracts/create')" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
           <Plus class="w-5 h-5" />
         </Button>
       </div>

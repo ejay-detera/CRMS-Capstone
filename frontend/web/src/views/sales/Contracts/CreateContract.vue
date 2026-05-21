@@ -1,0 +1,340 @@
+<script setup lang="ts">
+import { reactive, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { ArrowLeft } from 'lucide-vue-next'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/composables/useToast'
+import type { ContractStatus, ContractRegion } from '@/types/contract'
+
+const router = useRouter()
+const { success } = useToast()
+
+interface FormState {
+  businessPartner: string
+  category:        string
+  itemCode:        string
+  description:     string
+  serialNo:        string
+  region:          ContractRegion | ''
+  startDate:       string
+  endDate:         string
+  status:          ContractStatus | ''
+  contractLink:    string
+}
+
+const form = reactive<FormState>({
+  businessPartner: '',
+  category:        '',
+  itemCode:        '',
+  description:     '',
+  serialNo:        '',
+  region:          '',
+  startDate:       '',
+  endDate:         '',
+  status:          '',
+  contractLink:    '',
+})
+
+const touched = reactive<Record<keyof FormState, boolean>>({
+  businessPartner: false,
+  category:        false,
+  itemCode:        false,
+  description:     false,
+  serialNo:        false,
+  region:          false,
+  startDate:       false,
+  endDate:         false,
+  status:          false,
+  contractLink:    false,
+})
+
+const errors = computed(() => ({
+  businessPartner: touched.businessPartner && !form.businessPartner.trim()    ? 'Business partner is required.' : '',
+  category:        touched.category        && !form.category                  ? 'Category is required.' : '',
+  itemCode:        touched.itemCode        && !form.itemCode.trim()           ? 'Item code is required.' : '',
+  description:     touched.description     && !form.description.trim()        ? 'Description is required.' : '',
+  serialNo:        touched.serialNo        && !form.serialNo.trim()           ? 'Serial number is required.' : '',
+  region:          touched.region          && !form.region                    ? 'Region is required.' : '',
+  startDate:       touched.startDate       && !form.startDate                 ? 'Start date is required.' : '',
+  endDate:         touched.endDate && !form.endDate
+    ? 'End date is required.'
+    : touched.endDate && form.startDate && form.endDate && form.endDate <= form.startDate
+    ? 'End date must be after start date.'
+    : '',
+  status:          touched.status          && !form.status                    ? 'Status is required.' : '',
+  contractLink:    touched.contractLink && form.contractLink && !/^https?:\/\/.+/.test(form.contractLink)
+    ? 'Must be a valid URL (http:// or https://).'
+    : '',
+}))
+
+const categories = [
+  'Service Agreement',
+  'Partnership Agreement',
+  'Supply Contract',
+  'Equipment Lease',
+  'Equipment Maintenance',
+]
+
+const regions: ContractRegion[]       = ['Luzon', 'Visayas', 'Mindanao']
+const statuses: ContractStatus[]      = ['Notarized PDF', 'Client Review', 'SBSI Review']
+
+function touchAll() {
+  (Object.keys(touched) as (keyof FormState)[]).forEach(k => { touched[k] = true })
+}
+
+function isValid() {
+  return (
+    form.businessPartner.trim() &&
+    form.category &&
+    form.itemCode.trim() &&
+    form.description.trim() &&
+    form.serialNo.trim() &&
+    form.region &&
+    form.startDate &&
+    form.endDate &&
+    form.endDate > form.startDate &&
+    form.status &&
+    (!form.contractLink || /^https?:\/\/.+/.test(form.contractLink))
+  )
+}
+
+function handleSubmit() {
+  touchAll()
+  if (!isValid()) return
+  success('Contract created', `${form.businessPartner}'s contract has been saved.`)
+  router.push('/sales/contracts')
+}
+</script>
+
+<template>
+  <div class="p-8 space-y-6">
+
+    <!-- Header -->
+    <div class="flex items-center gap-4">
+      <button @click="router.push('/sales/contracts')"
+        class="flex items-center justify-center w-9 h-9 rounded-lg border border-black/10 bg-white hover:bg-black/4 text-black/50 hover:text-black transition shrink-0">
+        <ArrowLeft class="w-4 h-4" />
+      </button>
+      <div>
+        <h1 class="text-xl font-semibold text-black">Create New Contract</h1>
+        <p class="text-sm text-black/40 mt-0.5">Fill in the details below to create a new contract.</p>
+      </div>
+    </div>
+
+    <!-- Form card -->
+    <div class="bg-white rounded-lg border border-black/8 shadow-sm overflow-hidden">
+
+      <!-- Section: Contract Info -->
+      <div class="px-6 py-5 border-b border-black/6">
+        <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Contract Info</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <!-- Business Partner -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-black/55">Business Partner <span class="text-red-500">*</span></label>
+            <input
+              v-model="form.businessPartner"
+              @blur="touched.businessPartner = true"
+              type="text"
+              placeholder="e.g. Globe Telecom"
+              class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
+              :class="errors.businessPartner
+                ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
+                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+            />
+            <p v-if="errors.businessPartner" class="text-xs text-red-500">{{ errors.businessPartner }}</p>
+          </div>
+
+          <!-- Category -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-black/55">Category <span class="text-red-500">*</span></label>
+            <select
+              v-model="form.category"
+              @blur="touched.category = true"
+              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition"
+              :class="[
+                !form.category ? 'text-black/30' : 'text-black',
+                errors.category
+                  ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
+                  : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
+              ]">
+              <option value="" disabled>Select category</option>
+              <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
+            </select>
+            <p v-if="errors.category" class="text-xs text-red-500">{{ errors.category }}</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section: Item Details -->
+      <div class="px-6 py-5 border-b border-black/6">
+        <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Item Details</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+          <!-- Item Code -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-black/55">Item Code <span class="text-red-500">*</span></label>
+            <input
+              v-model="form.itemCode"
+              @blur="touched.itemCode = true"
+              type="text"
+              placeholder="e.g. ITM-0041"
+              class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
+              :class="errors.itemCode
+                ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
+                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+            />
+            <p v-if="errors.itemCode" class="text-xs text-red-500">{{ errors.itemCode }}</p>
+          </div>
+
+          <!-- Description -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-black/55">Description <span class="text-red-500">*</span></label>
+            <input
+              v-model="form.description"
+              @blur="touched.description = true"
+              type="text"
+              placeholder="e.g. Network Infrastructure"
+              class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
+              :class="errors.description
+                ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
+                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+            />
+            <p v-if="errors.description" class="text-xs text-red-500">{{ errors.description }}</p>
+          </div>
+
+          <!-- Serial No -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-black/55">Serial No <span class="text-red-500">*</span></label>
+            <input
+              v-model="form.serialNo"
+              @blur="touched.serialNo = true"
+              type="text"
+              placeholder="e.g. SN-2024-0041"
+              class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
+              :class="errors.serialNo
+                ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
+                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+            />
+            <p v-if="errors.serialNo" class="text-xs text-red-500">{{ errors.serialNo }}</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section: Schedule -->
+      <div class="px-6 py-5 border-b border-black/6">
+        <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Schedule & Location</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+          <!-- Region -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-black/55">Region <span class="text-red-500">*</span></label>
+            <select
+              v-model="form.region"
+              @blur="touched.region = true"
+              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition"
+              :class="[
+                !form.region ? 'text-black/30' : 'text-black',
+                errors.region
+                  ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
+                  : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
+              ]">
+              <option value="" disabled>Select region</option>
+              <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
+            </select>
+            <p v-if="errors.region" class="text-xs text-red-500">{{ errors.region }}</p>
+          </div>
+
+          <!-- Start Date -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-black/55">Start Date <span class="text-red-500">*</span></label>
+            <input
+              v-model="form.startDate"
+              @blur="touched.startDate = true"
+              type="date"
+              class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition"
+              :class="errors.startDate
+                ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
+                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+            />
+            <p v-if="errors.startDate" class="text-xs text-red-500">{{ errors.startDate }}</p>
+          </div>
+
+          <!-- End Date -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-black/55">End Date <span class="text-red-500">*</span></label>
+            <input
+              v-model="form.endDate"
+              @blur="touched.endDate = true"
+              type="date"
+              class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition"
+              :class="errors.endDate
+                ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
+                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+            />
+            <p v-if="errors.endDate" class="text-xs text-red-500">{{ errors.endDate }}</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section: Status -->
+      <div class="px-6 py-5 border-b border-black/6">
+        <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Status & Document</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <!-- Status -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-black/55">Status <span class="text-red-500">*</span></label>
+            <select
+              v-model="form.status"
+              @blur="touched.status = true"
+              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition"
+              :class="[
+                !form.status ? 'text-black/30' : 'text-black',
+                errors.status
+                  ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
+                  : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
+              ]">
+              <option value="" disabled>Select status</option>
+              <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
+            </select>
+            <p v-if="errors.status" class="text-xs text-red-500">{{ errors.status }}</p>
+          </div>
+
+          <!-- Contract Link -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-black/55">Contract Link <span class="text-black/30 font-normal">(optional)</span></label>
+            <input
+              v-model="form.contractLink"
+              @blur="touched.contractLink = true"
+              type="url"
+              placeholder="https://drive.google.com/..."
+              class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
+              :class="errors.contractLink
+                ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
+                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+            />
+            <p v-if="errors.contractLink" class="text-xs text-red-500">{{ errors.contractLink }}</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 flex items-center justify-end gap-3">
+        <Button variant="outline" @click="router.push('/sales/contracts')"
+          class="h-9 px-5 text-sm border-black/15 text-black/60 hover:text-black">
+          Cancel
+        </Button>
+        <Button @click="handleSubmit"
+          class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white shadow-sm">
+          Create Contract
+        </Button>
+      </div>
+
+    </div>
+  </div>
+</template>
