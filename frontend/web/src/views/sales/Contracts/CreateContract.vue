@@ -5,6 +5,7 @@ import { ArrowLeft, ScanLine } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
+import { useApiCache } from '@/composables/useApiCache'
 import OCRUploadDialog from './OCRUploadDialog.vue'
 import DocumentUpload from './DocumentUpload.vue'
 import type { ContractRegion, UploadedDoc } from '@/types/contract'
@@ -12,6 +13,7 @@ import type { ContractRegion, UploadedDoc } from '@/types/contract'
 const router = useRouter()
 const { success, error } = useToast()
 const { state: authState } = useAuth()
+const { invalidateContracts, invalidateRequests } = useApiCache()
 
 const showOCR      = ref(false)
 const loading      = ref(false)
@@ -139,6 +141,8 @@ async function handleSubmit() {
     }
 
     contractDocs.value = []
+    invalidateContracts()
+    invalidateRequests()
     success('Contract created', `${form.businessPartner}'s contract has been saved.`)
     router.push(`/sales/contracts/${data.data.contract_id}`)
   } catch {

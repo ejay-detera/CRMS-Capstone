@@ -9,60 +9,25 @@ import { useAuth } from '@/composables/useAuth'
 import SalesContractsTable  from './SalesContractsTable.vue'
 import ContractDetailDialog from '@/views/admin/Contracts/ContractDetailDialog.vue'
 import { remainingDays } from '@/types/contract'
-import type { Contract, FilterTab, ContractApprovalStatus, ContractWorkflowStatus, ContractRegion } from '@/types/contract'
+import type { Contract, FilterTab } from '@/types/contract'
 
 const router = useRouter()
 const { success, error } = useToast()
 const { state: authState } = useAuth()
 
-const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+import { useApiCache } from '@/composables/useApiCache'
 
-const contracts = ref<Contract[]>([])
-const loading   = ref(true)
+const { state: cacheState, fetchContracts: fetchContractsCached } = useApiCache()
 
-function mapApiContract(d: any): Contract {
-  const user = authState.user
-  const createdBy = (user && d.created_by === user.id)
-    ? `${user.first_name} ${user.last_name}`.trim()
-    : d.created_by ? `User #${d.created_by}` : '—'
-  return {
-    id:              String(d.contract_id),
-    businessPartner: d.bp_name         ?? '',
-    category:        d.category        ?? '',
-    itemCode:        d.item_code       ?? '',
-    description:     d.description     ?? '',
-    serialNo:        d.serial_number   ?? '',
-    sbuNumber:       d.sbu_number      ?? '',
-    region:          (d.region         ?? 'Luzon') as ContractRegion,
-    startDate:       d.start_date      ?? '',
-    endDate:         d.end_date        ?? '',
-    approvalStatus:  (d.approval_status ?? 'Pending') as ContractApprovalStatus,
-    workflowStatus:  (d.workflow_status ?? null)       as ContractWorkflowStatus | null,
-    contractLink:    '',
-    createdBy,
-  }
-}
+const contracts = computed(() => cacheState.contracts || [])
+const loading   = computed(() => cacheState.contractsLoading)
 
 async function fetchContracts() {
-  loading.value = true
   try {
     const userId = authState.user?.id
-    const url = userId
-      ? `${apiBase}/contracts?created_by=${userId}`
-      : `${apiBase}/contracts`
-    const res = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${authState.token}`,
-      },
-    })
-    if (!res.ok) { error('Failed to load', 'Could not fetch contracts.'); return }
-    const json = await res.json()
-    contracts.value = (json.data ?? []).map(mapApiContract)
+    await fetchContractsCached(userId)
   } catch {
     error('Network error', 'Could not reach the server.')
-  } finally {
-    loading.value = false
   }
 }
 

@@ -1,61 +1,23 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
-import { useAuth } from '@/composables/useAuth'
 import RequestsTable      from './RequestsTable.vue'
 import RequestDetailDialog from './RequestDetailDialog.vue'
-import type { ContractRequest, RequestFilterTab, RequestStatus, RequestPriority } from '@/types/contractRequest'
+import type { ContractRequest, RequestFilterTab } from '@/types/contractRequest'
+import { useApiCache } from '@/composables/useApiCache'
 
 const { success, error } = useToast()
-const { state: authState } = useAuth()
 
-const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+const { state: cacheState, fetchRequests: fetchRequestsCached, updateRequestStatusInCache } = useApiCache()
 
-const requests = ref<ContractRequest[]>([])
-const loading  = ref(true)
-
-// Map contract API approval_status → request status label
-const STATUS_MAP: Record<string, RequestStatus> = {
-  'Pending':  'Pending',
-  'Approved': 'Approved',
-  'Rejected': 'Rejected',
-}
-
-function mapApiToRequest(d: any): ContractRequest {
-  return {
-    id:              `CTR-${String(d.contract_id).padStart(3, '0')}`,
-    businessPartner: d.bp_name        ?? '',
-    category:        d.category       ?? '',
-    description:     d.description    ?? '',
-    region:          (d.region        ?? 'Luzon') as ContractRequest['region'],
-    requestDate:     d.created_at     ?? '',
-    startDate:       d.start_date     ?? '',
-    endDate:         d.end_date       ?? '',
-    priority:        'Medium' as RequestPriority,   // priority not yet in DB; default
-    status:          STATUS_MAP[d.approval_status ?? 'Pending'] ?? 'Pending',
-    notes:           '',
-    rejectionReason: '',
-    contractLink:    '',
-    createdBy:       d.created_by ? `User #${d.created_by}` : '—',
-  }
-}
+const requests = computed(() => cacheState.requests || [])
+const loading  = computed(() => cacheState.requestsLoading)
 
 async function fetchRequests() {
-  loading.value = true
   try {
-    const res = await fetch(`${apiBase}/contract-requests`, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${authState.token}`,
-      },
-    })
-    if (!res.ok) { error('Failed to load', 'Could not fetch contract requests.'); return }
-    const json = await res.json()
-    requests.value = (json.data ?? []).map(mapApiToRequest)
+    await fetchRequestsCached()
   } catch {
     error('Network error', 'Could not reach the server.')
-  } finally {
-    loading.value = false
   }
 }
 
@@ -112,22 +74,21 @@ function openDetail(r: ContractRequest) { detailTarget.value = r; showDetail.val
 function handleApprove(id: string) {
   const r = requests.value.find(x => x.id === id)
   if (!r) return
-  r.status = 'Approved'
+  updateRequestStatusInCache(id, 'Approved')
   success('Request approved', `${r.businessPartner}'s contract request has been approved.`)
 }
 
 function handleReject(id: string, reason: string = '') {
   const r = requests.value.find(x => x.id === id)
   if (!r) return
-  r.status = 'Rejected'
-  r.rejectionReason = reason
+  updateRequestStatusInCache(id, 'Rejected', { rejectionReason: reason })
   success('Request rejected', `${r.businessPartner}'s contract request has been rejected.`)
 }
 
 function handleSetReviewing(id: string) {
   const r = requests.value.find(x => x.id === id)
   if (!r) return
-  r.status = 'Under Review'
+  updateRequestStatusInCache(id, 'Under Review')
   success('Status updated', `${r.businessPartner}'s request is now under review.`)
 }
 </script>

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { remainingDays } from '@/types/contract'
-import type { Contract, ContractApprovalStatus, ContractWorkflowStatus, ContractRegion } from '@/types/contract'
-import type { ContractRequest, RequestStatus, RequestPriority } from '@/types/contractRequest'
 import RecentRequestsTable from './RecentRequestsTable.vue'
 import ContractStatusPanel from './ContractStatusPanel.vue'
 import { useAuth } from '@/composables/useAuth'
@@ -10,7 +8,6 @@ import { useToast } from '@/composables/useToast'
 
 const { state: authState } = useAuth()
 const { error } = useToast()
-const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
 
 // ── Live clock ──────────────────────────────────────────────────
 const now = ref(new Date())
@@ -33,97 +30,24 @@ const formattedTime = computed(() =>
 
 const userFirstName = computed(() => authState.user?.first_name || 'Shadrack')
 
-// ── Live data ───────────────────────────────────────────────────
-const contracts = ref<Contract[]>([])
-const recentRequests = ref<ContractRequest[]>([])
-const loading = ref(true)
+import { useApiCache } from '@/composables/useApiCache'
 
-function mapApiContract(d: any): Contract {
-  const user = authState.user
-  const createdBy = (user && d.created_by === user.id)
-    ? `${user.first_name} ${user.last_name}`.trim()
-    : d.created_by ? `User #${d.created_by}` : '—'
-  return {
-    id:              String(d.contract_id),
-    businessPartner: d.bp_name         ?? '',
-    category:        d.category        ?? '',
-    itemCode:        d.item_code       ?? '',
-    description:     d.description     ?? '',
-    serialNo:        d.serial_number   ?? '',
-    sbuNumber:       d.sbu_number      ?? '',
-    region:          (d.region         ?? 'Luzon') as ContractRegion,
-    startDate:       d.start_date      ?? '',
-    endDate:         d.end_date        ?? '',
-    approvalStatus:  (d.approval_status ?? 'Pending') as ContractApprovalStatus,
-    workflowStatus:  (d.workflow_status ?? null)       as ContractWorkflowStatus | null,
-    contractLink:    '',
-    createdBy,
-  }
-}
+const { state: cacheState, fetchContracts, fetchRequests } = useApiCache()
 
-const STATUS_MAP: Record<string, RequestStatus> = {
-  'Pending':      'Pending',
-  'Under Review': 'Under Review',
-  'Approved':     'Approved',
-  'Rejected':     'Rejected',
-}
-
-function mapApiToRequest(d: any): ContractRequest {
-  const user = authState.user
-  const createdBy = (user && d.created_by === user.id)
-    ? `${user.first_name} ${user.last_name}`.trim()
-    : d.created_by ? `User #${d.created_by}` : '—'
-  return {
-    id:              `REQ-${String(d.contract_id).padStart(3, '0')}`,
-    businessPartner: d.bp_name        ?? '',
-    category:        d.category       ?? '',
-    description:     d.description    ?? '',
-    region:          (d.region        ?? 'Luzon') as ContractRequest['region'],
-    requestDate:     d.created_at     ?? '',
-    startDate:       d.start_date     ?? '',
-    endDate:         d.end_date       ?? '',
-    priority:        'Medium' as RequestPriority, // default priority since not in DB
-    status:          d.workflow_status ? 'Under Review' : (STATUS_MAP[d.approval_status ?? 'Pending'] ?? 'Pending'),
-    notes:           '',
-    rejectionReason: '',
-    contractLink:    '',
-    createdBy,
-  }
-}
+// ── Cached live data ─────────────────────────────────────────────
+const contracts = computed(() => cacheState.contracts || [])
+const recentRequests = computed(() => (cacheState.requests || []).slice(0, 6))
+const loading = computed(() => cacheState.contractsLoading || cacheState.requestsLoading)
 
 async function fetchDashboardData() {
-  loading.value = true
   try {
     const userId = authState.user?.id
-    const headers = {
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${authState.token}`,
-    }
-
-    // Fetch contracts
-    const contractsUrl = userId
-      ? `${apiBase}/contracts?created_by=${userId}`
-      : `${apiBase}/contracts`
-    const contractsRes = await fetch(contractsUrl, { headers })
-    if (contractsRes.ok) {
-      const contractsJson = await contractsRes.json()
-      contracts.value = (contractsJson.data ?? []).map(mapApiContract)
-    }
-
-    // Fetch requests (contracts in any state belonging to the user)
-    const requestsUrl = userId
-      ? `${apiBase}/contract-requests?created_by=${userId}`
-      : `${apiBase}/contract-requests`
-    const requestsRes = await fetch(requestsUrl, { headers })
-    if (requestsRes.ok) {
-      const requestsJson = await requestsRes.json()
-      // Limit to 6 items on the dashboard
-      recentRequests.value = (requestsJson.data ?? []).map(mapApiToRequest).slice(0, 6)
-    }
+    await Promise.all([
+      fetchContracts(userId),
+      fetchRequests(userId)
+    ])
   } catch {
     error('Network error', 'Could not reach the server.')
-  } finally {
-    loading.value = false
   }
 }
 

@@ -4,56 +4,25 @@ import { Upload, Plus } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
-import { useAuth } from '@/composables/useAuth'
 import ContractsTable      from '@/views/admin/Contracts/ContractsTable.vue'
 import ContractDetailDialog from '@/views/admin/Contracts/ContractDetailDialog.vue'
 import EditContractDialog   from '@/views/admin/Contracts/EditContractDialog.vue'
 import { remainingDays } from '@/types/contract'
-import type { Contract, FilterTab, ContractApprovalStatus, ContractWorkflowStatus, ContractRegion } from '@/types/contract'
+import type { Contract, FilterTab } from '@/types/contract'
+import { useApiCache } from '@/composables/useApiCache'
 
 const { success, error } = useToast()
-const { state: authState } = useAuth()
 
-const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+const { state: cacheState, fetchContracts: fetchContractsCached, updateContractInCache, deleteContractFromCache } = useApiCache()
 
-const contracts = ref<Contract[]>([])
-const loading   = ref(true)
-
-function mapApiContract(d: any): Contract {
-  return {
-    id:              String(d.contract_id),
-    businessPartner: d.bp_name         ?? '',
-    category:        d.category        ?? '',
-    itemCode:        d.item_code       ?? '',
-    description:     d.description     ?? '',
-    serialNo:        d.serial_number   ?? '',
-    sbuNumber:       d.sbu_number      ?? '',
-    region:          (d.region         ?? 'Luzon') as ContractRegion,
-    startDate:       d.start_date      ?? '',
-    endDate:         d.end_date        ?? '',
-    approvalStatus:  (d.approval_status ?? 'Pending') as ContractApprovalStatus,
-    workflowStatus:  (d.workflow_status ?? null)       as ContractWorkflowStatus | null,
-    contractLink:    '',
-    createdBy:       d.created_by ? `User #${d.created_by}` : '—',
-  }
-}
+const contracts = computed(() => cacheState.contracts || [])
+const loading   = computed(() => cacheState.contractsLoading)
 
 async function fetchContracts() {
-  loading.value = true
   try {
-    const res = await fetch(`${apiBase}/contracts`, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${authState.token}`,
-      },
-    })
-    if (!res.ok) { error('Failed to load', 'Could not fetch contracts.'); return }
-    const json = await res.json()
-    contracts.value = (json.data ?? []).map(mapApiContract)
+    await fetchContractsCached()
   } catch {
     error('Network error', 'Could not reach the server.')
-  } finally {
-    loading.value = false
   }
 }
 
@@ -113,15 +82,13 @@ function openEdit(c: Contract & { days: number }) { editTarget.value = c; showEd
 
 function handleEdit(data: Omit<Contract, 'id' | 'createdBy'>) {
   if (!editTarget.value) return
-  const idx = contracts.value.findIndex(c => c.id === editTarget.value!.id)
-  if (idx < 0) return
-  contracts.value[idx] = { ...contracts.value[idx], ...data }
+  updateContractInCache(editTarget.value.id, data)
   success('Contract updated', `${data.businessPartner}'s contract has been saved.`)
 }
 
 function handleDelete(id: string) {
   const name = contracts.value.find(c => c.id === id)?.businessPartner ?? id
-  contracts.value = contracts.value.filter(c => c.id !== id)
+  deleteContractFromCache(id)
   success('Contract removed', `${name}'s contract has been deleted.`)
 }
 
