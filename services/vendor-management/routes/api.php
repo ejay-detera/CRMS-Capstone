@@ -28,4 +28,31 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::post('/admin/users', [\App\Http\Controllers\AdminUserProxyController::class, 'store'])
         ->middleware('permission:manage-users');
 
+    // Suppliers Routes
+    Route::get('/suppliers/search', [\App\Http\Controllers\SupplierController::class, 'search'])
+        ->middleware('permission:view-suppliers');
+    Route::get('/suppliers', [\App\Http\Controllers\SupplierController::class, 'index'])
+        ->middleware('permission:view-suppliers');
+    Route::get('/suppliers/{id}', [\App\Http\Controllers\SupplierController::class, 'show'])
+        ->middleware('permission:view-suppliers');
+    Route::post('/suppliers', [\App\Http\Controllers\SupplierController::class, 'store'])
+        ->middleware('permission:manage-suppliers');
+    Route::put('/suppliers/{id}', [\App\Http\Controllers\SupplierController::class, 'update'])
+        ->middleware('permission:manage-suppliers');
+    Route::delete('/suppliers/{id}', [\App\Http\Controllers\SupplierController::class, 'destroy'])
+        ->middleware('permission:manage-suppliers');
+
+    // Business Partners Routes
+    Route::get('/partners/search', [\App\Http\Controllers\BusinessPartnerController::class, 'search'])
+        ->middleware('permission:view-partners');
+    Route::get('/partners', [\App\Http\Controllers\BusinessPartnerController::class, 'index'])
+        ->middleware('permission:view-partners');
+    Route::get('/partners/{id}', [\App\Http\Controllers\BusinessPartnerController::class, 'show'])
+        ->middleware('permission:view-partners');
+    Route::post('/partners', [\App\Http\Controllers\BusinessPartnerController::class, 'store'])
+        ->middleware('permission:manage-partners');
+    Route::put('/partners/{id}', [\App\Http\Controllers\BusinessPartnerController::class, 'update'])
+        ->middleware('permission:manage-partners');
+    Route::delete('/partners/{id}', [\App\Http\Controllers\BusinessPartnerController::class, 'destroy'])
+        ->middleware('permission:manage-partners');
 });
