@@ -58,8 +58,12 @@ class ContractController extends Controller
      */
     public function indexRequests(Request $request)
     {
-        $query = Contract::with(['category', 'approvalStatus', 'workflowStatus'])
-            ->orderByDesc('created_at'); // uses idx_contracts_approval_created index
+        $query = Contract::with(['category', 'approvalStatus', 'workflowStatus']);
+
+        // Uses index on created_by (and composite idx_contracts_owner_approval when status is filtered)
+        if ($request->filled('created_by')) {
+            $query->where('created_by', $request->created_by);
+        }
 
         // Optional: filter to a single approval status
         if ($request->filled('approval_status')) {
@@ -72,7 +76,7 @@ class ContractController extends Controller
             }
         }
 
-        $contracts = $query->get();
+        $contracts = $query->orderByDesc('created_at')->get();
 
         return response()->json([
             'data' => $contracts->map(fn ($c) => [

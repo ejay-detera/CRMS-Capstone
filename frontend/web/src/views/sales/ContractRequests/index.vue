@@ -1,24 +1,75 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { Plus } from 'lucide-vue-next'
+import { computed, ref, watch, onMounted } from 'vue'
+import { Plus, Loader2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
 import SalesRequestsTable      from './SalesRequestsTable.vue'
 import SalesRequestDetailDialog from './SalesRequestDetailDialog.vue'
-import type { ContractRequest, RequestFilterTab } from '@/types/contractRequest'
+import type { ContractRequest, RequestFilterTab, RequestStatus, RequestPriority } from '@/types/contractRequest'
 
-const { success } = useToast()
+const { success, error } = useToast()
+const { state: authState } = useAuth()
 
-const requests = ref<ContractRequest[]>([
-  { id: 'REQ-001', businessPartner: 'ABS-CBN Corporation',    category: 'Service Agreement',     description: 'Broadcast equipment maintenance for Luzon region studios.',        region: 'Luzon',    requestDate: '2026-01-15', startDate: '2026-03-01', endDate: '2027-02-28', priority: 'High',   status: 'Pending',      notes: 'Urgent — required before Q1 audit.', rejectionReason: '', contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'REQ-002', businessPartner: 'Jollibee Foods Corp.',   category: 'Supply Contract',       description: 'Refrigeration unit supply agreement for Luzon commissaries.',       region: 'Luzon',    requestDate: '2026-01-20', startDate: '2026-04-01', endDate: '2027-03-31', priority: 'Medium', status: 'Pending',      notes: 'Renewal of previous supply agreement.', rejectionReason: '', contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'REQ-003', businessPartner: 'San Miguel Brewery',     category: 'Supply Contract',       description: 'Industrial cooling system supply for Luzon brewing facilities.',    region: 'Luzon',    requestDate: '2025-12-10', startDate: '2026-02-01', endDate: '2027-01-31', priority: 'High',   status: 'Approved',     notes: '', rejectionReason: '', contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'REQ-004', businessPartner: 'Ayala Land Inc.',        category: 'Equipment Lease',       description: 'HVAC facility system lease for Makati corporate tower.',             region: 'Luzon',    requestDate: '2025-11-28', startDate: '2026-01-15', endDate: '2026-07-15', priority: 'Low',    status: 'Rejected',     notes: '', rejectionReason: 'Budget constraints for Q2. Please resubmit next quarter with revised scope.', contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'REQ-005', businessPartner: 'Meralco',                category: 'Service Agreement',     description: 'Power monitoring equipment service for Luzon distribution points.', region: 'Luzon',    requestDate: '2026-02-01', startDate: '2026-05-01', endDate: '2027-04-30', priority: 'Medium', status: 'Under Review', notes: 'Awaiting technical review from engineering.', rejectionReason: '', contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'REQ-006', businessPartner: 'Globe Telecom',          category: 'Partnership Agreement', description: 'Network infrastructure partnership for Luzon data corridors.',       region: 'Luzon',    requestDate: '2026-01-22', startDate: '2026-03-15', endDate: '2026-09-15', priority: 'High',   status: 'Approved',     notes: '', rejectionReason: '', contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'REQ-007', businessPartner: 'SM Prime Holdings',      category: 'Equipment Lease',       description: 'Escalator maintenance unit lease for SM MOA expansion.',            region: 'Luzon',    requestDate: '2026-02-05', startDate: '2026-04-01', endDate: '2027-03-31', priority: 'Medium', status: 'Under Review', notes: 'Property management approved on their end.', rejectionReason: '', contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'REQ-008', businessPartner: 'PharmaCare Dist.',       category: 'Supply Contract',       description: 'IV fluid supply for hospital network across Luzon.',                 region: 'Luzon',    requestDate: '2026-02-10', startDate: '2026-04-15', endDate: '2027-04-14', priority: 'High',   status: 'Pending',      notes: 'Critical supply — stock running low.', rejectionReason: '', contractLink: '#', createdBy: 'Shadrack Castro' },
-])
+const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+
+const requests = ref<ContractRequest[]>([])
+const loading  = ref(true)
+
+const STATUS_MAP: Record<string, RequestStatus> = {
+  'Pending':      'Pending',
+  'Under Review': 'Under Review',
+  'Approved':     'Approved',
+  'Rejected':     'Rejected',
+}
+
+function mapApiToRequest(d: any): ContractRequest {
+  const user = authState.user
+  const createdBy = (user && d.created_by === user.id)
+    ? `${user.first_name} ${user.last_name}`.trim()
+    : d.created_by ? `User #${d.created_by}` : '—'
+  return {
+    id:              `REQ-${String(d.contract_id).padStart(3, '0')}`,
+    businessPartner: d.bp_name        ?? '',
+    category:        d.category       ?? '',
+    description:     d.description    ?? '',
+    region:          (d.region        ?? 'Luzon') as ContractRequest['region'],
+    requestDate:     d.created_at     ?? '',
+    startDate:       d.start_date     ?? '',
+    endDate:         d.end_date       ?? '',
+    priority:        'Medium' as RequestPriority, // priority not yet in DB; default
+    status:          d.workflow_status ? 'Under Review' : (STATUS_MAP[d.approval_status ?? 'Pending'] ?? 'Pending'),
+    notes:           '',
+    rejectionReason: '',
+    contractLink:    '',
+    createdBy,
+  }
+}
+
+async function fetchRequests() {
+  loading.value = true
+  try {
+    const userId = authState.user?.id
+    const url = userId
+      ? `${apiBase}/contract-requests?created_by=${userId}`
+      : `${apiBase}/contract-requests`
+    const res = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+    })
+    if (!res.ok) { error('Failed to load', 'Could not fetch contract requests.'); return }
+    const json = await res.json()
+    requests.value = (json.data ?? []).map(mapApiToRequest)
+  } catch {
+    error('Network error', 'Could not reach the server.')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchRequests)
 
 const followedUpIds = ref<string[]>([])
 
@@ -109,8 +160,13 @@ function handleFollowUp(id: string) {
       </div>
     </div>
 
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center py-24 text-black/30">
+      <Loader2 class="w-8 h-8 animate-spin" />
+    </div>
+
     <!-- Table -->
-    <SalesRequestsTable
+    <SalesRequestsTable v-else
       :paginated="paginated"
       :filtered="filtered"
       :active-filter="activeFilter"
