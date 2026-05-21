@@ -20,6 +20,7 @@ class Document extends Model
         'contract_id',
         'file_name',
         'file_path',
+        'document_url',
         'file_type',
         'file_size',
         'uploaded_by',

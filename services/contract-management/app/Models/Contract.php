@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\EncryptedCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Contract extends Model
 {
@@ -22,6 +23,7 @@ class Contract extends Model
         'item_code',
         'description',
         'serial_number',
+        'region',
         'start_date',
         'end_date',
         'created_by',
@@ -33,4 +35,9 @@ class Contract extends Model
         'start_date' => 'date',
         'end_date' => 'date',
     ];
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class, 'contract_id', 'contract_id');
+    }
 }

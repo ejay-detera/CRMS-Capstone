@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ContractController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -14,6 +15,9 @@ Route::middleware(['auth.internal'])->group(function () {
             ]
         ]);
     })->middleware('permission:view-contracts');
+
+    // TODO: restore ->middleware('permission:create-contracts') once the permission is seeded in auth-service
+    Route::post('/contracts', [ContractController::class, 'store']);
 
     Route::post('/admin/users', [\App\Http\Controllers\AdminUserProxyController::class, 'store'])
         ->middleware('permission:manage-users');

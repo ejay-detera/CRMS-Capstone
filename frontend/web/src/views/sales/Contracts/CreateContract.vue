@@ -5,17 +5,16 @@ import { ArrowLeft, ScanLine } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
-import { useContractStore, type StoredContract } from '@/composables/useContractStore'
 import OCRUploadDialog from './OCRUploadDialog.vue'
 import DocumentUpload from './DocumentUpload.vue'
 import type { ContractRegion, UploadedDoc } from '@/types/contract'
 
 const router = useRouter()
-const { success } = useToast()
-const { user } = useAuth()
-const { generateId, save } = useContractStore()
+const { success, error } = useToast()
+const { state: authState } = useAuth()
 
-const showOCR     = ref(false)
+const showOCR      = ref(false)
+const loading      = ref(false)
 const contractDocs = ref<UploadedDoc[]>([])
 
 interface FormState {
@@ -94,30 +93,53 @@ function isValid() {
   )
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   touchAll()
   if (!isValid()) return
 
-  const id = generateId()
-  const contract: StoredContract = {
-    id,
-    businessPartner: form.businessPartner,
-    category:        form.category,
-    itemCode:        form.itemCode,
-    description:     form.description,
-    serialNo:        form.serialNo,
-    region:          form.region as ContractRegion,
-    startDate:       form.startDate,
-    endDate:         form.endDate,
-    status:          'Notarized PDF',
-    contractLink:    '',
-    createdBy:       user.value ? `${user.value.first_name} ${user.value.last_name}`.trim() : 'Sales Rep',
-    docs:            contractDocs.value,
+  loading.value = true
+  try {
+    const payload = {
+      bp_name:       form.businessPartner,
+      category:      form.category,
+      item_code:     form.itemCode,
+      description:   form.description,
+      serial_number: form.serialNo,
+      region:        form.region,
+      start_date:    form.startDate,
+      end_date:      form.endDate,
+      docs: contractDocs.value.map(d => ({
+        file_name: d.name,
+        file_type: d.type,
+        file_size: d.size,
+      })),
+    }
+
+    const res = await fetch(`${import.meta.env.VITE_CONTRACT_API_URL}/contracts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+      body: JSON.stringify(payload),
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      error('Failed to create contract', data.message ?? 'Something went wrong.')
+      return
+    }
+
+    contractDocs.value = []
+    success('Contract created', `${form.businessPartner}'s contract has been saved.`)
+    router.push(`/sales/contracts/${data.data.contract_id}`)
+  } catch {
+    error('Network error', 'Could not reach the server. Please try again.')
+  } finally {
+    loading.value = false
   }
-  save(contract)
-  contractDocs.value = []
-  success('Contract created', `${form.businessPartner}'s contract has been saved.`)
-  router.push(`/sales/contracts/${id}`)
 }
 </script>
 
@@ -313,9 +335,9 @@ function handleSubmit() {
           class="h-9 px-5 text-sm border-black/15 text-black/60 hover:text-black">
           Cancel
         </Button>
-        <Button @click="handleSubmit"
-          class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white shadow-sm">
-          Create Contract
+        <Button @click="handleSubmit" :disabled="loading"
+          class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+          {{ loading ? 'Saving…' : 'Create Contract' }}
         </Button>
       </div>
 
