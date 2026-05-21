@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Plus } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import SalesRequestsTable      from './SalesRequestsTable.vue'
-import SalesRequestDetailDialog from './SalesRequestDetailDialog.vue'
 import type { ContractRequest, RequestFilterTab } from '@/types/contractRequest'
 
 const { success, error } = useToast()
 const { state: authState } = useAuth()
+const router = useRouter()
 
 import { useApiCache } from '@/composables/useApiCache'
 
@@ -73,13 +74,9 @@ const paginated = computed(() =>
   filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
 )
 
-const showDetail   = ref(false)
-const detailTarget = ref<ContractRequest | null>(null)
-function openDetail(r: ContractRequest) { detailTarget.value = r; showDetail.value = true }
-
-const isDetailFollowedUp = computed(() =>
-  detailTarget.value ? followedUpIds.value.includes(detailTarget.value.id) : false
-)
+function openDetail(r: ContractRequest) {
+  router.push(`/sales/contract-requests/${r.id}`)
+}
 
 function handleFollowUp(id: string) {
   if (followedUpIds.value.includes(id)) return
@@ -148,11 +145,4 @@ function handleFollowUp(id: string) {
     />
 
   </div>
-
-  <SalesRequestDetailDialog
-    v-model:open="showDetail"
-    :request="detailTarget"
-    :is-followed-up="isDetailFollowedUp"
-    @follow-up="handleFollowUp"
-  />
 </template>

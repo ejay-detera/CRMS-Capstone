@@ -52,7 +52,8 @@ const router = useRouter()
       </template>
       <template v-else>
         <div v-for="r in requests" :key="r.id"
-          class="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-black/1.5 transition-colors cursor-default">
+          @click="router.push('/sales/contract-requests/' + r.id)"
+          class="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-black/1.5 transition-colors cursor-pointer">
 
           <!-- Partner + meta -->
           <div class="min-w-0 flex-1">

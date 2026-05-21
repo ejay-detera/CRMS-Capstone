@@ -7,7 +7,6 @@ import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import SalesContractsTable  from './SalesContractsTable.vue'
-import ContractDetailDialog from '@/views/admin/Contracts/ContractDetailDialog.vue'
 import { remainingDays } from '@/types/contract'
 import type { Contract, FilterTab } from '@/types/contract'
 
@@ -77,9 +76,9 @@ const paginated = computed(() =>
   filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
 )
 
-const showDetail   = ref(false)
-const detailTarget = ref<(Contract & { days: number }) | null>(null)
-function openDetail(c: Contract & { days: number }) { detailTarget.value = c; showDetail.value = true }
+function openDetail(c: Contract & { days: number }) {
+  router.push(`/sales/contracts/${c.id}`)
+}
 
 const showEdit   = ref(false)
 const editTarget = ref<Contract | null>(null)
@@ -164,6 +163,4 @@ function exportXLSX() {
     />
 
   </div>
-
-  <ContractDetailDialog v-model:open="showDetail" :contract="detailTarget" />
 </template>

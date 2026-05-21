@@ -25,6 +25,12 @@ const savingEdit      = ref(false)
 
 const days = computed(() => contract.value ? remainingDays(contract.value.endDate) : 0)
 
+const backPath = computed(() => {
+  if (route.path.startsWith('/admin')) return '/admin/contracts'
+  if (route.path.startsWith('/manager')) return '/manager/contracts'
+  return '/sales/contracts'
+})
+
 const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
 
 function mapApiToContract(data: any): StoredContract {
@@ -237,7 +243,7 @@ async function saveEdit() {
       <FileX class="w-12 h-12" />
       <p class="text-base font-semibold">Contract not found</p>
       <p class="text-sm text-black/25">The contract may have been deleted or the ID is invalid.</p>
-      <Button variant="outline" @click="router.push('/sales/contracts')"
+      <Button variant="outline" @click="router.push(backPath)"
         class="mt-2 h-9 px-5 text-sm border-black/15 text-black/60 hover:text-black">
         Back to Contracts
       </Button>
@@ -249,7 +255,7 @@ async function saveEdit() {
         :days="days"
         :is-editing="isEditing"
         :saving="savingEdit"
-        @back="router.push('/sales/contracts')"
+        @back="router.push(backPath)"
         @edit="startEdit"
         @save="saveEdit"
         @cancel="cancelEdit"

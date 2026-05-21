@@ -21,6 +21,11 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/admin/Contracts/index.vue'),
       },
       {
+        path: 'contracts/:id',
+        name: 'admin-contracts-detail',
+        component: () => import('@/views/sales/Contracts/ContractDetail/index.vue'),
+      },
+      {
         path: 'users',
         name: 'admin-users',
         component: () => import('@/views/admin/Users/index.vue'),
@@ -76,9 +81,19 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/manager/Contracts/index.vue'),
       },
       {
+        path: 'contracts/:id',
+        name: 'manager-contracts-detail',
+        component: () => import('@/views/sales/Contracts/ContractDetail/index.vue'),
+      },
+      {
         path: 'contract-requests',
         name: 'manager-contract-requests',
         component: () => import('@/views/manager/ContractRequests/index.vue'),
+      },
+      {
+        path: 'contract-requests/:id',
+        name: 'manager-contract-requests-detail',
+        component: () => import('@/views/sales/ContractRequests/RequestDetail/index.vue'),
       },
       {
         path: 'notifications',
@@ -124,6 +139,11 @@ const routes: Array<RouteRecordRaw> = [
         path: 'contract-requests',
         name: 'sales-contract-requests',
         component: () => import('@/views/sales/ContractRequests/index.vue'),
+      },
+      {
+        path: 'contract-requests/:id',
+        name: 'sales-contract-requests-detail',
+        component: () => import('@/views/sales/ContractRequests/RequestDetail/index.vue'),
       },
       {
         path: 'notifications',

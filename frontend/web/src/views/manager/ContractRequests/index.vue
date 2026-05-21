@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import RequestsTable      from './RequestsTable.vue'
-import RequestDetailDialog from './RequestDetailDialog.vue'
 import type { ContractRequest, RequestFilterTab } from '@/types/contractRequest'
 import { useApiCache } from '@/composables/useApiCache'
 
 const { success, error } = useToast()
+const router = useRouter()
 
 const { state: cacheState, fetchRequests: fetchRequestsCached, updateRequestStatusInCache } = useApiCache()
 
@@ -66,9 +67,9 @@ const paginated = computed(() =>
   filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
 )
 
-const showDetail    = ref(false)
-const detailTarget  = ref<ContractRequest | null>(null)
-function openDetail(r: ContractRequest) { detailTarget.value = r; showDetail.value = true }
+function openDetail(r: ContractRequest) {
+  router.push(`/manager/contract-requests/${r.id}`)
+}
 
 // Optimistic local-state updates — PATCH endpoints can be wired later
 function handleApprove(id: string) {
@@ -148,12 +149,4 @@ function handleSetReviewing(id: string) {
     />
 
   </div>
-
-  <RequestDetailDialog
-    v-model:open="showDetail"
-    :request="detailTarget"
-    @approve="handleApprove"
-    @reject="handleReject"
-    @set-reviewing="handleSetReviewing"
-  />
 </template>

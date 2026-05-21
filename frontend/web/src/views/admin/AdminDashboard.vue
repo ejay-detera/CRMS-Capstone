@@ -187,7 +187,8 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
             <TableRow
               v-for="contract in allContracts"
               :key="contract.id"
-              class="border-b border-black/4 last:border-0 hover:bg-black/1.2 transition-colors"
+              class="border-b border-black/4 last:border-0 hover:bg-black/1.2 transition-colors cursor-pointer"
+              @click="router.push('/admin/contracts/' + contract.id)"
             >
               <TableCell class="pl-6 py-3.5 text-xs font-medium text-[#252578]/70">{{ contract.id }}</TableCell>
               <TableCell class="py-3.5 text-sm text-black">{{ contract.partner }}</TableCell>

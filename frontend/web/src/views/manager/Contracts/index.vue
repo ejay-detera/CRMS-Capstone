@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Upload, Plus } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import ContractsTable      from '@/views/admin/Contracts/ContractsTable.vue'
-import ContractDetailDialog from '@/views/admin/Contracts/ContractDetailDialog.vue'
 import EditContractDialog   from '@/views/admin/Contracts/EditContractDialog.vue'
 import { remainingDays } from '@/types/contract'
 import type { Contract, FilterTab } from '@/types/contract'
 import { useApiCache } from '@/composables/useApiCache'
 
 const { success, error } = useToast()
+const router = useRouter()
 
 const { state: cacheState, fetchContracts: fetchContractsCached, updateContractInCache, deleteContractFromCache } = useApiCache()
 
@@ -72,9 +73,9 @@ const paginated = computed(() =>
   filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
 )
 
-const showDetail   = ref(false)
-const detailTarget = ref<(Contract & { days: number }) | null>(null)
-function openDetail(c: Contract & { days: number }) { detailTarget.value = c; showDetail.value = true }
+function openDetail(c: Contract & { days: number }) {
+  router.push(`/manager/contracts/${c.id}`)
+}
 
 const showEdit   = ref(false)
 const editTarget = ref<Contract | null>(null)
@@ -173,6 +174,5 @@ function exportXLSX() {
 
   </div>
 
-  <ContractDetailDialog v-model:open="showDetail" :contract="detailTarget" />
   <EditContractDialog   v-model:open="showEdit"   :contract="editTarget"   @submit="handleEdit" />
 </template>

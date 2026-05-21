@@ -37,7 +37,9 @@ const expiringSoon = computed(() =>
           </div>
         </template>
         <template v-else>
-          <div v-for="c in expiringSoon" :key="c.id" class="px-5 py-3 flex items-center justify-between gap-3">
+          <div v-for="c in expiringSoon" :key="c.id"
+            @click="router.push('/sales/contracts/' + c.id)"
+            class="px-5 py-3 flex items-center justify-between gap-3 cursor-pointer hover:bg-black/1.5 transition-colors">
             <div class="min-w-0">
               <p class="text-xs font-medium text-black truncate">{{ c.businessPartner }}</p>
               <p class="text-[10px] text-black/35 mt-0.5">{{ c.id }}</p>
