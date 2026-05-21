@@ -1,13 +1,16 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import {
   ClipboardList, MapPin, CalendarDays, FileText,
-  Bell, CheckCircle, AlertCircle, ExternalLink,
+  Bell, CheckCircle, AlertCircle, ExternalLink, FilePenLine,
 } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { requestStatusBadge, fmtReqDate } from '@/types/contractRequest'
 import type { ContractRequest } from '@/types/contractRequest'
 import { safeHref } from '@/utils/sanitize'
+
+const router = useRouter()
 
 defineProps<{
   open:         boolean
@@ -129,8 +132,13 @@ const emit = defineEmits<{
 
           <div class="flex items-center justify-between gap-2">
 
-            <!-- Follow up action (pending only) -->
-            <div v-if="request.status === 'Pending'">
+            <!-- Edit + follow up actions (pending only) -->
+            <div v-if="request.status === 'Pending'" class="flex items-center gap-2">
+              <Button variant="outline"
+                @click="router.push(`/sales/contract-requests/${request.id}`); $emit('update:open', false)"
+                class="h-8 px-3.5 text-xs font-semibold border-[#252578]/25 text-[#252578] hover:bg-[#252578]/5 hover:border-[#252578]/40 gap-1.5">
+                <FilePenLine class="w-3.5 h-3.5" /> Edit Request
+              </Button>
               <Button v-if="!isFollowedUp"
                 @click="emit('followUp', request.id)"
                 variant="outline"

@@ -36,11 +36,10 @@ const emit = defineEmits<{
 }>()
 
 const filterTabs: { label: string; value: RequestFilterTab }[] = [
-  { label: 'All',          value: 'all'       },
-  { label: 'Pending',      value: 'pending'   },
-  { label: 'Under Review', value: 'reviewing' },
-  { label: 'Approved',     value: 'approved'  },
-  { label: 'Rejected',     value: 'rejected'  },
+  { label: 'All',      value: 'all'      },
+  { label: 'Pending',  value: 'pending'  },
+  { label: 'Approved', value: 'approved' },
+  { label: 'Rejected', value: 'rejected' },
 ]
 
 const palette = ['#252578', '#2E85D8', '#2F2F73']
