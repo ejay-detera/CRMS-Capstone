@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
-import { Upload, Plus, Loader2 } from 'lucide-vue-next'
+import { Upload, Plus } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
@@ -162,26 +162,34 @@ function exportXLSX() {
 
     <!-- Stat cards -->
     <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      <div v-for="card in statCardList" :key="card.label"
-        class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
-        <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
-        <div class="flex items-end justify-between gap-2">
-          <span class="text-3xl font-semibold tabular-nums" :class="card.valueClass">{{ card.value }}</span>
-          <span class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
-            :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
-            {{ card.change }}
-          </span>
+      <template v-if="loading">
+        <div v-for="i in 4" :key="i"
+          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
+          <div class="h-3.5 w-24 bg-black/5 animate-pulse rounded mb-4"></div>
+          <div class="flex items-end justify-between gap-2">
+            <div class="h-8 w-12 bg-black/5 animate-pulse rounded"></div>
+            <div class="h-5 w-10 bg-black/5 animate-pulse rounded mb-0.5"></div>
+          </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Loading -->
-    <div v-if="loading" class="flex items-center justify-center py-24 text-black/30">
-      <Loader2 class="w-8 h-8 animate-spin" />
+      </template>
+      <template v-else>
+        <div v-for="card in statCardList" :key="card.label"
+          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
+          <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
+          <div class="flex items-end justify-between gap-2">
+            <span class="text-3xl font-semibold tabular-nums" :class="card.valueClass">{{ card.value }}</span>
+            <span class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
+              :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
+              {{ card.change }}
+            </span>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- Table -->
-    <ContractsTable v-else
+    <ContractsTable
+      :loading="loading"
       :paginated="paginated"
       :filtered="filtered"
       :active-filter="activeFilter"

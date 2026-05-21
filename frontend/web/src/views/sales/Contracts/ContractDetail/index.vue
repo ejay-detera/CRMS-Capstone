@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { FileX, Loader2 } from 'lucide-vue-next'
+import { FileX } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
@@ -201,8 +201,34 @@ async function saveEdit() {
   <div class="p-8 space-y-6">
 
     <!-- Loading state -->
-    <div v-if="loadingContract" class="flex items-center justify-center py-24 text-black/30">
-      <Loader2 class="w-8 h-8 animate-spin" />
+    <div v-if="loadingContract" class="space-y-6">
+      <!-- Header Skeleton -->
+      <div class="flex items-center justify-between border-b border-black/5 pb-5">
+        <div class="space-y-2.5">
+          <div class="h-3.5 w-16 bg-black/5 animate-pulse rounded"></div>
+          <div class="h-6 w-64 bg-black/5 animate-pulse rounded"></div>
+          <div class="h-4.5 w-40 bg-black/5 animate-pulse rounded"></div>
+        </div>
+        <div class="flex gap-2">
+          <div class="h-9 w-20 bg-black/5 animate-pulse rounded-lg"></div>
+          <div class="h-9 w-24 bg-black/5 animate-pulse rounded-lg"></div>
+        </div>
+      </div>
+      <!-- Info Section Skeleton -->
+      <div class="bg-white rounded-lg border border-black/8 shadow-sm p-6 space-y-5">
+        <div class="h-4.5 w-32 bg-black/5 animate-pulse rounded"></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-for="i in 9" :key="i" class="space-y-2">
+            <div class="h-3 w-20 bg-black/5 animate-pulse rounded"></div>
+            <div class="h-4 w-40 bg-black/5 animate-pulse rounded"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Documents Section Skeleton -->
+      <div class="bg-white rounded-lg border border-black/8 shadow-sm p-6 space-y-4">
+        <div class="h-4.5 w-32 bg-black/5 animate-pulse rounded"></div>
+        <div class="h-12 w-full bg-black/5 animate-pulse rounded-lg"></div>
+      </div>
     </div>
 
     <!-- Not-found state -->

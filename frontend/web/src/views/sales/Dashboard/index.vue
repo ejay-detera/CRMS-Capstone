@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { Loader2 } from 'lucide-vue-next'
 import { remainingDays } from '@/types/contract'
 import type { Contract, ContractApprovalStatus, ContractWorkflowStatus, ContractRegion } from '@/types/contract'
 import type { ContractRequest, RequestStatus, RequestPriority } from '@/types/contractRequest'
@@ -158,31 +157,33 @@ const statCards = computed(() => [
       </div>
     </div>
 
-    <!-- Loading spinner -->
-    <div v-if="loading" class="flex items-center justify-center py-24 text-black/30">
-      <Loader2 class="w-8 h-8 animate-spin" />
-    </div>
-
-    <template v-else>
-      <!-- Stat cards -->
-      <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+    <!-- Stat cards -->
+    <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <template v-if="loading">
+        <div v-for="i in 4" :key="i"
+          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
+          <div class="h-3.5 w-24 bg-black/5 animate-pulse rounded mb-4"></div>
+          <div class="h-8 w-12 bg-black/5 animate-pulse rounded"></div>
+        </div>
+      </template>
+      <template v-else>
         <div v-for="card in statCards" :key="card.label"
           class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
           <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
           <p class="text-3xl font-semibold tabular-nums text-black">{{ card.value }}</p>
         </div>
-      </div>
+      </template>
+    </div>
 
-      <!-- Main content: requests table + status panel -->
-      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div class="xl:col-span-2">
-          <RecentRequestsTable :requests="recentRequests" />
-        </div>
-        <div>
-          <ContractStatusPanel :contracts="withDays" />
-        </div>
+    <!-- Main content: requests table + status panel -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div class="xl:col-span-2">
+        <RecentRequestsTable :requests="recentRequests" :loading="loading" />
       </div>
-    </template>
+      <div>
+        <ContractStatusPanel :contracts="withDays" :loading="loading" />
+      </div>
+    </div>
 
   </div>
 </template>
