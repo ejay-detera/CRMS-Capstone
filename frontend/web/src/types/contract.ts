@@ -29,7 +29,7 @@ export interface Contract {
 }
 
 export const approvalStatusBadge: Record<ContractApprovalStatus, string> = {
-  'Pending':  'bg-amber-50 text-amber-600 border-amber-200',
+  'Pending':  'bg-black/5 text-black/50 border-black/10',
   'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200',
   'Rejected': 'bg-red-50 text-red-600 border-red-200',
 }

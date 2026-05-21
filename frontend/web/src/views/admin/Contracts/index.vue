@@ -1,34 +1,65 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { Plus, Upload } from 'lucide-vue-next'
+import { computed, ref, watch, onMounted } from 'vue'
+import { Plus, Upload, Loader2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
 import ContractsTable       from './ContractsTable.vue'
 import ContractDetailDialog  from './ContractDetailDialog.vue'
 import EditContractDialog    from './EditContractDialog.vue'
 import { remainingDays } from '@/types/contract'
-import type { Contract, FilterTab } from '@/types/contract'
+import type { Contract, FilterTab, ContractApprovalStatus, ContractWorkflowStatus, ContractRegion } from '@/types/contract'
 
-const { success } = useToast()
+const { success, error } = useToast()
+const { state: authState } = useAuth()
 
-const contracts = ref<Contract[]>([
-  { id: 'CTR-001', businessPartner: 'Philippine National Bank', category: 'Service Agreement',     itemCode: 'ITM-0041', description: 'ATM Maintenance Unit',       serialNo: 'SN-2024-0041', region: 'Luzon',    startDate: '2026-01-01', endDate: '2026-12-31', approvalStatus: 'Approved',  workflowStatus: 'Notarized PDF', contractLink: '#', createdBy: 'Maria Santos'   },
-  { id: 'CTR-002', businessPartner: 'Globe Telecom',            category: 'Partnership Agreement', itemCode: 'ITM-0082', description: 'Network Infrastructure',    serialNo: 'SN-2024-0082', region: 'Luzon',    startDate: '2025-10-01', endDate: '2026-09-30', approvalStatus: 'Approved',  workflowStatus: 'Client Review', contractLink: '#', createdBy: 'Alex Rivera'    },
-  { id: 'CTR-003', businessPartner: 'MedLine Philippines',      category: 'Supply Contract',       itemCode: 'ITM-0113', description: 'Surgical Supply Agreement',  serialNo: 'SN-2025-0113', region: 'Luzon',    startDate: '2025-08-15', endDate: '2026-08-15', approvalStatus: 'Approved',  workflowStatus: 'Notarized PDF', contractLink: '#', createdBy: 'John Doe'       },
-  { id: 'CTR-004', businessPartner: 'BDO Unibank',              category: 'Equipment Lease',       itemCode: 'ITM-0054', description: 'Vault Security System',      serialNo: 'SN-2025-0054', region: 'Luzon',    startDate: '2026-01-01', endDate: '2026-07-01', approvalStatus: 'Pending',   workflowStatus: null,            contractLink: '#', createdBy: 'Sarah Jenkins'  },
-  { id: 'CTR-005', businessPartner: 'PLDT',                     category: 'Service Agreement',     itemCode: 'ITM-0095', description: 'Fiber Optic Maintenance',    serialNo: 'SN-2024-0095', region: 'Mindanao', startDate: '2026-01-01', endDate: '2026-06-30', approvalStatus: 'Approved',  workflowStatus: 'Client Review', contractLink: '#', createdBy: 'Emma Wilson'    },
-  { id: 'CTR-006', businessPartner: 'Bio-Tech Logistics',       category: 'Supply Contract',       itemCode: 'ITM-0076', description: 'Cold Chain Equipment',       serialNo: 'SN-2025-0076', region: 'Luzon',    startDate: '2025-12-15', endDate: '2026-06-15', approvalStatus: 'Approved',  workflowStatus: 'Notarized PDF', contractLink: '#', createdBy: 'Maria Santos'   },
-  { id: 'CTR-007', businessPartner: 'Cebu Pacific Air',         category: 'Service Agreement',     itemCode: 'ITM-0037', description: 'Cargo Handling Equipment',   serialNo: 'SN-2025-0037', region: 'Visayas',  startDate: '2025-11-20', endDate: '2026-05-20', approvalStatus: 'Rejected',  workflowStatus: 'SBSI Review',   contractLink: '#', createdBy: 'Alex Rivera'    },
-  { id: 'CTR-008', businessPartner: 'SM Prime Holdings',        category: 'Equipment Lease',       itemCode: 'ITM-0068', description: 'HVAC System Unit B',         serialNo: 'SN-2025-0068', region: 'Luzon',    startDate: '2025-11-25', endDate: '2026-05-25', approvalStatus: 'Approved',  workflowStatus: 'Client Review', contractLink: '#', createdBy: 'John Doe'       },
-  { id: 'CTR-009', businessPartner: 'Global Pharma Inc.',       category: 'Supply Contract',       itemCode: 'ITM-0019', description: 'Pharmaceutical Dispenser',   serialNo: 'SN-2025-0019', region: 'Visayas',  startDate: '2025-11-28', endDate: '2026-05-28', approvalStatus: 'Approved',  workflowStatus: 'Notarized PDF', contractLink: '#', createdBy: 'Sarah Jenkins'  },
-  { id: 'CTR-010', businessPartner: 'BioGenesis Research',      category: 'Equipment Maintenance', itemCode: 'ITM-0150', description: 'PCR Machine Unit 3',         serialNo: 'SN-2024-0150', region: 'Mindanao', startDate: '2025-10-30', endDate: '2026-04-30', approvalStatus: 'Pending',   workflowStatus: null,            contractLink: '#', createdBy: 'Emma Wilson'    },
-  { id: 'CTR-011', businessPartner: 'Stellar Lab Equipment',    category: 'Equipment Lease',       itemCode: 'ITM-0121', description: 'Centrifuge Model X200',       serialNo: 'SN-2024-0121', region: 'Luzon',    startDate: '2025-09-15', endDate: '2026-03-15', approvalStatus: 'Pending',   workflowStatus: null,            contractLink: '#', createdBy: 'Maria Santos'   },
-  { id: 'CTR-012', businessPartner: 'PharmaCare Dist.',         category: 'Supply Contract',       itemCode: 'ITM-0033', description: 'IV Fluid Supply Agreement',   serialNo: 'SN-2023-0033', region: 'Luzon',    startDate: '2025-07-01', endDate: '2026-01-01', approvalStatus: 'Approved',  workflowStatus: 'Client Review', contractLink: '#', createdBy: 'Alex Rivera'    },
-  { id: 'CTR-013', businessPartner: 'Metrobank',                category: 'Service Agreement',     itemCode: 'ITM-0087', description: 'Cash Counting Machine',       serialNo: 'SN-2024-0087', region: 'Mindanao', startDate: '2026-02-01', endDate: '2027-01-31', approvalStatus: 'Approved',  workflowStatus: 'Notarized PDF', contractLink: '#', createdBy: 'John Doe'       },
-  { id: 'CTR-014', businessPartner: 'LabTech Solutions',        category: 'Equipment Maintenance', itemCode: 'ITM-0102', description: 'Spectrophotometer SPX-5',     serialNo: 'SN-2025-0102', region: 'Visayas',  startDate: '2026-03-01', endDate: '2027-02-28', approvalStatus: 'Approved',  workflowStatus: 'Client Review', contractLink: '#', createdBy: 'Sarah Jenkins'  },
-  { id: 'CTR-015', businessPartner: 'Philippine Airlines',      category: 'Partnership Agreement', itemCode: 'ITM-0059', description: 'Ground Support Equipment',    serialNo: 'SN-2024-0059', region: 'Visayas',  startDate: '2026-01-15', endDate: '2026-07-15', approvalStatus: 'Rejected',  workflowStatus: 'SBSI Review',   contractLink: '#', createdBy: 'Emma Wilson'    },
-])
+const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+
+const contracts  = ref<Contract[]>([])
+const loading    = ref(true)
+
+function mapApiContract(d: any): Contract {
+  return {
+    id:              String(d.contract_id),
+    businessPartner: d.bp_name         ?? '',
+    category:        d.category        ?? '',
+    itemCode:        d.item_code       ?? '',
+    description:     d.description     ?? '',
+    serialNo:        d.serial_number   ?? '',
+    sbuNumber:       d.sbu_number      ?? '',
+    region:          (d.region         ?? 'Luzon') as ContractRegion,
+    startDate:       d.start_date      ?? '',
+    endDate:         d.end_date        ?? '',
+    approvalStatus:  (d.approval_status ?? 'Pending') as ContractApprovalStatus,
+    workflowStatus:  (d.workflow_status ?? null)       as ContractWorkflowStatus | null,
+    contractLink:    '',
+    createdBy:       d.created_by ? `User #${d.created_by}` : '—',
+  }
+}
+
+async function fetchContracts() {
+  loading.value = true
+  try {
+    const res = await fetch(`${apiBase}/contracts`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+    })
+    if (!res.ok) { error('Failed to load', 'Could not fetch contracts.'); return }
+    const json = await res.json()
+    contracts.value = (json.data ?? []).map(mapApiContract)
+  } catch {
+    error('Network error', 'Could not reach the server.')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchContracts)
+
+
 
 const activeFilter = ref<FilterTab>('all')
 const searchQuery  = ref('')
@@ -143,8 +174,13 @@ function exportXLSX() {
       </div>
     </div>
 
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center py-24 text-black/30">
+      <Loader2 class="w-8 h-8 animate-spin" />
+    </div>
+
     <!-- Table -->
-    <ContractsTable
+    <ContractsTable v-else
       :paginated="paginated"
       :filtered="filtered"
       :active-filter="activeFilter"

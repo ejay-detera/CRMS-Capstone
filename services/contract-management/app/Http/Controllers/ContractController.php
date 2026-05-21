@@ -35,6 +35,22 @@ class ContractController extends Controller
         ];
     }
 
+    public function index(Request $request)
+    {
+        $query = Contract::with(['documents', 'category', 'approvalStatus', 'workflowStatus']);
+
+        // If caller passes created_by (sales rep filtering own contracts)
+        if ($request->filled('created_by')) {
+            $query->where('created_by', $request->created_by);
+        }
+
+        $contracts = $query->orderByDesc('contract_id')->get();
+
+        return response()->json([
+            'data' => $contracts->map(fn ($c) => $this->formatContract($c))->values(),
+        ]);
+    }
+
     public function show(int $id)
     {
         $contract = Contract::with(['documents', 'category', 'approvalStatus', 'workflowStatus'])->findOrFail($id);

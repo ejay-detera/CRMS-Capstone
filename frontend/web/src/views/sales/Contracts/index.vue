@@ -1,32 +1,72 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Upload, Plus } from 'lucide-vue-next'
+import { Upload, Plus, Loader2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
 import SalesContractsTable  from './SalesContractsTable.vue'
 import ContractDetailDialog from '@/views/admin/Contracts/ContractDetailDialog.vue'
 import { remainingDays } from '@/types/contract'
-import type { Contract, FilterTab } from '@/types/contract'
+import type { Contract, FilterTab, ContractApprovalStatus, ContractWorkflowStatus, ContractRegion } from '@/types/contract'
 
 const router = useRouter()
-const { success } = useToast()
+const { success, error } = useToast()
+const { state: authState } = useAuth()
 
-const contracts = ref<Contract[]>([
-  { id: 'CTR-001', businessPartner: 'ABS-CBN Corporation',    category: 'Service Agreement',     itemCode: 'ITM-0041', description: 'Broadcast Equipment Unit',       serialNo: 'SN-2024-0041', region: 'Luzon',    startDate: '2026-01-01', endDate: '2026-12-31', approvalStatus: 'Pending', workflowStatus: null, contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'CTR-002', businessPartner: 'Globe Telecom',           category: 'Partnership Agreement', itemCode: 'ITM-0082', description: 'Network Infrastructure',         serialNo: 'SN-2024-0082', region: 'Luzon',    startDate: '2025-10-01', endDate: '2026-09-30', approvalStatus: 'Pending', workflowStatus: null, contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'CTR-003', businessPartner: 'San Miguel Brewery',      category: 'Supply Contract',       itemCode: 'ITM-0113', description: 'Industrial Cooling System',       serialNo: 'SN-2025-0113', region: 'Luzon',    startDate: '2025-08-15', endDate: '2026-08-15', approvalStatus: 'Pending', workflowStatus: null, contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'CTR-004', businessPartner: 'Ayala Land Inc.',         category: 'Equipment Lease',       itemCode: 'ITM-0054', description: 'HVAC Facility System',            serialNo: 'SN-2025-0054', region: 'Luzon',    startDate: '2026-01-01', endDate: '2026-07-01', approvalStatus: 'Pending', workflowStatus: null,   contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'CTR-005', businessPartner: 'Meralco',                 category: 'Service Agreement',     itemCode: 'ITM-0095', description: 'Power Monitoring Equipment',      serialNo: 'SN-2024-0095', region: 'Luzon',    startDate: '2026-01-01', endDate: '2026-06-30', approvalStatus: 'Pending', workflowStatus: null, contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'CTR-006', businessPartner: 'Jollibee Foods Corp.',    category: 'Supply Contract',       itemCode: 'ITM-0076', description: 'Refrigeration Unit Agreement',    serialNo: 'SN-2025-0076', region: 'Luzon',    startDate: '2025-12-15', endDate: '2026-06-15', approvalStatus: 'Pending', workflowStatus: null, contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'CTR-007', businessPartner: 'Cebu Pacific Air',        category: 'Service Agreement',     itemCode: 'ITM-0037', description: 'Cargo Handling Equipment',        serialNo: 'SN-2025-0037', region: 'Visayas',  startDate: '2025-11-20', endDate: '2026-05-20', approvalStatus: 'Pending', workflowStatus: null,   contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'CTR-008', businessPartner: 'SM Prime Holdings',       category: 'Equipment Lease',       itemCode: 'ITM-0068', description: 'Escalator Maintenance Unit',      serialNo: 'SN-2025-0068', region: 'Luzon',    startDate: '2025-11-25', endDate: '2026-05-25', approvalStatus: 'Pending', workflowStatus: null, contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'CTR-009', businessPartner: 'Global Pharma Inc.',      category: 'Supply Contract',       itemCode: 'ITM-0019', description: 'Pharmaceutical Dispenser',        serialNo: 'SN-2025-0019', region: 'Visayas',  startDate: '2025-11-28', endDate: '2026-05-28', approvalStatus: 'Pending', workflowStatus: null, contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'CTR-010', businessPartner: 'BioGenesis Research',     category: 'Equipment Maintenance', itemCode: 'ITM-0150', description: 'PCR Machine Unit 3',              serialNo: 'SN-2024-0150', region: 'Mindanao', startDate: '2025-10-30', endDate: '2026-04-30', approvalStatus: 'Pending', workflowStatus: null, contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'CTR-011', businessPartner: 'Stellar Lab Equipment',   category: 'Equipment Lease',       itemCode: 'ITM-0121', description: 'Centrifuge Model X200',           serialNo: 'SN-2024-0121', region: 'Luzon',    startDate: '2025-09-15', endDate: '2026-03-15', approvalStatus: 'Pending', workflowStatus: null,   contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'CTR-012', businessPartner: 'PharmaCare Dist.',        category: 'Supply Contract',       itemCode: 'ITM-0033', description: 'IV Fluid Supply Agreement',       serialNo: 'SN-2023-0033', region: 'Luzon',    startDate: '2025-07-01', endDate: '2026-01-01', approvalStatus: 'Pending', workflowStatus: null, contractLink: '#', createdBy: 'Shadrack Castro' },
-])
+const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+
+const contracts = ref<Contract[]>([])
+const loading   = ref(true)
+
+function mapApiContract(d: any): Contract {
+  const user = authState.user
+  const createdBy = (user && d.created_by === user.id)
+    ? `${user.first_name} ${user.last_name}`.trim()
+    : d.created_by ? `User #${d.created_by}` : '—'
+  return {
+    id:              String(d.contract_id),
+    businessPartner: d.bp_name         ?? '',
+    category:        d.category        ?? '',
+    itemCode:        d.item_code       ?? '',
+    description:     d.description     ?? '',
+    serialNo:        d.serial_number   ?? '',
+    sbuNumber:       d.sbu_number      ?? '',
+    region:          (d.region         ?? 'Luzon') as ContractRegion,
+    startDate:       d.start_date      ?? '',
+    endDate:         d.end_date        ?? '',
+    approvalStatus:  (d.approval_status ?? 'Pending') as ContractApprovalStatus,
+    workflowStatus:  (d.workflow_status ?? null)       as ContractWorkflowStatus | null,
+    contractLink:    '',
+    createdBy,
+  }
+}
+
+async function fetchContracts() {
+  loading.value = true
+  try {
+    const userId = authState.user?.id
+    const url = userId
+      ? `${apiBase}/contracts?created_by=${userId}`
+      : `${apiBase}/contracts`
+    const res = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+    })
+    if (!res.ok) { error('Failed to load', 'Could not fetch contracts.'); return }
+    const json = await res.json()
+    contracts.value = (json.data ?? []).map(mapApiContract)
+  } catch {
+    error('Network error', 'Could not reach the server.')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchContracts)
 
 const activeFilter = ref<FilterTab>('all')
 const searchQuery  = ref('')
@@ -130,8 +170,13 @@ function exportXLSX() {
       </div>
     </div>
 
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center py-24 text-black/30">
+      <Loader2 class="w-8 h-8 animate-spin" />
+    </div>
+
     <!-- Table -->
-    <SalesContractsTable
+    <SalesContractsTable v-else
       :paginated="paginated"
       :filtered="filtered"
       :active-filter="activeFilter"
