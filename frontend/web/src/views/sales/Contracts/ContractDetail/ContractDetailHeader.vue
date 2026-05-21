@@ -5,11 +5,12 @@ import { statusBadge } from '@/types/contract'
 import type { StoredContract } from '@/composables/useContractStore'
 
 const props = defineProps<{
-  contract: StoredContract
-  days: number
+  contract:  StoredContract
+  days:      number
+  isEditing: boolean
 }>()
 
-defineEmits<{ back: []; edit: [] }>()
+defineEmits<{ back: []; edit: []; save: []; cancel: [] }>()
 
 function daysDisplay(days: number) {
   if (days < 0)   return { text: `Expired ${Math.abs(days)}d ago`, cls: 'bg-red-50 text-red-600 border-red-200',     icon: AlertTriangle }
@@ -49,12 +50,26 @@ function daysDisplay(days: number) {
       </div>
     </div>
 
-    <!-- Edit button -->
-    <Button @click="$emit('edit')" variant="outline"
-      class="h-9 gap-2 text-sm font-medium border-[#252578]/25 text-[#252578] hover:bg-[#252578]/5 hover:border-[#252578]/40 shrink-0">
-      <FilePenLine class="w-4 h-4" />
-      Edit Contract
-    </Button>
+    <!-- Action buttons -->
+    <div class="flex items-center gap-2 shrink-0">
+      <template v-if="isEditing">
+        <Button @click="$emit('cancel')" variant="outline"
+          class="h-9 px-4 text-sm border-black/15 text-black/60 hover:text-black">
+          Cancel
+        </Button>
+        <Button @click="$emit('save')"
+          class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white shadow-sm">
+          Save Changes
+        </Button>
+      </template>
+      <template v-else>
+        <Button @click="$emit('edit')" variant="outline"
+          class="h-9 gap-2 text-sm font-medium border-[#252578]/25 text-[#252578] hover:bg-[#252578]/5 hover:border-[#252578]/40">
+          <FilePenLine class="w-4 h-4" />
+          Edit Contract
+        </Button>
+      </template>
+    </div>
 
   </div>
 </template>

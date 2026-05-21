@@ -1,19 +1,18 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { FileX } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useContractStore } from '@/composables/useContractStore'
 import { remainingDays } from '@/types/contract'
-import type { Contract } from '@/types/contract'
-import ContractDetailHeader    from './ContractDetailHeader.vue'
-import ContractInfoSection     from './ContractInfoSection.vue'
+import type { ContractRegion, UploadedDoc } from '@/types/contract'
+import ContractDetailHeader     from './ContractDetailHeader.vue'
+import ContractInfoSection      from './ContractInfoSection.vue'
 import ContractDocumentsSection from './ContractDocumentsSection.vue'
-import EditContractDialog      from './EditContractDialog.vue'
 
 const route  = useRoute()
 const router = useRouter()
-const { store, get, update } = useContractStore()
+const { store, get, update, updateDocs } = useContractStore()
 
 const id = route.params.id as string
 
@@ -24,10 +23,79 @@ const contract = computed(() => {
 
 const days = computed(() => contract.value ? remainingDays(contract.value.endDate) : 0)
 
-const showEdit = ref(false)
+// ── Inline edit state ────────────────────────────────────────────────────────
 
-function handleSave(patch: Omit<Contract, 'id' | 'createdBy'>) {
-  update(id, patch)
+const isEditing = ref(false)
+
+const editForm = reactive({
+  businessPartner: '',
+  category:        '',
+  itemCode:        '',
+  description:     '',
+  serialNo:        '',
+  region:          '' as ContractRegion | '',
+  startDate:       '',
+  endDate:         '',
+})
+
+const touched = reactive<Record<string, boolean>>({
+  businessPartner: false,
+  category:        false,
+  itemCode:        false,
+  description:     false,
+  serialNo:        false,
+  region:          false,
+  startDate:       false,
+  endDate:         false,
+})
+
+const dateError = computed(() =>
+  touched.startDate && touched.endDate && editForm.startDate && editForm.endDate
+    ? editForm.endDate <= editForm.startDate ? 'End date must be after start date.' : ''
+    : ''
+)
+
+const isFormValid = computed(() =>
+  !!editForm.businessPartner &&
+  !!editForm.category &&
+  !!editForm.itemCode &&
+  !!editForm.description &&
+  !!editForm.serialNo &&
+  !!editForm.region &&
+  !!editForm.startDate &&
+  !!editForm.endDate &&
+  !dateError.value
+)
+
+const contractDocs = ref<UploadedDoc[]>([])
+
+function startEdit() {
+  if (!contract.value) return
+  Object.assign(editForm, {
+    businessPartner: contract.value.businessPartner,
+    category:        contract.value.category,
+    itemCode:        contract.value.itemCode,
+    description:     contract.value.description,
+    serialNo:        contract.value.serialNo,
+    region:          contract.value.region,
+    startDate:       contract.value.startDate,
+    endDate:         contract.value.endDate,
+  })
+  contractDocs.value = [...contract.value.docs]
+  Object.keys(touched).forEach(k => (touched[k] = false))
+  isEditing.value = true
+}
+
+function cancelEdit() {
+  isEditing.value = false
+}
+
+function saveEdit() {
+  Object.keys(touched).forEach(k => (touched[k] = true))
+  if (!isFormValid.value) return
+  update(id, { ...editForm, region: editForm.region as ContractRegion })
+  updateDocs(id, contractDocs.value)
+  isEditing.value = false
 }
 </script>
 
@@ -50,23 +118,25 @@ function handleSave(patch: Omit<Contract, 'id' | 'createdBy'>) {
       <ContractDetailHeader
         :contract="contract"
         :days="days"
+        :is-editing="isEditing"
         @back="router.push('/sales/contracts')"
-        @edit="showEdit = true"
+        @edit="startEdit"
+        @save="saveEdit"
+        @cancel="cancelEdit"
       />
       <ContractInfoSection
         :contract="contract"
-        :days="days"
+        :is-editing="isEditing"
+        :edit-form="editForm"
+        :touched="touched"
+        :date-error="dateError"
       />
       <ContractDocumentsSection
-        :docs="contract.docs"
+        :docs="isEditing ? contractDocs : contract.docs"
+        :is-editing="isEditing"
+        @update:docs="contractDocs = $event"
       />
     </template>
-
-    <EditContractDialog
-      v-model:open="showEdit"
-      :contract="contract ?? null"
-      @save="handleSave"
-    />
 
   </div>
 </template>

@@ -26,5 +26,10 @@ export function useContractStore() {
     if (existing) Object.assign(existing, patch)
   }
 
-  return { store, generateId, save, get, update }
+  function updateDocs(id: string, docs: UploadedDoc[]): void {
+    const existing = store.get(id)
+    if (existing) existing.docs = docs
+  }
+
+  return { store, generateId, save, get, update, updateDocs }
 }
