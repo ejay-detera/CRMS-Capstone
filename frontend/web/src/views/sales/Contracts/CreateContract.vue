@@ -4,13 +4,16 @@ import { useRouter } from 'vue-router'
 import { ArrowLeft, ScanLine } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
+import { useContractStore, type StoredContract } from '@/composables/useContractStore'
 import OCRUploadDialog from './OCRUploadDialog.vue'
-import DocumentUpload  from './DocumentUpload.vue'
-import type { UploadedDoc } from './DocumentUpload.vue'
-import type { ContractRegion } from '@/types/contract'
+import DocumentUpload from './DocumentUpload.vue'
+import type { ContractRegion, UploadedDoc } from '@/types/contract'
 
 const router = useRouter()
 const { success } = useToast()
+const { user } = useAuth()
+const { generateId, save } = useContractStore()
 
 const showOCR     = ref(false)
 const contractDocs = ref<UploadedDoc[]>([])
@@ -94,8 +97,27 @@ function isValid() {
 function handleSubmit() {
   touchAll()
   if (!isValid()) return
+
+  const id = generateId()
+  const contract: StoredContract = {
+    id,
+    businessPartner: form.businessPartner,
+    category:        form.category,
+    itemCode:        form.itemCode,
+    description:     form.description,
+    serialNo:        form.serialNo,
+    region:          form.region as ContractRegion,
+    startDate:       form.startDate,
+    endDate:         form.endDate,
+    status:          'Notarized PDF',
+    contractLink:    '',
+    createdBy:       user.value ? `${user.value.first_name} ${user.value.last_name}`.trim() : 'Sales Rep',
+    docs:            contractDocs.value,
+  }
+  save(contract)
+  contractDocs.value = []
   success('Contract created', `${form.businessPartner}'s contract has been saved.`)
-  router.push('/sales/contracts')
+  router.push(`/sales/contracts/${id}`)
 }
 </script>
 

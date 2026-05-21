@@ -1,14 +1,9 @@
 <script setup lang="ts">
 import { ref, onUnmounted } from 'vue'
 import { UploadCloud, FileType2, X, AlertCircle } from 'lucide-vue-next'
+import type { UploadedDoc } from '@/types/contract'
 
-export interface UploadedDoc {
-  file:       File
-  name:       string
-  size:       number
-  type:       'pdf' | 'docx'
-  previewUrl: string
-}
+export type { UploadedDoc }
 
 const props = defineProps<{ modelValue: UploadedDoc[] }>()
 const emit  = defineEmits<{ 'update:modelValue': [v: UploadedDoc[]] }>()

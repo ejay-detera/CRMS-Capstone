@@ -1,4 +1,12 @@
 export type ContractStatus = 'Notarized PDF' | 'Client Review' | 'SBSI Review'
+
+export interface UploadedDoc {
+  file:       File
+  name:       string
+  size:       number
+  type:       'pdf' | 'docx'
+  previewUrl: string
+}
 export type ContractRegion = 'Luzon' | 'Visayas' | 'Mindanao'
 export type FilterTab      = 'all' | 'active' | 'expiring' | 'expired'
 
