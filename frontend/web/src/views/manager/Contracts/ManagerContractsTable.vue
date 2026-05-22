@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Search, MoreHorizontal, Eye, CheckCircle, XCircle } from 'lucide-vue-next'
+import { Search, MoreHorizontal, Eye, Pencil, AlertTriangle, Clock } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -12,34 +13,30 @@ import {
   Pagination, PaginationContent, PaginationEllipsis,
   PaginationItem, PaginationNext, PaginationPrevious,
 } from '@/components/ui/pagination'
-import { requestStatusBadge, fmtReqDate } from '@/types/contractRequest'
-import type { ContractRequest, RequestFilterTab } from '@/types/contractRequest'
+import { approvalStatusBadge, workflowStatusBadge, fmtDate } from '@/types/contract'
+import type { Contract, StatusFilter } from '@/types/contract'
+
+type ContractWithDays = Contract & { days: number }
+
+const router = useRouter()
 
 const props = defineProps<{
-  paginated:    ContractRequest[]
-  filtered:     ContractRequest[]
-  activeFilter: RequestFilterTab
-  searchQuery:  string
-  currentPage:  number
-  itemsPerPage: number
-  loading?:     boolean
+  paginated:     ContractWithDays[]
+  filtered:      ContractWithDays[]
+  statusFilter:  StatusFilter
+  statusOptions: { label: string; value: StatusFilter }[]
+  searchQuery:   string
+  currentPage:   number
+  itemsPerPage:  number
+  loading?:      boolean
 }>()
 
 const emit = defineEmits<{
-  openDetail:            [r: ContractRequest]
-  approve:               [id: string]
-  reject:                [id: string]
-  'update:activeFilter': [v: RequestFilterTab]
+  openDetail:            [c: ContractWithDays]
+  'update:statusFilter': [v: StatusFilter]
   'update:searchQuery':  [v: string]
   'update:currentPage':  [v: number]
 }>()
-
-const filterTabs: { label: string; value: RequestFilterTab }[] = [
-  { label: 'All',      value: 'all'      },
-  { label: 'Pending',  value: 'pending'  },
-  { label: 'Approved', value: 'approved' },
-  { label: 'Rejected', value: 'rejected' },
-]
 
 const palette = ['#252578', '#2E85D8', '#2F2F73']
 function initials(name: string) {
@@ -50,6 +47,12 @@ function avatarColor(name: string) {
   for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
   return palette[h % palette.length]
 }
+
+function daysLabel(days: number) {
+  if (days < 0)   return { text: 'Expired',       cls: 'text-red-500' }
+  if (days <= 30) return { text: `${days}d left`, cls: 'text-amber-500' }
+  return                 { text: `${days}d left`, cls: 'text-black/45' }
+}
 </script>
 
 <template>
@@ -58,27 +61,29 @@ function avatarColor(name: string) {
     <!-- Section heading -->
     <div class="px-6 pt-5 pb-4 border-b border-black/5">
       <h2 class="text-sm font-semibold text-black">
-        Contract Requests <span class="text-black/30 font-normal">({{ loading ? 0 : filtered.length }})</span>
+        All Contracts <span class="text-black/30 font-normal">({{ loading ? 0 : filtered.length }})</span>
       </h2>
     </div>
 
     <!-- Filters + search -->
     <div class="flex items-center justify-between px-6 py-3 border-b border-black/5 gap-4">
-      <div class="flex items-center gap-0.5 bg-black/4 rounded-md p-1 flex-wrap">
-        <button v-for="tab in filterTabs" :key="tab.value"
-          @click="emit('update:activeFilter', tab.value)"
-          class="px-4 py-1.5 text-sm rounded transition-all font-medium"
-          :class="activeFilter === tab.value
-            ? 'bg-white text-black shadow-sm'
-            : 'text-black/40 hover:text-black/60'">
-          {{ tab.label }}
-        </button>
-      </div>
+      <!-- Status dropdown -->
+      <select
+        :value="statusFilter"
+        @change="emit('update:statusFilter', ($event.target as HTMLSelectElement).value as StatusFilter)"
+        class="h-9 rounded-lg border border-black/10 bg-white px-3 pr-8 text-sm focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition appearance-none cursor-pointer"
+        :class="statusFilter ? 'text-black border-[#252578]/30' : 'text-black/45'">
+        <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
+          {{ opt.label }}
+        </option>
+      </select>
+
       <div class="relative w-56 shrink-0">
         <Search class="w-3.5 h-3.5 text-black/30 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input :value="searchQuery"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"
-          type="text" placeholder="Search requests..."
+          type="text" placeholder="Search contracts..."
+          maxlength="100"
           class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
       </div>
     </div>
@@ -87,11 +92,11 @@ function avatarColor(name: string) {
     <Table>
       <TableHeader class="bg-black/1.8">
         <TableRow class="border-b border-black/4 hover:bg-transparent">
-          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3 pl-6 w-60">Request</TableHead>
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3 pl-6 w-56">Contract</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Category</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Region</TableHead>
-          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Requested</TableHead>
-
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">End Date</TableHead>
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Remaining</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Sales Rep</TableHead>
           <TableHead class="w-12 py-3" />
@@ -101,84 +106,99 @@ function avatarColor(name: string) {
       <TableBody>
         <template v-if="loading">
           <TableRow v-for="i in itemsPerPage" :key="i" class="border-b border-black/4 last:border-0">
-            <!-- Request ID + Partner -->
             <TableCell class="py-4 pl-6">
               <div class="h-4 w-32 bg-black/5 animate-pulse rounded mb-1.5"></div>
               <div class="h-3 w-16 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Category -->
             <TableCell class="py-4">
               <div class="h-4 w-24 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Region -->
             <TableCell class="py-4">
               <div class="h-4 w-16 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Requested Date -->
             <TableCell class="py-4">
-              <div class="h-4 w-28 bg-black/5 animate-pulse rounded"></div>
+              <div class="h-4 w-20 bg-black/5 animate-pulse rounded mb-1.5"></div>
+              <div class="h-3 w-28 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-
-
-            <!-- Status -->
             <TableCell class="py-4">
-              <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
+              <div class="h-4 w-16 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Sales Rep -->
+            <TableCell class="py-4">
+              <div class="flex flex-col gap-1">
+                <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
+                <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
+              </div>
+            </TableCell>
             <TableCell class="py-4">
               <div class="flex items-center gap-2">
                 <div class="w-7 h-7 rounded-full bg-black/5 animate-pulse shrink-0"></div>
                 <div class="h-3 w-24 bg-black/5 animate-pulse rounded"></div>
               </div>
             </TableCell>
-
-            <!-- Actions -->
             <TableCell class="py-4 pr-4">
               <div class="h-8 w-8 bg-black/5 animate-pulse rounded ml-auto"></div>
             </TableCell>
           </TableRow>
         </template>
         <template v-else>
-          <TableRow v-for="r in paginated" :key="r.id"
+          <TableRow v-for="c in paginated" :key="c.id"
             class="border-b border-black/4 last:border-0 transition-colors hover:bg-black/1.2 cursor-pointer"
-            @click="emit('openDetail', r)">
+            @click="emit('openDetail', c)">
 
+            <!-- Contract ID + Partner -->
             <TableCell class="py-4 pl-6">
-              <p class="text-sm font-medium text-black leading-snug">{{ r.businessPartner }}</p>
-              <span class="text-[10px] font-mono text-black/35 bg-black/4 px-1.5 py-0.5 rounded mt-0.5 inline-block">{{ r.id }}</span>
+              <p class="text-sm font-medium text-black leading-snug">{{ c.businessPartner }}</p>
+              <span class="text-[10px] font-mono text-black/35 bg-black/4 px-1.5 py-0.5 rounded mt-0.5 inline-block">{{ c.id }}</span>
             </TableCell>
 
-            <TableCell class="py-4 text-sm text-black/60">{{ r.category }}</TableCell>
+            <!-- Category -->
+            <TableCell class="py-4 text-sm text-black/60">{{ c.category }}</TableCell>
 
-            <TableCell class="py-4 text-sm text-black/60">{{ r.region }}</TableCell>
+            <!-- Region -->
+            <TableCell class="py-4 text-sm text-black/60">{{ c.region }}</TableCell>
 
-            <TableCell class="py-4 text-sm text-black/60">{{ fmtReqDate(r.requestDate) }}</TableCell>
+            <!-- End Date -->
+            <TableCell class="py-4">
+              <p class="text-sm font-medium text-black">{{ fmtDate(c.endDate) }}</p>
+              <p class="text-xs text-black/35 mt-0.5">from {{ fmtDate(c.startDate) }}</p>
+            </TableCell>
 
-
-
-            <TableCell class="py-4" @click.stop>
-              <span class="text-xs font-medium px-2.5 py-0.5 rounded-full border whitespace-nowrap"
-                :class="requestStatusBadge[r.status]">
-                {{ r.status }}
+            <!-- Remaining Days -->
+            <TableCell class="py-4">
+              <span class="inline-flex items-center gap-1 text-sm font-medium" :class="daysLabel(c.days).cls">
+                <AlertTriangle v-if="c.days < 0"        class="w-3.5 h-3.5 shrink-0" />
+                <Clock         v-else-if="c.days <= 15" class="w-3.5 h-3.5 shrink-0" />
+                {{ daysLabel(c.days).text }}
               </span>
+            </TableCell>
+
+            <!-- Status -->
+            <TableCell class="py-4" @click.stop>
+              <div class="flex flex-col gap-1">
+                <span class="text-xs font-medium px-2.5 py-0.5 rounded-full border whitespace-nowrap w-fit"
+                  :class="approvalStatusBadge[c.approvalStatus]">
+                  {{ c.approvalStatus }}
+                </span>
+                <span v-if="c.workflowStatus"
+                  class="text-xs font-medium px-2.5 py-0.5 rounded-full border whitespace-nowrap w-fit"
+                  :class="workflowStatusBadge[c.workflowStatus]">
+                  {{ c.workflowStatus }}
+                </span>
+              </div>
             </TableCell>
 
             <!-- Sales Rep -->
             <TableCell class="py-4" @click.stop>
               <div class="flex items-center gap-2">
                 <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 select-none"
-                  :style="{ backgroundColor: avatarColor(r.createdBy) }">
-                  {{ initials(r.createdBy) }}
+                  :style="{ backgroundColor: avatarColor(c.createdBy) }">
+                  {{ initials(c.createdBy) }}
                 </div>
-                <span class="text-xs font-medium text-black/70">{{ r.createdBy }}</span>
+                <span class="text-xs font-medium text-black/70 leading-snug">{{ c.createdBy }}</span>
               </div>
             </TableCell>
 
+            <!-- Actions -->
             <TableCell class="py-4 pr-4" @click.stop>
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
@@ -187,31 +207,23 @@ function avatarColor(name: string) {
                     <MoreHorizontal class="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" class="w-48">
+                <DropdownMenuContent align="end" class="w-44">
                   <DropdownMenuLabel class="text-xs font-semibold text-black/38 pb-1">Actions</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem @click="emit('openDetail', r)" class="gap-2.5 text-sm cursor-pointer">
+                  <DropdownMenuItem @click="emit('openDetail', c)" class="gap-2.5 text-sm cursor-pointer">
                     <Eye class="w-3.5 h-3.5 text-black/40" /> View details
                   </DropdownMenuItem>
-                  <template v-if="r.status === 'Pending' || r.status === 'Under Review'">
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem @click="emit('approve', r.id)"
-                      class="gap-2.5 text-sm cursor-pointer text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50">
-                      <CheckCircle class="w-3.5 h-3.5" /> Approve
-                    </DropdownMenuItem>
-                    <DropdownMenuItem @click="emit('reject', r.id)"
-                      class="gap-2.5 text-sm cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
-                      <XCircle class="w-3.5 h-3.5" /> Reject
-                    </DropdownMenuItem>
-                  </template>
+                  <DropdownMenuItem @click="router.push(`/manager/contracts/${c.id}?edit=1`)" class="gap-2.5 text-sm cursor-pointer">
+                    <Pencil class="w-3.5 h-3.5 text-black/40" /> Edit contract
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </TableCell>
           </TableRow>
 
           <TableRow v-if="paginated.length === 0">
-            <TableCell colspan="7" class="text-center py-16">
-              <p class="text-sm font-semibold text-black/28">No requests found</p>
+            <TableCell colspan="8" class="text-center py-16">
+              <p class="text-sm font-semibold text-black/28">No contracts found</p>
               <p class="text-xs text-black/20 mt-1">Try a different filter or search term</p>
             </TableCell>
           </TableRow>

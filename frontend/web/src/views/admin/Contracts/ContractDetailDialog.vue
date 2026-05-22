@@ -1,8 +1,8 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { FileText, ExternalLink, MapPin, Hash, Cpu, Barcode, CalendarDays, Clock, AlertTriangle, User } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { statusBadge, fmtDate } from '@/types/contract'
+import { approvalStatusBadge, workflowStatusBadge, fmtDate } from '@/types/contract'
 import type { Contract } from '@/types/contract'
 import { safeHref } from '@/utils/sanitize'
 
@@ -42,8 +42,12 @@ function avatarColor(name: string) {
               <p class="text-xs text-black/45 mt-0.5">{{ contract.category }}</p>
               <div class="flex items-center gap-2 mt-1.5 flex-wrap">
                 <span class="text-[10px] font-mono text-black/30 bg-black/4 px-1.5 py-0.5 rounded">{{ contract.id }}</span>
-                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" :class="statusBadge[contract.status]">
-                  {{ contract.status }}
+                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" :class="approvalStatusBadge[contract.approvalStatus]">
+                  {{ contract.approvalStatus }}
+                </span>
+                <span v-if="contract.workflowStatus"
+                  class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" :class="workflowStatusBadge[contract.workflowStatus]">
+                  {{ contract.workflowStatus }}
                 </span>
               </div>
             </div>

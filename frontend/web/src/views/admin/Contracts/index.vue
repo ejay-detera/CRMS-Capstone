@@ -1,34 +1,35 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Plus, Upload } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import ContractsTable       from './ContractsTable.vue'
-import ContractDetailDialog  from './ContractDetailDialog.vue'
 import EditContractDialog    from './EditContractDialog.vue'
 import { remainingDays } from '@/types/contract'
 import type { Contract, FilterTab } from '@/types/contract'
+import { useApiCache } from '@/composables/useApiCache'
 
-const { success } = useToast()
+const { success, error } = useToast()
+const router = useRouter()
 
-const contracts = ref<Contract[]>([
-  { id: 'CTR-001', businessPartner: 'Philippine National Bank', category: 'Service Agreement',     itemCode: 'ITM-0041', description: 'ATM Maintenance Unit',       serialNo: 'SN-2024-0041', region: 'Luzon',    startDate: '2026-01-01', endDate: '2026-12-31', status: 'Notarized PDF', contractLink: '#', createdBy: 'Maria Santos'   },
-  { id: 'CTR-002', businessPartner: 'Globe Telecom',            category: 'Partnership Agreement', itemCode: 'ITM-0082', description: 'Network Infrastructure',    serialNo: 'SN-2024-0082', region: 'Luzon',    startDate: '2025-10-01', endDate: '2026-09-30', status: 'Client Review', contractLink: '#', createdBy: 'Alex Rivera'    },
-  { id: 'CTR-003', businessPartner: 'MedLine Philippines',      category: 'Supply Contract',       itemCode: 'ITM-0113', description: 'Surgical Supply Agreement',  serialNo: 'SN-2025-0113', region: 'Luzon',    startDate: '2025-08-15', endDate: '2026-08-15', status: 'Notarized PDF', contractLink: '#', createdBy: 'John Doe'       },
-  { id: 'CTR-004', businessPartner: 'BDO Unibank',              category: 'Equipment Lease',       itemCode: 'ITM-0054', description: 'Vault Security System',      serialNo: 'SN-2025-0054', region: 'Luzon',    startDate: '2026-01-01', endDate: '2026-07-01', status: 'SBSI Review',   contractLink: '#', createdBy: 'Sarah Jenkins'  },
-  { id: 'CTR-005', businessPartner: 'PLDT',                     category: 'Service Agreement',     itemCode: 'ITM-0095', description: 'Fiber Optic Maintenance',    serialNo: 'SN-2024-0095', region: 'Mindanao', startDate: '2026-01-01', endDate: '2026-06-30', status: 'Client Review', contractLink: '#', createdBy: 'Emma Wilson'    },
-  { id: 'CTR-006', businessPartner: 'Bio-Tech Logistics',       category: 'Supply Contract',       itemCode: 'ITM-0076', description: 'Cold Chain Equipment',       serialNo: 'SN-2025-0076', region: 'Luzon',    startDate: '2025-12-15', endDate: '2026-06-15', status: 'Notarized PDF', contractLink: '#', createdBy: 'Maria Santos'   },
-  { id: 'CTR-007', businessPartner: 'Cebu Pacific Air',         category: 'Service Agreement',     itemCode: 'ITM-0037', description: 'Cargo Handling Equipment',   serialNo: 'SN-2025-0037', region: 'Visayas',  startDate: '2025-11-20', endDate: '2026-05-20', status: 'SBSI Review',   contractLink: '#', createdBy: 'Alex Rivera'    },
-  { id: 'CTR-008', businessPartner: 'SM Prime Holdings',        category: 'Equipment Lease',       itemCode: 'ITM-0068', description: 'HVAC System Unit B',         serialNo: 'SN-2025-0068', region: 'Luzon',    startDate: '2025-11-25', endDate: '2026-05-25', status: 'Client Review', contractLink: '#', createdBy: 'John Doe'       },
-  { id: 'CTR-009', businessPartner: 'Global Pharma Inc.',       category: 'Supply Contract',       itemCode: 'ITM-0019', description: 'Pharmaceutical Dispenser',   serialNo: 'SN-2025-0019', region: 'Visayas',  startDate: '2025-11-28', endDate: '2026-05-28', status: 'Notarized PDF', contractLink: '#', createdBy: 'Sarah Jenkins'  },
-  { id: 'CTR-010', businessPartner: 'BioGenesis Research',      category: 'Equipment Maintenance', itemCode: 'ITM-0150', description: 'PCR Machine Unit 3',         serialNo: 'SN-2024-0150', region: 'Mindanao', startDate: '2025-10-30', endDate: '2026-04-30', status: 'Notarized PDF', contractLink: '#', createdBy: 'Emma Wilson'    },
-  { id: 'CTR-011', businessPartner: 'Stellar Lab Equipment',    category: 'Equipment Lease',       itemCode: 'ITM-0121', description: 'Centrifuge Model X200',       serialNo: 'SN-2024-0121', region: 'Luzon',    startDate: '2025-09-15', endDate: '2026-03-15', status: 'SBSI Review',   contractLink: '#', createdBy: 'Maria Santos'   },
-  { id: 'CTR-012', businessPartner: 'PharmaCare Dist.',         category: 'Supply Contract',       itemCode: 'ITM-0033', description: 'IV Fluid Supply Agreement',   serialNo: 'SN-2023-0033', region: 'Luzon',    startDate: '2025-07-01', endDate: '2026-01-01', status: 'Client Review', contractLink: '#', createdBy: 'Alex Rivera'    },
-  { id: 'CTR-013', businessPartner: 'Metrobank',                category: 'Service Agreement',     itemCode: 'ITM-0087', description: 'Cash Counting Machine',       serialNo: 'SN-2024-0087', region: 'Mindanao', startDate: '2026-02-01', endDate: '2027-01-31', status: 'Notarized PDF', contractLink: '#', createdBy: 'John Doe'       },
-  { id: 'CTR-014', businessPartner: 'LabTech Solutions',        category: 'Equipment Maintenance', itemCode: 'ITM-0102', description: 'Spectrophotometer SPX-5',     serialNo: 'SN-2025-0102', region: 'Visayas',  startDate: '2026-03-01', endDate: '2027-02-28', status: 'Client Review', contractLink: '#', createdBy: 'Sarah Jenkins'  },
-  { id: 'CTR-015', businessPartner: 'Philippine Airlines',      category: 'Partnership Agreement', itemCode: 'ITM-0059', description: 'Ground Support Equipment',    serialNo: 'SN-2024-0059', region: 'Visayas',  startDate: '2026-01-15', endDate: '2026-07-15', status: 'SBSI Review',   contractLink: '#', createdBy: 'Emma Wilson'    },
-])
+const { state: cacheState, fetchContracts: fetchContractsCached, updateContractInCache, deleteContractFromCache } = useApiCache()
+
+const contracts = computed(() => cacheState.contracts || [])
+const loading   = computed(() => cacheState.contractsLoading)
+
+async function fetchContracts() {
+  try {
+    await fetchContractsCached()
+  } catch {
+    error('Network error', 'Could not reach the server.')
+  }
+}
+
+onMounted(fetchContracts)
+
+
 
 const activeFilter = ref<FilterTab>('all')
 const searchQuery  = ref('')
@@ -72,9 +73,9 @@ const paginated = computed(() =>
   filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
 )
 
-const showDetail   = ref(false)
-const detailTarget = ref<(Contract & { days: number }) | null>(null)
-function openDetail(c: Contract & { days: number }) { detailTarget.value = c; showDetail.value = true }
+function openDetail(c: Contract & { days: number }) {
+  router.push(`/admin/contracts/${c.id}`)
+}
 
 const showEdit   = ref(false)
 const editTarget = ref<Contract | null>(null)
@@ -82,15 +83,13 @@ function openEdit(c: Contract & { days: number }) { editTarget.value = c; showEd
 
 function handleEdit(data: Omit<Contract, 'id' | 'createdBy'>) {
   if (!editTarget.value) return
-  const idx = contracts.value.findIndex(c => c.id === editTarget.value!.id)
-  if (idx < 0) return
-  contracts.value[idx] = { ...contracts.value[idx], ...data }
+  updateContractInCache(editTarget.value.id, data)
   success('Contract updated', `${data.businessPartner}'s contract has been saved.`)
 }
 
 function handleDelete(id: string) {
   const name = contracts.value.find(c => c.id === id)?.businessPartner ?? id
-  contracts.value = contracts.value.filter(c => c.id !== id)
+  deleteContractFromCache(id)
   success('Contract removed', `${name}'s contract has been deleted.`)
 }
 
@@ -99,7 +98,7 @@ function exportXLSX() {
     'Contract ID': c.id, 'Business Partner': c.businessPartner, 'Category': c.category,
     'Item Code': c.itemCode, 'Description': c.description, 'Serial No': c.serialNo,
     'Region': c.region, 'Start Date': c.startDate, 'End Date': c.endDate,
-    'Remaining Days': c.days, 'Status': c.status,
+    'Remaining Days': c.days, 'Approval Status': c.approvalStatus, 'Workflow Status': c.workflowStatus ?? '',
   }))
   const ws = XLSX.utils.json_to_sheet(rows)
   const wb = XLSX.utils.book_new()
@@ -130,21 +129,34 @@ function exportXLSX() {
 
     <!-- Stat cards -->
     <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      <div v-for="card in statCardList" :key="card.label"
-        class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
-        <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
-        <div class="flex items-end justify-between gap-2">
-          <span class="text-3xl font-semibold tabular-nums" :class="card.valueClass">{{ card.value }}</span>
-          <span class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
-            :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
-            {{ card.change }}
-          </span>
+      <template v-if="loading">
+        <div v-for="i in 4" :key="i"
+          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
+          <div class="h-3.5 w-24 bg-black/5 animate-pulse rounded mb-4"></div>
+          <div class="flex items-end justify-between gap-2">
+            <div class="h-8 w-12 bg-black/5 animate-pulse rounded"></div>
+            <div class="h-5 w-10 bg-black/5 animate-pulse rounded mb-0.5"></div>
+          </div>
         </div>
-      </div>
+      </template>
+      <template v-else>
+        <div v-for="card in statCardList" :key="card.label"
+          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
+          <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
+          <div class="flex items-end justify-between gap-2">
+            <span class="text-3xl font-semibold tabular-nums" :class="card.valueClass">{{ card.value }}</span>
+            <span class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
+              :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
+              {{ card.change }}
+            </span>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- Table -->
     <ContractsTable
+      :loading="loading"
       :paginated="paginated"
       :filtered="filtered"
       :active-filter="activeFilter"
@@ -161,6 +173,5 @@ function exportXLSX() {
 
   </div>
 
-  <ContractDetailDialog v-model:open="showDetail" :contract="detailTarget" />
   <EditContractDialog   v-model:open="showEdit"   :contract="editTarget"   @submit="handleEdit" />
 </template>

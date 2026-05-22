@@ -1,6 +1,16 @@
-export type ContractStatus = 'Notarized PDF' | 'Client Review' | 'SBSI Review'
+export type ContractWorkflowStatus  = 'Notarized PDF' | 'Client Review' | 'SBSI Review'
+export type ContractApprovalStatus  = 'Pending' | 'Approved' | 'Rejected'
+
+export interface UploadedDoc {
+  file?:       File
+  name:        string
+  size:        number
+  type:        'pdf' | 'docx'
+  previewUrl?: string
+}
 export type ContractRegion = 'Luzon' | 'Visayas' | 'Mindanao'
 export type FilterTab      = 'all' | 'active' | 'expiring' | 'expired'
+export type StatusFilter   = '' | ContractApprovalStatus | ContractWorkflowStatus
 
 export interface Contract {
   id:              string
@@ -9,15 +19,24 @@ export interface Contract {
   itemCode:        string
   description:     string
   serialNo:        string
+  sbuNumber?:      string
   region:          ContractRegion
   startDate:       string
   endDate:         string
-  status:          ContractStatus
+  approvalStatus:  ContractApprovalStatus
+  workflowStatus:  ContractWorkflowStatus | null
   contractLink:    string
   createdBy:       string
+  docs:            UploadedDoc[]
 }
 
-export const statusBadge: Record<ContractStatus, string> = {
+export const approvalStatusBadge: Record<ContractApprovalStatus, string> = {
+  'Pending':  'bg-black/5 text-black/50 border-black/10',
+  'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Rejected': 'bg-red-50 text-red-600 border-red-200',
+}
+
+export const workflowStatusBadge: Record<ContractWorkflowStatus, string> = {
   'Notarized PDF': 'bg-black/5 text-black/60 border-black/12',
   'Client Review': 'bg-emerald-50 text-emerald-700 border-emerald-200',
   'SBSI Review':   'bg-red-50 text-red-600 border-red-200',

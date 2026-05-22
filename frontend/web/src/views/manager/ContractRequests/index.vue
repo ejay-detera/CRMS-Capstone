@@ -1,29 +1,28 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import RequestsTable      from './RequestsTable.vue'
-import RequestDetailDialog from './RequestDetailDialog.vue'
 import type { ContractRequest, RequestFilterTab } from '@/types/contractRequest'
+import { useApiCache } from '@/composables/useApiCache'
 
-const { success } = useToast()
+const { success, error } = useToast()
+const router = useRouter()
 
-const requests = ref<ContractRequest[]>([
-  { id: 'REQ-001', businessPartner: 'Philippine National Bank', category: 'Service Agreement',     description: 'ATM maintenance unit for Luzon region branches.',               region: 'Luzon',    requestDate: '2026-01-15', startDate: '2026-03-01', endDate: '2027-02-28', priority: 'High',   status: 'Pending',      notes: 'Urgent — required before Q1 audit.', rejectionReason: '', contractLink: '#', createdBy: 'Maria Santos'  },
-  { id: 'REQ-002', businessPartner: 'Globe Telecom',            category: 'Partnership Agreement', description: 'Network infrastructure expansion across Luzon corridors.',      region: 'Luzon',    requestDate: '2026-01-18', startDate: '2026-04-01', endDate: '2027-03-31', priority: 'High',   status: 'Under Review', notes: 'Awaiting technical review from IT.', rejectionReason: '', contractLink: '#', createdBy: 'Alex Rivera'   },
-  { id: 'REQ-003', businessPartner: 'MedLine Philippines',      category: 'Supply Contract',       description: 'Surgical supply agreement for Luzon hospitals.',                region: 'Luzon',    requestDate: '2025-12-10', startDate: '2026-02-01', endDate: '2027-01-31', priority: 'Medium', status: 'Approved',     notes: '', rejectionReason: '', contractLink: '#', createdBy: 'John Doe'      },
-  { id: 'REQ-004', businessPartner: 'BDO Unibank',              category: 'Equipment Lease',       description: 'Vault security system lease for Makati branch.',                region: 'Luzon',    requestDate: '2025-11-28', startDate: '2026-01-15', endDate: '2026-07-15', priority: 'Low',    status: 'Rejected',     notes: '', rejectionReason: 'Budget constraints for this fiscal year. Please resubmit next quarter.', contractLink: '#', createdBy: 'Sarah Jenkins' },
-  { id: 'REQ-005', businessPartner: 'PLDT',                     category: 'Service Agreement',     description: 'Fiber optic maintenance contract for Mindanao operations.',     region: 'Mindanao', requestDate: '2026-02-01', startDate: '2026-05-01', endDate: '2027-04-30', priority: 'Medium', status: 'Pending',      notes: 'Renewal of previous contract.', rejectionReason: '', contractLink: '#', createdBy: 'Emma Wilson'   },
-  { id: 'REQ-006', businessPartner: 'Bio-Tech Logistics',       category: 'Supply Contract',       description: 'Cold chain equipment supply for vaccine distribution.',          region: 'Luzon',    requestDate: '2026-01-22', startDate: '2026-03-15', endDate: '2026-09-15', priority: 'High',   status: 'Under Review', notes: 'Temperature-sensitive logistics required.', rejectionReason: '', contractLink: '#', createdBy: 'Maria Santos'  },
-  { id: 'REQ-007', businessPartner: 'Cebu Pacific Air',         category: 'Service Agreement',     description: 'Cargo handling equipment services for Visayas routes.',          region: 'Visayas',  requestDate: '2025-12-20', startDate: '2026-02-15', endDate: '2026-08-15', priority: 'Low',    status: 'Approved',     notes: '', rejectionReason: '', contractLink: '#', createdBy: 'Alex Rivera'   },
-  { id: 'REQ-008', businessPartner: 'SM Prime Holdings',        category: 'Equipment Lease',       description: 'HVAC system lease for SM Mall of Asia expansion units.',         region: 'Luzon',    requestDate: '2026-02-05', startDate: '2026-04-01', endDate: '2027-03-31', priority: 'Medium', status: 'Pending',      notes: 'Property management approved on their end.', rejectionReason: '', contractLink: '#', createdBy: 'John Doe'      },
-  { id: 'REQ-009', businessPartner: 'Global Pharma Inc.',       category: 'Supply Contract',       description: 'Pharmaceutical dispenser units for Visayas distribution.',       region: 'Visayas',  requestDate: '2026-01-30', startDate: '2026-03-20', endDate: '2026-09-20', priority: 'High',   status: 'Under Review', notes: 'Compliance documents submitted.', rejectionReason: '', contractLink: '#', createdBy: 'Sarah Jenkins' },
-  { id: 'REQ-010', businessPartner: 'BioGenesis Research',      category: 'Equipment Maintenance', description: 'PCR machine maintenance agreement for Mindanao labs.',           region: 'Mindanao', requestDate: '2025-11-15', startDate: '2026-01-01', endDate: '2026-12-31', priority: 'Medium', status: 'Approved',     notes: '', rejectionReason: '', contractLink: '#', createdBy: 'Emma Wilson'   },
-  { id: 'REQ-011', businessPartner: 'Stellar Lab Equipment',    category: 'Equipment Lease',       description: 'Centrifuge model X200 lease for clinical laboratory.',            region: 'Luzon',    requestDate: '2025-10-30', startDate: '2026-01-01', endDate: '2026-06-30', priority: 'Low',    status: 'Rejected',     notes: '', rejectionReason: 'Vendor not on approved supplier list. Procurement review required.', contractLink: '#', createdBy: 'Maria Santos'  },
-  { id: 'REQ-012', businessPartner: 'PharmaCare Dist.',         category: 'Supply Contract',       description: 'IV fluid supply for hospital network across Luzon.',             region: 'Luzon',    requestDate: '2026-02-10', startDate: '2026-04-15', endDate: '2027-04-14', priority: 'High',   status: 'Pending',      notes: 'Critical supply — stock running low.', rejectionReason: '', contractLink: '#', createdBy: 'Alex Rivera'   },
-  { id: 'REQ-013', businessPartner: 'Metrobank',                category: 'Service Agreement',     description: 'Cash counting machine service agreement for Mindanao offices.',  region: 'Mindanao', requestDate: '2025-12-05', startDate: '2026-02-01', endDate: '2027-01-31', priority: 'Medium', status: 'Approved',     notes: '', rejectionReason: '', contractLink: '#', createdBy: 'John Doe'      },
-  { id: 'REQ-014', businessPartner: 'LabTech Solutions',        category: 'Equipment Maintenance', description: 'Spectrophotometer SPX-5 calibration and maintenance.',           region: 'Visayas',  requestDate: '2026-02-12', startDate: '2026-05-01', endDate: '2027-04-30', priority: 'Medium', status: 'Under Review', notes: 'ISO certification review in progress.', rejectionReason: '', contractLink: '#', createdBy: 'Sarah Jenkins' },
-  { id: 'REQ-015', businessPartner: 'Philippine Airlines',      category: 'Partnership Agreement', description: 'Ground support equipment partnership for Visayas airports.',      region: 'Visayas',  requestDate: '2026-01-25', startDate: '2026-04-01', endDate: '2026-10-01', priority: 'High',   status: 'Pending',      notes: 'Board approval pending.', rejectionReason: '', contractLink: '#', createdBy: 'Emma Wilson'   },
-])
+const { state: cacheState, fetchRequests: fetchRequestsCached, updateRequestStatusInCache } = useApiCache()
+
+const requests = computed(() => cacheState.requests || [])
+const loading  = computed(() => cacheState.requestsLoading)
+
+async function fetchRequests() {
+  try {
+    await fetchRequestsCached()
+  } catch {
+    error('Network error', 'Could not reach the server.')
+  }
+}
+
+onMounted(fetchRequests)
 
 const activeFilter = ref<RequestFilterTab>('all')
 const searchQuery  = ref('')
@@ -68,31 +67,25 @@ const paginated = computed(() =>
   filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
 )
 
-const showDetail    = ref(false)
-const detailTarget  = ref<ContractRequest | null>(null)
-function openDetail(r: ContractRequest) { detailTarget.value = r; showDetail.value = true }
+function openDetail(r: ContractRequest) {
+  router.push(`/manager/contract-requests/${r.id}`)
+}
 
+// Optimistic local-state updates — PATCH endpoints can be wired later
 function handleApprove(id: string) {
   const r = requests.value.find(x => x.id === id)
   if (!r) return
-  r.status = 'Approved'
+  updateRequestStatusInCache(id, 'Approved')
   success('Request approved', `${r.businessPartner}'s contract request has been approved.`)
 }
 
 function handleReject(id: string, reason: string = '') {
   const r = requests.value.find(x => x.id === id)
   if (!r) return
-  r.status = 'Rejected'
-  r.rejectionReason = reason
+  updateRequestStatusInCache(id, 'Rejected', { rejectionReason: reason })
   success('Request rejected', `${r.businessPartner}'s contract request has been rejected.`)
 }
 
-function handleSetReviewing(id: string) {
-  const r = requests.value.find(x => x.id === id)
-  if (!r) return
-  r.status = 'Under Review'
-  success('Status updated', `${r.businessPartner}'s request is now under review.`)
-}
 </script>
 
 <template>
@@ -106,21 +99,34 @@ function handleSetReviewing(id: string) {
 
     <!-- Stat cards -->
     <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      <div v-for="card in statCardList" :key="card.label"
-        class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
-        <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
-        <div class="flex items-end justify-between gap-2">
-          <span class="text-3xl font-semibold tabular-nums" :class="card.valueClass">{{ card.value }}</span>
-          <span class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
-            :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
-            {{ card.change }}
-          </span>
+      <template v-if="loading">
+        <div v-for="i in 4" :key="i"
+          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
+          <div class="h-3.5 w-24 bg-black/5 animate-pulse rounded mb-4"></div>
+          <div class="flex items-end justify-between gap-2">
+            <div class="h-8 w-12 bg-black/5 animate-pulse rounded"></div>
+            <div class="h-5 w-10 bg-black/5 animate-pulse rounded mb-0.5"></div>
+          </div>
         </div>
-      </div>
+      </template>
+      <template v-else>
+        <div v-for="card in statCardList" :key="card.label"
+          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
+          <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
+          <div class="flex items-end justify-between gap-2">
+            <span class="text-3xl font-semibold tabular-nums" :class="card.valueClass">{{ card.value }}</span>
+            <span class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
+              :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
+              {{ card.change }}
+            </span>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- Table -->
     <RequestsTable
+      :loading="loading"
       :paginated="paginated"
       :filtered="filtered"
       :active-filter="activeFilter"
@@ -130,19 +136,10 @@ function handleSetReviewing(id: string) {
       @open-detail="openDetail"
       @approve="handleApprove"
       @reject="handleReject"
-      @set-reviewing="handleSetReviewing"
       @update:active-filter="activeFilter = $event"
       @update:search-query="searchQuery = $event"
       @update:current-page="currentPage = $event"
     />
 
   </div>
-
-  <RequestDetailDialog
-    v-model:open="showDetail"
-    :request="detailTarget"
-    @approve="handleApprove"
-    @reject="handleReject"
-    @set-reviewing="handleSetReviewing"
-  />
 </template>

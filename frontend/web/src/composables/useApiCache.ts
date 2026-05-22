@@ -1,0 +1,349 @@
+import { reactive, watch } from 'vue'
+import { useAuth } from './useAuth'
+import type { Contract, ContractRegion, ContractApprovalStatus, ContractWorkflowStatus } from '@/types/contract'
+import type { ContractRequest, RequestStatus } from '@/types/contractRequest'
+
+interface CacheState {
+  contracts: Contract[] | null
+  contractsScope: string | null // 'all' or 'user-<id>'
+  contractsLoading: boolean
+
+  requests: ContractRequest[] | null
+  requestsScope: string | null // 'all' or 'user-<id>'
+  requestsLoading: boolean
+
+  cachedToken: string | null
+  cachedUserId: number | null
+}
+
+const state = reactive<CacheState>({
+  contracts: null,
+  contractsScope: null,
+  contractsLoading: false,
+
+  requests: null,
+  requestsScope: null,
+  requestsLoading: false,
+
+  cachedToken: null,
+  cachedUserId: null,
+})
+
+// Reactively watch for auth state changes to clear cache instantly
+watch(
+  () => {
+    const { state: authState } = useAuth()
+    return [authState.token, authState.user?.id || null] as const
+  },
+  ([currentToken, currentUserId]) => {
+    if (state.cachedToken !== currentToken || state.cachedUserId !== currentUserId) {
+      state.contracts = null
+      state.contractsScope = null
+      state.contractsLoading = false
+
+      state.requests = null
+      state.requestsScope = null
+      state.requestsLoading = false
+
+      state.cachedToken = currentToken
+      state.cachedUserId = currentUserId
+    }
+  },
+  { immediate: true }
+)
+
+function validateCacheCredentials() {
+  const { state: authState } = useAuth()
+  const currentToken = authState.token
+  const currentUserId = authState.user?.id || null
+
+  // If credentials changed, clear cache completely to avoid data exposure
+  if (state.cachedToken !== currentToken || state.cachedUserId !== currentUserId) {
+    state.contracts = null
+    state.contractsScope = null
+    state.contractsLoading = false
+
+    state.requests = null
+    state.requestsScope = null
+    state.requestsLoading = false
+
+    state.cachedToken = currentToken
+    state.cachedUserId = currentUserId
+  }
+}
+
+function mapApiContract(d: any, currentUserId: number | null, firstName?: string, lastName?: string): Contract {
+  const isCreatedByCurrentUser = currentUserId !== null && d.created_by === currentUserId
+  const createdBy = isCreatedByCurrentUser
+    ? `${firstName || ''} ${lastName || ''}`.trim() || 'Me'
+    : d.created_by ? `User #${d.created_by}` : '—'
+
+  return {
+    id:              String(d.contract_id),
+    businessPartner: d.bp_name         ?? '',
+    category:        d.category        ?? '',
+    itemCode:        d.item_code       ?? '',
+    description:     d.description     ?? '',
+    serialNo:        d.serial_number   ?? '',
+    sbuNumber:       d.sbu_number      ?? '',
+    region:          (d.region         ?? 'Luzon') as ContractRegion,
+    startDate:       d.start_date      ?? '',
+    endDate:         d.end_date        ?? '',
+    approvalStatus:  (d.approval_status ?? 'Pending') as ContractApprovalStatus,
+    workflowStatus:  (d.workflow_status ?? null)       as ContractWorkflowStatus | null,
+    contractLink:    '',
+    createdBy,
+    docs: (d.documents ?? []).map((doc: any) => ({
+      name: doc.file_name,
+      type: doc.file_type as 'pdf' | 'docx',
+      size: doc.file_size ?? 0,
+    })),
+  }
+}
+
+const STATUS_MAP: Record<string, RequestStatus> = {
+  'Pending':      'Pending',
+  'Under Review': 'Under Review',
+  'Approved':     'Approved',
+  'Rejected':     'Rejected',
+}
+
+function mapApiToRequest(d: any, currentUserId: number | null, firstName?: string, lastName?: string): ContractRequest {
+  const isCreatedByCurrentUser = currentUserId !== null && d.created_by === currentUserId
+  const createdBy = isCreatedByCurrentUser
+    ? `${firstName || ''} ${lastName || ''}`.trim() || 'Me'
+    : d.created_by ? `User #${d.created_by}` : '—'
+
+  return {
+    id:              `REQ-${String(d.contract_id).padStart(3, '0')}`,
+    businessPartner: d.bp_name        ?? '',
+    category:        d.category       ?? '',
+    description:     d.description    ?? '',
+    region:          (d.region        ?? 'Luzon') as ContractRequest['region'],
+    requestDate:     d.created_at     ?? '',
+    startDate:       d.start_date     ?? '',
+    endDate:         d.end_date       ?? '',
+    status:          d.approval_status === 'Approved' ? 'Approved'
+      : d.approval_status === 'Rejected'             ? 'Rejected'
+      : d.workflow_status                            ? 'Under Review'
+      : 'Pending',
+    notes:           '',
+    rejectionReason: '',
+    contractLink:    '',
+    createdBy,
+    docs: (d.documents ?? []).map((doc: any) => ({
+      name: doc.file_name,
+      type: doc.file_type as 'pdf' | 'docx',
+      size: doc.file_size ?? 0,
+    })),
+    itemCode:        d.item_code      ?? '',
+    serialNo:        d.serial_number  ?? '',
+    sbuNumber:       d.sbu_number     ?? '',
+  }
+}
+
+async function fetchDashboard(force = false): Promise<void> {
+  validateCacheCredentials()
+
+  const userId = state.cachedUserId
+  const scope  = userId ? `user-${userId}` : 'all'
+
+  if (
+    state.contracts !== null && state.contractsScope === scope &&
+    state.requests  !== null && state.requestsScope  === scope &&
+    !force
+  ) return
+
+  state.contractsLoading = true
+  state.requestsLoading  = true
+
+  const { state: authState } = useAuth()
+  const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+
+  try {
+    const res = await fetch(`${apiBase}/dashboard`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${state.cachedToken}`,
+      },
+    })
+
+    if (!res.ok) throw new Error('Failed to fetch dashboard data')
+
+    const json = await res.json()
+    const user = authState.user
+    const data: any[] = json.data ?? []
+
+    state.contracts = data.map(d => mapApiContract(d, state.cachedUserId, user?.first_name, user?.last_name))
+    state.requests  = data.map(d => mapApiToRequest(d, state.cachedUserId, user?.first_name, user?.last_name))
+    state.contractsScope = scope
+    state.requestsScope  = scope
+  } finally {
+    state.contractsLoading = false
+    state.requestsLoading  = false
+  }
+}
+
+async function fetchContracts(userId?: number, force = false): Promise<Contract[]> {
+  validateCacheCredentials()
+
+  const scope = userId ? `user-${userId}` : 'all'
+
+  // If already cached and scope matches and not forced, return cached data
+  if (state.contracts !== null && state.contractsScope === scope && !force) {
+    return state.contracts as Contract[]
+  }
+
+  state.contractsLoading = true
+  const { state: authState } = useAuth()
+  const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+
+  try {
+    const url = userId
+      ? `${apiBase}/contracts?created_by=${userId}`
+      : `${apiBase}/contracts`
+
+    const res = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${state.cachedToken}`,
+      },
+    })
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch contracts')
+    }
+
+    const json = await res.json()
+    const user = authState.user
+    state.contracts = (json.data ?? []).map((d: any) =>
+      mapApiContract(d, state.cachedUserId, user?.first_name, user?.last_name)
+    )
+    state.contractsScope = scope
+  } catch (err) {
+    console.error('Error fetching contracts:', err)
+    throw err
+  } finally {
+    state.contractsLoading = false
+  }
+
+  return (state.contracts || []) as Contract[]
+}
+
+async function fetchRequests(userId?: number, force = false): Promise<ContractRequest[]> {
+  validateCacheCredentials()
+
+  const scope = userId ? `user-${userId}` : 'all'
+
+  // If already cached and scope matches and not forced, return cached data
+  if (state.requests !== null && state.requestsScope === scope && !force) {
+    return state.requests as ContractRequest[]
+  }
+
+  state.requestsLoading = true
+  const { state: authState } = useAuth()
+  const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+
+  try {
+    const url = userId
+      ? `${apiBase}/contract-requests?created_by=${userId}`
+      : `${apiBase}/contract-requests`
+
+    const res = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${state.cachedToken}`,
+      },
+    })
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch contract requests')
+    }
+
+    const json = await res.json()
+    const user = authState.user
+    state.requests = (json.data ?? []).map((d: any) =>
+      mapApiToRequest(d, state.cachedUserId, user?.first_name, user?.last_name)
+    )
+    state.requestsScope = scope
+  } catch (err) {
+    console.error('Error fetching requests:', err)
+    throw err
+  } finally {
+    state.requestsLoading = false
+  }
+
+  return (state.requests || []) as ContractRequest[]
+}
+
+function invalidateContracts() {
+  state.contracts = null
+  state.contractsScope = null
+}
+
+function invalidateRequests() {
+  state.requests = null
+  state.requestsScope = null
+}
+
+function clearCache() {
+  state.contracts = null
+  state.contractsScope = null
+  state.contractsLoading = false
+  state.requests = null
+  state.requestsScope = null
+  state.requestsLoading = false
+  state.cachedToken = null
+  state.cachedUserId = null
+}
+
+function updateContractInCache(id: string, patch: Partial<Contract>) {
+  if (state.contracts) {
+    const idx = state.contracts.findIndex(c => c.id === id)
+    if (idx !== -1) {
+      state.contracts[idx] = { ...state.contracts[idx], ...patch }
+    }
+  }
+}
+
+function deleteContractFromCache(id: string) {
+  if (state.contracts) {
+    state.contracts = state.contracts.filter(c => c.id !== id)
+  }
+}
+
+function updateRequestStatusInCache(id: string, status: RequestStatus, patch: Partial<ContractRequest> = {}) {
+  if (state.requests) {
+    const idx = state.requests.findIndex(r => r.id === id)
+    if (idx !== -1) {
+      state.requests[idx] = { ...state.requests[idx], status, ...patch }
+    }
+  }
+}
+
+function updateRequestInCache(id: string, patch: Partial<ContractRequest>) {
+  if (state.requests) {
+    const idx = state.requests.findIndex(r => r.id === id)
+    if (idx !== -1) {
+      state.requests[idx] = { ...state.requests[idx], ...patch }
+    }
+  }
+}
+
+export function useApiCache() {
+  validateCacheCredentials()
+
+  return {
+    state,
+    fetchDashboard,
+    fetchContracts,
+    fetchRequests,
+    invalidateContracts,
+    invalidateRequests,
+    clearCache,
+    updateContractInCache,
+    deleteContractFromCache,
+    updateRequestStatusInCache,
+    updateRequestInCache,
+  }
+}

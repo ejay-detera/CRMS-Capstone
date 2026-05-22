@@ -1,24 +1,34 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Plus } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
 import SalesRequestsTable      from './SalesRequestsTable.vue'
-import SalesRequestDetailDialog from './SalesRequestDetailDialog.vue'
 import type { ContractRequest, RequestFilterTab } from '@/types/contractRequest'
 
-const { success } = useToast()
+const { success, error } = useToast()
+const { state: authState } = useAuth()
+const router = useRouter()
 
-const requests = ref<ContractRequest[]>([
-  { id: 'REQ-001', businessPartner: 'ABS-CBN Corporation',    category: 'Service Agreement',     description: 'Broadcast equipment maintenance for Luzon region studios.',        region: 'Luzon',    requestDate: '2026-01-15', startDate: '2026-03-01', endDate: '2027-02-28', priority: 'High',   status: 'Pending',      notes: 'Urgent — required before Q1 audit.', rejectionReason: '', contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'REQ-002', businessPartner: 'Jollibee Foods Corp.',   category: 'Supply Contract',       description: 'Refrigeration unit supply agreement for Luzon commissaries.',       region: 'Luzon',    requestDate: '2026-01-20', startDate: '2026-04-01', endDate: '2027-03-31', priority: 'Medium', status: 'Pending',      notes: 'Renewal of previous supply agreement.', rejectionReason: '', contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'REQ-003', businessPartner: 'San Miguel Brewery',     category: 'Supply Contract',       description: 'Industrial cooling system supply for Luzon brewing facilities.',    region: 'Luzon',    requestDate: '2025-12-10', startDate: '2026-02-01', endDate: '2027-01-31', priority: 'High',   status: 'Approved',     notes: '', rejectionReason: '', contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'REQ-004', businessPartner: 'Ayala Land Inc.',        category: 'Equipment Lease',       description: 'HVAC facility system lease for Makati corporate tower.',             region: 'Luzon',    requestDate: '2025-11-28', startDate: '2026-01-15', endDate: '2026-07-15', priority: 'Low',    status: 'Rejected',     notes: '', rejectionReason: 'Budget constraints for Q2. Please resubmit next quarter with revised scope.', contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'REQ-005', businessPartner: 'Meralco',                category: 'Service Agreement',     description: 'Power monitoring equipment service for Luzon distribution points.', region: 'Luzon',    requestDate: '2026-02-01', startDate: '2026-05-01', endDate: '2027-04-30', priority: 'Medium', status: 'Under Review', notes: 'Awaiting technical review from engineering.', rejectionReason: '', contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'REQ-006', businessPartner: 'Globe Telecom',          category: 'Partnership Agreement', description: 'Network infrastructure partnership for Luzon data corridors.',       region: 'Luzon',    requestDate: '2026-01-22', startDate: '2026-03-15', endDate: '2026-09-15', priority: 'High',   status: 'Approved',     notes: '', rejectionReason: '', contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'REQ-007', businessPartner: 'SM Prime Holdings',      category: 'Equipment Lease',       description: 'Escalator maintenance unit lease for SM MOA expansion.',            region: 'Luzon',    requestDate: '2026-02-05', startDate: '2026-04-01', endDate: '2027-03-31', priority: 'Medium', status: 'Under Review', notes: 'Property management approved on their end.', rejectionReason: '', contractLink: '#', createdBy: 'Shadrack Castro' },
-  { id: 'REQ-008', businessPartner: 'PharmaCare Dist.',       category: 'Supply Contract',       description: 'IV fluid supply for hospital network across Luzon.',                 region: 'Luzon',    requestDate: '2026-02-10', startDate: '2026-04-15', endDate: '2027-04-14', priority: 'High',   status: 'Pending',      notes: 'Critical supply — stock running low.', rejectionReason: '', contractLink: '#', createdBy: 'Shadrack Castro' },
-])
+import { useApiCache } from '@/composables/useApiCache'
+
+const { state: cacheState, fetchRequests: fetchRequestsCached } = useApiCache()
+
+const requests = computed(() => cacheState.requests || [])
+const loading  = computed(() => cacheState.requestsLoading)
+
+async function fetchRequests() {
+  try {
+    const userId = authState.user?.id
+    await fetchRequestsCached(userId)
+  } catch {
+    error('Network error', 'Could not reach the server.')
+  }
+}
+
+onMounted(fetchRequests)
 
 const followedUpIds = ref<string[]>([])
 
@@ -64,13 +74,9 @@ const paginated = computed(() =>
   filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
 )
 
-const showDetail   = ref(false)
-const detailTarget = ref<ContractRequest | null>(null)
-function openDetail(r: ContractRequest) { detailTarget.value = r; showDetail.value = true }
-
-const isDetailFollowedUp = computed(() =>
-  detailTarget.value ? followedUpIds.value.includes(detailTarget.value.id) : false
-)
+function openDetail(r: ContractRequest) {
+  router.push(`/sales/contract-requests/${r.id}`)
+}
 
 function handleFollowUp(id: string) {
   if (followedUpIds.value.includes(id)) return
@@ -89,28 +95,41 @@ function handleFollowUp(id: string) {
         <h1 class="text-xl font-semibold text-black">My Contract Requests</h1>
         <p class="text-sm text-black/40 mt-0.5">Track and manage your contract submissions.</p>
       </div>
-      <Button class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+      <Button @click="router.push('/sales/contracts/create')" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
         <Plus class="w-5 h-5" />
       </Button>
     </div>
 
     <!-- Stat cards -->
     <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      <div v-for="card in statCardList" :key="card.label"
-        class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
-        <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
-        <div class="flex items-end justify-between gap-2">
-          <span class="text-3xl font-semibold tabular-nums" :class="card.valueClass">{{ card.value }}</span>
-          <span class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
-            :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
-            {{ card.change }}
-          </span>
+      <template v-if="loading">
+        <div v-for="i in 4" :key="i"
+          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
+          <div class="h-3.5 w-24 bg-black/5 animate-pulse rounded mb-4"></div>
+          <div class="flex items-end justify-between gap-2">
+            <div class="h-8 w-12 bg-black/5 animate-pulse rounded"></div>
+            <div class="h-5 w-10 bg-black/5 animate-pulse rounded mb-0.5"></div>
+          </div>
         </div>
-      </div>
+      </template>
+      <template v-else>
+        <div v-for="card in statCardList" :key="card.label"
+          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
+          <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
+          <div class="flex items-end justify-between gap-2">
+            <span class="text-3xl font-semibold tabular-nums" :class="card.valueClass">{{ card.value }}</span>
+            <span class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
+              :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
+              {{ card.change }}
+            </span>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- Table -->
     <SalesRequestsTable
+      :loading="loading"
       :paginated="paginated"
       :filtered="filtered"
       :active-filter="activeFilter"
@@ -126,11 +145,4 @@ function handleFollowUp(id: string) {
     />
 
   </div>
-
-  <SalesRequestDetailDialog
-    v-model:open="showDetail"
-    :request="detailTarget"
-    :is-followed-up="isDetailFollowedUp"
-    @follow-up="handleFollowUp"
-  />
 </template>

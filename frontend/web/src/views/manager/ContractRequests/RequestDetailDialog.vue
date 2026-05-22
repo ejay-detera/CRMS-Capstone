@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   ClipboardList, MapPin, CalendarDays, FileText,
-  CheckCircle, XCircle, RefreshCw, AlertCircle, ExternalLink, User,
+  CheckCircle, XCircle, RefreshCw, AlertCircle, ExternalLink, User, FilePenLine,
 } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { requestStatusBadge, priorityBadge, fmtReqDate } from '@/types/contractRequest'
+import { requestStatusBadge, fmtReqDate } from '@/types/contractRequest'
 import type { ContractRequest } from '@/types/contractRequest'
 import { safeHref } from '@/utils/sanitize'
+
+const router = useRouter()
 
 const props = defineProps<{ open: boolean; request: ContractRequest | null }>()
 const emit  = defineEmits<{
@@ -62,10 +65,7 @@ function confirmReject() {
                   :class="requestStatusBadge[request.status]">
                   {{ request.status }}
                 </span>
-                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border"
-                  :class="priorityBadge[request.priority]">
-                  {{ request.priority }} priority
-                </span>
+
               </div>
             </div>
           </div>
@@ -180,6 +180,12 @@ function confirmReject() {
 
             <div v-if="request.status === 'Pending' || request.status === 'Under Review'"
               class="flex items-center gap-2">
+
+              <Button v-if="!showRejectInput" variant="outline"
+                @click="router.push(`/manager/contract-requests/${request.id}`); $emit('update:open', false)"
+                class="h-8 px-3.5 text-xs font-semibold border-[#252578]/25 text-[#252578] hover:bg-[#252578]/5 hover:border-[#252578]/40 gap-1.5">
+                <FilePenLine class="w-3.5 h-3.5" /> Edit Request
+              </Button>
 
               <Button v-if="!showRejectInput" variant="outline"
                 @click="showRejectInput = true"

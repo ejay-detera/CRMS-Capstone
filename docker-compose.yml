@@ -46,7 +46,7 @@ services:
       - ./services/vendor-management:/var/www/html
     ports:
       - "8001:8000"
-    command: sh -c "export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "if [ ! -d vendor ]; then export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts; fi && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       - mysql
       - mongodb
@@ -60,7 +60,7 @@ services:
       - ./services/contract-management:/var/www/html
     ports:
       - "8002:8000"
-    command: sh -c "export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "if [ ! -d vendor ]; then export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts; fi && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       - mysql
       - mongodb
@@ -74,7 +74,7 @@ services:
       - ./services/search:/var/www/html
     ports:
       - "8003:8000"
-    command: sh -c "export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "if [ ! -d vendor ]; then export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts; fi && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       - elasticsearch
     networks:
@@ -86,7 +86,7 @@ services:
       - ./services/notification:/var/www/html
     ports:
       - "8004:8000"
-    command: sh -c "export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "if [ ! -d vendor ]; then export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts; fi && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       - mysql
       - redis
@@ -103,7 +103,7 @@ services:
     container_name: crms-web
     expose:
       - "5001"
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5001"
+    command: sh -c "if [ ! -d node_modules ]; then npm install; fi && npm run dev -- --host 0.0.0.0 --port 5001"
     networks:
       - shared-capstone-network
 

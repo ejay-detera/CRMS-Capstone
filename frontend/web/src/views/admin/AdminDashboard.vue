@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight } from 'lucide-vue-next'
@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/badge'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
-import { statusBadge } from '@/types/contract'
-import type { ContractStatus } from '@/types/contract'
+import { workflowStatusBadge } from '@/types/contract'
+import type { ContractWorkflowStatus } from '@/types/contract'
 
 // ── Live clock ─────────────────────────────────────────────────────
 const now = ref(new Date())
@@ -41,7 +41,7 @@ const statCards = [
 // ── Recent contracts ───────────────────────────────────────────────
 interface DashContract {
   id: string; partner: string; category: string
-  status: ContractStatus; endDate: string
+  status: ContractWorkflowStatus; endDate: string
 }
 
 const timeFilter = ref<'1D' | '1W' | '1M' | 'All'>('All')
@@ -187,14 +187,15 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
             <TableRow
               v-for="contract in allContracts"
               :key="contract.id"
-              class="border-b border-black/4 last:border-0 hover:bg-black/1.2 transition-colors"
+              class="border-b border-black/4 last:border-0 hover:bg-black/1.2 transition-colors cursor-pointer"
+              @click="router.push('/admin/contracts/' + contract.id)"
             >
               <TableCell class="pl-6 py-3.5 text-xs font-medium text-[#252578]/70">{{ contract.id }}</TableCell>
               <TableCell class="py-3.5 text-sm text-black">{{ contract.partner }}</TableCell>
               <TableCell class="py-3.5 text-sm text-black/40">{{ contract.category }}</TableCell>
               <TableCell class="py-3.5">
                 <Badge variant="outline" class="text-xs font-medium rounded-full px-2.5 py-0.5"
-                  :class="statusBadge[contract.status]">
+                  :class="workflowStatusBadge[contract.status]">
                   {{ contract.status }}
                 </Badge>
               </TableCell>
