@@ -17,6 +17,7 @@ const route  = useRoute()
 const router = useRouter()
 const { state: authState, role } = useAuth()
 const isManager = computed(() => role.value === 'Manager' || role.value === 'Admin')
+const isOwner   = computed(() => !!contract.value && !contract.value.createdBy.startsWith('User #'))
 const { success, error } = useToast()
 const { state: cacheState, fetchContracts, updateContractInCache } = useApiCache()
 
@@ -192,7 +193,7 @@ async function saveEdit() {
       start_date:    editForm.startDate,
       end_date:      editForm.endDate,
     }
-    if (isManager.value) {
+    if (isManager.value || isOwner.value) {
       payload.workflow_status = editForm.workflowStatus || null
     }
 
@@ -289,6 +290,7 @@ async function saveEdit() {
         :touched="touched"
         :date-error="dateError"
         :is-manager="isManager"
+        :is-owner="isOwner"
         :is-approved="contract.approvalStatus === 'Approved'"
       />
       <ContractDocumentsSection

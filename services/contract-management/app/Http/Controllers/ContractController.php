@@ -356,7 +356,7 @@ class ContractController extends Controller
             'end_date'      => $request->end_date,
         ]);
 
-        if ($request->filled('workflow_status') && in_array($request->auth_role, ['Manager', 'Admin'])) {
+        if ($request->filled('workflow_status')) {
             $workflowStatusId = DB::table('contract_statuses')
                 ->where('status_name', $request->workflow_status)
                 ->value('status_id');

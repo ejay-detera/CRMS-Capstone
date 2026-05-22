@@ -7,6 +7,7 @@ const props = defineProps<{
   contract:   StoredContract
   isEditing:  boolean
   isManager:  boolean
+  isOwner:    boolean
   isApproved: boolean
   editForm:   {
     businessPartner: string
@@ -100,8 +101,8 @@ const categories = [
           </template>
         </div>
 
-        <!-- Workflow Status (manager edit only) -->
-        <div v-if="isEditing && isManager" class="flex flex-col gap-1.5">
+        <!-- Workflow Status (manager or contract owner) -->
+        <div v-if="isEditing && (isManager || isOwner)" class="flex flex-col gap-1.5">
           <label class="text-xs font-semibold text-black/55">Workflow Status</label>
           <select
             v-model="editForm.workflowStatus"
