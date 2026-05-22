@@ -32,7 +32,7 @@ const userFirstName = computed(() => authState.user?.first_name || 'Shadrack')
 
 import { useApiCache } from '@/composables/useApiCache'
 
-const { state: cacheState, fetchContracts, fetchRequests } = useApiCache()
+const { state: cacheState, fetchDashboard } = useApiCache()
 
 // ── Cached live data ─────────────────────────────────────────────
 const contracts = computed(() => cacheState.contracts || [])
@@ -41,11 +41,7 @@ const loading = computed(() => cacheState.contractsLoading || cacheState.request
 
 async function fetchDashboardData() {
   try {
-    const userId = authState.user?.id
-    await Promise.all([
-      fetchContracts(userId),
-      fetchRequests(userId)
-    ])
+    await fetchDashboard()
   } catch {
     error('Network error', 'Could not reach the server.')
   }

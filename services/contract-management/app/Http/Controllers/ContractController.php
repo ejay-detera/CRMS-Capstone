@@ -35,16 +35,63 @@ class ContractController extends Controller
         ];
     }
 
+    public function dashboardSummary(Request $request)
+    {
+        $contracts = Contract::with([
+            'documents:document_id,contract_id,file_name,file_type,file_size,document_url',
+            'category:category_id,category_name',
+            'approvalStatus:approval_status_id,status_name',
+            'workflowStatus:status_id,status_name',
+            'region:region_id,region_name',
+        ])
+        ->where('created_by', $request->auth_id)
+        ->orderByDesc('created_at')
+        ->get();
+
+        return response()->json([
+            'data' => $contracts->map(fn ($c) => [
+                'contract_id'     => $c->contract_id,
+                'bp_name'         => $c->bp_name,
+                'category'        => $c->category?->category_name,
+                'approval_status' => $c->approvalStatus?->status_name,
+                'workflow_status' => $c->workflowStatus?->status_name,
+                'item_code'       => $c->item_code,
+                'description'     => $c->description,
+                'serial_number'   => $c->serial_number,
+                'sbu_number'      => $c->sbu_number,
+                'region'          => $c->region?->region_name,
+                'start_date'      => $c->start_date?->toDateString(),
+                'end_date'        => $c->end_date?->toDateString(),
+                'created_at'      => $c->created_at?->toDateString(),
+                'created_by'      => $c->created_by,
+                'documents'       => $c->documents->map(fn ($d) => [
+                    'document_id'  => $d->document_id,
+                    'file_name'    => $d->file_name,
+                    'file_type'    => $d->file_type,
+                    'file_size'    => $d->file_size,
+                    'document_url' => $d->document_url,
+                ])->values(),
+            ])->values(),
+        ]);
+    }
+
     public function index(Request $request)
     {
-        $query = Contract::with(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
+        $query = Contract::with([
+            'documents:document_id,contract_id,file_name,file_type,file_size,document_url',
+            'category:category_id,category_name',
+            'approvalStatus:approval_status_id,status_name',
+            'workflowStatus:status_id,status_name',
+            'region:region_id,region_name',
+        ]);
 
-        // Uses idx_contracts_owner_approval composite index when filtering by sales rep
-        if ($request->filled('created_by')) {
-            $query->where('created_by', $request->created_by);
+        // Sales can only ever see their own contracts — the client-supplied
+        // created_by param is intentionally ignored for this role.
+        // Manager and Admin may see all contracts (no forced filter).
+        if ($request->auth_role === 'Sales') {
+            $query->where('created_by', $request->auth_id);
         }
 
-        // Order newest-first; MySQL can use idx_contracts_approval_created or idx_contracts_owner_approval
         $contracts = $query->orderByDesc('created_at')->get();
 
         return response()->json([
@@ -58,10 +105,20 @@ class ContractController extends Controller
      */
     public function indexRequests(Request $request)
     {
-        $query = Contract::with(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
+        $query = Contract::with([
+            'documents:document_id,contract_id,file_name,file_type,file_size,document_url',
+            'category:category_id,category_name',
+            'approvalStatus:approval_status_id,status_name',
+            'workflowStatus:status_id,status_name',
+            'region:region_id,region_name',
+        ]);
 
-        // Uses index on created_by (and composite idx_contracts_owner_approval when status is filtered)
-        if ($request->filled('created_by')) {
+        // Sales can only ever see their own requests.
+        // Manager and Admin see all; a client-supplied created_by is accepted
+        // only for privileged roles so they can filter by a specific rep.
+        if ($request->auth_role === 'Sales') {
+            $query->where('created_by', $request->auth_id);
+        } elseif ($request->filled('created_by')) {
             $query->where('created_by', $request->created_by);
         }
 
@@ -105,9 +162,19 @@ class ContractController extends Controller
         ]);
     }
 
-    public function show(int $id)
+    public function show(Request $request, int $id)
     {
-        $contract = Contract::with(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region'])->findOrFail($id);
+        $contract = Contract::with([
+            'documents:document_id,contract_id,file_name,file_type,file_size,document_url',
+            'category:category_id,category_name',
+            'approvalStatus:approval_status_id,status_name',
+            'workflowStatus:status_id,status_name',
+            'region:region_id,region_name',
+        ])->findOrFail($id);
+
+        if ($request->auth_role === 'Sales' && $contract->created_by !== $request->auth_id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
 
         return response()->json([
             'data' => $this->formatContract($contract),
@@ -189,6 +256,10 @@ class ContractController extends Controller
     {
         $contract = Contract::findOrFail($id);
 
+        if ($request->auth_role === 'Sales' && $contract->created_by !== $request->auth_id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
         $request->validate([
             'bp_name'       => 'required|string',
             'category'      => 'required|string',
@@ -229,7 +300,13 @@ class ContractController extends Controller
             'end_date'      => $request->end_date,
         ]);
 
-        $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
+        $contract->load([
+            'documents:document_id,contract_id,file_name,file_type,file_size,document_url',
+            'category:category_id,category_name',
+            'approvalStatus:approval_status_id,status_name',
+            'workflowStatus:status_id,status_name',
+            'region:region_id,region_name',
+        ]);
 
         return response()->json([
             'message' => 'Contract updated.',

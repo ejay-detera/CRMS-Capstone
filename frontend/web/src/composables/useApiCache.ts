@@ -139,6 +139,48 @@ function mapApiToRequest(d: any, currentUserId: number | null, firstName?: strin
   }
 }
 
+async function fetchDashboard(force = false): Promise<void> {
+  validateCacheCredentials()
+
+  const userId = state.cachedUserId
+  const scope  = userId ? `user-${userId}` : 'all'
+
+  if (
+    state.contracts !== null && state.contractsScope === scope &&
+    state.requests  !== null && state.requestsScope  === scope &&
+    !force
+  ) return
+
+  state.contractsLoading = true
+  state.requestsLoading  = true
+
+  const { state: authState } = useAuth()
+  const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+
+  try {
+    const res = await fetch(`${apiBase}/dashboard`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${state.cachedToken}`,
+      },
+    })
+
+    if (!res.ok) throw new Error('Failed to fetch dashboard data')
+
+    const json = await res.json()
+    const user = authState.user
+    const data: any[] = json.data ?? []
+
+    state.contracts = data.map(d => mapApiContract(d, state.cachedUserId, user?.first_name, user?.last_name))
+    state.requests  = data.map(d => mapApiToRequest(d, state.cachedUserId, user?.first_name, user?.last_name))
+    state.contractsScope = scope
+    state.requestsScope  = scope
+  } finally {
+    state.contractsLoading = false
+    state.requestsLoading  = false
+  }
+}
+
 async function fetchContracts(userId?: number, force = false): Promise<Contract[]> {
   validateCacheCredentials()
 
@@ -290,6 +332,7 @@ export function useApiCache() {
 
   return {
     state,
+    fetchDashboard,
     fetchContracts,
     fetchRequests,
     invalidateContracts,

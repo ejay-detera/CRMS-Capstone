@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -19,6 +20,13 @@ class AuthService
      */
     public function verifyToken(string $token): ?array
     {
+        $cacheKey = 'token_verify_' . hash('sha256', $token);
+
+        $cached = Cache::store('file')->get($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
         try {
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
@@ -28,7 +36,13 @@ class AuthService
             ]);
 
             if ($response->successful()) {
-                return $response->json();
+                $data = $response->json();
+                // Only cache verified-valid tokens; failures are not cached so
+                // transient auth-service errors don't block legitimate retries.
+                if ($data['valid'] ?? false) {
+                    Cache::store('file')->put($cacheKey, $data, 300);
+                }
+                return $data;
             }
 
             return null;

@@ -9,6 +9,7 @@ Route::middleware(['auth.internal'])->group(function () {
 
     Route::get('/lookups/{type}', [LookupController::class, 'show']);
     
+    Route::get('/dashboard',           [ContractController::class, 'dashboardSummary']);
     Route::get('/contracts',          [ContractController::class, 'index']);
     Route::get('/contract-requests',  [ContractController::class, 'indexRequests']);
 
