@@ -8,7 +8,7 @@ import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import SalesContractsTable  from './SalesContractsTable.vue'
 import { remainingDays } from '@/types/contract'
-import type { Contract, FilterTab } from '@/types/contract'
+import type { Contract, StatusFilter } from '@/types/contract'
 
 const router = useRouter()
 const { success, error } = useToast()
@@ -32,7 +32,7 @@ async function fetchContracts() {
 
 onMounted(fetchContracts)
 
-const activeFilter = ref<FilterTab>('all')
+const statusFilter = ref<StatusFilter>('')
 const searchQuery  = ref('')
 const currentPage  = ref(1)
 const itemsPerPage = 10
@@ -55,22 +55,25 @@ const statCardList = computed(() => [
   { label: 'Expired',       value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false },
 ])
 
+const approvalStatuses = new Set(['Pending', 'Approved', 'Rejected'])
+
 const filtered = computed(() => {
-  const q = searchQuery.value.toLowerCase()
+  const q  = searchQuery.value.toLowerCase()
+  const sf = statusFilter.value
   return withDays.value.filter(c => {
     const bySearch = !q || c.id.toLowerCase().includes(q)
       || c.businessPartner.toLowerCase().includes(q)
       || c.category.toLowerCase().includes(q)
-    const byFilter =
-      activeFilter.value === 'all'      ? true :
-      activeFilter.value === 'active'   ? c.days > 30 :
-      activeFilter.value === 'expiring' ? c.days >= 0 && c.days <= 30 :
-      c.days < 0
-    return bySearch && byFilter
+    const byStatus = !sf
+      ? true
+      : approvalStatuses.has(sf)
+        ? c.approvalStatus === sf
+        : c.workflowStatus === sf
+    return bySearch && byStatus
   })
 })
 
-watch([activeFilter, searchQuery], () => { currentPage.value = 1 })
+watch([statusFilter, searchQuery], () => { currentPage.value = 1 })
 
 const paginated = computed(() =>
   filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
@@ -151,13 +154,13 @@ function exportXLSX() {
       :loading="loading"
       :paginated="paginated"
       :filtered="filtered"
-      :active-filter="activeFilter"
+      :status-filter="statusFilter"
       :search-query="searchQuery"
       :current-page="currentPage"
       :items-per-page="itemsPerPage"
       @open-detail="openDetail"
       @open-edit="openEdit"
-      @update:active-filter="activeFilter = $event"
+      @update:status-filter="statusFilter = $event"
       @update:search-query="searchQuery = $event"
       @update:current-page="currentPage = $event"
     />

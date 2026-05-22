@@ -10,6 +10,7 @@ export interface UploadedDoc {
 }
 export type ContractRegion = 'Luzon' | 'Visayas' | 'Mindanao'
 export type FilterTab      = 'all' | 'active' | 'expiring' | 'expired'
+export type StatusFilter   = '' | ContractApprovalStatus | ContractWorkflowStatus
 
 export interface Contract {
   id:              string

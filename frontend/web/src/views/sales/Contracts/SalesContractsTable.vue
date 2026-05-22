@@ -13,14 +13,14 @@ import {
   PaginationItem, PaginationNext, PaginationPrevious,
 } from '@/components/ui/pagination'
 import { approvalStatusBadge, fmtDate } from '@/types/contract'
-import type { Contract, FilterTab } from '@/types/contract'
+import type { Contract, StatusFilter } from '@/types/contract'
 
 type ContractWithDays = Contract & { days: number }
 
 const props = defineProps<{
   paginated:    ContractWithDays[]
   filtered:     ContractWithDays[]
-  activeFilter: FilterTab
+  statusFilter: StatusFilter
   searchQuery:  string
   currentPage:  number
   itemsPerPage: number
@@ -30,16 +30,18 @@ const props = defineProps<{
 const emit = defineEmits<{
   openDetail:            [c: ContractWithDays]
   openEdit:              [c: ContractWithDays]
-  'update:activeFilter': [v: FilterTab]
+  'update:statusFilter': [v: StatusFilter]
   'update:searchQuery':  [v: string]
   'update:currentPage':  [v: number]
 }>()
 
-const filterTabs: { label: string; value: FilterTab }[] = [
-  { label: 'All',           value: 'all'      },
-  { label: 'Active',        value: 'active'   },
-  { label: 'Expiring Soon', value: 'expiring' },
-  { label: 'Expired',       value: 'expired'  },
+const statusOptions: { label: string; value: StatusFilter }[] = [
+  { label: 'All Status',    value: ''             },
+  { label: 'Pending',       value: 'Pending'      },
+  { label: 'Rejected',      value: 'Rejected'     },
+  { label: 'Notarized',     value: 'Notarized PDF'},
+  { label: 'SBSI Review',   value: 'SBSI Review'  },
+  { label: 'Client Review', value: 'Client Review'},
 ]
 
 function daysLabel(days: number) {
@@ -60,18 +62,19 @@ function daysLabel(days: number) {
     </div>
 
     <!-- Filters + search -->
-    <div class="flex items-center justify-between px-6 py-3 border-b border-black/5">
-      <div class="flex items-center gap-0.5 bg-black/4 rounded-md p-1">
-        <button v-for="tab in filterTabs" :key="tab.value"
-          @click="emit('update:activeFilter', tab.value)"
-          class="flex items-center gap-1.5 px-4 py-1.5 text-sm rounded transition-all font-medium"
-          :class="activeFilter === tab.value
-            ? 'bg-white text-black shadow-sm'
-            : 'text-black/40 hover:text-black/60'">
-          {{ tab.label }}
-        </button>
-      </div>
-      <div class="relative w-56">
+    <div class="flex items-center justify-between px-6 py-3 border-b border-black/5 gap-4">
+      <!-- Status dropdown -->
+      <select
+        :value="statusFilter"
+        @change="emit('update:statusFilter', ($event.target as HTMLSelectElement).value as StatusFilter)"
+        class="h-9 rounded-lg border border-black/10 bg-white px-3 pr-8 text-sm focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition appearance-none cursor-pointer"
+        :class="statusFilter ? 'text-black border-[#252578]/30' : 'text-black/45'">
+        <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
+          {{ opt.label }}
+        </option>
+      </select>
+
+      <div class="relative w-56 shrink-0">
         <Search class="w-3.5 h-3.5 text-black/30 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input :value="searchQuery"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"
