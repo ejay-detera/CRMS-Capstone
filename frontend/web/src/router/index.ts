@@ -81,6 +81,11 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/manager/Contracts/index.vue'),
       },
       {
+        path: 'contracts/create',
+        name: 'manager-contracts-create',
+        component: () => import('@/views/manager/Contracts/CreateContract.vue'),
+      },
+      {
         path: 'contracts/:id',
         name: 'manager-contracts-detail',
         component: () => import('@/views/sales/Contracts/ContractDetail/index.vue'),

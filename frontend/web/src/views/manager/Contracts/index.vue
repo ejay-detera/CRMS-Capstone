@@ -5,19 +5,60 @@ import { Upload, Plus } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
-import ContractsTable      from '@/views/admin/Contracts/ContractsTable.vue'
-import EditContractDialog   from '@/views/admin/Contracts/EditContractDialog.vue'
-import { remainingDays } from '@/types/contract'
-import type { Contract, FilterTab } from '@/types/contract'
+import { useAuth } from '@/composables/useAuth'
 import { useApiCache } from '@/composables/useApiCache'
+import ManagerContractsTable from './ManagerContractsTable.vue'
+import { remainingDays } from '@/types/contract'
+import type { Contract, StatusFilter } from '@/types/contract'
 
-const { success, error } = useToast()
 const router = useRouter()
-
-const { state: cacheState, fetchContracts: fetchContractsCached, updateContractInCache, deleteContractFromCache } = useApiCache()
+const { success, error } = useToast()
+const { state: authState } = useAuth()
+const { state: cacheState, fetchContracts: fetchContractsCached } = useApiCache()
 
 const contracts = computed(() => cacheState.contracts || [])
 const loading   = computed(() => cacheState.contractsLoading)
+
+// ── Lookup options fetched from API ──────────────────────────────────────────
+
+const statusOptions = ref<{ label: string; value: StatusFilter }[]>([
+  { label: 'All Status', value: '' },
+])
+
+async function fetchStatusOptions() {
+  const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+  const headers = {
+    'Accept': 'application/json',
+    'Authorization': `Bearer ${authState.token}`,
+  }
+  try {
+    const [approvalRes, workflowRes] = await Promise.all([
+      fetch(`${apiBase}/lookups/approval-statuses`, { headers }),
+      fetch(`${apiBase}/lookups/workflow-statuses`, { headers }),
+    ])
+
+    const opts: { label: string; value: StatusFilter }[] = [{ label: 'All Status', value: '' }]
+
+    if (approvalRes.ok) {
+      const j = await approvalRes.json()
+      for (const s of (j.data ?? []) as string[]) {
+        opts.push({ label: s, value: s as StatusFilter })
+      }
+    }
+    if (workflowRes.ok) {
+      const j = await workflowRes.json()
+      for (const s of (j.data ?? []) as { status_name: string }[]) {
+        opts.push({ label: s.status_name, value: s.status_name as StatusFilter })
+      }
+    }
+
+    statusOptions.value = opts
+  } catch {
+    // keep defaults on failure
+  }
+}
+
+// ── Contracts fetch ──────────────────────────────────────────────────────────
 
 async function fetchContracts() {
   try {
@@ -27,9 +68,14 @@ async function fetchContracts() {
   }
 }
 
-onMounted(fetchContracts)
+onMounted(() => {
+  fetchContracts()
+  fetchStatusOptions()
+})
 
-const activeFilter = ref<FilterTab>('all')
+// ── Filter / search / pagination ─────────────────────────────────────────────
+
+const statusFilter = ref<StatusFilter>('')
 const searchQuery  = ref('')
 const currentPage  = ref(1)
 const itemsPerPage = 10
@@ -46,28 +92,31 @@ const statCards = computed(() => ({
 }))
 
 const statCardList = computed(() => [
-  { label: 'Total Contracts', value: statCards.value.total,    valueClass: 'text-black', change: '+2.1%', positive: true  },
-  { label: 'Active',          value: statCards.value.active,   valueClass: 'text-black', change: '+4.0%', positive: true  },
-  { label: 'Expiring Soon',   value: statCards.value.expiring, valueClass: 'text-black', change: '+5.2%', positive: true  },
-  { label: 'Expired',         value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false },
+  { label: 'All Contracts', value: statCards.value.total,    valueClass: 'text-black', change: '+2.1%', positive: true  },
+  { label: 'Active',        value: statCards.value.active,   valueClass: 'text-black', change: '+4.0%', positive: true  },
+  { label: 'Expiring Soon', value: statCards.value.expiring, valueClass: 'text-black', change: '+5.2%', positive: true  },
+  { label: 'Expired',       value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false },
 ])
 
+const approvalStatuses = new Set(['Pending', 'Approved', 'Rejected'])
+
 const filtered = computed(() => {
-  const q = searchQuery.value.toLowerCase()
+  const q  = searchQuery.value.toLowerCase()
+  const sf = statusFilter.value
   return withDays.value.filter(c => {
     const bySearch = !q || c.id.toLowerCase().includes(q)
       || c.businessPartner.toLowerCase().includes(q)
       || c.category.toLowerCase().includes(q)
-    const byFilter =
-      activeFilter.value === 'all'      ? true :
-      activeFilter.value === 'active'   ? c.days > 30 :
-      activeFilter.value === 'expiring' ? c.days >= 0 && c.days <= 30 :
-      c.days < 0
-    return bySearch && byFilter
+    const byStatus = !sf
+      ? true
+      : approvalStatuses.has(sf)
+        ? c.approvalStatus === sf
+        : c.workflowStatus === sf
+    return bySearch && byStatus
   })
 })
 
-watch([activeFilter, searchQuery], () => { currentPage.value = 1 })
+watch([statusFilter, searchQuery], () => { currentPage.value = 1 })
 
 const paginated = computed(() =>
   filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
@@ -77,33 +126,18 @@ function openDetail(c: Contract & { days: number }) {
   router.push(`/manager/contracts/${c.id}`)
 }
 
-const showEdit   = ref(false)
-const editTarget = ref<Contract | null>(null)
-function openEdit(c: Contract & { days: number }) { editTarget.value = c; showEdit.value = true }
-
-function handleEdit(data: Omit<Contract, 'id' | 'createdBy'>) {
-  if (!editTarget.value) return
-  updateContractInCache(editTarget.value.id, data)
-  success('Contract updated', `${data.businessPartner}'s contract has been saved.`)
-}
-
-function handleDelete(id: string) {
-  const name = contracts.value.find(c => c.id === id)?.businessPartner ?? id
-  deleteContractFromCache(id)
-  success('Contract removed', `${name}'s contract has been deleted.`)
-}
-
 function exportXLSX() {
   const rows = filtered.value.map(c => ({
     'Contract ID': c.id, 'Business Partner': c.businessPartner, 'Category': c.category,
     'Item Code': c.itemCode, 'Description': c.description, 'Serial No': c.serialNo,
     'Region': c.region, 'Start Date': c.startDate, 'End Date': c.endDate,
-    'Remaining Days': c.days, 'Approval Status': c.approvalStatus, 'Workflow Status': c.workflowStatus ?? '',
+    'Remaining Days': c.days, 'Approval Status': c.approvalStatus,
+    'Workflow Status': c.workflowStatus ?? '', 'Sales Rep': c.createdBy,
   }))
   const ws = XLSX.utils.json_to_sheet(rows)
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Contracts')
-  XLSX.writeFile(wb, 'contracts.xlsx')
+  XLSX.utils.book_append_sheet(wb, ws, 'All Contracts')
+  XLSX.writeFile(wb, 'all-contracts.xlsx')
   success('Export complete', `${filtered.value.length} contracts exported.`)
 }
 </script>
@@ -115,14 +149,14 @@ function exportXLSX() {
     <div class="flex items-start justify-between">
       <div>
         <h1 class="text-xl font-semibold text-black">All Contracts</h1>
-        <p class="text-sm text-black/40 mt-0.5">View and manage all contract agreements.</p>
+        <p class="text-sm text-black/40 mt-0.5">View and manage all employee contracts.</p>
       </div>
       <div class="flex items-center gap-2">
         <Button @click="exportXLSX" variant="outline"
           class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
-        <Button class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+        <Button @click="router.push('/manager/contracts/create')" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
           <Plus class="w-5 h-5" />
         </Button>
       </div>
@@ -156,23 +190,20 @@ function exportXLSX() {
     </div>
 
     <!-- Table -->
-    <ContractsTable
+    <ManagerContractsTable
       :loading="loading"
       :paginated="paginated"
       :filtered="filtered"
-      :active-filter="activeFilter"
+      :status-filter="statusFilter"
+      :status-options="statusOptions"
       :search-query="searchQuery"
       :current-page="currentPage"
       :items-per-page="itemsPerPage"
       @open-detail="openDetail"
-      @open-edit="openEdit"
-      @delete="handleDelete"
-      @update:active-filter="activeFilter = $event"
+      @update:status-filter="statusFilter = $event"
       @update:search-query="searchQuery = $event"
       @update:current-page="currentPage = $event"
     />
 
   </div>
-
-  <EditContractDialog   v-model:open="showEdit"   :contract="editTarget"   @submit="handleEdit" />
 </template>
