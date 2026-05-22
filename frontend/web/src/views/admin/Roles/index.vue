@@ -12,6 +12,7 @@ const { success, error: toastError } = useToast()
 const {
   roles,
   allPermissions,
+  rolePermissionIds,
   isLoading,
   error,
   init,
@@ -45,10 +46,6 @@ const activeRoleMeta = computed(() =>
 
 const isLocked = computed(() => activeRoleMeta.value?.locked ?? false)
 
-const activePermIds = computed(() =>
-  activeRole.value ? getActivePermIds(activeRole.value.id) : []
-)
-
 // ── Enabled permission counts per role (for the role cards) ───────────
 const enabledCounts = computed(() => {
   const result: Record<number, number> = {}
@@ -77,27 +74,30 @@ async function saveChanges() {
 // ── Toggle handlers (passed into PermissionsPanel) ────────────────────
 function handleTogglePermission(_categoryKey: string, permKey: string) {
   if (!activeRole.value || isLocked.value) return
-  // permKey is the slug; resolve it to a DB id
   const perm = allPermissions.value.find(p => p.slug === permKey)
   if (perm) togglePermission(activeRole.value.id, perm.id)
 }
 
 function handleToggleCategory(cat: typeof UI_CATEGORIES[number]) {
   if (!activeRole.value || isLocked.value) return
-  const catPerms = cat.permissions.map(p => p.key)
-  const allOn = catPerms.every(slug => {
-    const perm = allPermissions.value.find(p => p.slug === slug)
-    return perm ? activePermIds.value.includes(perm.id) : false
-  })
-  toggleCategory(activeRole.value.id, cat.key, allOn)
+  const roleId = activeRole.value.id
+  const set = rolePermissionIds.value[roleId]
+  const catPerms = cat.permissions
+    .map(p => allPermissions.value.find(ap => ap.slug === p.key))
+    .filter(Boolean) as typeof allPermissions.value
+  const allOn = catPerms.every(p => set?.has(p.id))
+  toggleCategory(roleId, cat.key, allOn)
 }
 
-// ── Active permissions as slugs (for PermissionsPanel which uses slug keys) ──
+// ── Active permissions as slugs — reads directly from rolePermissionIds ──
+// Uses the Set reference inside the record so Vue tracks it reactively.
 const activePermSlugs = computed(() => {
   if (!activeRole.value) return []
-  const ids = new Set(activePermIds.value)
+  // Access the Set directly so Vue tracks mutations on the record
+  const set = rolePermissionIds.value[activeRole.value.id]
+  if (!set || set.size === 0) return []
   return allPermissions.value
-    .filter(p => ids.has(p.id))
+    .filter(p => set.has(p.id))
     .map(p => p.slug)
 })
 

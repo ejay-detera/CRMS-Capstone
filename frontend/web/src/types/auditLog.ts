@@ -12,6 +12,8 @@ export interface LogEntry {
   source: 'crms' | 'auth'
   user_id: number
   user_name: string
+  role?: string
+  user_email?: string
   action: ActionType
   entity_type: string
   description: string

@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useAuth } from '@/composables/useAuth'
 import DashboardStats          from './DashboardStats.vue'
 import ContractTrendChart      from './ContractTrendChart.vue'
 import ContractStatusChart     from './ContractStatusChart.vue'
 import ContractsByRegionChart  from './ContractsByRegionChart.vue'
 import RecentContractsTable    from './RecentContractsTable.vue'
 import ExpiringContractsList   from './ExpiringContractsList.vue'
+
+const { hasPermission } = useAuth()
+const canViewContracts = computed(() => hasPermission('crms.contracts.view'))
 
 const now = ref(new Date())
 let timer: ReturnType<typeof setInterval>
@@ -42,22 +46,26 @@ const formattedTime = computed(() =>
     </div>
 
     <!-- KPI Cards -->
-    <DashboardStats />
+    <DashboardStats v-if="canViewContracts" />
 
     <!-- Trend chart + Status donut -->
-    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+    <div v-if="canViewContracts" class="grid grid-cols-1 xl:grid-cols-5 gap-6">
       <div class="xl:col-span-3"><ContractTrendChart /></div>
       <div class="xl:col-span-2"><ContractStatusChart /></div>
     </div>
 
     <!-- Recent contracts table + Expiring soon list -->
-    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+    <div v-if="canViewContracts" class="grid grid-cols-1 xl:grid-cols-5 gap-6">
       <div class="xl:col-span-3"><RecentContractsTable /></div>
       <div class="xl:col-span-2"><ExpiringContractsList /></div>
     </div>
 
     <!-- Grouped bar: category × region -->
-    <ContractsByRegionChart />
+    <ContractsByRegionChart v-if="canViewContracts" />
+
+    <div v-if="!canViewContracts" class="bg-white p-8 rounded-xl border border-black/10 text-center">
+      <p class="text-black/40">You do not have permission to view contract data.</p>
+    </div>
 
   </div>
 </template>
