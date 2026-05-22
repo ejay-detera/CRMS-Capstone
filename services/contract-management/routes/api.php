@@ -10,8 +10,9 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::get('/contract-requests',  [ContractController::class, 'indexRequests']);
 
 
-    // TODO: restore permission middleware once create-contracts/view-contracts are seeded in auth-service
-    Route::post('/contracts', [ContractController::class, 'store']);
+    Route::post('/contracts', [ContractController::class, 'store'])
+        ->middleware('role:Manager,Sales');
+
     Route::get('/contracts/{id}',  [ContractController::class, 'show']);
     Route::put('/contracts/{id}',  [ContractController::class, 'update']);
 

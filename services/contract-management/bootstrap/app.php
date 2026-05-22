@@ -14,7 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'auth.internal' => \App\Http\Middleware\AuthenticateInternal::class,
-            'permission' => \App\Http\Middleware\HasPermission::class,
+            'permission'    => \App\Http\Middleware\HasPermission::class,
+            'role'          => \App\Http\Middleware\HasRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
