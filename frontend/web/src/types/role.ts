@@ -22,3 +22,18 @@ export interface RoleMeta {
   description: string
   locked:      boolean
 }
+
+// ── API-shaped types (from auth-service) ─────────────────────────────
+export interface ApiRole {
+  id:          number
+  name:        string
+  description: string
+}
+
+export interface ApiPermission {
+  id:     number
+  name:   string
+  slug:   string
+  system: string
+}
+
