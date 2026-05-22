@@ -123,7 +123,10 @@ function mapApiToRequest(d: any, currentUserId: number | null, firstName?: strin
     requestDate:     d.created_at     ?? '',
     startDate:       d.start_date     ?? '',
     endDate:         d.end_date       ?? '',
-    status:          d.workflow_status ? 'Under Review' : (STATUS_MAP[d.approval_status ?? 'Pending'] ?? 'Pending'),
+    status:          d.approval_status === 'Approved' ? 'Approved'
+      : d.approval_status === 'Rejected'             ? 'Rejected'
+      : d.workflow_status                            ? 'Under Review'
+      : 'Pending',
     notes:           '',
     rejectionReason: '',
     contractLink:    '',

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search, MoreHorizontal, Eye, CheckCircle, XCircle, RefreshCw } from 'lucide-vue-next'
+import { Search, MoreHorizontal, Eye, CheckCircle, XCircle } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -29,7 +29,6 @@ const emit = defineEmits<{
   openDetail:            [r: ContractRequest]
   approve:               [id: string]
   reject:                [id: string]
-  setReviewing:          [id: string]
   'update:activeFilter': [v: RequestFilterTab]
   'update:searchQuery':  [v: string]
   'update:currentPage':  [v: number]
@@ -196,10 +195,6 @@ function avatarColor(name: string) {
                   </DropdownMenuItem>
                   <template v-if="r.status === 'Pending' || r.status === 'Under Review'">
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem v-if="r.status === 'Pending'" @click="emit('setReviewing', r.id)"
-                      class="gap-2.5 text-sm cursor-pointer">
-                      <RefreshCw class="w-3.5 h-3.5 text-black/40" /> Mark as reviewing
-                    </DropdownMenuItem>
                     <DropdownMenuItem @click="emit('approve', r.id)"
                       class="gap-2.5 text-sm cursor-pointer text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50">
                       <CheckCircle class="w-3.5 h-3.5" /> Approve

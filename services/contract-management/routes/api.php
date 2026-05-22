@@ -17,8 +17,10 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::post('/contracts', [ContractController::class, 'store'])
         ->middleware('role:Manager,Sales');
 
-    Route::get('/contracts/{id}',  [ContractController::class, 'show']);
-    Route::put('/contracts/{id}',  [ContractController::class, 'update']);
+    Route::get('/contracts/{id}',    [ContractController::class, 'show']);
+    Route::put('/contracts/{id}',    [ContractController::class, 'update']);
+    Route::patch('/contracts/{id}/status', [ContractController::class, 'updateStatus'])
+        ->middleware('role:Manager,Admin');
 
     Route::post('/admin/users', [\App\Http\Controllers\AdminUserProxyController::class, 'store'])
         ->middleware('permission:manage-users');

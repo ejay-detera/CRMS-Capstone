@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { fmtDate } from '@/types/contract'
-import type { ContractRegion } from '@/types/contract'
+import type { ContractRegion, ContractWorkflowStatus } from '@/types/contract'
 import type { StoredContract } from '@/composables/useContractStore'
 
 const props = defineProps<{
-  contract:  StoredContract
-  isEditing: boolean
-  editForm:  {
+  contract:   StoredContract
+  isEditing:  boolean
+  isManager:  boolean
+  isApproved: boolean
+  editForm:   {
     businessPartner: string
     category:        string
     itemCode:        string
@@ -16,6 +18,7 @@ const props = defineProps<{
     region:          ContractRegion | ''
     startDate:       string
     endDate:         string
+    workflowStatus:  ContractWorkflowStatus | ''
   }
   touched:   Record<string, boolean>
   dateError: string
@@ -95,6 +98,20 @@ const categories = [
             </select>
             <p v-if="touched.category && !editForm.category" class="text-xs text-red-500">Category is required.</p>
           </template>
+        </div>
+
+        <!-- Workflow Status (manager edit only) -->
+        <div v-if="isEditing && isManager" class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-black/55">Workflow Status</label>
+          <select
+            v-model="editForm.workflowStatus"
+            class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15"
+            :class="!editForm.workflowStatus ? 'text-black/30' : 'text-black'">
+            <option value="">No status</option>
+            <option value="SBSI Review">SBSI Review</option>
+            <option value="Client Review">Client Review</option>
+            <option value="Notarized PDF">Notarized PDF</option>
+          </select>
         </div>
 
       </div>

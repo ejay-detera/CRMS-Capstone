@@ -13,7 +13,7 @@ import {
   Pagination, PaginationContent, PaginationEllipsis,
   PaginationItem, PaginationNext, PaginationPrevious,
 } from '@/components/ui/pagination'
-import { approvalStatusBadge, fmtDate } from '@/types/contract'
+import { approvalStatusBadge, workflowStatusBadge, fmtDate } from '@/types/contract'
 import type { Contract, StatusFilter } from '@/types/contract'
 
 type ContractWithDays = Contract & { days: number }
@@ -132,7 +132,10 @@ function daysLabel(days: number) {
 
             <!-- Status -->
             <TableCell class="py-4">
-              <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
+              <div class="flex flex-col gap-1">
+                <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
+                <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
+              </div>
             </TableCell>
 
             <!-- Actions -->
@@ -175,10 +178,17 @@ function daysLabel(days: number) {
 
             <!-- Status -->
             <TableCell class="py-4" @click.stop>
-              <span class="text-xs font-medium px-2.5 py-0.5 rounded-full border whitespace-nowrap"
-                :class="approvalStatusBadge[c.approvalStatus]">
-                {{ c.approvalStatus }}
-              </span>
+              <div class="flex flex-col gap-1">
+                <span class="text-xs font-medium px-2.5 py-0.5 rounded-full border whitespace-nowrap w-fit"
+                  :class="approvalStatusBadge[c.approvalStatus]">
+                  {{ c.approvalStatus }}
+                </span>
+                <span v-if="c.workflowStatus"
+                  class="text-xs font-medium px-2.5 py-0.5 rounded-full border whitespace-nowrap w-fit"
+                  :class="workflowStatusBadge[c.workflowStatus]">
+                  {{ c.workflowStatus }}
+                </span>
+              </div>
             </TableCell>
 
             <!-- Actions -->

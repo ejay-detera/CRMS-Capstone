@@ -86,12 +86,6 @@ function handleReject(id: string, reason: string = '') {
   success('Request rejected', `${r.businessPartner}'s contract request has been rejected.`)
 }
 
-function handleSetReviewing(id: string) {
-  const r = requests.value.find(x => x.id === id)
-  if (!r) return
-  updateRequestStatusInCache(id, 'Under Review')
-  success('Status updated', `${r.businessPartner}'s request is now under review.`)
-}
 </script>
 
 <template>
@@ -142,7 +136,6 @@ function handleSetReviewing(id: string) {
       @open-detail="openDetail"
       @approve="handleApprove"
       @reject="handleReject"
-      @set-reviewing="handleSetReviewing"
       @update:active-filter="activeFilter = $event"
       @update:search-query="searchQuery = $event"
       @update:current-page="currentPage = $event"

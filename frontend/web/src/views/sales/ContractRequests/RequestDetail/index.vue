@@ -16,7 +16,7 @@ const route  = useRoute()
 const router = useRouter()
 const { state: authState } = useAuth()
 const { success, error } = useToast()
-const { state: cacheState, fetchRequests, updateRequestStatusInCache, updateRequestInCache } = useApiCache()
+const { state: cacheState, fetchRequests, updateRequestStatusInCache, updateRequestInCache, updateContractInCache } = useApiCache()
 
 const id = route.params.id as string
 const request = ref<ContractRequest | null>(null)
@@ -45,21 +45,41 @@ function handleFollowUp() {
 
 // ── Manager actions ──────────────────────────────────────────────────────────
 
-const showRejectInput = ref(false)
-const rejectReason    = ref('')
+const showRejectInput  = ref(false)
+const rejectReason     = ref('')
+const actionInProgress = ref(false)
 
-function handleApprove() {
-  if (!request.value) return
-  updateRequestStatusInCache(id, 'Approved')
-  success('Request approved', `${request.value.businessPartner}'s contract request has been approved.`)
-  loadLocalRequest()
-}
+const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
 
-function handleSetReviewing() {
-  if (!request.value) return
-  updateRequestStatusInCache(id, 'Under Review')
-  success('Status updated', `${request.value.businessPartner}'s request is now under review.`)
-  loadLocalRequest()
+async function handleApprove() {
+  if (!request.value || actionInProgress.value) return
+  const numericId  = parseInt(id.replace('REQ-', ''), 10)
+  const contractId = String(numericId)
+
+  actionInProgress.value = true
+  try {
+    const res = await fetch(`${apiBase}/contracts/${numericId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+      body: JSON.stringify({ approval_status: 'Approved', workflow_status: 'SBSI Review' }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) { error('Failed to approve', data.message ?? 'Something went wrong.'); return }
+
+    updateRequestStatusInCache(id, 'Approved')
+    updateContractInCache(contractId, { approvalStatus: 'Approved', workflowStatus: 'SBSI Review' })
+    success('Request approved', `${request.value.businessPartner}'s contract request has been approved.`)
+    loadLocalRequest()
+  } catch {
+    error('Network error', 'Could not reach the server. Please try again.')
+  } finally {
+    actionInProgress.value = false
+  }
 }
 
 function handleToggleReject() {
@@ -67,13 +87,37 @@ function handleToggleReject() {
   if (!showRejectInput.value) rejectReason.value = ''
 }
 
-function confirmReject() {
-  if (!request.value || !rejectReason.value.trim()) return
-  updateRequestStatusInCache(id, 'Rejected', { rejectionReason: rejectReason.value.trim() })
-  success('Request rejected', `${request.value.businessPartner}'s contract request has been rejected.`)
-  showRejectInput.value = false
-  rejectReason.value = ''
-  loadLocalRequest()
+async function confirmReject() {
+  if (!request.value || !rejectReason.value.trim() || actionInProgress.value) return
+  const numericId  = parseInt(id.replace('REQ-', ''), 10)
+  const contractId = String(numericId)
+
+  actionInProgress.value = true
+  try {
+    const res = await fetch(`${apiBase}/contracts/${numericId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+      body: JSON.stringify({ approval_status: 'Rejected' }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) { error('Failed to reject', data.message ?? 'Something went wrong.'); return }
+
+    updateRequestStatusInCache(id, 'Rejected', { rejectionReason: rejectReason.value.trim() })
+    updateContractInCache(contractId, { approvalStatus: 'Rejected', workflowStatus: null })
+    success('Request rejected', `${request.value.businessPartner}'s contract request has been rejected.`)
+    showRejectInput.value = false
+    rejectReason.value = ''
+    loadLocalRequest()
+  } catch {
+    error('Network error', 'Could not reach the server. Please try again.')
+  } finally {
+    actionInProgress.value = false
+  }
 }
 
 // ── Data loading ─────────────────────────────────────────────────────────────
@@ -165,8 +209,6 @@ function cancelEdit() {
   isEditing.value = false
 }
 
-const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
-
 const STATUS_MAP: Record<string, string> = {
   'Pending':      'Pending',
   'Under Review': 'Under Review',
@@ -220,9 +262,12 @@ async function saveEdit() {
       requestDate:     data.data.created_at     ?? '',
       startDate:       data.data.start_date     ?? '',
       endDate:         data.data.end_date       ?? '',
-      status:          data.data.workflow_status
-        ? 'Under Review'
-        : (STATUS_MAP[data.data.approval_status ?? 'Pending'] ?? 'Pending') as ContractRequest['status'],
+      status: (
+        data.data.approval_status === 'Approved' ? 'Approved' :
+        data.data.approval_status === 'Rejected' ? 'Rejected' :
+        data.data.workflow_status                ? 'Under Review' :
+        'Pending'
+      ) as ContractRequest['status'],
       notes:           '',
       rejectionReason: '',
       contractLink:    '',
@@ -313,6 +358,7 @@ function fmtSize(bytes: number) {
         :days="days"
         :is-editing="isEditing"
         :saving="savingEdit"
+        :action-in-progress="actionInProgress"
         :is-manager="isManager"
         :is-followed-up="isFollowedUp"
         :show-reject-input="showRejectInput"
@@ -323,7 +369,6 @@ function fmtSize(bytes: number) {
         @cancel="cancelEdit"
         @follow-up="handleFollowUp"
         @approve="handleApprove"
-        @set-reviewing="handleSetReviewing"
         @toggle-reject="handleToggleReject"
         @confirm-reject="confirmReject"
       />

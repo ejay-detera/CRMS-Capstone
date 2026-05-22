@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AlertTriangle, Clock, ArrowLeft, ClipboardList, FilePenLine, Loader2, CheckCircle, XCircle, RefreshCw, Bell } from 'lucide-vue-next'
+import { AlertTriangle, Clock, ArrowLeft, ClipboardList, FilePenLine, Loader2, CheckCircle, XCircle, Bell } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { requestStatusBadge } from '@/types/contractRequest'
 import type { ContractRequest } from '@/types/contractRequest'
@@ -9,6 +9,7 @@ const props = defineProps<{
   days:              number
   isEditing:         boolean
   saving?:           boolean
+  actionInProgress?: boolean
   isManager:         boolean
   isFollowedUp:      boolean
   showRejectInput:   boolean
@@ -22,7 +23,6 @@ defineEmits<{
   cancel:        []
   followUp:      []
   approve:       []
-  setReviewing:  []
   toggleReject:  []
   confirmReject: []
 }>()
@@ -35,38 +35,40 @@ function daysDisplay(days: number) {
 </script>
 
 <template>
-  <div class="flex items-start gap-4">
+  <div class="space-y-4">
 
-    <!-- Back button -->
-    <button @click="$emit('back')"
-      class="flex items-center justify-center w-9 h-9 rounded-lg border border-black/10 bg-white hover:bg-black/4 text-black/50 hover:text-black transition shrink-0 mt-0.5">
-      <ArrowLeft class="w-4 h-4" />
-    </button>
+    <!-- Row 1: Back + Icon + Title -->
+    <div class="flex items-start gap-4">
+      <button @click="$emit('back')"
+        class="flex items-center justify-center w-9 h-9 rounded-lg border border-black/10 bg-white hover:bg-black/4 text-black/50 hover:text-black transition shrink-0 mt-0.5">
+        <ArrowLeft class="w-4 h-4" />
+      </button>
 
-    <!-- Icon + title block -->
-    <div class="flex items-start gap-3.5 flex-1 min-w-0">
-      <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 bg-[#252578]">
-        <ClipboardList class="w-5 h-5" />
-      </div>
-      <div class="flex-1 min-w-0">
-        <h1 class="text-xl font-semibold text-black leading-snug truncate">{{ request.businessPartner }}</h1>
-        <p class="text-sm text-black/45 mt-0.5">{{ request.category }}</p>
-        <div class="flex items-center gap-2 mt-2 flex-wrap">
-          <span class="text-[10px] font-mono text-black/30 bg-black/4 px-1.5 py-0.5 rounded">{{ request.id }}</span>
-          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" :class="requestStatusBadge[request.status]">
-            {{ request.status }}
-          </span>
-          <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border"
-            :class="daysDisplay(days).cls">
-            <component :is="daysDisplay(days).icon" class="w-3 h-3" />
-            {{ daysDisplay(days).text }}
-          </span>
+      <div class="flex items-start gap-3.5 flex-1 min-w-0">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 bg-[#252578]">
+          <ClipboardList class="w-5 h-5" />
+        </div>
+        <div class="flex-1 min-w-0">
+          <h1 class="text-xl font-semibold text-black leading-snug truncate">{{ request.businessPartner }}</h1>
+          <p class="text-sm text-black/45 mt-0.5">{{ request.category }}</p>
+          <div class="flex items-center gap-2 mt-2 flex-wrap">
+            <span class="text-[10px] font-mono text-black/30 bg-black/4 px-1.5 py-0.5 rounded">{{ request.id }}</span>
+            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" :class="requestStatusBadge[request.status]">
+              {{ request.status }}
+            </span>
+            <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border"
+              :class="daysDisplay(days).cls">
+              <component :is="daysDisplay(days).icon" class="w-3 h-3" />
+              {{ daysDisplay(days).text }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Action buttons -->
-    <div class="flex items-center gap-2 shrink-0">
+    <!-- Row 2: Action buttons (right-aligned) -->
+    <div class="flex items-center justify-end gap-2 flex-wrap">
+
       <template v-if="isEditing">
         <Button @click="$emit('cancel')" variant="outline" :disabled="saving"
           class="h-9 px-4 text-sm border-black/15 text-black/60 hover:text-black">
@@ -100,34 +102,35 @@ function daysDisplay(days: number) {
           </div>
         </template>
 
-        <!-- Manager: Approve / Set Reviewing / Reject -->
+        <!-- Manager: Approve / Reject -->
         <template v-if="isManager && (request.status === 'Pending' || request.status === 'Under Review')">
           <template v-if="!showRejectInput">
-            <Button v-if="request.status === 'Pending'" @click="$emit('setReviewing')" variant="outline"
-              class="h-9 border-[#2E85D8]/20 text-[#2E85D8] hover:bg-[#2E85D8]/5 gap-2 font-semibold">
-              <RefreshCw class="w-4 h-4" /> Set Reviewing
+            <Button @click="$emit('approve')" :disabled="actionInProgress"
+              class="h-9 bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+              <Loader2 v-if="actionInProgress" class="w-3.5 h-3.5 animate-spin" />
+              <CheckCircle v-else class="w-4 h-4" />
+              Approve Request
             </Button>
-            <Button @click="$emit('approve')"
-              class="h-9 bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-semibold shadow-sm">
-              <CheckCircle class="w-4 h-4" /> Approve Request
-            </Button>
-            <Button @click="$emit('toggleReject')" variant="outline"
-              class="h-9 border-red-200 text-red-600 hover:bg-red-50 gap-2 font-semibold">
+            <Button @click="$emit('toggleReject')" :disabled="actionInProgress" variant="outline"
+              class="h-9 border-red-200 text-red-600 hover:bg-red-50 gap-2 font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
               <XCircle class="w-4 h-4" /> Reject Request
             </Button>
           </template>
           <template v-else>
-            <Button variant="outline" @click="$emit('toggleReject')"
-              class="h-9 border-black/10 text-black/60 hover:text-black">
+            <Button variant="outline" @click="$emit('toggleReject')" :disabled="actionInProgress"
+              class="h-9 border-black/10 text-black/60 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed">
               Cancel
             </Button>
-            <Button @click="$emit('confirmReject')" :disabled="!rejectReasonValid"
+            <Button @click="$emit('confirmReject')" :disabled="!rejectReasonValid || actionInProgress"
               class="h-9 bg-red-600 hover:bg-red-700 text-white gap-2 font-semibold disabled:opacity-40 shadow-sm">
-              <XCircle class="w-4 h-4" /> Confirm Reject
+              <Loader2 v-if="actionInProgress" class="w-3.5 h-3.5 animate-spin" />
+              <XCircle v-else class="w-4 h-4" />
+              Confirm Reject
             </Button>
           </template>
         </template>
       </template>
+
     </div>
 
   </div>

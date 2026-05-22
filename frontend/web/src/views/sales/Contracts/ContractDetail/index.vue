@@ -15,7 +15,8 @@ import ContractDocumentsSection from './ContractDocumentsSection.vue'
 
 const route  = useRoute()
 const router = useRouter()
-const { state: authState } = useAuth()
+const { state: authState, role } = useAuth()
+const isManager = computed(() => role.value === 'Manager' || role.value === 'Admin')
 const { success, error } = useToast()
 const { state: cacheState, fetchContracts, updateContractInCache } = useApiCache()
 
@@ -115,6 +116,7 @@ const editForm = reactive({
   region:          '' as ContractRegion | '',
   startDate:       '',
   endDate:         '',
+  workflowStatus:  '' as ContractWorkflowStatus | '',
 })
 
 const touched = reactive<Record<string, boolean>>({
@@ -162,6 +164,7 @@ function startEdit() {
     region:          contract.value.region,
     startDate:       contract.value.startDate,
     endDate:         contract.value.endDate,
+    workflowStatus:  contract.value.workflowStatus ?? '',
   })
   contractDocs.value = [...contract.value.docs]
   Object.keys(touched).forEach(k => (touched[k] = false))
@@ -178,7 +181,7 @@ async function saveEdit() {
 
   savingEdit.value = true
   try {
-    const payload = {
+    const payload: Record<string, unknown> = {
       bp_name:       editForm.businessPartner,
       category:      editForm.category,
       item_code:     editForm.itemCode,
@@ -188,6 +191,9 @@ async function saveEdit() {
       region:        editForm.region,
       start_date:    editForm.startDate,
       end_date:      editForm.endDate,
+    }
+    if (isManager.value) {
+      payload.workflow_status = editForm.workflowStatus || null
     }
 
     const res = await fetch(`${apiBase}/contracts/${id}`, {
@@ -282,6 +288,8 @@ async function saveEdit() {
         :edit-form="editForm"
         :touched="touched"
         :date-error="dateError"
+        :is-manager="isManager"
+        :is-approved="contract.approvalStatus === 'Approved'"
       />
       <ContractDocumentsSection
         :docs="isEditing ? contractDocs : contract.docs"

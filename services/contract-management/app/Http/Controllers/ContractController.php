@@ -215,13 +215,21 @@ class ContractController extends Controller
             return response()->json(['message' => 'Invalid region.'], 422);
         }
 
-        $approvalStatusId = DB::table('contract_approval_statuses')
-            ->where('status_name', 'Pending')
-            ->value('approval_status_id');
+        if ($request->auth_role === 'Manager') {
+            $approvalStatusId = DB::table('contract_approval_statuses')
+                ->where('status_name', 'Approved')->value('approval_status_id');
+            $workflowStatusId = DB::table('contract_statuses')
+                ->where('status_name', 'SBSI Review')->value('status_id');
+        } else {
+            $approvalStatusId = DB::table('contract_approval_statuses')
+                ->where('status_name', 'Pending')->value('approval_status_id');
+            $workflowStatusId = null;
+        }
 
         $contract = Contract::create([
             'category_id'        => $categoryId,
             'approval_status_id' => $approvalStatusId,
+            'workflow_status_id' => $workflowStatusId,
             'bp_name'            => $request->bp_name,
             'item_code'     => $request->item_code,
             'description'   => $request->description,
@@ -252,6 +260,53 @@ class ContractController extends Controller
         ], 201);
     }
 
+    public function updateStatus(Request $request, int $id)
+    {
+        $contract = Contract::findOrFail($id);
+
+        $request->validate([
+            'approval_status' => 'required|string|in:Approved,Rejected',
+            'workflow_status' => 'nullable|string',
+        ]);
+
+        $approvalStatusId = DB::table('contract_approval_statuses')
+            ->where('status_name', $request->approval_status)
+            ->value('approval_status_id');
+
+        if (!$approvalStatusId) {
+            return response()->json(['message' => 'Invalid approval status.'], 422);
+        }
+
+        $workflowStatusId = null;
+        if ($request->filled('workflow_status')) {
+            $workflowStatusId = DB::table('contract_statuses')
+                ->where('status_name', $request->workflow_status)
+                ->value('status_id');
+
+            if (!$workflowStatusId) {
+                return response()->json(['message' => 'Invalid workflow status.'], 422);
+            }
+        }
+
+        $contract->update([
+            'approval_status_id' => $approvalStatusId,
+            'workflow_status_id' => $workflowStatusId,
+        ]);
+
+        $contract->load([
+            'documents:document_id,contract_id,file_name,file_type,file_size,document_url',
+            'category:category_id,category_name',
+            'approvalStatus:approval_status_id,status_name',
+            'workflowStatus:status_id,status_name',
+            'region:region_id,region_name',
+        ]);
+
+        return response()->json([
+            'message' => 'Contract status updated.',
+            'data'    => $this->formatContract($contract),
+        ]);
+    }
+
     public function update(Request $request, int $id)
     {
         $contract = Contract::findOrFail($id);
@@ -261,15 +316,16 @@ class ContractController extends Controller
         }
 
         $request->validate([
-            'bp_name'       => 'required|string',
-            'category'      => 'required|string',
-            'item_code'     => 'required|string|max:255',
-            'description'   => 'required|string',
-            'serial_number' => "required|string|max:255|unique:contracts,serial_number,{$id},contract_id",
-            'sbu_number'    => 'required|string|max:255',
-            'region'        => 'required|string|in:Luzon,Visayas,Mindanao',
-            'start_date'    => 'required|date',
-            'end_date'      => 'required|date|after:start_date',
+            'bp_name'         => 'required|string',
+            'category'        => 'required|string',
+            'item_code'       => 'required|string|max:255',
+            'description'     => 'required|string',
+            'serial_number'   => "required|string|max:255|unique:contracts,serial_number,{$id},contract_id",
+            'sbu_number'      => 'required|string|max:255',
+            'region'          => 'required|string|in:Luzon,Visayas,Mindanao',
+            'start_date'      => 'required|date',
+            'end_date'        => 'required|date|after:start_date',
+            'workflow_status' => 'nullable|string|in:SBSI Review,Client Review,Notarized PDF',
         ]);
 
         $categoryId = DB::table('contract_categories')
@@ -299,6 +355,13 @@ class ContractController extends Controller
             'start_date'    => $request->start_date,
             'end_date'      => $request->end_date,
         ]);
+
+        if ($request->filled('workflow_status') && in_array($request->auth_role, ['Manager', 'Admin'])) {
+            $workflowStatusId = DB::table('contract_statuses')
+                ->where('status_name', $request->workflow_status)
+                ->value('status_id');
+            $contract->update(['workflow_status_id' => $workflowStatusId]);
+        }
 
         $contract->load([
             'documents:document_id,contract_id,file_name,file_type,file_size,document_url',
