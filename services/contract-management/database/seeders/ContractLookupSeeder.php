@@ -45,5 +45,14 @@ class ContractLookupSeeder extends Seeder
                 ['status_name' => $name]
             );
         }
+
+        $regions = ['Luzon', 'Visayas', 'Mindanao'];
+
+        foreach ($regions as $name) {
+            DB::table('contract_regions')->updateOrInsert(
+                ['region_name' => $name],
+                ['region_name' => $name]
+            );
+        }
     }
 }

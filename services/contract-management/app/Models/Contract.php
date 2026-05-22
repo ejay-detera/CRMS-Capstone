@@ -25,7 +25,7 @@ class Contract extends Model
         'item_code',
         'description',
         'serial_number',
-        'region',
+        'region_id',
         'start_date',
         'end_date',
         'created_by',
@@ -56,5 +56,10 @@ class Contract extends Model
     public function workflowStatus(): BelongsTo
     {
         return $this->belongsTo(ContractStatus::class, 'workflow_status_id', 'status_id');
+    }
+
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(ContractRegion::class, 'region_id', 'region_id');
     }
 }

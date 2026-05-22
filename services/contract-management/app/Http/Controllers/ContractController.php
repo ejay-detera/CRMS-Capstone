@@ -21,7 +21,7 @@ class ContractController extends Controller
             'description'     => $contract->description,
             'serial_number'   => $contract->serial_number,
             'sbu_number'      => $contract->sbu_number,
-            'region'          => $contract->region,
+            'region'          => $contract->region?->region_name,
             'start_date'      => $contract->start_date?->toDateString(),
             'end_date'        => $contract->end_date?->toDateString(),
             'created_by'      => $contract->created_by,
@@ -37,7 +37,7 @@ class ContractController extends Controller
 
     public function index(Request $request)
     {
-        $query = Contract::with(['documents', 'category', 'approvalStatus', 'workflowStatus']);
+        $query = Contract::with(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
 
         // Uses idx_contracts_owner_approval composite index when filtering by sales rep
         if ($request->filled('created_by')) {
@@ -58,7 +58,7 @@ class ContractController extends Controller
      */
     public function indexRequests(Request $request)
     {
-        $query = Contract::with(['documents', 'category', 'approvalStatus', 'workflowStatus']);
+        $query = Contract::with(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
 
         // Uses index on created_by (and composite idx_contracts_owner_approval when status is filtered)
         if ($request->filled('created_by')) {
@@ -89,7 +89,7 @@ class ContractController extends Controller
                 'description'      => $c->description,
                 'serial_number'    => $c->serial_number,
                 'sbu_number'       => $c->sbu_number,
-                'region'           => $c->region,
+                'region'           => $c->region?->region_name,
                 'start_date'       => $c->start_date?->toDateString(),
                 'end_date'         => $c->end_date?->toDateString(),
                 'created_at'       => $c->created_at?->toDateString(),
@@ -107,7 +107,7 @@ class ContractController extends Controller
 
     public function show(int $id)
     {
-        $contract = Contract::with(['documents', 'category', 'approvalStatus', 'workflowStatus'])->findOrFail($id);
+        $contract = Contract::with(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region'])->findOrFail($id);
 
         return response()->json([
             'data' => $this->formatContract($contract),
@@ -140,6 +140,14 @@ class ContractController extends Controller
             return response()->json(['message' => 'Invalid category.'], 422);
         }
 
+        $regionId = DB::table('contract_regions')
+            ->where('region_name', $request->region)
+            ->value('region_id');
+
+        if (!$regionId) {
+            return response()->json(['message' => 'Invalid region.'], 422);
+        }
+
         $approvalStatusId = DB::table('contract_approval_statuses')
             ->where('status_name', 'Pending')
             ->value('approval_status_id');
@@ -152,7 +160,7 @@ class ContractController extends Controller
             'description'   => $request->description,
             'serial_number' => $request->serial_number,
             'sbu_number'    => $request->sbu_number,
-            'region'        => $request->region,
+            'region_id'     => $regionId,
             'start_date'    => $request->start_date,
             'end_date'      => $request->end_date,
             'created_by'    => $request->auth_id,
@@ -201,6 +209,14 @@ class ContractController extends Controller
             return response()->json(['message' => 'Invalid category.'], 422);
         }
 
+        $regionId = DB::table('contract_regions')
+            ->where('region_name', $request->region)
+            ->value('region_id');
+
+        if (!$regionId) {
+            return response()->json(['message' => 'Invalid region.'], 422);
+        }
+
         $contract->update([
             'category_id'   => $categoryId,
             'bp_name'       => $request->bp_name,
@@ -208,12 +224,12 @@ class ContractController extends Controller
             'description'   => $request->description,
             'serial_number' => $request->serial_number,
             'sbu_number'    => $request->sbu_number,
-            'region'        => $request->region,
+            'region_id'     => $regionId,
             'start_date'    => $request->start_date,
             'end_date'      => $request->end_date,
         ]);
 
-        $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus']);
+        $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
 
         return response()->json([
             'message' => 'Contract updated.',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ContractApprovalStatus;
 use App\Models\ContractCategory;
+use App\Models\ContractRegion;
 use App\Models\ContractStatus;
 use Illuminate\Http\JsonResponse;
 
@@ -36,7 +37,7 @@ class LookupController extends Controller
             ]),
 
             'regions' => response()->json([
-                'data' => ['Luzon', 'Visayas', 'Mindanao'],
+                'data' => ContractRegion::orderBy('region_name')->pluck('region_name'),
             ]),
 
             default => response()->json([
