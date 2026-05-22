@@ -94,7 +94,12 @@ async function loadContract() {
   }
 }
 
-onMounted(loadContract)
+onMounted(async () => {
+  await loadContract()
+  if (route.query.edit === '1' && contract.value) {
+    startEdit()
+  }
+})
 
 // ── Inline edit state ────────────────────────────────────────────────────────
 

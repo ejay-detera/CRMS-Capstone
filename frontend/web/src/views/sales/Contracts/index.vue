@@ -83,9 +83,6 @@ function openDetail(c: Contract & { days: number }) {
   router.push(`/sales/contracts/${c.id}`)
 }
 
-const showEdit   = ref(false)
-const editTarget = ref<Contract | null>(null)
-function openEdit(c: Contract & { days: number }) { editTarget.value = c; showEdit.value = true }
 
 function exportXLSX() {
   const rows = filtered.value.map(c => ({
@@ -159,7 +156,6 @@ function exportXLSX() {
       :current-page="currentPage"
       :items-per-page="itemsPerPage"
       @open-detail="openDetail"
-      @open-edit="openEdit"
       @update:status-filter="statusFilter = $event"
       @update:search-query="searchQuery = $event"
       @update:current-page="currentPage = $event"

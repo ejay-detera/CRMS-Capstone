@@ -95,7 +95,7 @@ function handleFollowUp(id: string) {
         <h1 class="text-xl font-semibold text-black">My Contract Requests</h1>
         <p class="text-sm text-black/40 mt-0.5">Track and manage your contract submissions.</p>
       </div>
-      <Button class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+      <Button @click="router.push('/sales/contracts/create')" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
         <Plus class="w-5 h-5" />
       </Button>
     </div>

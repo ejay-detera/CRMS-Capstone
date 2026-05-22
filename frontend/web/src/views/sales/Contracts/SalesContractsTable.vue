@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Search, MoreHorizontal, Eye, Pencil, AlertTriangle, Clock } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -17,6 +18,8 @@ import type { Contract, StatusFilter } from '@/types/contract'
 
 type ContractWithDays = Contract & { days: number }
 
+const router = useRouter()
+
 const props = defineProps<{
   paginated:    ContractWithDays[]
   filtered:     ContractWithDays[]
@@ -29,7 +32,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   openDetail:            [c: ContractWithDays]
-  openEdit:              [c: ContractWithDays]
   'update:statusFilter': [v: StatusFilter]
   'update:searchQuery':  [v: string]
   'update:currentPage':  [v: number]
@@ -194,7 +196,7 @@ function daysLabel(days: number) {
                   <DropdownMenuItem @click="emit('openDetail', c)" class="gap-2.5 text-sm cursor-pointer">
                     <Eye class="w-3.5 h-3.5 text-black/40" /> View details
                   </DropdownMenuItem>
-                  <DropdownMenuItem @click="emit('openEdit', c)" class="gap-2.5 text-sm cursor-pointer">
+                  <DropdownMenuItem @click="router.push(`/sales/contracts/${c.id}?edit=1`)" class="gap-2.5 text-sm cursor-pointer">
                     <Pencil class="w-3.5 h-3.5 text-black/40" /> Edit contract
                   </DropdownMenuItem>
                 </DropdownMenuContent>
