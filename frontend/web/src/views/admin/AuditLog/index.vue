@@ -1,34 +1,20 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { Upload } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
+import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
 import AuditLogFilters from './AuditLogFilters.vue'
 import AuditLogTable   from './AuditLogTable.vue'
 import type { LogEntry, ActionType } from '@/types/auditLog'
 
-const logs = ref<LogEntry[]>([
-  { id: 'AL-001', user: 'John Doe',     email: 'john.doe@sbsi.com',     role: 'Admin',   action: 'Contract Approved', target: 'CNT-2023-001 — Medical Supplies Co.',    timestamp: '2025-05-14 09:42 AM' },
-  { id: 'AL-002', user: 'Alice Smith',  email: 'alice.smith@sbsi.com',  role: 'Manager', action: 'Contract Updated',  target: 'CNT-2023-042 — Bio-Tech Logistics',      timestamp: '2025-05-14 08:15 AM' },
-  { id: 'AL-003', user: 'John Doe',     email: 'john.doe@sbsi.com',     role: 'Admin',   action: 'User Created',      target: 'Emma Wilson (Sales)',                    timestamp: '2025-05-13 04:30 PM' },
-  { id: 'AL-004', user: 'Maria Santos', email: 'maria.santos@sbsi.com', role: 'Sales',   action: 'Login',             target: 'Session started from 192.168.1.12',      timestamp: '2025-05-13 09:00 AM' },
-  { id: 'AL-005', user: 'Alice Smith',  email: 'alice.smith@sbsi.com',  role: 'Manager', action: 'Contract Created',  target: 'CNT-2023-134 — BioGenesis Research',     timestamp: '2025-05-12 03:18 PM' },
-  { id: 'AL-006', user: 'John Doe',     email: 'john.doe@sbsi.com',     role: 'Admin',   action: 'Role Updated',      target: 'Manager — removed contracts.delete',     timestamp: '2025-05-12 11:05 AM' },
-  { id: 'AL-007', user: 'John Doe',     email: 'john.doe@sbsi.com',     role: 'Admin',   action: 'User Deleted',      target: 'Bob Johnson (Manager)',                  timestamp: '2025-05-11 02:45 PM' },
-  { id: 'AL-008', user: 'Alice Smith',  email: 'alice.smith@sbsi.com',  role: 'Manager', action: 'Partner Added',     target: 'SP-009 — PhilHealth Supplies',           timestamp: '2025-05-11 10:22 AM' },
-  { id: 'AL-009', user: 'Emma Wilson',  email: 'emma.wilson@sbsi.com',  role: 'Sales',   action: 'Contract Updated',  target: 'CNT-2023-089 — Global Pharma Inc.',      timestamp: '2025-05-10 04:00 PM' },
-  { id: 'AL-010', user: 'John Doe',     email: 'john.doe@sbsi.com',     role: 'Admin',   action: 'Settings Changed',  target: 'System config — session timeout updated',timestamp: '2025-05-10 09:30 AM' },
-  { id: 'AL-011', user: 'Maria Santos', email: 'maria.santos@sbsi.com', role: 'Sales',   action: 'Login',             target: 'Session started from 192.168.1.08',      timestamp: '2025-05-09 08:55 AM' },
-  { id: 'AL-012', user: 'Alice Smith',  email: 'alice.smith@sbsi.com',  role: 'Manager', action: 'Contract Approved', target: 'CNT-2023-112 — Stellar Lab Equipment',   timestamp: '2025-05-08 03:10 PM' },
-  { id: 'AL-013', user: 'John Doe',     email: 'john.doe@sbsi.com',     role: 'Admin',   action: 'Partner Updated',   target: 'BP-003 — Cebu Pacific Air',              timestamp: '2025-05-08 01:40 PM' },
-  { id: 'AL-014', user: 'Emma Wilson',  email: 'emma.wilson@sbsi.com',  role: 'Sales',   action: 'Contract Created',  target: 'CNT-2023-155 — Wellcare Diagnostics',    timestamp: '2025-05-07 11:25 AM' },
-  { id: 'AL-015', user: 'Alice Smith',  email: 'alice.smith@sbsi.com',  role: 'Manager', action: 'User Updated',      target: 'Maria Santos — role changed to Sales',   timestamp: '2025-05-07 09:50 AM' },
-  { id: 'AL-016', user: 'John Doe',     email: 'john.doe@sbsi.com',     role: 'Admin',   action: 'Contract Deleted',  target: 'CNT-2022-088 — Expired draft removed',   timestamp: '2025-05-06 04:20 PM' },
-  { id: 'AL-017', user: 'Maria Santos', email: 'maria.santos@sbsi.com', role: 'Sales',   action: 'Login',             target: 'Session started from 192.168.1.08',      timestamp: '2025-05-06 08:45 AM' },
-  { id: 'AL-018', user: 'Alice Smith',  email: 'alice.smith@sbsi.com',  role: 'Manager', action: 'Partner Added',     target: 'BP-008 — Philippine Airlines',           timestamp: '2025-05-05 02:35 PM' },
-  { id: 'AL-019', user: 'John Doe',     email: 'john.doe@sbsi.com',     role: 'Admin',   action: 'Role Updated',      target: 'Sales — added partners.view permission', timestamp: '2025-05-05 10:10 AM' },
-  { id: 'AL-020', user: 'Emma Wilson',  email: 'emma.wilson@sbsi.com',  role: 'Sales',   action: 'Contract Updated',  target: 'CNT-2023-042 — Status → Draft Client',   timestamp: '2025-05-04 03:55 PM' },
-])
+const { error: showError, success: showSuccess } = useToast()
+
+const logs = ref<LogEntry[]>([])
+const totalLogs = ref(0)
+const totalPages = ref(1)
+const isFetching = ref(false)
 
 const searchQuery  = ref('')
 const actionFilter = ref<ActionType | 'All'>('All')
@@ -36,34 +22,139 @@ const dateFilter   = ref('')
 const currentPage  = ref(1)
 const PAGE_SIZE    = 10
 
-const filtered = computed(() => {
-  let list = logs.value
-  if (actionFilter.value !== 'All') list = list.filter(l => l.action === actionFilter.value)
-  if (dateFilter.value)             list = list.filter(l => l.timestamp.startsWith(dateFilter.value))
-  if (searchQuery.value.trim()) {
-    const q = searchQuery.value.toLowerCase()
-    list = list.filter(l =>
-      l.user.toLowerCase().includes(q) || l.email.toLowerCase().includes(q) ||
-      l.target.toLowerCase().includes(q) || l.action.toLowerCase().includes(q)
-    )
+async function fetchAuditLogs() {
+  const { state } = useAuth()
+  if (!state.token) return
+
+  isFetching.value = true
+  try {
+    const params = new URLSearchParams()
+    params.append('page', currentPage.value.toString())
+    params.append('per_page', PAGE_SIZE.toString())
+
+    if (actionFilter.value !== 'All') {
+      params.append('action', actionFilter.value)
+    }
+    if (dateFilter.value) {
+      params.append('date', dateFilter.value)
+    }
+    if (searchQuery.value.trim()) {
+      params.append('search', searchQuery.value.trim())
+    }
+
+    const res = await fetch(`http://localhost:8002/api/audit-logs?${params.toString()}`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'X-Session-ID': localStorage.getItem('session_id') || '',
+        'Accept': 'application/json'
+      }
+    })
+
+    const data = await res.json()
+    if (res.ok && data.data) {
+      logs.value = data.data
+      totalLogs.value = data.total
+      totalPages.value = data.last_page || 1
+    } else {
+      showError('Fetch failed', data.message || 'Could not load audit logs from the server.')
+    }
+  } catch (err) {
+    console.error('Failed to fetch audit logs:', err)
+    showError('Network Error', 'Could not connect to the contract management service.')
+  } finally {
+    isFetching.value = false
   }
-  return list
+}
+
+onMounted(() => {
+  fetchAuditLogs()
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / PAGE_SIZE)))
-const paginated  = computed(() => filtered.value.slice((currentPage.value - 1) * PAGE_SIZE, currentPage.value * PAGE_SIZE))
+// Debounce search input to avoid spamming the backend API
+let debounceTimeout: any = null
+watch(searchQuery, () => {
+  if (debounceTimeout) clearTimeout(debounceTimeout)
+  debounceTimeout = setTimeout(() => {
+    currentPage.value = 1
+    fetchAuditLogs()
+  }, 300)
+})
 
-watch([actionFilter, dateFilter, searchQuery], () => { currentPage.value = 1 })
+// Trigger reload on filter updates
+watch([actionFilter, dateFilter], () => {
+  if (currentPage.value === 1) {
+    fetchAuditLogs()
+  } else {
+    currentPage.value = 1
+  }
+})
 
-function exportXLSX() {
-  const rows = filtered.value.map(l => ({
-    'Log ID': l.id, 'User': l.user, 'Email': l.email, 'Role': l.role,
-    'Action': l.action, 'Target': l.target, 'Timestamp': l.timestamp,
-  }))
-  const ws = XLSX.utils.json_to_sheet(rows)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Audit Log')
-  XLSX.writeFile(wb, 'audit-log.xlsx')
+// Trigger reload on page changes
+watch(currentPage, () => {
+  fetchAuditLogs()
+})
+
+async function exportXLSX() {
+  const { state } = useAuth()
+  if (!state.token) return
+
+  try {
+    const params = new URLSearchParams()
+    params.append('page', '1')
+    params.append('per_page', '100') // Fetch a larger slice to create a complete report
+
+    if (actionFilter.value !== 'All') {
+      params.append('action', actionFilter.value)
+    }
+    if (dateFilter.value) {
+      params.append('date', dateFilter.value)
+    }
+    if (searchQuery.value.trim()) {
+      params.append('search', searchQuery.value.trim())
+    }
+
+    const res = await fetch(`http://localhost:8002/api/audit-logs?${params.toString()}`, {
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'X-Session-ID': localStorage.getItem('session_id') || '',
+        'Accept': 'application/json'
+      }
+    })
+
+    const data = await res.json()
+    if (res.ok && data.data) {
+      const rows = data.data.map((l: any) => ({
+        'Log ID': l.id,
+        'Source': l.source.toUpperCase(),
+        'User': l.user_name,
+        'Email': l.user_email || 'N/A',
+        'Role': l.role || 'Finance',
+        'Action': l.action,
+        'Description': l.description,
+        'Timestamp': new Date(l.performed_at).toLocaleString()
+      }))
+      const ws = XLSX.utils.json_to_sheet(rows)
+      ws['!cols'] = [
+        { wch: 12 },
+        { wch: 10 },
+        { wch: 20 },
+        { wch: 25 },
+        { wch: 12 },
+        { wch: 18 },
+        { wch: 35 },
+        { wch: 25 }
+      ]
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Audit Log')
+      XLSX.writeFile(wb, 'audit-log.xlsx')
+      showSuccess('Export complete', `${data.data.length} logs exported to audit-log.xlsx`)
+    } else {
+      showError('Export failed', 'Could not retrieve data for export.')
+    }
+  } catch (err) {
+    console.error('Failed to export audit logs:', err)
+    showError('Export Error', 'An error occurred during export.')
+  }
 }
 </script>
 
@@ -88,13 +179,16 @@ function exportXLSX() {
     />
 
     <AuditLogTable
-      :paginated="paginated"
-      :filtered="filtered"
+      :paginated="logs"
+      :filtered="logs"
       :current-page="currentPage"
       :page-size="PAGE_SIZE"
       :total-pages="totalPages"
+      :is-loading="isFetching"
+      :total-logs="totalLogs"
       @update:current-page="currentPage = $event"
     />
 
   </div>
 </template>
+

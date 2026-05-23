@@ -58,10 +58,16 @@ class AuthService
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Authorization' => 'Bearer ' . $token,
+                'X-Session-ID' => request()->header('X-Session-ID') ?? '',
                 'X-Internal-Service' => 'contract-management-admin',
             ])->post("{$this->baseUrl}/admin/users", $data);
 
-            return $response->successful() ? $response->json() : ['error' => true, 'status' => $response->status(), 'message' => $response->json('message')];
+            return $response->successful() ? $response->json() : [
+                'error' => true, 
+                'status' => $response->status(), 
+                'message' => $response->json('message') ?? 'Failed to create user',
+                'errors' => $response->json('errors') ?? []
+            ];
         } catch (\Exception $e) {
             return ['error' => true, 'message' => 'Connection failed'];
         }

@@ -3,16 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Services\AuthService;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class AdminUserProxyController extends Controller
 {
     protected AuthService $authService;
+    protected AuditLogService $auditLogService;
 
-    public function __construct(AuthService $authService)
+    public function __construct(AuthService $authService, AuditLogService $auditLogService)
     {
         $this->authService = $authService;
+        $this->auditLogService = $auditLogService;
     }
 
     /**
@@ -57,7 +60,17 @@ class AdminUserProxyController extends Controller
         $roles = HttpProxy::get('admin/role-options', $token);
         $depts = HttpProxy::get('admin/department-options', $token);
 
-        $roleId = $this->findIdByName($roles, $request->role_name);
+        // Map standard roles to department-scoped roles
+        $targetRoleName = ucfirst(strtolower($request->role_name));
+        if ($targetRoleName === 'Manager') {
+            $mappedRoleName = 'Finance Manager';
+        } elseif ($targetRoleName === 'Employee') {
+            $mappedRoleName = 'Finance Employee';
+        } else {
+            $mappedRoleName = $targetRoleName;
+        }
+
+        $roleId = $this->findIdByName($roles, $mappedRoleName);
         $deptId = $this->findIdByName($depts, $request->department_name);
 
         if (!$roleId || !$deptId) {
@@ -79,6 +92,29 @@ class AdminUserProxyController extends Controller
             return response()->json($result, $result['status'] ?? 500);
         }
 
+        // Audit Log User Creation
+        $creatorRole = $request->get('auth_role');
+        $creatorDepartment = $request->get('auth_department');
+        $shouldLog = ($creatorDepartment === 'Finance') || ($creatorRole === 'IT Admin');
+
+        if ($shouldLog) {
+            $this->auditLogService->log(
+                'user_created',
+                'User',
+                $result['user']['id'] ?? 0,
+                $request->get('auth_id'),
+                [],
+                [
+                    'email' => $request->email,
+                    'first_name' => $request->first_name,
+                    'last_name' => $request->last_name,
+                    'role' => $request->role_name,
+                    'department' => $request->department_name
+                ],
+                null // Skip department filter
+            );
+        }
+
         return response()->json($result, 201);
     }
 
@@ -98,7 +134,9 @@ class AdminUserProxyController extends Controller
 class HttpProxy {
     public static function get($endpoint, $token) {
         $baseUrl = env('AUTH_SERVICE_URL', 'http://auth-service:8000/api');
-        $response = \Illuminate\Support\Facades\Http::withToken($token)->get("{$baseUrl}/{$endpoint}");
+        $response = \Illuminate\Support\Facades\Http::withToken($token)
+            ->withHeaders(['X-Session-ID' => request()->header('X-Session-ID') ?? ''])
+            ->get("{$baseUrl}/{$endpoint}");
         return $response->json();
     }
 }

@@ -79,7 +79,7 @@ class BusinessPartnerController extends Controller
 
         // Audit Log
         $userId = $request->get('auth_id');
-        $this->auditLogService->log('created', 'BusinessPartner', $partner->partner_id, $userId, [], $partner->toArray());
+        $this->auditLogService->log('created', 'BusinessPartner', $partner->partner_id, $userId, [], $partner->toArray(), $request->get('auth_department'));
 
         $warnings = [];
         if (!empty($detection['fuzzy_warnings'])) {
@@ -158,7 +158,7 @@ class BusinessPartnerController extends Controller
 
         // Audit Log
         $userId = $request->get('auth_id');
-        $this->auditLogService->log('updated', 'BusinessPartner', $partner->partner_id, $userId, $oldData, $partner->toArray());
+        $this->auditLogService->log('updated', 'BusinessPartner', $partner->partner_id, $userId, $oldData, $partner->toArray(), $request->get('auth_department'));
 
         $warnings = [];
         if (!empty($detection['fuzzy_warnings'])) {
@@ -191,7 +191,7 @@ class BusinessPartnerController extends Controller
 
         // Audit Log
         $userId = $request->get('auth_id');
-        $this->auditLogService->log('deleted', 'BusinessPartner', $id, $userId, $oldData, []);
+        $this->auditLogService->log('deleted', 'BusinessPartner', $id, $userId, $oldData, [], $request->get('auth_department'));
 
         return response()->json(['message' => 'Business partner deleted successfully.']);
     }

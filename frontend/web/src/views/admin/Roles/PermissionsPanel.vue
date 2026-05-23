@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import type { RoleKey, RoleMeta, Category } from '@/types/role'
+import type { RoleMeta, Category } from '@/types/role'
 
+// Props now use activeRoleName (string) + activeRoleMeta instead of a map lookup,
+// and activePermissions is still string[] (slugs) — unchanged for the template.
 const props = defineProps<{
-  activeRole:        RoleKey
-  isLocked:          boolean
-  roleMeta:          Record<RoleKey, RoleMeta>
-  categories:        Category[]
-  activePermissions: string[]
+  activeRoleName:  string
+  isLocked:        boolean
+  activeRoleMeta:  RoleMeta
+  categories:      Category[]
+  activePermissions: string[]   // slugs of currently-enabled permissions
 }>()
 
 const emit = defineEmits<{
@@ -22,16 +24,17 @@ function isCategoryAllChecked(cat: Category): boolean {
 <template>
   <div class="bg-white rounded-xl border border-black/8 shadow-sm overflow-hidden">
 
+    <!-- Panel header -->
     <div class="px-6 py-4 border-b border-black/5 flex items-center gap-3">
       <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-[#252578]/8">
-        <component :is="roleMeta[activeRole].icon" class="w-4 h-4 text-[#252578]" />
+        <component :is="activeRoleMeta.icon" class="w-4 h-4 text-[#252578]" />
       </div>
       <div>
-        <h2 class="text-sm font-semibold text-black">{{ activeRole }} Role Permissions</h2>
+        <h2 class="text-sm font-semibold text-black">{{ activeRoleName }} Role Permissions</h2>
         <p class="text-xs text-black/40 mt-0.5">
           {{ isLocked
-            ? `${activeRole} has all permissions (cannot be restricted)`
-            : `Customize what ${activeRole} users can access` }}
+            ? `${activeRoleName} has all permissions (cannot be restricted)`
+            : `Customize what ${activeRoleName} users can access` }}
         </p>
       </div>
       <span v-if="isLocked"
@@ -40,38 +43,55 @@ function isCategoryAllChecked(cat: Category): boolean {
       </span>
     </div>
 
+    <!-- Permission categories -->
     <div class="divide-y divide-black/5">
       <div v-for="cat in categories" :key="cat.key" class="px-6 py-5">
 
+        <!-- Category header -->
         <div class="flex items-center justify-between mb-4">
-          <span class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">{{ cat.label }}</span>
-          <button v-if="!isLocked" @click="emit('toggle-category', cat)"
+          <span class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">
+            {{ cat.label }}
+          </span>
+          <button
+            v-if="!isLocked"
+            @click="emit('toggle-category', cat)"
             class="text-xs font-medium transition-colors"
-            :class="isCategoryAllChecked(cat) ? 'text-[#2E85D8] hover:text-[#252578]' : 'text-black/35 hover:text-black/60'">
+            :class="isCategoryAllChecked(cat)
+              ? 'text-[#2E85D8] hover:text-[#252578]'
+              : 'text-black/35 hover:text-black/60'"
+          >
             {{ isCategoryAllChecked(cat) ? 'Deselect all' : 'Select all' }}
           </button>
         </div>
 
+        <!-- Permission pills (slug is used as key, matching activePermissions slugs) -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <button v-for="perm in cat.permissions" :key="perm.key"
+          <button
+            v-for="perm in cat.permissions"
+            :key="perm.key"
             @click="emit('toggle-permission', cat.key, perm.key)"
             :disabled="isLocked"
-            class="flex items-center justify-between gap-2 px-4 py-3 rounded-lg border text-left transition-all duration-150"
+            class="flex items-center justify-between gap-2 px-5 py-2.5 rounded-full border text-left transition-all duration-200 shrink-0"
             :class="activePermissions.includes(perm.key)
-              ? 'bg-[#252578]/6 border-[#252578]/20 text-[#252578]'
-              : 'bg-black/2 border-black/8 text-black/40 hover:border-black/15'">
-
+              ? 'bg-[#252578]/6 border-[#252578]/25 text-[#252578] shadow-sm'
+              : 'bg-black/[0.02] border-black/8 text-black/45 hover:bg-black/[0.04] hover:border-black/15'"
+          >
             <div class="flex items-center gap-2.5">
-              <div class="w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-colors"
-                :class="activePermissions.includes(perm.key) ? 'bg-[#252578] border-[#252578]' : 'bg-white border-black/20'">
-                <svg v-if="activePermissions.includes(perm.key)" viewBox="0 0 10 8"
-                  class="w-2.5 h-2.5 fill-none stroke-white stroke-[1.8]">
-                  <polyline points="1,4 3.5,6.5 9,1" />
-                </svg>
+              <div
+                class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-all duration-200"
+                :class="activePermissions.includes(perm.key)
+                  ? 'bg-[#252578] border-[#252578]'
+                  : 'bg-white border-black/20'"
+              >
+                <div
+                  class="w-1.5 h-1.5 rounded-full bg-white transition-all duration-200"
+                  :class="activePermissions.includes(perm.key) ? 'scale-100 opacity-100' : 'scale-0 opacity-0'"
+                ></div>
               </div>
               <span class="text-sm font-medium">{{ perm.label }}</span>
             </div>
 
+            <!-- Lock icon for locked roles -->
             <svg v-if="isLocked" viewBox="0 0 24 24"
               class="w-3.5 h-3.5 shrink-0 fill-none stroke-current opacity-40 stroke-[1.8]">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />

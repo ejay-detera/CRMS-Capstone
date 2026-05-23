@@ -78,7 +78,7 @@ class SupplierController extends Controller
 
         // Audit Log
         $userId = $request->get('auth_id');
-        $this->auditLogService->log('created', 'Supplier', $supplier->supplier_id, $userId, [], $supplier->toArray());
+        $this->auditLogService->log('created', 'Supplier', $supplier->supplier_id, $userId, [], $supplier->toArray(), $request->get('auth_department'));
 
         $warnings = [];
         if (!empty($detection['fuzzy_warnings'])) {
@@ -157,7 +157,7 @@ class SupplierController extends Controller
 
         // Audit Log
         $userId = $request->get('auth_id');
-        $this->auditLogService->log('updated', 'Supplier', $supplier->supplier_id, $userId, $oldData, $supplier->toArray());
+        $this->auditLogService->log('updated', 'Supplier', $supplier->supplier_id, $userId, $oldData, $supplier->toArray(), $request->get('auth_department'));
 
         $warnings = [];
         if (!empty($detection['fuzzy_warnings'])) {
@@ -190,7 +190,7 @@ class SupplierController extends Controller
 
         // Audit Log
         $userId = $request->get('auth_id');
-        $this->auditLogService->log('deleted', 'Supplier', $id, $userId, $oldData, []);
+        $this->auditLogService->log('deleted', 'Supplier', $id, $userId, $oldData, [], $request->get('auth_department'));
 
         return response()->json(['message' => 'Supplier deleted successfully.']);
     }

@@ -46,7 +46,9 @@ services:
       - ./services/vendor-management:/var/www/html
     ports:
       - "8001:8000"
-    command: sh -c "if [ ! -d vendor ]; then export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts; fi && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts && php artisan serve --host=0.0.0.0 --port=8000"
+    environment:
+      - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
     depends_on:
       - mysql
       - mongodb
@@ -60,7 +62,9 @@ services:
       - ./services/contract-management:/var/www/html
     ports:
       - "8002:8000"
-    command: sh -c "if [ ! -d vendor ]; then export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts; fi && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "export COMPOSER_PROCESS_TIMEOUT=2000 && composer config --global process-timeout 2000 && composer install --no-scripts && php artisan serve --host=0.0.0.0 --port=8000"
+    environment:
+      - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
     depends_on:
       - mysql
       - mongodb

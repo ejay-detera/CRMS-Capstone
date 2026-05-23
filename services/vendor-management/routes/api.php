@@ -55,4 +55,5 @@ Route::middleware(['auth.internal'])->group(function () {
         ->middleware('permission:manage-partners');
     Route::delete('/partners/{id}', [\App\Http\Controllers\BusinessPartnerController::class, 'destroy'])
         ->middleware('permission:manage-partners');
+
 });

@@ -39,6 +39,7 @@ class AuthenticateInternal
             'auth_id' => $authData['user']['id'],
             'auth_role' => $authData['user']['role'],
             'auth_permissions' => $authData['user']['permissions'] ?? [],
+            'auth_department' => $authData['user']['department'] ?? null,
         ]);
 
         // CRMS-capstone Strict Role Isolation

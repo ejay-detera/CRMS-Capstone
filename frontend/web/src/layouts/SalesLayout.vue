@@ -29,13 +29,17 @@ import {
   ChevronDown,
 } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
-import { ref, watch } from "vue";
+import { ref, watch, computed, onMounted } from "vue";
 import { useAuth } from "@/composables/useAuth";
 import logoUrl from "@/assets/sbsi logo.png";
 
 const route  = useRoute();
 const router = useRouter();
-const { logout } = useAuth();
+const { logout, hasPermission, refreshPermissions, user } = useAuth();
+
+// Refresh permissions every time the layout mounts so sidebar items
+// always reflect the latest permissions saved by an admin.
+onMounted(() => refreshPermissions())
 
 const contractPaths = ["/sales/contracts", "/sales/contract-requests"];
 const contractsOpen = ref(contractPaths.includes(route.path));
@@ -44,17 +48,29 @@ watch(() => route.path, path => {
   if (contractPaths.includes(path)) contractsOpen.value = true;
 });
 
-const contractSubItems = [
-  { title: "All Contracts",     url: "/sales/contracts",         icon: FileText  },
-  { title: "Contract Requests", url: "/sales/contract-requests", icon: FilePlus2 },
-];
+// Gate contract sub-items behind their respective permissions
+const contractSubItems = computed(() => {
+  const items = []
+  if (hasPermission('crms.contracts.view')) {
+    items.push({ title: "All Contracts",     url: "/sales/contracts",         icon: FileText  })
+  }
+  if (hasPermission('crms.contracts.create')) {
+    items.push({ title: "Contract Requests", url: "/sales/contract-requests", icon: FilePlus2 })
+  }
+  return items
+})
 
-const user = {
-  name: "Shadrack Castro",
-  role: "Sales",
-  initials: "SC",
-  email: "shadrack.castro@sbsi.com",
-};
+// Dynamic user info derived from auth state
+const displayUser = computed(() => {
+  const u = user.value as any
+  if (!u) return { name: 'Sales', role: 'Sales', initials: 'S', email: '' }
+  const first = u.first_name ?? u.profile?.first_name ?? ''
+  const last  = u.last_name  ?? u.profile?.last_name  ?? ''
+  const name  = [first, last].filter(Boolean).join(' ') || u.email || 'Sales'
+  const role  = u.role ?? u.profile?.role?.name ?? 'Sales'
+  const initials = [first[0], last[0]].filter(Boolean).join('').toUpperCase() || 'S'
+  return { name, role, initials, email: u.email ?? '' }
+})
 
 const searchQuery = ref("");
 
@@ -177,7 +193,42 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <!-- General group -->
+        <!-- Vendor Management (Partners) group — shown only when permitted -->
+        <SidebarGroup v-if="hasPermission('crms.partners.view')" class="mb-1 p-0">
+          <SidebarGroupLabel
+            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"
+          >Vendor Management</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu class="gap-0.5">
+              <SidebarMenuItem>
+                <SidebarMenuButton as-child :is-active="route.path === '/sales/partners'" class="h-auto p-0 rounded-lg">
+                  <router-link
+                    to="/sales/partners"
+                    class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 group-data-[collapsible=icon]:justify-center"
+                    :class="lnk(route.path === '/sales/partners')"
+                  >
+                    <svg
+                      class="w-4 h-4 shrink-0 group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5"
+                      :class="ico(route.path === '/sales/partners')"
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+                    >
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    <span
+                      class="text-sm font-medium flex-1 text-left group-data-[collapsible=icon]:hidden"
+                      :class="txt(route.path === '/sales/partners')"
+                    >Business Partners</span>
+                  </router-link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+
         <SidebarGroup class="mb-1 p-0">
           <SidebarGroupLabel
             class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"
@@ -259,20 +310,20 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
               <div class="flex items-center gap-2.5 cursor-pointer hover:bg-black/5 rounded-lg px-2 py-1 transition-colors">
                 <Avatar class="w-9 h-9 ring-2 ring-[#252578]/20">
                   <AvatarFallback class="bg-[#252578] text-white text-sm font-bold">
-                    {{ user.initials }}
+                    {{ displayUser.initials }}
                   </AvatarFallback>
                 </Avatar>
                 <div class="hidden sm:block text-left">
-                  <p class="text-sm font-semibold text-black leading-tight">{{ user.name }}</p>
-                  <p class="text-xs text-black/50">{{ user.role }}</p>
+                  <p class="text-sm font-semibold text-black leading-tight">{{ displayUser.name }}</p>
+                  <p class="text-xs text-black/50">{{ displayUser.role }}</p>
                 </div>
               </div>
             </PopoverTrigger>
             <PopoverContent class="w-56 p-2" align="end">
               <div class="space-y-1">
                 <div class="px-2 py-1.5 border-b border-black/5">
-                  <p class="text-sm font-semibold text-black">{{ user.name }}</p>
-                  <p class="text-xs text-black/50">{{ user.email }}</p>
+                  <p class="text-sm font-semibold text-black">{{ displayUser.name }}</p>
+                  <p class="text-xs text-black/50">{{ displayUser.email }}</p>
                 </div>
                 <button @click="router.push('/sales/profile')"
                   class="w-full flex items-center gap-3 px-2 py-2 text-sm text-black hover:bg-black/5 rounded-lg transition-colors text-left">

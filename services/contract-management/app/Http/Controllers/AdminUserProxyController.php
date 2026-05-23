@@ -3,16 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Services\AuthService;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 class AdminUserProxyController extends Controller
 {
     protected AuthService $authService;
+    protected AuditLogService $auditLogService;
 
-    public function __construct(AuthService $authService)
+    public function __construct(AuthService $authService, AuditLogService $auditLogService)
     {
         $this->authService = $authService;
+        $this->auditLogService = $auditLogService;
     }
 
     public function store(Request $request)
@@ -36,13 +39,24 @@ class AdminUserProxyController extends Controller
         }
 
         $token = $request->bearerToken();
+        $sessionId = $request->header('X-Session-ID');
         
         // Resolve IDs
         $baseUrl = env('AUTH_SERVICE_URL', 'http://auth-service:8000/api');
-        $roles = Http::withToken($token)->get("{$baseUrl}/admin/role-options")->json();
-        $depts = Http::withToken($token)->get("{$baseUrl}/admin/department-options")->json();
+        $roles = Http::withToken($token)->withHeaders(['X-Session-ID' => $sessionId])->get("{$baseUrl}/admin/role-options")->json();
+        $depts = Http::withToken($token)->withHeaders(['X-Session-ID' => $sessionId])->get("{$baseUrl}/admin/department-options")->json();
 
-        $roleId = collect($roles)->firstWhere('name', ucfirst(strtolower($request->role_name)))['id'] ?? null;
+        // Map standard roles to department-scoped roles
+        $targetRoleName = ucfirst(strtolower($request->role_name));
+        if ($targetRoleName === 'Manager') {
+            $mappedRoleName = 'Finance Manager';
+        } elseif ($targetRoleName === 'Employee') {
+            $mappedRoleName = 'Finance Employee';
+        } else {
+            $mappedRoleName = $targetRoleName;
+        }
+
+        $roleId = collect($roles)->firstWhere('name', $mappedRoleName)['id'] ?? null;
         $deptId = collect($depts)->firstWhere('name', 'Finance')['id'] ?? null;
 
         if (!$roleId || !$deptId) {
@@ -59,6 +73,29 @@ class AdminUserProxyController extends Controller
 
         if (isset($result['error'])) {
             return response()->json($result, $result['status'] ?? 500);
+        }
+
+        // Audit Log User Creation
+        $creatorRole = $request->get('auth_role');
+        $creatorDepartment = $request->get('auth_department');
+        $shouldLog = ($creatorDepartment === 'Finance') || ($creatorRole === 'IT Admin');
+
+        if ($shouldLog) {
+            $this->auditLogService->log(
+                'user_created',
+                'User',
+                $result['user']['id'] ?? 0,
+                $request->get('auth_id'),
+                [],
+                [
+                    'email' => $request->email,
+                    'first_name' => $request->first_name,
+                    'last_name' => $request->last_name,
+                    'role' => $request->role_name,
+                    'department' => $request->department_name
+                ],
+                null // Skip department filter (IT Admin or creator department log override)
+            );
         }
 
         return response()->json($result, 201);

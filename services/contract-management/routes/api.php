@@ -25,4 +25,11 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::post('/admin/users', [\App\Http\Controllers\AdminUserProxyController::class, 'store'])
         ->middleware('permission:manage-users');
 
+    // Aggregated Audit Logs Route
+    Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])
+        ->middleware('permission:manage-users');
+
 });
+
+// Internal webhook for login/logout events from auth-service
+Route::post('/internal/audit-event', [\App\Http\Controllers\InternalAuditController::class, 'receive']);

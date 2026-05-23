@@ -106,6 +106,11 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/manager/Notifications/index.vue'),
       },
       {
+        path: 'partners',
+        name: 'manager-partners',
+        component: () => import('@/views/manager/Partners/index.vue'),
+      },
+      {
         path: 'profile',
         name: 'manager-profile',
         component: () => import('@/views/manager/Profile/index.vue'),
@@ -156,6 +161,12 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/sales/Notifications/index.vue'),
       },
       {
+        path: 'partners',
+        name: 'sales-partners',
+        component: () => import('@/views/sales/Partners/index.vue'),
+        meta: { requiresPermission: 'crms.partners.view' },
+      },
+      {
         path: 'profile',
         name: 'sales-profile',
         component: () => import('@/views/sales/Profile/index.vue'),
@@ -169,9 +180,9 @@ const routes: Array<RouteRecordRaw> = [
     redirect: () => {
       const { role } = useAuth()
       if (role.value === 'Admin') return '/admin/dashboard'
-      if (role.value === 'Manager') return '/manager/dashboard'
-      if (role.value === 'Sales' || role.value === 'Employee') return '/sales/dashboard'
-      
+      if (['Manager', 'Finance Manager'].includes(role.value || '')) return '/manager/dashboard'
+      if (['Sales', 'Employee', 'Finance Employee', 'Finance'].includes(role.value || '')) return '/sales/dashboard'
+
       // Fallback: escape CRMS router entirely and go to auth-module login
       window.location.href = '/'
       return '/'
@@ -198,19 +209,19 @@ router.beforeEach((to: RouteLocationNormalized) => {
     } catch (err) {
       error('Access Denied', 'You must log in to access this system.')
       console.warn('User not authenticated, redirecting to auth-service:', to.path)
-      
+
       // Delay redirection slightly so the user can see the error toast
       setTimeout(() => {
         window.location.href = '/'
       }, 1500)
-      
+
       return false
     }
   }
 
   // Role-based access control (Strict Role Isolation)
   // CRMS-capstone only supports 3 roles: Admin, Manager, and Sales (or Employee)
-  const allowedRoles = ['Admin', 'Manager', 'Sales', 'Employee']
+  const allowedRoles = ['Admin', 'Manager', 'Sales', 'Employee', 'Finance Manager', 'Finance Employee', 'Finance']
 
   // If the user's role isn't recognized by CRMS (e.g., IT Admin, Super Admin), block them entirely
   if (!allowedRoles.includes(role.value || '')) {
@@ -222,14 +233,23 @@ router.beforeEach((to: RouteLocationNormalized) => {
     return { name: 'not-found' }
   }
 
-  // Manager can ONLY access /manager
-  if (to.path.startsWith('/manager') && role.value !== 'Manager') {
+  // Manager can access /manager
+  if (to.path.startsWith('/manager') && !['Manager', 'Finance Manager'].includes(role.value || '')) {
     return { name: 'not-found' }
   }
 
-  // Sales/Employee can ONLY access /sales
-  if (to.path.startsWith('/sales') && !['Sales', 'Employee'].includes(role.value || '')) {
+  // Sales/Employee/Finance can access /sales
+  if (to.path.startsWith('/sales') && !['Sales', 'Employee', 'Finance Employee', 'Finance'].includes(role.value || '')) {
     return { name: 'not-found' }
+  }
+
+  // Permission-gated routes: redirect to dashboard if user lacks the required permission
+  if (to.meta?.requiresPermission) {
+    const { hasPermission } = useAuth()
+    if (!hasPermission(to.meta.requiresPermission as string)) {
+      const dashName = to.path.startsWith('/manager') ? 'manager-dashboard' : 'sales-dashboard'
+      return { name: dashName }
+    }
   }
 
   return true
