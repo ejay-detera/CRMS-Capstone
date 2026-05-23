@@ -3,7 +3,7 @@ import { reactive, ref, computed } from 'vue'
 import { ShieldCheck, Eye, EyeOff } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 
-const emit = defineEmits<{ save: [] }>()
+const emit = defineEmits<{ save: [data: { current: string, next: string }] }>()
 
 const form = reactive({ current: '', next: '', confirm: '' })
 const touched = reactive({ current: false, next: false, confirm: false })
@@ -29,10 +29,10 @@ function fieldCls(field: keyof typeof touched, invalid: boolean) {
 function save() {
   Object.assign(touched, { current: true, next: true, confirm: true })
   if (!form.current || !passwordValid.value || passwordMismatch.value) return
+  emit('save', { current: form.current, next: form.next })
   Object.assign(form, { current: '', next: '', confirm: '' })
   Object.assign(touched, { current: false, next: false, confirm: false })
   showCurrent.value = false; showNext.value = false; showConfirm.value = false
-  emit('save')
 }
 </script>
 

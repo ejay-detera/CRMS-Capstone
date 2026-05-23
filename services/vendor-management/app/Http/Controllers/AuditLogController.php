@@ -31,13 +31,13 @@ class AuditLogController extends Controller
 
             if ($usersResponse->successful() && isset($usersResponse->json()['data'])) {
                 foreach ($usersResponse->json()['data'] as $u) {
-                    $firstName = $u['profile']['first_name'] ?? '';
-                    $lastName = $u['profile']['last_name'] ?? '';
+                    $firstName = isset($u['profile']['first_name']) ? $u['profile']['first_name'] : '';
+                    $lastName = isset($u['profile']['last_name']) ? $u['profile']['last_name'] : '';
                     $fullName = trim("{$firstName} {$lastName}");
                     $userId = $u['id'];
                     $userMap[$userId] = !empty($fullName) ? $fullName : ($u['email'] ?? 'Finance User');
                     $emailMap[$userId] = $u['email'] ?? '';
-                    $roleMap[$userId] = $u['profile']['role']['name'] ?? 'Finance';
+                    $roleMap[$userId] = isset($u['profile']['role']['name']) ? $u['profile']['role']['name'] : 'Finance';
                 }
             }
         } catch (\Exception $e) {
@@ -77,11 +77,16 @@ class AuditLogController extends Controller
             } elseif ($log->action === 'deleted') {
                 $description = "Deleted {$log->entity_type} #{$log->entity_id}";
             } elseif ($log->action === 'user_created') {
-                $email = $log->new_data['email'] ?? '';
+                $new_data = is_array($log->new_data) ? $log->new_data : [];
+                $email = $new_data['email'] ?? '';
                 $description = "Created User account for {$email}";
             } else {
                 $description = ucfirst($log->action) . " {$log->entity_type}";
             }
+
+            $performedAtStr = $log->performed_at 
+                ? ($log->performed_at instanceof Carbon ? $log->performed_at->toIso8601String() : Carbon::parse($log->performed_at)->toIso8601String())
+                : now()->toIso8601String();
 
             $merged[] = [
                 'id' => 'crms-' . $log->audit_id,
@@ -95,7 +100,7 @@ class AuditLogController extends Controller
                 'description' => $description,
                 'old_data' => $log->old_data,
                 'new_data' => $log->new_data,
-                'performed_at' => $log->performed_at->toIso8601String(),
+                'performed_at' => $performedAtStr,
             ];
         }
 

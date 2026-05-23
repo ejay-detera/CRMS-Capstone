@@ -1,19 +1,21 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
 import ProfileHero      from '@/views/admin/Profile/ProfileHero.vue'
 import PersonalInfoCard from '@/views/admin/Profile/PersonalInfoCard.vue'
 import SecurityCard     from '@/views/admin/Profile/SecurityCard.vue'
 import PreferencesCard  from '@/views/admin/Profile/PreferencesCard.vue'
 
-const { success } = useToast()
+const { error: showError, success: showSuccess } = useToast()
+const { state } = useAuth()
 
 const profile = reactive({
-  firstName:  'Shadrack',
-  lastName:   'Castro',
+  firstName:  '',
+  lastName:   '',
   middleName: '',
-  email:      'shadrack.castro@sbsi.com',
-  phone:      '+63 2 8123 4567',
+  email:      '',
+  phone:      '',
   role:       'Manager',
   department: 'IT Department',
   dateJoined: 'January 5, 2025',
@@ -30,17 +32,115 @@ const preferences = reactive({
   dateFormat:         'MM/DD/YYYY',
 })
 
-function handleProfileSave(data: Partial<typeof profile>) {
-  Object.assign(profile, data)
-  success('Profile updated', 'Your personal details have been saved.')
+function loadProfile() {
+  const u = state.user as any
+  if (u) {
+    profile.firstName = u.profile?.first_name || u.first_name || ''
+    profile.lastName = u.profile?.last_name || u.last_name || ''
+    profile.middleName = u.profile?.middle_name || ''
+    profile.email = u.email || ''
+    profile.phone = u.profile?.phone || ''
+    profile.role = u.profile?.role?.name || u.role || 'Manager'
+    profile.department = u.profile?.department?.name || u.department || 'IT Department'
+    profile.dateJoined = u.created_at ? new Date(u.created_at).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }) : 'January 5, 2025'
+  }
 }
 
-function handlePasswordChange() {
-  success('Password changed', 'Your password has been updated successfully.')
+onMounted(() => {
+  loadProfile()
+})
+
+async function handleProfileSave(data: Partial<typeof profile>) {
+  if (!state.token) return
+
+  try {
+    const res = await fetch(`${import.meta.env.VITE_AUTH_API_URL}/me/profile`, {
+      method: 'PUT',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`,
+        'X-Session-ID': localStorage.getItem('session_id') || '',
+      },
+      body: JSON.stringify({
+        first_name: data.firstName,
+        last_name: data.lastName,
+        phone: data.phone,
+        email: data.email,
+      })
+    })
+
+    const result = await res.json()
+    if (res.ok && result.user) {
+      const currentUser = state.user as any
+      state.user = {
+        ...currentUser,
+        email: result.user.email,
+        first_name: result.user.first_name,
+        last_name: result.user.last_name,
+        phone: result.user.phone,
+        role: result.user.role,
+        department: result.user.department,
+        profile: currentUser?.profile ? {
+          ...currentUser.profile,
+          first_name: result.user.first_name,
+          last_name: result.user.last_name,
+          phone: result.user.phone,
+        } : undefined
+      } as any
+
+      localStorage.setItem('user', JSON.stringify(state.user))
+      loadProfile()
+
+      showSuccess('Profile updated', 'Your personal details have been saved.')
+    } else {
+      showError('Update failed', result.message || 'Could not save profile changes.')
+    }
+  } catch (err) {
+    console.error(err)
+    showError('Network Error', 'Could not connect to the authentication service.')
+  }
+}
+
+async function handlePasswordChange(data: { current: string, next: string }) {
+  if (!state.token) return
+
+  try {
+    const res = await fetch(`${import.meta.env.VITE_AUTH_API_URL}/me/password`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`,
+        'X-Session-ID': localStorage.getItem('session_id') || '',
+      },
+      body: JSON.stringify({
+        current_password: data.current,
+        new_password: data.next,
+      })
+    })
+
+    const result = await res.json()
+    if (res.ok) {
+      showSuccess('Password updated', 'Your security credentials have been updated successfully.')
+    } else {
+      const errMsg = result.errors 
+        ? Object.values(result.errors).flat().join(' ') 
+        : (result.message || 'Could not update your password.')
+      showError('Password update failed', errMsg)
+    }
+  } catch (err) {
+    console.error(err)
+    showError('Network Error', 'Could not connect to the authentication service.')
+  }
 }
 
 function handlePreferencesSave() {
-  success('Preferences saved', 'Your settings have been applied.')
+  showSuccess('Preferences saved', 'Your settings have been applied.')
 }
 </script>
 

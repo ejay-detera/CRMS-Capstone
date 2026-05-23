@@ -31,13 +31,13 @@ class AuditLogController extends Controller
 
             if ($usersResponse->successful() && isset($usersResponse->json()['data'])) {
                 foreach ($usersResponse->json()['data'] as $u) {
-                    $firstName = $u['profile']['first_name'] ?? '';
-                    $lastName = $u['profile']['last_name'] ?? '';
+                    $firstName = isset($u['profile']['first_name']) ? $u['profile']['first_name'] : '';
+                    $lastName = isset($u['profile']['last_name']) ? $u['profile']['last_name'] : '';
                     $fullName = trim("{$firstName} {$lastName}");
                     $userId = $u['id'];
                     $userMap[$userId] = !empty($fullName) ? $fullName : ($u['email'] ?? 'Finance User');
                     $emailMap[$userId] = $u['email'] ?? '';
-                    $roleMap[$userId] = $u['profile']['role']['name'] ?? 'Finance';
+                    $roleMap[$userId] = isset($u['profile']['role']['name']) ? $u['profile']['role']['name'] : 'Finance';
                 }
             }
         } catch (\Exception $e) {
@@ -57,6 +57,7 @@ class AuditLogController extends Controller
         $crmsLogs = $crmsLogsQuery->orderBy('performed_at', 'desc')->limit(150)->get();
 
         // 3. Fetch remote Auth logs
+        $authLogs = [];
         try {
             $authLogsResponse = Http::withHeaders([
                 'Accept' => 'application/json',
