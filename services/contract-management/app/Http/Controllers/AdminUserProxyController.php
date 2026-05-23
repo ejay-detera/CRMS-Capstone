@@ -39,13 +39,24 @@ class AdminUserProxyController extends Controller
         }
 
         $token = $request->bearerToken();
+        $sessionId = $request->header('X-Session-ID');
         
         // Resolve IDs
         $baseUrl = env('AUTH_SERVICE_URL', 'http://auth-service:8000/api');
-        $roles = Http::withToken($token)->get("{$baseUrl}/admin/role-options")->json();
-        $depts = Http::withToken($token)->get("{$baseUrl}/admin/department-options")->json();
+        $roles = Http::withToken($token)->withHeaders(['X-Session-ID' => $sessionId])->get("{$baseUrl}/admin/role-options")->json();
+        $depts = Http::withToken($token)->withHeaders(['X-Session-ID' => $sessionId])->get("{$baseUrl}/admin/department-options")->json();
 
-        $roleId = collect($roles)->firstWhere('name', ucfirst(strtolower($request->role_name)))['id'] ?? null;
+        // Map standard roles to department-scoped roles
+        $targetRoleName = ucfirst(strtolower($request->role_name));
+        if ($targetRoleName === 'Manager') {
+            $mappedRoleName = 'Finance Manager';
+        } elseif ($targetRoleName === 'Employee') {
+            $mappedRoleName = 'Finance Employee';
+        } else {
+            $mappedRoleName = $targetRoleName;
+        }
+
+        $roleId = collect($roles)->firstWhere('name', $mappedRoleName)['id'] ?? null;
         $deptId = collect($depts)->firstWhere('name', 'Finance')['id'] ?? null;
 
         if (!$roleId || !$deptId) {

@@ -25,7 +25,8 @@ async function fetchUsers() {
   const { state } = useAuth()
   isFetching.value = true
   try {
-    const res = await fetch('http://localhost:8000/api/admin/users?per_page=100', {
+    const authApiUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8000/api'
+    const res = await fetch(`${authApiUrl}/admin/users?per_page=100`, {
       headers: {
         'Authorization': `Bearer ${state.token}`,
         'X-Session-ID': localStorage.getItem('session_id') || '',
@@ -123,7 +124,8 @@ async function handleAdd(data: any) {
 
   await withLoading('creating', async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/admin/users', {
+      const contractApiUrl = import.meta.env.VITE_CONTRACT_API_URL || 'http://localhost:8002/api'
+      const response = await fetch(`${contractApiUrl}/admin/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

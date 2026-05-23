@@ -54,6 +54,7 @@ class AuthService
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Authorization' => 'Bearer ' . $token,
+                'X-Session-ID' => request()->header('X-Session-ID') ?? '',
                 'X-Internal-Service' => 'vendor-management-admin',
             ])->post("{$this->baseUrl}/admin/users", $data);
 

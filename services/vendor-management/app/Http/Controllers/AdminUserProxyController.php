@@ -60,7 +60,17 @@ class AdminUserProxyController extends Controller
         $roles = HttpProxy::get('admin/role-options', $token);
         $depts = HttpProxy::get('admin/department-options', $token);
 
-        $roleId = $this->findIdByName($roles, $request->role_name);
+        // Map standard roles to department-scoped roles
+        $targetRoleName = ucfirst(strtolower($request->role_name));
+        if ($targetRoleName === 'Manager') {
+            $mappedRoleName = 'Finance Manager';
+        } elseif ($targetRoleName === 'Employee') {
+            $mappedRoleName = 'Finance Employee';
+        } else {
+            $mappedRoleName = $targetRoleName;
+        }
+
+        $roleId = $this->findIdByName($roles, $mappedRoleName);
         $deptId = $this->findIdByName($depts, $request->department_name);
 
         if (!$roleId || !$deptId) {
@@ -124,7 +134,9 @@ class AdminUserProxyController extends Controller
 class HttpProxy {
     public static function get($endpoint, $token) {
         $baseUrl = env('AUTH_SERVICE_URL', 'http://auth-service:8000/api');
-        $response = \Illuminate\Support\Facades\Http::withToken($token)->get("{$baseUrl}/{$endpoint}");
+        $response = \Illuminate\Support\Facades\Http::withToken($token)
+            ->withHeaders(['X-Session-ID' => request()->header('X-Session-ID') ?? ''])
+            ->get("{$baseUrl}/{$endpoint}");
         return $response->json();
     }
 }
