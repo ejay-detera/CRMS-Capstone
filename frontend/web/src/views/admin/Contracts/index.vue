@@ -148,7 +148,8 @@ function exportXLSX() {
     'Contract ID': c.id, 'Business Partner': c.businessPartner, 'Category': c.category,
     'Item Code': c.itemCode, 'Description': c.description, 'Serial No': c.serialNo,
     'Region': c.region, 'Start Date': c.startDate, 'End Date': c.endDate,
-    'Remaining Days': c.days, 'Status': c.status,
+    'Remaining Days': c.days, 'Approval Status': c.approvalStatus,
+    'Workflow Status': c.workflowStatus ?? '', 'Sales Rep': c.createdBy,
   }))
   const ws = XLSX.utils.json_to_sheet(rows)
   const wb = XLSX.utils.book_new()
@@ -224,4 +225,5 @@ function exportXLSX() {
   </div>
 
   <EditContractDialog   v-model:open="showEdit"   :contract="editTarget"   @submit="handleEdit" />
+  <ContractDetailDialog v-model:open="showDetail" :contract="detailTarget" />
 </template>

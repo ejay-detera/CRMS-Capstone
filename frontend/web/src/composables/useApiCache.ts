@@ -101,13 +101,6 @@ function mapApiContract(d: any, currentUserId: number | null, firstName?: string
   }
 }
 
-const STATUS_MAP: Record<string, RequestStatus> = {
-  'Pending':      'Pending',
-  'Under Review': 'Under Review',
-  'Approved':     'Approved',
-  'Rejected':     'Rejected',
-}
-
 function mapApiToRequest(d: any, currentUserId: number | null, firstName?: string, lastName?: string): ContractRequest {
   const isCreatedByCurrentUser = currentUserId !== null && d.created_by === currentUserId
   const createdBy = isCreatedByCurrentUser

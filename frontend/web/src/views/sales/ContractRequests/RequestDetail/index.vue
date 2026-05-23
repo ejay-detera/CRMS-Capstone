@@ -209,13 +209,6 @@ function cancelEdit() {
   isEditing.value = false
 }
 
-const STATUS_MAP: Record<string, string> = {
-  'Pending':      'Pending',
-  'Under Review': 'Under Review',
-  'Approved':     'Approved',
-  'Rejected':     'Rejected',
-}
-
 async function saveEdit() {
   Object.keys(touched).forEach(k => (touched[k] = true))
   if (!isFormValid.value) return
