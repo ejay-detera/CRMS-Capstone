@@ -33,13 +33,13 @@ import {
   User,
 } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useAuth } from "@/composables/useAuth";
 import logoUrl from "@/assets/sbsi logo.png";
 
 const route  = useRoute();
 const router = useRouter();
-const { logout } = useAuth();
+const { user: authUser, logout } = useAuth();
 
 // ── Nav groups ──────────────────────────────────────────────────────
 const navGroups = [
@@ -68,12 +68,16 @@ const navGroups = [
   },
 ];
 
-const user = {
-  name: "Shadrack Castro",
-  role: "Admin",
-  initials: "SC",
-  email: "shadrack.castro@sbsi.com",
-};
+const user = computed(() => {
+  const u = authUser.value;
+  const firstName = u?.first_name ?? "Admin";
+  const lastName = u?.last_name ?? "User";
+  const name = `${firstName} ${lastName}`.trim();
+  const role = u?.role ?? "Admin";
+  const email = u?.email ?? "";
+  const initials = `${firstName[0] ?? "A"}${lastName[0] ?? "U"}`.toUpperCase();
+  return { name, role, email, initials };
+});
 
 // ── Calendar in Header ──
 const searchQuery = ref("");

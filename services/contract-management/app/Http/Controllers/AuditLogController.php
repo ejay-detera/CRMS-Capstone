@@ -98,6 +98,8 @@ class AuditLogController extends Controller
             $userEmail = $log->user_email ?? ($emailMap[$log->user_id] ?? '');
             $userRole = $log->user_role ?? ($roleMap[$log->user_id] ?? 'Finance');
 
+            $new_data = is_array($log->new_data) ? $log->new_data : [];
+
             $description = '';
             if ($log->action === 'created') {
                 $description = "Created {$log->entity_type} #{$log->entity_id}";
@@ -106,25 +108,29 @@ class AuditLogController extends Controller
             } elseif ($log->action === 'deleted') {
                 $description = "Deleted {$log->entity_type} #{$log->entity_id}";
             } elseif ($log->action === 'user_created') {
-                $email = $log->new_data['email'] ?? '';
+                $email = $new_data['email'] ?? '';
                 $description = "Created User account for {$email}";
             } elseif ($log->action === 'user_activated') {
-                $email = $log->new_data['email'] ?? '';
+                $email = $new_data['email'] ?? '';
                 $description = "Activated User account for {$email}";
             } elseif ($log->action === 'user_deactivated') {
-                $email = $log->new_data['email'] ?? '';
+                $email = $new_data['email'] ?? '';
                 $description = "Deactivated User account for {$email}";
             } elseif ($log->action === 'permission_denied') {
-                $reqPerm = $log->new_data['required_permission'] ?? 'N/A';
+                $reqPerm = $new_data['required_permission'] ?? 'N/A';
                 $description = "Access Denied: Lacks '{$reqPerm}' permission";
             } elseif (in_array(strtoupper($log->action), [
                 'ROLE_CREATED', 'ROLE_UPDATED', 'ROLE_DELETED', 'ROLE_ASSIGNED', 
                 'ROLE_PERMISSIONS_UPDATED', 'PERMISSION_ROLES_UPDATED'
             ])) {
-                $description = $log->new_data['message'] ?? (ucfirst(strtolower($log->action)) . " {$log->entity_type}");
+                $description = $new_data['message'] ?? (ucfirst(strtolower($log->action)) . " {$log->entity_type}");
             } else {
-                $description = $log->new_data['message'] ?? (ucfirst(str_replace('_', ' ', strtolower($log->action))) . " {$log->entity_type}");
+                $description = $new_data['message'] ?? (ucfirst(str_replace('_', ' ', strtolower($log->action))) . " {$log->entity_type}");
             }
+
+            $performedAtStr = $log->performed_at 
+                ? ($log->performed_at instanceof Carbon ? $log->performed_at->toIso8601String() : Carbon::parse($log->performed_at)->toIso8601String())
+                : now()->toIso8601String();
 
             $merged[] = [
                 'id' => 'crms-' . $log->audit_id,
@@ -138,7 +144,7 @@ class AuditLogController extends Controller
                 'description' => $description,
                 'old_data' => $log->old_data,
                 'new_data' => $log->new_data,
-                'performed_at' => $log->performed_at->toIso8601String(),
+                'performed_at' => $performedAtStr,
             ];
         }
 
