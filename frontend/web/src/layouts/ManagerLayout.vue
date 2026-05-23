@@ -140,7 +140,7 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
         </SidebarGroup>
 
         <!-- Contracts group -->
-        <SidebarGroup class="mb-1 p-0">
+        <SidebarGroup v-if="hasPermission('crms.contracts.view') || hasPermission('crms.contracts.create')" class="mb-1 p-0">
           <SidebarGroupLabel
             class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"
           >Contracts</SidebarGroupLabel>

@@ -56,11 +56,41 @@ class AuditLogController extends Controller
 
         $crmsLogs = $crmsLogsQuery->orderBy('performed_at', 'desc')->limit(150)->get();
 
-        // 3. Remote Auth logs remote fetch disabled (login/logout events are pushed directly to CRMS)
-        $authLogs = [];
+        // 3. Fetch remote Auth logs
+        try {
+            $authLogsResponse = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $token,
+                'X-Internal-Service' => 'contract-management',
+            ])->timeout(3)->get(env('AUTH_SERVICE_URL', 'http://auth-service:8000/api') . '/internal/audit-logs');
+
+            if ($authLogsResponse->successful() && isset($authLogsResponse->json()['logs'])) {
+                $authLogs = $authLogsResponse->json()['logs'];
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to fetch auth logs: ' . $e->getMessage());
+        }
 
         // 4. Merge and normalize both collections
         $merged = [];
+
+        // Process Auth logs
+        foreach ($authLogs as $log) {
+            $merged[] = [
+                'id' => 'auth-' . ($log['id'] ?? uniqid()),
+                'source' => 'auth',
+                'user_id' => $log['user_id'] ?? null,
+                'user_name' => trim(($log['first_name'] ?? '') . ' ' . ($log['last_name'] ?? '')) ?: ($log['user_email'] ?? 'Finance User'),
+                'user_email' => $log['user_email'] ?? '',
+                'role' => $log['user_role'] ?? ($roleMap[$log['user_id'] ?? 0] ?? 'Finance'),
+                'action' => $log['action'] ?? '',
+                'entity_type' => 'Session',
+                'description' => $log['description'] ?? '',
+                'old_data' => null,
+                'new_data' => null,
+                'performed_at' => isset($log['performed_at']) ? Carbon::parse($log['performed_at'])->toIso8601String() : now()->toIso8601String(),
+            ];
+        }
 
         // Process CRMS logs
         foreach ($crmsLogs as $log) {
@@ -78,8 +108,22 @@ class AuditLogController extends Controller
             } elseif ($log->action === 'user_created') {
                 $email = $log->new_data['email'] ?? '';
                 $description = "Created User account for {$email}";
+            } elseif ($log->action === 'user_activated') {
+                $email = $log->new_data['email'] ?? '';
+                $description = "Activated User account for {$email}";
+            } elseif ($log->action === 'user_deactivated') {
+                $email = $log->new_data['email'] ?? '';
+                $description = "Deactivated User account for {$email}";
+            } elseif ($log->action === 'permission_denied') {
+                $reqPerm = $log->new_data['required_permission'] ?? 'N/A';
+                $description = "Access Denied: Lacks '{$reqPerm}' permission";
+            } elseif (in_array(strtoupper($log->action), [
+                'ROLE_CREATED', 'ROLE_UPDATED', 'ROLE_DELETED', 'ROLE_ASSIGNED', 
+                'ROLE_PERMISSIONS_UPDATED', 'PERMISSION_ROLES_UPDATED'
+            ])) {
+                $description = $log->new_data['message'] ?? (ucfirst(strtolower($log->action)) . " {$log->entity_type}");
             } else {
-                $description = ucfirst($log->action) . " {$log->entity_type}";
+                $description = $log->new_data['message'] ?? (ucfirst(str_replace('_', ' ', strtolower($log->action))) . " {$log->entity_type}");
             }
 
             $merged[] = [

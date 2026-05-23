@@ -10,12 +10,16 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::get('/lookups/{type}', [LookupController::class, 'show']);
     
     Route::get('/dashboard',           [ContractController::class, 'dashboardSummary']);
-    Route::get('/contracts',          [ContractController::class, 'index']);
+    // Contracts REST endpoints
+    Route::get('/contracts', [\App\Http\Controllers\ContractController::class, 'index'])
+        ->middleware('permission:view-contracts');
+    Route::post('/contracts', [\App\Http\Controllers\ContractController::class, 'store'])
+        ->middleware('permission:manage-contracts');
+    Route::put('/contracts/{id}', [\App\Http\Controllers\ContractController::class, 'update'])
+        ->middleware('permission:manage-contracts');
+    Route::delete('/contracts/{id}', [\App\Http\Controllers\ContractController::class, 'destroy'])
+        ->middleware('permission:manage-contracts');
     Route::get('/contract-requests',  [ContractController::class, 'indexRequests']);
-
-
-    Route::post('/contracts', [ContractController::class, 'store'])
-        ->middleware('role:Manager,Sales');
 
     Route::get('/contracts/{id}',    [ContractController::class, 'show']);
     Route::put('/contracts/{id}',    [ContractController::class, 'update']);

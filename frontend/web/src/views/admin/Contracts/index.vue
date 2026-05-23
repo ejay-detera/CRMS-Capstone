@@ -1,35 +1,37 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { Plus, Upload } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
+import { useApiCache } from '@/composables/useApiCache'
 import ContractsTable       from './ContractsTable.vue'
+import ContractDetailDialog  from './ContractDetailDialog.vue'
 import EditContractDialog    from './EditContractDialog.vue'
 import { remainingDays } from '@/types/contract'
 import type { Contract, FilterTab } from '@/types/contract'
-import { useApiCache } from '@/composables/useApiCache'
 
 const { success, error } = useToast()
-const router = useRouter()
-
-const { state: cacheState, fetchContracts: fetchContractsCached, updateContractInCache, deleteContractFromCache } = useApiCache()
+const { state: authState } = useAuth()
+const { state: cacheState, fetchContracts: fetchContractsCached } = useApiCache()
 
 const contracts = computed(() => cacheState.contracts || [])
 const loading   = computed(() => cacheState.contractsLoading)
 
 async function fetchContracts() {
+  if (!authState.token) return
   try {
-    await fetchContractsCached()
-  } catch {
-    error('Network error', 'Could not reach the server.')
+    await fetchContractsCached(undefined, true) // Force fetch from backend
+  } catch (err) {
+    console.error('Failed to fetch contracts:', err)
+    error('Fetch failed', 'Could not load contracts from server.')
   }
 }
 
-onMounted(fetchContracts)
-
-
+onMounted(() => {
+  fetchContracts()
+})
 
 const activeFilter = ref<FilterTab>('all')
 const searchQuery  = ref('')
@@ -73,24 +75,72 @@ const paginated = computed(() =>
   filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
 )
 
-function openDetail(c: Contract & { days: number }) {
-  router.push(`/admin/contracts/${c.id}`)
-}
+const showDetail   = ref(false)
+const detailTarget = ref<(Contract & { days: number }) | null>(null)
+function openDetail(c: Contract & { days: number }) { detailTarget.value = c; showDetail.value = true }
 
 const showEdit   = ref(false)
 const editTarget = ref<Contract | null>(null)
 function openEdit(c: Contract & { days: number }) { editTarget.value = c; showEdit.value = true }
 
-function handleEdit(data: Omit<Contract, 'id' | 'createdBy'>) {
-  if (!editTarget.value) return
-  updateContractInCache(editTarget.value.id, data)
-  success('Contract updated', `${data.businessPartner}'s contract has been saved.`)
+async function handleEdit(data: Omit<Contract, 'id' | 'createdBy'>) {
+  if (!editTarget.value || !authState.token) return
+  
+  // Clean contract ID from the composite key e.g. "CTR-001" or raw integer ID
+  const contractId = editTarget.value.id
+  if (!contractId) return
+
+  const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+
+  try {
+    const res = await fetch(`${apiBase}/contracts/${contractId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${authState.token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+    const json = await res.json()
+    if (res.ok) {
+      await fetchContracts()
+      success('Contract updated', `${data.businessPartner}'s contract has been saved.`)
+    } else {
+      error('Update failed', json.message || 'Could not update contract.')
+    }
+  } catch (err) {
+    console.error('Failed to update contract:', err)
+    error('Update failed', 'Connection to contract service failed.')
+  }
 }
 
-function handleDelete(id: string) {
-  const name = contracts.value.find(c => c.id === id)?.businessPartner ?? id
-  deleteContractFromCache(id)
-  success('Contract removed', `${name}'s contract has been deleted.`)
+async function handleDelete(id: string) {
+  if (!authState.token) return
+  const contract = contracts.value.find(c => c.id === id)
+  if (!contract) return
+
+  const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+
+  try {
+    const res = await fetch(`${apiBase}/contracts/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${authState.token}`,
+        'Accept': 'application/json'
+      }
+    })
+    const json = await res.json()
+    if (res.ok) {
+      await fetchContracts()
+      success('Contract removed', `${contract.businessPartner}'s contract has been deleted.`)
+    } else {
+      error('Delete failed', json.message || 'Could not delete contract.')
+    }
+  } catch (err) {
+    console.error('Failed to delete contract:', err)
+    error('Delete failed', 'Connection to contract service failed.')
+  }
 }
 
 function exportXLSX() {
@@ -98,7 +148,7 @@ function exportXLSX() {
     'Contract ID': c.id, 'Business Partner': c.businessPartner, 'Category': c.category,
     'Item Code': c.itemCode, 'Description': c.description, 'Serial No': c.serialNo,
     'Region': c.region, 'Start Date': c.startDate, 'End Date': c.endDate,
-    'Remaining Days': c.days, 'Approval Status': c.approvalStatus, 'Workflow Status': c.workflowStatus ?? '',
+    'Remaining Days': c.days, 'Status': c.status,
   }))
   const ws = XLSX.utils.json_to_sheet(rows)
   const wb = XLSX.utils.book_new()

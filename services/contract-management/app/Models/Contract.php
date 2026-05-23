@@ -38,28 +38,18 @@ class Contract extends Model
         'end_date' => 'date',
     ];
 
-    public function documents(): HasMany
-    {
-        return $this->hasMany(Document::class, 'contract_id', 'contract_id');
-    }
-
     public function category(): BelongsTo
     {
         return $this->belongsTo(ContractCategory::class, 'category_id', 'category_id');
     }
 
-    public function approvalStatus(): BelongsTo
+    public function status(): BelongsTo
     {
-        return $this->belongsTo(ContractApprovalStatus::class, 'approval_status_id', 'approval_status_id');
+        return $this->belongsTo(ContractStatus::class, 'status_id', 'status_id');
     }
 
-    public function workflowStatus(): BelongsTo
+    public function documents(): HasMany
     {
-        return $this->belongsTo(ContractStatus::class, 'workflow_status_id', 'status_id');
-    }
-
-    public function region(): BelongsTo
-    {
-        return $this->belongsTo(ContractRegion::class, 'region_id', 'region_id');
+        return $this->hasMany(Document::class, 'contract_id', 'contract_id');
     }
 }

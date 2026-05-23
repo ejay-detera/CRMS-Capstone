@@ -11,10 +11,6 @@ class AuditLogService
      */
     public function log(string $action, string $entityType, int $entityId, ?int $userId, array $old = [], array $new = [], ?string $department = null): void
     {
-        if ($department !== null && $department !== 'Finance') {
-            return;
-        }
-
         $sensitiveFields = ['contact_number', 'email', 'address'];
         
         $oldClean = $this->cleanData($old, $sensitiveFields);

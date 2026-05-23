@@ -10,6 +10,7 @@ class AuthCommunicationTest extends TestCase
 {
     public function test_it_communicates_with_auth_service_and_enforces_contract_permissions()
     {
+        \Illuminate\Support\Facades\Cache::store('file')->flush();
         // Mock the Auth Service
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
