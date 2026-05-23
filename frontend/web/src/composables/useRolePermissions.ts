@@ -8,16 +8,21 @@ const AUTH_API = import.meta.env.VITE_AUTH_API_URL as string
 // Add new slugs here when new CRMS permissions are seeded.
 const SLUG_UI_MAP: Record<string, { category: string; label: string }> = {
   // Contracts
-  'crms.contracts.view':   { category: 'contracts', label: 'View' },
-  'crms.contracts.create': { category: 'contracts', label: 'Create' },
-  'crms.contracts.edit':   { category: 'contracts', label: 'Edit' },
-  'crms.contracts.delete': { category: 'contracts', label: 'Delete' },
+  'crms.contracts.view':    { category: 'contracts', label: 'View' },
+  'crms.contracts.create':  { category: 'contracts', label: 'Create' },
+  'crms.contracts.edit':    { category: 'contracts', label: 'Edit' },
+  'crms.contracts.delete':  { category: 'contracts', label: 'Delete' },
+  'crms.contracts.approve': { category: 'contracts', label: 'Approve' },
 
   // Business Partners & Suppliers
   'crms.partners.view':   { category: 'partners', label: 'View' },
   'crms.partners.create': { category: 'partners', label: 'Create' },
   'crms.partners.edit':   { category: 'partners', label: 'Edit' },
   'crms.partners.delete': { category: 'partners', label: 'Delete' },
+
+  // System (frontend-only)
+  'crms.system.ocr':             { category: 'system', label: 'Use of OCR' },
+  'crms.system.risk_assessment': { category: 'system', label: 'AI Risk Assessment' },
 }
 
 // The fixed UI category structure (labels stay exactly as designed)
@@ -26,10 +31,11 @@ export const UI_CATEGORIES: Category[] = [
     key: 'contracts',
     label: 'Contracts',
     permissions: [
-      { key: 'crms.contracts.view',   label: 'View' },
-      { key: 'crms.contracts.create', label: 'Create' },
-      { key: 'crms.contracts.edit',   label: 'Edit' },
-      { key: 'crms.contracts.delete', label: 'Delete' },
+      { key: 'crms.contracts.view',    label: 'View' },
+      { key: 'crms.contracts.create',  label: 'Create' },
+      { key: 'crms.contracts.edit',    label: 'Edit' },
+      { key: 'crms.contracts.delete',  label: 'Delete' },
+      { key: 'crms.contracts.approve', label: 'Approve' },
     ],
   },
   {
@@ -40,6 +46,14 @@ export const UI_CATEGORIES: Category[] = [
       { key: 'crms.partners.create', label: 'Create' },
       { key: 'crms.partners.edit',   label: 'Edit' },
       { key: 'crms.partners.delete', label: 'Delete' },
+    ],
+  },
+  {
+    key: 'system',
+    label: 'System Settings',
+    permissions: [
+      { key: 'crms.system.ocr',             label: 'Use of OCR' },
+      { key: 'crms.system.risk_assessment', label: 'AI Risk Assessment' },
     ],
   },
 ]
@@ -93,6 +107,12 @@ export function useRolePermissions() {
     const data = await apiFetch<ApiPermission[]>('/admin/permissions')
     // Only keep CRMS CRUD permissions that appear in the UI map
     allPermissions.value = data.filter(p => SLUG_UI_MAP[p.slug] !== undefined)
+    
+    // Inject frontend-only permissions
+    allPermissions.value.push(
+      { id: -1, name: 'Use of OCR', slug: 'crms.system.ocr', system: 'crms' },
+      { id: -2, name: 'AI Risk Assessment', slug: 'crms.system.risk_assessment', system: 'crms' }
+    )
   }
 
   /** Load permissions already assigned to a single role */
@@ -101,7 +121,30 @@ export function useRolePermissions() {
     // Filter to only include IDs that exist in allPermissions (which contains only crms slugs)
     const allowedIds = new Set(allPermissions.value.map(p => p.id))
     const validIds = ids.filter(id => allowedIds.has(id))
-    rolePermissionIds.value[roleId] = new Set(validIds)
+    
+    const set = new Set(validIds)
+    
+    // Read frontend-only permissions state from localStorage keyed by role name
+    const roleName = roles.value.find(r => r.id === roleId)?.name
+    if (roleName) {
+      const localSaved = localStorage.getItem(`crms_frontend_perms_${roleName}`)
+      if (localSaved) {
+        const savedIds: number[] = JSON.parse(localSaved)
+        savedIds.forEach(id => {
+          if (id === -1 || id === -2) {
+            set.add(id)
+          }
+        })
+      } else {
+        // Sensible defaults (aligned with FR Matrix)
+        if (['Manager', 'Finance Manager', 'Sales'].includes(roleName)) {
+          set.add(-1) // Use of OCR
+          set.add(-2) // AI Risk Assessment
+        }
+      }
+    }
+    
+    rolePermissionIds.value[roleId] = set
   }
 
   /** Initialise: load everything in parallel */
@@ -149,9 +192,19 @@ export function useRolePermissions() {
   /** Persist current state for a role to the backend */
   async function saveRolePermissions(roleId: number): Promise<void> {
     const permIds = [...(rolePermissionIds.value[roleId] ?? new Set())]
+    
+    const backendIds = permIds.filter(id => id > 0)
+    const frontendIds = permIds.filter(id => id < 0)
+    
+    // Save frontend-only permissions in localStorage
+    const roleName = roles.value.find(r => r.id === roleId)?.name
+    if (roleName) {
+      localStorage.setItem(`crms_frontend_perms_${roleName}`, JSON.stringify(frontendIds))
+    }
+    
     await apiFetch(`/admin/roles/${roleId}/permissions`, {
       method: 'POST',
-      body: JSON.stringify({ permissions: permIds }),
+      body: JSON.stringify({ permissions: backendIds }),
     })
     // Re-sync from server so pill state and count badge always match reality
     await fetchRolePermissions(roleId)

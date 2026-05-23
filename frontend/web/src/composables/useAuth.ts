@@ -51,11 +51,29 @@ export function useAuth() {
       rawPerms = u.role.permissions
     }
 
-    return rawPerms.map((p: any) => {
+    const perms = rawPerms.map((p: any) => {
       if (!p) return ''
       if (typeof p === 'string') return p
       return p.slug || p.name || p.key || ''
     }).filter(Boolean)
+
+    // Merge frontend-only permissions
+    const activeRole = role.value
+    if (activeRole) {
+      const localSaved = localStorage.getItem(`crms_frontend_perms_${activeRole}`)
+      if (localSaved) {
+        const savedIds: number[] = JSON.parse(localSaved)
+        if (savedIds.includes(-1)) perms.push('crms.system.ocr')
+        if (savedIds.includes(-2)) perms.push('crms.system.risk_assessment')
+      } else {
+        // Defaults (aligned with FR Matrix)
+        if (['Manager', 'Finance Manager', 'Sales'].includes(activeRole)) {
+          perms.push('crms.system.ocr', 'crms.system.risk_assessment')
+        }
+      }
+    }
+
+    return perms
   })
 
   const setAuth = (user: User, token: string) => {

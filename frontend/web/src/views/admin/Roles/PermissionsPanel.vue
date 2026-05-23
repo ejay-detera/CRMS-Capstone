@@ -71,22 +71,22 @@ function isCategoryAllChecked(cat: Category): boolean {
             :key="perm.key"
             @click="emit('toggle-permission', cat.key, perm.key)"
             :disabled="isLocked"
-            class="flex items-center justify-between gap-2 px-4 py-3 rounded-lg border text-left transition-all duration-150"
+            class="flex items-center justify-between gap-2 px-5 py-2.5 rounded-full border text-left transition-all duration-200 shrink-0"
             :class="activePermissions.includes(perm.key)
-              ? 'bg-[#252578]/6 border-[#252578]/20 text-[#252578]'
-              : 'bg-black/2 border-black/8 text-black/40 hover:border-black/15'"
+              ? 'bg-[#252578]/6 border-[#252578]/25 text-[#252578] shadow-sm'
+              : 'bg-black/[0.02] border-black/8 text-black/45 hover:bg-black/[0.04] hover:border-black/15'"
           >
             <div class="flex items-center gap-2.5">
               <div
-                class="w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-colors"
+                class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-all duration-200"
                 :class="activePermissions.includes(perm.key)
                   ? 'bg-[#252578] border-[#252578]'
                   : 'bg-white border-black/20'"
               >
-                <svg v-if="activePermissions.includes(perm.key)" viewBox="0 0 10 8"
-                  class="w-2.5 h-2.5 fill-none stroke-white stroke-[1.8]">
-                  <polyline points="1,4 3.5,6.5 9,1" />
-                </svg>
+                <div
+                  class="w-1.5 h-1.5 rounded-full bg-white transition-all duration-200"
+                  :class="activePermissions.includes(perm.key) ? 'scale-100 opacity-100' : 'scale-0 opacity-0'"
+                ></div>
               </div>
               <span class="text-sm font-medium">{{ perm.label }}</span>
             </div>
