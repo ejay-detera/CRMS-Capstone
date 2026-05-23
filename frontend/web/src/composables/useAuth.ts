@@ -120,11 +120,13 @@ export function useAuth() {
             return p.slug || p.name || p.key || ''
           }).filter(Boolean)
 
-          // Update user in state with fresh data and the extracted permissions list
+          // Update user in state with fresh data and the extracted permissions list.
+          // Shallow-replace the whole object so every computed that reads state.user
+          // (including hasPermission in the layout sidebars) is guaranteed to re-evaluate.
           state.user = {
             ...state.user,
             ...freshUser,
-            permissions: parsedPerms
+            permissions: parsedPerms,
           }
           localStorage.setItem('user', JSON.stringify(state.user))
         }

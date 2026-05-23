@@ -193,7 +193,42 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <!-- General group -->
+        <!-- Vendor Management (Partners) group — shown only when permitted -->
+        <SidebarGroup v-if="hasPermission('crms.partners.view')" class="mb-1 p-0">
+          <SidebarGroupLabel
+            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"
+          >Vendor Management</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu class="gap-0.5">
+              <SidebarMenuItem>
+                <SidebarMenuButton as-child :is-active="route.path === '/sales/partners'" class="h-auto p-0 rounded-lg">
+                  <router-link
+                    to="/sales/partners"
+                    class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 group-data-[collapsible=icon]:justify-center"
+                    :class="lnk(route.path === '/sales/partners')"
+                  >
+                    <svg
+                      class="w-4 h-4 shrink-0 group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5"
+                      :class="ico(route.path === '/sales/partners')"
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+                    >
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    <span
+                      class="text-sm font-medium flex-1 text-left group-data-[collapsible=icon]:hidden"
+                      :class="txt(route.path === '/sales/partners')"
+                    >Business Partners</span>
+                  </router-link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+
         <SidebarGroup class="mb-1 p-0">
           <SidebarGroupLabel
             class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"

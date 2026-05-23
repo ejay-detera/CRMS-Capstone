@@ -26,6 +26,10 @@ class InternalAuditController extends Controller
             'user_id' => 'nullable|integer',
             'old_data' => 'nullable|array',
             'new_data' => 'nullable|array',
+            'user_name' => 'nullable|string',
+            'user_email' => 'nullable|string',
+            'user_role' => 'nullable|string',
+            'user_department' => 'nullable|string',
         ]);
 
         $log = AuditLog::create([
@@ -33,6 +37,10 @@ class InternalAuditController extends Controller
             'entity_type' => $request->input('entity_type'),
             'entity_id' => $request->input('entity_id') ?? 0,
             'user_id' => $request->input('user_id'),
+            'user_name' => $request->input('user_name'),
+            'user_email' => $request->input('user_email'),
+            'user_role' => $request->input('user_role'),
+            'user_department' => $request->input('user_department'),
             'old_data' => $request->input('old_data'),
             'new_data' => $request->input('new_data'),
             'performed_at' => now(),

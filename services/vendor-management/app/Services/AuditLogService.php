@@ -20,11 +20,36 @@ class AuditLogService
         $oldClean = $this->cleanData($old, $sensitiveFields);
         $newClean = $this->cleanData($new, $sensitiveFields);
 
+        $userName = null;
+        $userEmail = null;
+        $userRole = null;
+        $userDept = $department;
+
+        $request = request();
+        if ($request) {
+            $authUser = $request->get('auth_user');
+            if ($authUser) {
+                $firstName = $authUser['first_name'] ?? '';
+                $lastName = $authUser['last_name'] ?? '';
+                $userName = trim("{$firstName} {$lastName}");
+                if (empty($userName)) {
+                    $userName = $authUser['email'] ?? null;
+                }
+                $userEmail = $authUser['email'] ?? null;
+                $userRole = $authUser['role'] ?? null;
+                $userDept = $userDept ?? ($authUser['department'] ?? null);
+            }
+        }
+
         AuditLog::create([
             'action' => $action,
             'entity_type' => $entityType,
             'entity_id' => $entityId,
             'user_id' => $userId,
+            'user_name' => $userName,
+            'user_email' => $userEmail,
+            'user_role' => $userRole,
+            'user_department' => $userDept,
             'old_data' => !empty($oldClean) ? $oldClean : null,
             'new_data' => !empty($newClean) ? $newClean : null,
             'performed_at' => now(),

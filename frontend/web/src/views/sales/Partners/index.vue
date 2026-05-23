@@ -3,19 +3,24 @@ import { computed, ref, watch } from 'vue'
 import { Building2, Truck, Search, LayoutGrid, List, Plus, Upload } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
+import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
-import PartnersGrid       from './PartnersGrid.vue'
-import PartnersTable      from './PartnersTable.vue'
-import PartnerDetailDialog from './PartnerDetailDialog.vue'
-import DeleteConfirmDialog from './DeleteConfirmDialog.vue'
-import AddPartnerDialog    from './AddPartnerDialog.vue'
+import PartnersGrid       from '@/views/admin/Partners/PartnersGrid.vue'
+import PartnersTable      from '@/views/admin/Partners/PartnersTable.vue'
+import PartnerDetailDialog from '@/views/admin/Partners/PartnerDetailDialog.vue'
+import DeleteConfirmDialog from '@/views/admin/Partners/DeleteConfirmDialog.vue'
+import AddPartnerDialog    from '@/views/admin/Partners/AddPartnerDialog.vue'
 import type { Partner, TabKey } from '@/types/partner'
 
+const { hasPermission } = useAuth()
 const { success } = useToast()
 
-const businessPartners = ref<Partner[]>([])
+// Permission gates — Finance Admin controls which of these are on
+const canCreate = computed(() => hasPermission('crms.partners.create'))
+const canDelete  = computed(() => hasPermission('crms.partners.delete'))
 
-const suppliersData = ref<Partner[]>([])
+const businessPartners = ref<Partner[]>([])
+const suppliersData    = ref<Partner[]>([])
 
 const activeTab    = ref<TabKey>('partners')
 const viewMode     = ref<'card' | 'table'>('card')
@@ -57,7 +62,10 @@ function openDetail(p: Partner) { selectedPartner.value = p; showDetail.value = 
 
 const showDelete   = ref(false)
 const deleteTarget = ref<Partner | null>(null)
-function openDelete(p: Partner) { deleteTarget.value = p; showDelete.value = true }
+function openDelete(p: Partner) {
+  if (!canDelete.value) return
+  deleteTarget.value = p; showDelete.value = true
+}
 function confirmDelete() {
   if (!deleteTarget.value) return
   const list = activeTab.value === 'partners' ? businessPartners : suppliersData
@@ -100,13 +108,18 @@ function exportXLSX() {
     <div class="flex items-start justify-between">
       <div>
         <h1 class="text-xl font-semibold text-black">Partners & Suppliers</h1>
-        <p class="text-sm text-black/40 mt-0.5">Manage business relationships.</p>
+        <p class="text-sm text-black/40 mt-0.5">View business relationships.</p>
       </div>
       <div class="flex items-center gap-2">
         <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
-        <Button @click="showAdd = true" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+        <!-- Add button only shown when user has create permission -->
+        <Button
+          v-if="canCreate"
+          @click="showAdd = true"
+          class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm"
+        >
           <Plus class="w-5 h-5" />
         </Button>
       </div>
@@ -163,6 +176,6 @@ function exportXLSX() {
   </div>
 
   <PartnerDetailDialog v-model:open="showDetail" :partner="selectedPartner" :active-tab="activeTab" />
-  <DeleteConfirmDialog v-model:open="showDelete" :partner="deleteTarget"   :active-tab="activeTab" @confirm="confirmDelete" />
-  <AddPartnerDialog    v-model:open="showAdd"    :active-tab="activeTab"   @submit="handleAdd" />
+  <DeleteConfirmDialog v-if="canDelete" v-model:open="showDelete" :partner="deleteTarget" :active-tab="activeTab" @confirm="confirmDelete" />
+  <AddPartnerDialog    v-if="canCreate" v-model:open="showAdd"   :active-tab="activeTab" @submit="handleAdd" />
 </template>

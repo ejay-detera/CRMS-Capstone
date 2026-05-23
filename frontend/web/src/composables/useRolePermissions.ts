@@ -13,12 +13,6 @@ const SLUG_UI_MAP: Record<string, { category: string; label: string }> = {
   'crms.contracts.edit':   { category: 'contracts', label: 'Edit' },
   'crms.contracts.delete': { category: 'contracts', label: 'Delete' },
 
-  // User Management
-  'crms.users.view':   { category: 'user_management', label: 'View' },
-  'crms.users.create': { category: 'user_management', label: 'Create' },
-  'crms.users.edit':   { category: 'user_management', label: 'Edit' },
-  'crms.users.delete': { category: 'user_management', label: 'Delete' },
-
   // Business Partners & Suppliers
   'crms.partners.view':   { category: 'partners', label: 'View' },
   'crms.partners.create': { category: 'partners', label: 'Create' },
@@ -36,16 +30,6 @@ export const UI_CATEGORIES: Category[] = [
       { key: 'crms.contracts.create', label: 'Create' },
       { key: 'crms.contracts.edit',   label: 'Edit' },
       { key: 'crms.contracts.delete', label: 'Delete' },
-    ],
-  },
-  {
-    key: 'user_management',
-    label: 'User Management',
-    permissions: [
-      { key: 'crms.users.view',   label: 'View' },
-      { key: 'crms.users.create', label: 'Create' },
-      { key: 'crms.users.edit',   label: 'Edit' },
-      { key: 'crms.users.delete', label: 'Delete' },
     ],
   },
   {
@@ -113,9 +97,11 @@ export function useRolePermissions() {
 
   /** Load permissions already assigned to a single role */
   async function fetchRolePermissions(roleId: number) {
-    const data = await apiFetch<ApiPermission[]>(`/admin/roles/${roleId}/permissions`)
-    const uiPerms = data.filter(p => SLUG_UI_MAP[p.slug] !== undefined)
-    rolePermissionIds.value[roleId] = new Set(uiPerms.map(p => p.id))
+    const ids = await apiFetch<number[]>(`/admin/roles/${roleId}/permissions`)
+    // Filter to only include IDs that exist in allPermissions (which contains only crms slugs)
+    const allowedIds = new Set(allPermissions.value.map(p => p.id))
+    const validIds = ids.filter(id => allowedIds.has(id))
+    rolePermissionIds.value[roleId] = new Set(validIds)
   }
 
   /** Initialise: load everything in parallel */
@@ -136,8 +122,12 @@ export function useRolePermissions() {
   function togglePermission(roleId: number, permId: number) {
     const set = rolePermissionIds.value[roleId] ??= new Set()
     set.has(permId) ? set.delete(permId) : set.add(permId)
-    // Trigger Vue reactivity: replace the set reference
-    rolePermissionIds.value[roleId] = new Set(set)
+    // Replace the inner Set AND the top-level object so all computed
+    // properties (enabledCounts, activePermSlugs) re-evaluate.
+    rolePermissionIds.value = {
+      ...rolePermissionIds.value,
+      [roleId]: new Set(set),
+    }
   }
 
   /** Toggle an entire category for a role (local, optimistic) */
@@ -145,11 +135,15 @@ export function useRolePermissions() {
     const categoryPerms = allPermissions.value.filter(
       p => SLUG_UI_MAP[p.slug]?.category === categoryKey
     )
-    const set = rolePermissionIds.value[roleId] ??= new Set()
+    const set = new Set(rolePermissionIds.value[roleId] ?? [])
     for (const p of categoryPerms) {
       allOn ? set.delete(p.id) : set.add(p.id)
     }
-    rolePermissionIds.value[roleId] = new Set(set)
+    // Replace both the inner Set and the top-level object for full reactivity
+    rolePermissionIds.value = {
+      ...rolePermissionIds.value,
+      [roleId]: set,
+    }
   }
 
   /** Persist current state for a role to the backend */
@@ -159,6 +153,9 @@ export function useRolePermissions() {
       method: 'POST',
       body: JSON.stringify({ permissions: permIds }),
     })
+    // Re-sync from server so pill state and count badge always match reality
+    await fetchRolePermissions(roleId)
+    rolePermissionIds.value = { ...rolePermissionIds.value }
   }
 
   /** Get the active permission IDs for a role as an array (for prop passing) */

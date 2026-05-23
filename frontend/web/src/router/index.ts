@@ -126,6 +126,12 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/sales/Notifications/index.vue'),
       },
       {
+        path: 'partners',
+        name: 'sales-partners',
+        component: () => import('@/views/sales/Partners/index.vue'),
+        meta: { requiresPermission: 'crms.partners.view' },
+      },
+      {
         path: 'profile',
         name: 'sales-profile',
         component: () => import('@/views/sales/Profile/index.vue'),
@@ -200,6 +206,15 @@ router.beforeEach((to: RouteLocationNormalized) => {
   // Sales/Employee/Finance can access /sales
   if (to.path.startsWith('/sales') && !['Sales', 'Employee', 'Finance Employee', 'Finance'].includes(role.value || '')) {
     return { name: 'not-found' }
+  }
+
+  // Permission-gated routes: redirect to dashboard if user lacks the required permission
+  if (to.meta?.requiresPermission) {
+    const { hasPermission } = useAuth()
+    if (!hasPermission(to.meta.requiresPermission as string)) {
+      const dashName = to.path.startsWith('/manager') ? 'manager-dashboard' : 'sales-dashboard'
+      return { name: dashName }
+    }
   }
 
   return true

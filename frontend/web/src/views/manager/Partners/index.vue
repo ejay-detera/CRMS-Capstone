@@ -19,27 +19,9 @@ const { success } = useToast()
 const canCreate = computed(() => hasPermission('crms.partners.create'))
 const canDelete  = computed(() => hasPermission('crms.partners.delete'))
 
-const businessPartners = ref<Partner[]>([
-  { id: 'BP-001', name: 'Philippine National Bank', industry: 'Banking & Finance',    region: 'Luzon',    status: 'Active',   contracts: 2, totalValue: '₱3.2M', contactPerson: 'Jose Reyes',      email: 'j.reyes@pnb.com.ph',              phone: '+63 2 8573 8888', address: 'PNB Financial Center, Roxas Blvd, Pasay City' },
-  { id: 'BP-002', name: 'BDO Unibank',              industry: 'Banking & Finance',    region: 'Luzon',    status: 'Active',   contracts: 1, totalValue: '₱1.8M', contactPerson: 'Maria Dela Cruz', email: 'm.delacruz@bdo.com.ph',           phone: '+63 2 8840 7000', address: 'BDO Corporate Center, Makati City' },
-  { id: 'BP-003', name: 'Cebu Pacific Air',         industry: 'Aviation & Transport', region: 'Visayas',  status: 'Active',   contracts: 1, totalValue: '₱0.9M', contactPerson: 'Anna Santos',     email: 'a.santos@cebupacificair.com',     phone: '+63 32 230 8888', address: 'Gokongwei Building, Pasay City' },
-  { id: 'BP-004', name: 'SM Prime Holdings',        industry: 'Real Estate & Retail', region: 'Luzon',    status: 'Active',   contracts: 0, totalValue: '₱3.2M', contactPerson: 'Carlos Tan',      email: 'c.tan@smprime.com',               phone: '+63 2 8831 1000', address: 'Mall of Asia Complex, Pasay City' },
-  { id: 'BP-005', name: 'Metrobank',                industry: 'Banking & Finance',    region: 'Mindanao', status: 'Active',   contracts: 1, totalValue: '₱1.5M', contactPerson: 'Luis Garcia',     email: 'l.garcia@metrobank.com.ph',       phone: '+63 82 226 3891', address: 'Metrobank Plaza, Davao City' },
-  { id: 'BP-006', name: 'Globe Telecom',            industry: 'Telecommunications',  region: 'Luzon',    status: 'Active',   contracts: 1, totalValue: '₱4.5M', contactPerson: 'Rachel Lim',      email: 'r.lim@globe.com.ph',              phone: '+63 2 7730 1000', address: 'The Globe Tower, Bonifacio Global City' },
-  { id: 'BP-007', name: 'Philippine Airlines',      industry: 'Aviation & Transport', region: 'Visayas',  status: 'Active',   contracts: 1, totalValue: '₱2.1M', contactPerson: 'Miguel Torres',   email: 'm.torres@philippineairlines.com', phone: '+63 2 8855 8888', address: 'Andrews Avenue, Pasay City' },
-  { id: 'BP-008', name: 'PLDT',                     industry: 'Telecommunications',  region: 'Mindanao', status: 'Active',   contracts: 1, totalValue: '₱5.8M', contactPerson: 'Sara Uy',         email: 's.uy@pldt.com.ph',                phone: '+63 2 8816 8888', address: 'PLDT-Smart Tower, Makati City' },
-])
+const businessPartners = ref<Partner[]>([])
 
-const suppliersData = ref<Partner[]>([
-  { id: 'SP-001', name: 'MedLine Philippines',   industry: 'Medical Supplies', region: 'Luzon',    status: 'Active',   contracts: 3, totalValue: '₱2.1M', contactPerson: 'Dr. Elena Ramos', email: 'e.ramos@medline.ph',        phone: '+63 2 8123 4567', address: '123 Bonifacio St., Mandaluyong City' },
-  { id: 'SP-002', name: 'Bio-Tech Logistics',    industry: 'Logistics',        region: 'Luzon',    status: 'Active',   contracts: 2, totalValue: '₱1.3M', contactPerson: 'Ryan Cruz',        email: 'r.cruz@biotech-log.com',    phone: '+63 2 8987 6543', address: '456 Ortigas Ave., Pasig City' },
-  { id: 'SP-003', name: 'Global Pharma Inc.',    industry: 'Pharmaceutical',   region: 'Visayas',  status: 'Active',   contracts: 1, totalValue: '₱0.8M', contactPerson: 'Dr. Peter Go',     email: 'p.go@globalpharma.com',     phone: '+63 32 412 3456', address: '789 Colon St., Cebu City' },
-  { id: 'SP-004', name: 'Stellar Lab Equipment', industry: 'Equipment',        region: 'Luzon',    status: 'Inactive', contracts: 0, totalValue: '₱1.5M', contactPerson: 'Nina Bautista',    email: 'n.bautista@stellarlab.com', phone: '+63 2 8765 4321', address: '321 Science Drive, Quezon City' },
-  { id: 'SP-005', name: 'BioGenesis Research',   industry: 'Research',         region: 'Mindanao', status: 'Active',   contracts: 2, totalValue: '₱3.8M', contactPerson: 'Dr. James Molo',   email: 'j.molo@biogenesis.ph',      phone: '+63 82 300 1234', address: '55 Quimpo Blvd., Davao City' },
-  { id: 'SP-006', name: 'PharmaCare Dist.',      industry: 'Pharmaceutical',   region: 'Luzon',    status: 'Active',   contracts: 1, totalValue: '₱2.5M', contactPerson: 'Lyn Navarro',      email: 'l.navarro@pharmacare.ph',   phone: '+63 2 8234 5678', address: '88 Shaw Blvd., Mandaluyong City' },
-  { id: 'SP-007', name: 'LabTech Solutions',     industry: 'Equipment',        region: 'Visayas',  status: 'Active',   contracts: 1, totalValue: '₱1.2M', contactPerson: 'Mark Villanueva',  email: 'm.villanueva@labtech.com',  phone: '+63 33 509 8765', address: '77 Iznart St., Iloilo City' },
-  { id: 'SP-008', name: 'MediSource PH',         industry: 'Medical Supplies', region: 'Mindanao', status: 'Inactive', contracts: 0, totalValue: '₱0.7M', contactPerson: 'Donna Flores',     email: 'd.flores@medisource.ph',    phone: '+63 88 857 6543', address: '12 Cagayan de Oro City' },
-])
+const suppliersData = ref<Partner[]>([])
 
 const activeTab    = ref<TabKey>('partners')
 const viewMode     = ref<'card' | 'table'>('card')

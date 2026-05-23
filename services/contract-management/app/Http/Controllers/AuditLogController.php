@@ -56,39 +56,17 @@ class AuditLogController extends Controller
 
         $crmsLogs = $crmsLogsQuery->orderBy('performed_at', 'desc')->limit(150)->get();
 
-        // 3. Fetch remote Auth logs
+        // 3. Remote Auth logs remote fetch disabled (login/logout events are pushed directly to CRMS)
         $authLogs = [];
-        $authUrl = env('AUTH_SERVICE_URL', 'http://auth-service:8000/api') . '/internal/audit-logs';
-        $secret = env('INTERNAL_SERVICE_SECRET');
-
-        try {
-            $authParams = [];
-            if ($request->has('action') && !empty($request->action)) {
-                $authParams['action'] = $request->action;
-            }
-            if ($request->has('date') && !empty($request->date)) {
-                $authParams['date'] = $request->date;
-            }
-
-            $response = Http::withHeaders([
-                'X-Internal-Secret' => $secret,
-            ])->timeout(3)->get($authUrl, $authParams);
-
-            if ($response->successful()) {
-                $authLogs = $response->json()['logs'] ?? [];
-            }
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to fetch auth logs for merge: ' . $e->getMessage());
-        }
 
         // 4. Merge and normalize both collections
         $merged = [];
 
         // Process CRMS logs
         foreach ($crmsLogs as $log) {
-            $userName = $userMap[$log->user_id] ?? 'Finance User';
-            $userEmail = $emailMap[$log->user_id] ?? '';
-            $userRole = $roleMap[$log->user_id] ?? 'Finance';
+            $userName = $log->user_name ?? ($userMap[$log->user_id] ?? 'Finance User');
+            $userEmail = $log->user_email ?? ($emailMap[$log->user_id] ?? '');
+            $userRole = $log->user_role ?? ($roleMap[$log->user_id] ?? 'Finance');
 
             $description = '';
             if ($log->action === 'created') {
@@ -117,36 +95,6 @@ class AuditLogController extends Controller
                 'old_data' => $log->old_data,
                 'new_data' => $log->new_data,
                 'performed_at' => $log->performed_at->toIso8601String(),
-            ];
-        }
-
-        // Process Auth logs
-        foreach ($authLogs as $log) {
-            $firstName = $log['first_name'] ?? '';
-            $lastName = $log['last_name'] ?? '';
-            $userName = trim("{$firstName} {$lastName}");
-            if (empty($userName)) {
-                $userName = $log['user_email'] ?? 'Finance User';
-            }
-            $userEmail = $log['user_email'] ?? '';
-            $userRole = $roleMap[$log['user_id']] ?? 'Finance';
-
-            $merged[] = [
-                'id' => 'auth-' . $log['id'],
-                'source' => 'auth',
-                'user_id' => $log['user_id'],
-                'user_name' => $userName,
-                'user_email' => $userEmail,
-                'role' => $userRole,
-                'action' => $log['action'],
-                'entity_type' => 'Session',
-                'description' => $log['description'] ?? "Session action: {$log['action']}",
-                'old_data' => null,
-                'new_data' => [
-                    'email' => $log['user_email'] ?? null,
-                    'ip_address' => $log['ip_address'] ?? null,
-                ],
-                'performed_at' => Carbon::parse($log['performed_at'])->toIso8601String(),
             ];
         }
 
