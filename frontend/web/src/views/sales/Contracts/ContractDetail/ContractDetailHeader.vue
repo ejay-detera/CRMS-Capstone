@@ -9,6 +9,7 @@ const props = defineProps<{
   days:      number
   isEditing: boolean
   saving?:   boolean
+  disabled?: boolean
 }>()
 
 defineEmits<{ back: []; edit: []; save: []; cancel: [] }>()
@@ -61,7 +62,7 @@ function daysDisplay(days: number) {
           class="h-9 px-4 text-sm border-black/15 text-black/60 hover:text-black">
           Cancel
         </Button>
-        <Button @click="$emit('save')" :disabled="saving"
+        <Button @click="$emit('save')" :disabled="saving || disabled"
           class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <Loader2 v-if="saving" class="w-3.5 h-3.5 animate-spin mr-1.5" />
           {{ saving ? 'Saving…' : 'Save Changes' }}

@@ -5,7 +5,7 @@ import {
   ClipboardList, MapPin, CalendarDays, FileText,
   CheckCircle, XCircle, RefreshCw, AlertCircle, ExternalLink, User, FilePenLine,
 } from 'lucide-vue-next'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { requestStatusBadge, fmtReqDate } from '@/types/contractRequest'
 import type { ContractRequest } from '@/types/contractRequest'
@@ -58,7 +58,7 @@ function confirmReject() {
             </div>
             <div class="flex-1 min-w-0 pr-6">
               <DialogTitle class="text-sm font-bold text-black leading-snug truncate">{{ request.businessPartner }}</DialogTitle>
-              <p class="text-xs text-black/45 mt-0.5">{{ request.category }}</p>
+              <DialogDescription class="text-xs text-black/45 mt-0.5">{{ request.category }}</DialogDescription>
               <div class="flex items-center gap-2 mt-1.5 flex-wrap">
                 <span class="text-[10px] font-mono text-black/30 bg-black/4 px-1.5 py-0.5 rounded">{{ request.id }}</span>
                 <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border"

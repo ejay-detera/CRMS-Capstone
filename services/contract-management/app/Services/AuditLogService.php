@@ -9,7 +9,7 @@ class AuditLogService
     /**
      * Log an action to the audit logs.
      */
-    public function log(string $action, string $entityType, int $entityId, ?int $userId, array $old = [], array $new = [], ?string $department = null): void
+    public function log(string $action, string $entityType, string|int $entityId, ?int $userId, array $old = [], array $new = [], ?string $department = null): void
     {
         $sensitiveFields = ['contact_number', 'email', 'address'];
         

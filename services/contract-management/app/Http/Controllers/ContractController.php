@@ -68,6 +68,8 @@ class ContractController extends Controller
             'serialNo' => 'nullable|string|max:255',
             'startDate' => 'nullable|date',
             'endDate' => 'nullable|date',
+            'document_ids' => 'nullable|array',
+            'document_ids.*' => 'string',
         ]);
 
         if ($validator->fails()) {
@@ -79,12 +81,14 @@ class ContractController extends Controller
         // Resolve Category and Status IDs from strings
         $cat = ContractCategory::firstOrCreate(['category_name' => $incoming['category']]);
         $stat = ContractStatus::firstOrCreate(['status_name' => $incoming['status']]);
+        $pendingStatus = \App\Models\ContractApprovalStatus::firstOrCreate(['status_name' => 'Pending']);
 
         $userId = $request->get('auth_id');
 
         $contract = Contract::create([
             'category_id' => $cat->category_id,
-            'status_id' => $stat->status_id,
+            'approval_status_id' => $pendingStatus->approval_status_id,
+            'workflow_status_id' => $stat->status_id,
             'bp_name' => $incoming['businessPartner'],
             'item_code' => $incoming['itemCode'] ?? null,
             'description' => $incoming['description'] ?? null,
@@ -93,6 +97,12 @@ class ContractController extends Controller
             'end_date' => $incoming['endDate'] ?? null,
             'created_by' => $userId,
         ]);
+
+        // Link MongoDB documents
+        if ($request->has('document_ids') && is_array($request->input('document_ids'))) {
+            \App\Models\Document::whereIn('_id', $request->input('document_ids'))
+                ->update(['contract_id' => $contract->contract_id]);
+        }
 
         // Audit Logging
         $this->auditLogService->log(
@@ -146,6 +156,8 @@ class ContractController extends Controller
             'serialNo' => 'nullable|string|max:255',
             'startDate' => 'nullable|date',
             'endDate' => 'nullable|date',
+            'document_ids' => 'nullable|array',
+            'document_ids.*' => 'string',
         ]);
 
         if ($validator->fails()) {
@@ -161,7 +173,7 @@ class ContractController extends Controller
 
         $contract->update([
             'category_id' => $cat->category_id,
-            'status_id' => $stat->status_id,
+            'workflow_status_id' => $stat->status_id,
             'bp_name' => $incoming['businessPartner'],
             'item_code' => $incoming['itemCode'] ?? null,
             'description' => $incoming['description'] ?? null,
@@ -169,6 +181,12 @@ class ContractController extends Controller
             'start_date' => $incoming['startDate'] ?? null,
             'end_date' => $incoming['endDate'] ?? null,
         ]);
+
+        // Link MongoDB documents
+        if ($request->has('document_ids') && is_array($request->input('document_ids'))) {
+            \App\Models\Document::whereIn('_id', $request->input('document_ids'))
+                ->update(['contract_id' => $contract->contract_id]);
+        }
 
         // Audit Logging
         $userId = $request->get('auth_id');

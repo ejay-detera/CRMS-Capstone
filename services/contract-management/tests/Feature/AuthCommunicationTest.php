@@ -31,7 +31,21 @@ class AuthCommunicationTest extends TestCase
         ])->getJson('/api/contracts');
 
         $response->assertStatus(200);
-        $response->assertJsonPath('message', 'Contract list retrieved');
+        $response->assertJsonStructure([
+            '*' => [
+                'id',
+                'contract_id',
+                'businessPartner',
+                'category',
+                'status',
+                'itemCode',
+                'description',
+                'serialNo',
+                'startDate',
+                'endDate',
+                'createdBy',
+            ]
+        ]);
         
         Http::assertSent(function ($request) {
             return $request->url() === 'http://auth-service:8000/api/internal/verify-token';

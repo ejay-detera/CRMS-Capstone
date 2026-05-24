@@ -4,16 +4,17 @@ namespace App\Models;
 
 use App\Casts\EncryptedCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use MongoDB\Laravel\Eloquent\Model;
+use MongoDB\Laravel\Eloquent\HybridRelations;
 
 class Document extends Model
 {
-    use HasFactory;
+    use HasFactory, HybridRelations;
 
-    protected $table = 'documents';
-    protected $primaryKey = 'document_id';
+    protected $connection = 'mongodb';
+    protected $collection = 'documents';
+    protected $primaryKey = '_id';
     
-    // Disable default timestamps because documents table only has uploaded_at
     public $timestamps = false;
 
     protected $fillable = [
@@ -31,4 +32,9 @@ class Document extends Model
         'file_path' => EncryptedCast::class,
         'uploaded_at' => 'datetime',
     ];
+
+    public function contract()
+    {
+        return $this->belongsTo(Contract::class, 'contract_id', 'contract_id');
+    }
 }

@@ -7,6 +7,9 @@ export interface UploadedDoc {
   size:        number
   type:        'pdf' | 'docx'
   previewUrl?: string
+  id?:         string
+  uploadStatus?: 'uploading' | 'scanning' | 'success' | 'error'
+  errorMessage?: string
 }
 export type ContractRegion = 'Luzon' | 'Visayas' | 'Mindanao'
 export type FilterTab      = 'all' | 'active' | 'expiring' | 'expired'

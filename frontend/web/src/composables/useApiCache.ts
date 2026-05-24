@@ -94,9 +94,11 @@ function mapApiContract(d: any, currentUserId: number | null, firstName?: string
     contractLink:    '',
     createdBy,
     docs: (d.documents ?? []).map((doc: any) => ({
+      id: doc.document_id || doc._id,
       name: doc.file_name,
       type: doc.file_type as 'pdf' | 'docx',
       size: doc.file_size ?? 0,
+      uploadStatus: 'success',
     })),
   }
 }
@@ -125,9 +127,11 @@ function mapApiToRequest(d: any, currentUserId: number | null, firstName?: strin
     contractLink:    '',
     createdBy,
     docs: (d.documents ?? []).map((doc: any) => ({
+      id: doc.document_id || doc._id,
       name: doc.file_name,
       type: doc.file_type as 'pdf' | 'docx',
       size: doc.file_size ?? 0,
+      uploadStatus: 'success',
     })),
     itemCode:        d.item_code      ?? '',
     serialNo:        d.serial_number  ?? '',
