@@ -72,6 +72,19 @@ function validateCacheCredentials() {
   }
 }
 
+function normalizeDocumentUrl(url?: string): string {
+  if (!url) return ''
+  if (url.startsWith('blob:')) return url
+  const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+  if (url.startsWith('/storage')) {
+    return `${apiBase}${url}`
+  }
+  if (url.startsWith('http://localhost/storage')) {
+    return url.replace('http://localhost', apiBase)
+  }
+  return url
+}
+
 function mapApiContract(d: any, currentUserId: number | null, firstName?: string, lastName?: string): Contract {
   const isCreatedByCurrentUser = currentUserId !== null && d.created_by === currentUserId
   const createdBy = isCreatedByCurrentUser
@@ -98,6 +111,7 @@ function mapApiContract(d: any, currentUserId: number | null, firstName?: string
       name: doc.file_name,
       type: doc.file_type as 'pdf' | 'docx',
       size: doc.file_size ?? 0,
+      previewUrl: normalizeDocumentUrl(doc.document_url),
       uploadStatus: 'success',
     })),
   }
@@ -131,6 +145,7 @@ function mapApiToRequest(d: any, currentUserId: number | null, firstName?: strin
       name: doc.file_name,
       type: doc.file_type as 'pdf' | 'docx',
       size: doc.file_size ?? 0,
+      previewUrl: normalizeDocumentUrl(doc.document_url),
       uploadStatus: 'success',
     })),
     itemCode:        d.item_code      ?? '',

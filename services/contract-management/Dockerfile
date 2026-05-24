@@ -6,6 +6,9 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-enable mongodb \
     && docker-php-ext-install pdo pdo_mysql mbstring
 
+RUN echo "upload_max_filesize = 12M" > /usr/local/etc/php/conf.d/uploads-limit.ini \
+    && echo "post_max_size = 15M" >> /usr/local/etc/php/conf.d/uploads-limit.ini
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html

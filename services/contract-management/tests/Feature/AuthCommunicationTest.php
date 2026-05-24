@@ -32,18 +32,23 @@ class AuthCommunicationTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
-            '*' => [
-                'id',
-                'contract_id',
-                'businessPartner',
-                'category',
-                'status',
-                'itemCode',
-                'description',
-                'serialNo',
-                'startDate',
-                'endDate',
-                'createdBy',
+            'data' => [
+                '*' => [
+                    'contract_id',
+                    'bp_name',
+                    'category',
+                    'approval_status',
+                    'workflow_status',
+                    'item_code',
+                    'description',
+                    'serial_number',
+                    'sbu_number',
+                    'region',
+                    'start_date',
+                    'end_date',
+                    'created_by',
+                    'documents',
+                ]
             ]
         ]);
         

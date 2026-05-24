@@ -233,6 +233,8 @@ class UploadDocumentTest extends TestCase
             'itemCode' => 'ITM-99',
             'description' => 'Test Link Contract',
             'serialNo' => 'SN-99',
+            'sbuNumber' => 'SBU-99',
+            'region' => 'Luzon',
             'startDate' => '2026-06-01',
             'endDate' => '2026-07-01',
             'document_ids' => [$docId]

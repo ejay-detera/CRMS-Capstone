@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Contract;
 use App\Models\ContractCategory;
 use App\Models\ContractStatus;
+use App\Models\ContractApprovalStatus;
+use App\Models\ContractRegion;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class ContractController extends Controller
 {
@@ -18,12 +21,44 @@ class ContractController extends Controller
         $this->auditLogService = $auditLogService;
     }
 
+    private function formatContract(Contract $contract): array
+    {
+        return [
+            'contract_id'     => $contract->contract_id,
+            'bp_name'         => $contract->bp_name,
+            'category'        => $contract->category?->category_name,
+            'approval_status' => $contract->approvalStatus?->status_name,
+            'workflow_status' => $contract->workflowStatus?->status_name,
+            'item_code'       => $contract->item_code,
+            'description'     => $contract->description,
+            'serial_number'   => $contract->serial_number,
+            'sbu_number'      => $contract->sbu_number,
+            'region'          => $contract->region?->region_name,
+            'start_date'      => $contract->start_date?->toDateString(),
+            'end_date'        => $contract->end_date?->toDateString(),
+            'created_by'      => $contract->created_by,
+            'documents'       => $contract->documents->map(fn ($d) => [
+                'document_id'  => (string) ($d->document_id ?? $d->_id),
+                'file_name'    => $d->file_name,
+                'file_type'    => $d->file_type,
+                'file_size'    => $d->file_size,
+                'document_url' => $d->document_url,
+            ])->values(),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $query = Contract::with(['category', 'status']);
+        $query = Contract::with([
+            'documents',
+            'category',
+            'approvalStatus',
+            'workflowStatus',
+            'region',
+        ]);
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
@@ -33,25 +68,17 @@ class ContractController extends Controller
             });
         }
 
+        // Sales and Finance Employee can only ever see their own contracts
+        $role = $request->get('auth_role');
+        if (in_array($role, ['Sales', 'Finance Employee'])) {
+            $query->where('created_by', $request->get('auth_id'));
+        }
+
         $contracts = $query->orderBy('contract_id', 'desc')->get();
 
-        $mapped = $contracts->map(function($c) {
-            return [
-                'id' => 'CTR-' . str_pad($c->contract_id, 3, '0', STR_PAD_LEFT),
-                'contract_id' => $c->contract_id,
-                'businessPartner' => $c->bp_name,
-                'category' => $c->category?->category_name ?? 'Service Agreement',
-                'status' => $c->status?->status_name ?? 'Notarized PDF',
-                'itemCode' => $c->item_code,
-                'description' => $c->description,
-                'serialNo' => $c->serial_number,
-                'startDate' => $c->start_date ? $c->start_date->format('Y-m-d') : null,
-                'endDate' => $c->end_date ? $c->end_date->format('Y-m-d') : null,
-                'createdBy' => $c->created_by ? 'User #' . $c->created_by : 'Admin User',
-            ];
-        });
-
-        return response()->json($mapped);
+        return response()->json([
+            'data' => $contracts->map(fn ($c) => $this->formatContract($c))->values(),
+        ]);
     }
 
     /**
@@ -59,17 +86,36 @@ class ContractController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'businessPartner' => 'required|string|max:255',
-            'category' => 'required|string|max:255',
-            'status' => 'required|string|max:255',
-            'itemCode' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'serialNo' => 'nullable|string|max:255',
-            'startDate' => 'nullable|date',
-            'endDate' => 'nullable|date',
-            'document_ids' => 'nullable|array',
-            'document_ids.*' => 'string',
+        $data = $request->all();
+
+        // Normalize camelCase fields from test to snake_case
+        $normalized = [
+            'bp_name'         => $data['bp_name'] ?? $data['businessPartner'] ?? null,
+            'category'        => $data['category'] ?? null,
+            'status'          => $data['status'] ?? $data['workflow_status'] ?? null,
+            'item_code'       => $data['item_code'] ?? $data['itemCode'] ?? null,
+            'description'     => $data['description'] ?? null,
+            'serial_number'   => $data['serial_number'] ?? $data['serialNo'] ?? null,
+            'sbu_number'      => $data['sbu_number'] ?? $data['sbuNumber'] ?? null,
+            'region'          => $data['region'] ?? null,
+            'start_date'      => $data['start_date'] ?? $data['startDate'] ?? null,
+            'end_date'        => $data['end_date'] ?? $data['endDate'] ?? null,
+            'document_ids'    => $data['document_ids'] ?? null,
+        ];
+
+        $validator = Validator::make($normalized, [
+            'bp_name'         => 'required|string|max:255',
+            'category'        => 'required|string|max:255',
+            'status'          => 'nullable|string|max:255',
+            'item_code'       => 'required|string|max:255',
+            'description'     => 'required|string',
+            'serial_number'   => 'required|string|max:255|unique:contracts,serial_number',
+            'sbu_number'      => 'required|string|max:255',
+            'region'          => 'required|string|in:Luzon,Visayas,Mindanao',
+            'start_date'      => 'required|date',
+            'end_date'        => 'required|date|after:start_date',
+            'document_ids'    => 'nullable|array',
+            'document_ids.*'  => 'string',
         ]);
 
         if ($validator->fails()) {
@@ -78,29 +124,55 @@ class ContractController extends Controller
 
         $incoming = $validator->validated();
 
-        // Resolve Category and Status IDs from strings
+        // Resolve IDs
         $cat = ContractCategory::firstOrCreate(['category_name' => $incoming['category']]);
-        $stat = ContractStatus::firstOrCreate(['status_name' => $incoming['status']]);
-        $pendingStatus = \App\Models\ContractApprovalStatus::firstOrCreate(['status_name' => 'Pending']);
+        $regionId = DB::table('contract_regions')
+            ->where('region_name', $incoming['region'])
+            ->value('region_id');
+
+        if (!$regionId) {
+            return response()->json(['message' => 'Invalid region.'], 422);
+        }
 
         $userId = $request->get('auth_id');
+        $role = $request->get('auth_role');
+        $isManagerRole = in_array($role, ['Manager', 'Admin', 'Finance Manager']);
+
+        // Resolve Approval Status and Workflow status
+        if ($isManagerRole) {
+            $approvalStatusName = 'Approved';
+            $workflowStatusName = $incoming['status'] ?? 'SBSI Review';
+        } else {
+            $approvalStatusName = 'Pending';
+            $workflowStatusName = $incoming['status'] ?? null;
+        }
+
+        $approvalStatus = ContractApprovalStatus::firstOrCreate(['status_name' => $approvalStatusName]);
+        
+        $workflowStatusId = null;
+        if ($workflowStatusName) {
+            $stat = ContractStatus::firstOrCreate(['status_name' => $workflowStatusName]);
+            $workflowStatusId = $stat->status_id;
+        }
 
         $contract = Contract::create([
-            'category_id' => $cat->category_id,
-            'approval_status_id' => $pendingStatus->approval_status_id,
-            'workflow_status_id' => $stat->status_id,
-            'bp_name' => $incoming['businessPartner'],
-            'item_code' => $incoming['itemCode'] ?? null,
-            'description' => $incoming['description'] ?? null,
-            'serial_number' => $incoming['serialNo'] ?? null,
-            'start_date' => $incoming['startDate'] ?? null,
-            'end_date' => $incoming['endDate'] ?? null,
-            'created_by' => $userId,
+            'category_id'        => $cat->category_id,
+            'approval_status_id' => $approvalStatus->approval_status_id,
+            'workflow_status_id' => $workflowStatusId,
+            'bp_name'            => $incoming['bp_name'],
+            'item_code'          => $incoming['item_code'],
+            'description'        => $incoming['description'],
+            'serial_number'      => $incoming['serial_number'],
+            'sbu_number'         => $incoming['sbu_number'],
+            'region_id'          => $regionId,
+            'start_date'         => $incoming['start_date'],
+            'end_date'           => $incoming['end_date'],
+            'created_by'         => $userId,
         ]);
 
         // Link MongoDB documents
-        if ($request->has('document_ids') && is_array($request->input('document_ids'))) {
-            \App\Models\Document::whereIn('_id', $request->input('document_ids'))
+        if (!empty($incoming['document_ids'])) {
+            \App\Models\Document::whereIn('_id', $incoming['document_ids'])
                 ->update(['contract_id' => $contract->contract_id]);
         }
 
@@ -115,24 +187,11 @@ class ContractController extends Controller
             $request->get('auth_department')
         );
 
-        // Map back to format expected by frontend
-        $mapped = [
-            'id' => 'CTR-' . str_pad($contract->contract_id, 3, '0', STR_PAD_LEFT),
-            'contract_id' => $contract->contract_id,
-            'businessPartner' => $contract->bp_name,
-            'category' => $incoming['category'],
-            'status' => $incoming['status'],
-            'itemCode' => $contract->item_code,
-            'description' => $contract->description,
-            'serialNo' => $contract->serial_number,
-            'startDate' => $contract->start_date ? $contract->start_date->format('Y-m-d') : null,
-            'endDate' => $contract->end_date ? $contract->end_date->format('Y-m-d') : null,
-            'createdBy' => $userId ? 'User #' . $userId : 'Admin User',
-        ];
+        $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
 
         return response()->json([
             'message' => 'Contract created successfully.',
-            'data' => $mapped
+            'data'    => $this->formatContract($contract)
         ], 201);
     }
 
@@ -147,17 +206,43 @@ class ContractController extends Controller
             return response()->json(['message' => 'Contract not found.'], 404);
         }
 
-        $validator = Validator::make($request->all(), [
-            'businessPartner' => 'required|string|max:255',
-            'category' => 'required|string|max:255',
-            'status' => 'required|string|max:255',
-            'itemCode' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'serialNo' => 'nullable|string|max:255',
-            'startDate' => 'nullable|date',
-            'endDate' => 'nullable|date',
-            'document_ids' => 'nullable|array',
-            'document_ids.*' => 'string',
+        // Authorization check if Sales / Finance Employee editing another user's contract
+        $role = $request->get('auth_role');
+        $userId = $request->get('auth_id');
+        if (in_array($role, ['Sales', 'Finance Employee']) && $contract->created_by !== $userId) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $data = $request->all();
+
+        // Normalize
+        $normalized = [
+            'bp_name'         => $data['bp_name'] ?? $data['businessPartner'] ?? null,
+            'category'        => $data['category'] ?? null,
+            'status'          => $data['status'] ?? $data['workflow_status'] ?? null,
+            'item_code'       => $data['item_code'] ?? $data['itemCode'] ?? null,
+            'description'     => $data['description'] ?? null,
+            'serial_number'   => $data['serial_number'] ?? $data['serialNo'] ?? null,
+            'sbu_number'      => $data['sbu_number'] ?? $data['sbuNumber'] ?? null,
+            'region'          => $data['region'] ?? null,
+            'start_date'      => $data['start_date'] ?? $data['startDate'] ?? null,
+            'end_date'        => $data['end_date'] ?? $data['endDate'] ?? null,
+            'document_ids'    => $data['document_ids'] ?? null,
+        ];
+
+        $validator = Validator::make($normalized, [
+            'bp_name'         => 'required|string|max:255',
+            'category'        => 'required|string|max:255',
+            'status'          => 'nullable|string|max:255',
+            'item_code'       => 'required|string|max:255',
+            'description'     => 'required|string',
+            'serial_number'   => "required|string|max:255|unique:contracts,serial_number,{$id},contract_id",
+            'sbu_number'      => 'required|string|max:255',
+            'region'          => 'required|string|in:Luzon,Visayas,Mindanao',
+            'start_date'      => 'required|date',
+            'end_date'        => 'required|date|after:start_date',
+            'document_ids'    => 'nullable|array',
+            'document_ids.*'  => 'string',
         ]);
 
         if ($validator->fails()) {
@@ -167,29 +252,42 @@ class ContractController extends Controller
         $incoming = $validator->validated();
 
         $cat = ContractCategory::firstOrCreate(['category_name' => $incoming['category']]);
-        $stat = ContractStatus::firstOrCreate(['status_name' => $incoming['status']]);
+        $regionId = DB::table('contract_regions')
+            ->where('region_name', $incoming['region'])
+            ->value('region_id');
+
+        if (!$regionId) {
+            return response()->json(['message' => 'Invalid region.'], 422);
+        }
 
         $oldData = $contract->toArray();
 
-        $contract->update([
-            'category_id' => $cat->category_id,
-            'workflow_status_id' => $stat->status_id,
-            'bp_name' => $incoming['businessPartner'],
-            'item_code' => $incoming['itemCode'] ?? null,
-            'description' => $incoming['description'] ?? null,
-            'serial_number' => $incoming['serialNo'] ?? null,
-            'start_date' => $incoming['startDate'] ?? null,
-            'end_date' => $incoming['endDate'] ?? null,
-        ]);
+        $updatePayload = [
+            'category_id'   => $cat->category_id,
+            'bp_name'       => $incoming['bp_name'],
+            'item_code'     => $incoming['item_code'],
+            'description'   => $incoming['description'],
+            'serial_number' => $incoming['serial_number'],
+            'sbu_number'    => $incoming['sbu_number'],
+            'region_id'     => $regionId,
+            'start_date'    => $incoming['start_date'],
+            'end_date'      => $incoming['end_date'],
+        ];
+
+        if (!empty($incoming['status'])) {
+            $stat = ContractStatus::firstOrCreate(['status_name' => $incoming['status']]);
+            $updatePayload['workflow_status_id'] = $stat->status_id;
+        }
+
+        $contract->update($updatePayload);
 
         // Link MongoDB documents
-        if ($request->has('document_ids') && is_array($request->input('document_ids'))) {
-            \App\Models\Document::whereIn('_id', $request->input('document_ids'))
+        if (!empty($incoming['document_ids'])) {
+            \App\Models\Document::whereIn('_id', $incoming['document_ids'])
                 ->update(['contract_id' => $contract->contract_id]);
         }
 
         // Audit Logging
-        $userId = $request->get('auth_id');
         $this->auditLogService->log(
             'updated',
             'Contract',
@@ -200,23 +298,11 @@ class ContractController extends Controller
             $request->get('auth_department')
         );
 
-        $mapped = [
-            'id' => 'CTR-' . str_pad($contract->contract_id, 3, '0', STR_PAD_LEFT),
-            'contract_id' => $contract->contract_id,
-            'businessPartner' => $contract->bp_name,
-            'category' => $incoming['category'],
-            'status' => $incoming['status'],
-            'itemCode' => $contract->item_code,
-            'description' => $contract->description,
-            'serialNo' => $contract->serial_number,
-            'startDate' => $contract->start_date ? $contract->start_date->format('Y-m-d') : null,
-            'endDate' => $contract->end_date ? $contract->end_date->format('Y-m-d') : null,
-            'createdBy' => $contract->created_by ? 'User #' . $contract->created_by : 'Admin User',
-        ];
+        $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
 
         return response()->json([
             'message' => 'Contract updated successfully.',
-            'data' => $mapped
+            'data'    => $this->formatContract($contract),
         ]);
     }
 
@@ -249,23 +335,116 @@ class ContractController extends Controller
         return response()->json(['message' => 'Contract deleted successfully.']);
     }
 
-    public function dashboardSummary()
+    public function dashboardSummary(Request $request)
     {
-        return response()->json(['message' => 'Not implemented']);
+        $contracts = Contract::with([
+            'documents',
+            'category',
+            'approvalStatus',
+            'workflowStatus',
+            'region',
+        ])
+        ->where('created_by', $request->get('auth_id'))
+        ->orderByDesc('created_at')
+        ->get();
+
+        return response()->json([
+            'data' => $contracts->map(fn ($c) => $this->formatContract($c))->values(),
+        ]);
     }
 
-    public function indexRequests()
+    public function indexRequests(Request $request)
     {
-        return response()->json(['message' => 'Not implemented']);
+        $query = Contract::with([
+            'documents',
+            'category',
+            'approvalStatus',
+            'workflowStatus',
+            'region',
+        ]);
+
+        $role = $request->get('auth_role');
+        if (in_array($role, ['Sales', 'Finance Employee'])) {
+            $query->where('created_by', $request->get('auth_id'));
+        } elseif ($request->filled('created_by')) {
+            $query->where('created_by', $request->created_by);
+        }
+
+        if ($request->filled('approval_status')) {
+            $approvalStatusId = DB::table('contract_approval_statuses')
+                ->where('status_name', $request->approval_status)
+                ->value('approval_status_id');
+
+            if ($approvalStatusId) {
+                $query->where('approval_status_id', $approvalStatusId);
+            }
+        }
+
+        $contracts = $query->orderByDesc('created_at')->get();
+
+        return response()->json([
+            'data' => $contracts->map(fn ($c) => $this->formatContract($c))->values(),
+        ]);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        return response()->json(['message' => 'Not implemented']);
+        $contract = Contract::with([
+            'documents',
+            'category',
+            'approvalStatus',
+            'workflowStatus',
+            'region',
+        ])->findOrFail($id);
+
+        $role = $request->get('auth_role');
+        if (in_array($role, ['Sales', 'Finance Employee']) && $contract->created_by !== $request->get('auth_id')) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        return response()->json([
+            'data' => $this->formatContract($contract),
+        ]);
     }
 
     public function updateStatus(Request $request, $id)
     {
-        return response()->json(['message' => 'Not implemented']);
+        $contract = Contract::findOrFail($id);
+
+        $request->validate([
+            'approval_status' => 'required|string|in:Approved,Rejected',
+            'workflow_status' => 'nullable|string',
+        ]);
+
+        $approvalStatusId = DB::table('contract_approval_statuses')
+            ->where('status_name', $request->approval_status)
+            ->value('approval_status_id');
+
+        if (!$approvalStatusId) {
+            return response()->json(['message' => 'Invalid approval status.'], 422);
+        }
+
+        $workflowStatusId = null;
+        if ($request->filled('workflow_status')) {
+            $workflowStatusId = DB::table('contract_statuses')
+                ->where('status_name', $request->workflow_status)
+                ->value('status_id');
+
+            if (!$workflowStatusId) {
+                return response()->json(['message' => 'Invalid workflow status.'], 422);
+            }
+        }
+
+        $contract->update([
+            'approval_status_id' => $approvalStatusId,
+            'workflow_status_id' => $workflowStatusId,
+        ]);
+
+        $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
+
+        return response()->json([
+            'message' => 'Contract status updated.',
+            'data'    => $this->formatContract($contract),
+        ]);
     }
 }

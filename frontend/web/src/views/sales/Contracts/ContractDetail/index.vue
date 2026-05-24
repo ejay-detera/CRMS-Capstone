@@ -37,6 +37,18 @@ const backPath = computed(() => {
 
 const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
 
+function normalizeDocumentUrl(url?: string): string {
+  if (!url) return ''
+  if (url.startsWith('blob:')) return url
+  if (url.startsWith('/storage')) {
+    return `${apiBase}${url}`
+  }
+  if (url.startsWith('http://localhost/storage')) {
+    return url.replace('http://localhost', apiBase)
+  }
+  return url
+}
+
 function mapApiToContract(data: any): StoredContract {
   const user = authState.user
   const createdBy = (user && data.created_by === user.id)
@@ -63,6 +75,7 @@ function mapApiToContract(data: any): StoredContract {
       name: d.file_name,
       type: d.file_type as 'pdf' | 'docx',
       size: d.file_size ?? 0,
+      previewUrl: normalizeDocumentUrl(d.document_url),
       uploadStatus: 'success',
     })),
   }

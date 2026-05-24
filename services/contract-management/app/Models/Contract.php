@@ -44,9 +44,19 @@ class Contract extends Model
         return $this->belongsTo(ContractCategory::class, 'category_id', 'category_id');
     }
 
-    public function status(): BelongsTo
+    public function approvalStatus(): BelongsTo
     {
-        return $this->belongsTo(ContractStatus::class, 'status_id', 'status_id');
+        return $this->belongsTo(ContractApprovalStatus::class, 'approval_status_id', 'approval_status_id');
+    }
+
+    public function workflowStatus(): BelongsTo
+    {
+        return $this->belongsTo(ContractStatus::class, 'workflow_status_id', 'status_id');
+    }
+
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(ContractRegion::class, 'region_id', 'region_id');
     }
 
     public function documents(): HasMany

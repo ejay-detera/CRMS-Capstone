@@ -51,6 +51,18 @@ const actionInProgress = ref(false)
 
 const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
 
+function normalizeDocumentUrl(url?: string): string {
+  if (!url) return ''
+  if (url.startsWith('blob:')) return url
+  if (url.startsWith('/storage')) {
+    return `${apiBase}${url}`
+  }
+  if (url.startsWith('http://localhost/storage')) {
+    return url.replace('http://localhost', apiBase)
+  }
+  return url
+}
+
 async function handleApprove() {
   if (!request.value || actionInProgress.value) return
   const numericId  = parseInt(id.replace('REQ-', ''), 10)
@@ -266,9 +278,12 @@ async function saveEdit() {
       contractLink:    '',
       createdBy,
       docs: (data.data.documents ?? []).map((doc: any) => ({
+        id: doc.document_id || doc._id,
         name: doc.file_name,
         type: doc.file_type as 'pdf' | 'docx',
         size: doc.file_size ?? 0,
+        previewUrl: normalizeDocumentUrl(doc.document_url),
+        uploadStatus: 'success',
       })),
       itemCode:  data.data.item_code     ?? '',
       serialNo:  data.data.serial_number ?? '',

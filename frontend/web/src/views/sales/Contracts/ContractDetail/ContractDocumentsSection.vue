@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { FileX, FileType2, UploadCloud, X, AlertCircle } from 'lucide-vue-next'
 import type { UploadedDoc } from '@/types/contract'
 import { useAuth } from '@/composables/useAuth'
@@ -12,9 +13,28 @@ const props = defineProps<{
 const emit = defineEmits<{ 'update:docs': [v: UploadedDoc[]] }>()
 
 const { state: authState } = useAuth()
+const route = useRoute()
+const router = useRouter()
+const contractId = route.params.id as string
+
 const fileInput = ref<HTMLInputElement | null>(null)
 const dragOver  = ref(false)
 const fileError = ref('')
+
+function viewDocument(doc: UploadedDoc) {
+  if (doc.uploadStatus && doc.uploadStatus !== 'success') return
+
+  if (doc.type === 'pdf' && doc.id) {
+    let basePath = ''
+    if (route.path.startsWith('/admin')) basePath = '/admin'
+    else if (route.path.startsWith('/manager')) basePath = '/manager'
+    else basePath = '/sales'
+
+    router.push(`${basePath}/contracts/${contractId}/documents/${doc.id}`)
+  } else if (doc.previewUrl) {
+    window.open(doc.previewUrl, '_blank')
+  }
+}
 
 const MAX_BYTES = 10 * 1024 * 1024
 
@@ -183,14 +203,14 @@ function fmtSize(bytes: number) {
 
           <!-- PDF preview -->
           <template v-if="doc.type === 'pdf'">
-            <div class="w-full h-44 bg-black/4 overflow-hidden">
+            <div @click="viewDocument(doc)" class="w-full h-44 bg-black/4 overflow-hidden cursor-pointer hover:opacity-85 transition-all">
               <iframe :src="doc.previewUrl" class="w-full h-full pointer-events-none" />
             </div>
           </template>
 
           <!-- DOCX placeholder -->
           <template v-else>
-            <div class="w-full h-44 bg-blue-50 flex flex-col items-center justify-center gap-2">
+            <div @click="viewDocument(doc)" class="w-full h-44 bg-blue-50 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-blue-100 transition-all">
               <FileType2 class="w-10 h-10 text-blue-400" />
               <span class="text-[10px] font-bold text-blue-400 uppercase tracking-wider">DOCX</span>
             </div>
