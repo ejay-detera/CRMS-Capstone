@@ -22,7 +22,7 @@ class InternalAuditController extends Controller
         $request->validate([
             'action' => 'required|string',
             'entity_type' => 'required|string',
-            'entity_id' => 'nullable|integer',
+            'entity_id' => 'nullable|string',
             'user_id' => 'nullable|integer',
             'old_data' => 'nullable|array',
             'new_data' => 'nullable|array',

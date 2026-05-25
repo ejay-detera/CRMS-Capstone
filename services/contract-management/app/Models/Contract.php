@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use MongoDB\Laravel\Eloquent\HybridRelations;
 
 class Contract extends Model
 {
-    use HasFactory;
+    use HasFactory, HybridRelations;
 
     protected $table = 'contracts';
     protected $primaryKey = 'contract_id';
@@ -38,14 +39,38 @@ class Contract extends Model
         'end_date' => 'date',
     ];
 
+    protected static function booted()
+    {
+        static::deleting(function ($contract) {
+            $associatedDocs = Document::where('contract_id', $contract->contract_id)->get();
+            foreach ($associatedDocs as $doc) {
+                if ($doc->file_path) {
+                    $disk = config('filesystems.default', 'local');
+                    \Illuminate\Support\Facades\Storage::disk($disk)->delete($doc->file_path);
+                }
+                $doc->delete();
+            }
+        });
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(ContractCategory::class, 'category_id', 'category_id');
     }
 
-    public function status(): BelongsTo
+    public function approvalStatus(): BelongsTo
     {
-        return $this->belongsTo(ContractStatus::class, 'status_id', 'status_id');
+        return $this->belongsTo(ContractApprovalStatus::class, 'approval_status_id', 'approval_status_id');
+    }
+
+    public function workflowStatus(): BelongsTo
+    {
+        return $this->belongsTo(ContractStatus::class, 'workflow_status_id', 'status_id');
+    }
+
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(ContractRegion::class, 'region_id', 'region_id');
     }
 
     public function documents(): HasMany

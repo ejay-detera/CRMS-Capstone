@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Building2, Truck, Phone, Mail, User, MapPin } from 'lucide-vue-next'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import type { Partner, TabKey } from '@/types/partner'
 
 defineProps<{ open: boolean; partner: Partner | null; activeTab: TabKey }>()
@@ -20,7 +20,7 @@ defineEmits<{ 'update:open': [v: boolean] }>()
             </div>
             <div class="flex-1 min-w-0 pr-6">
               <DialogTitle class="text-sm font-bold text-black leading-snug truncate">{{ partner.name }}</DialogTitle>
-              <p class="text-xs text-black/45 mt-0.5 truncate">{{ partner.industry }}</p>
+              <DialogDescription class="text-xs text-black/45 mt-0.5 truncate">{{ partner.industry }}</DialogDescription>
               <div class="flex items-center gap-2 mt-1.5">
                 <span class="text-[10px] font-mono text-black/30 bg-black/4 px-1.5 py-0.5 rounded">{{ partner.id }}</span>
                 <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border"

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { FileX, FileType2, UploadCloud, X, AlertCircle } from 'lucide-vue-next'
 import type { UploadedDoc } from '@/types/contract'
+import { useAuth } from '@/composables/useAuth'
 
 const props = defineProps<{
   docs:      UploadedDoc[]
@@ -10,9 +12,29 @@ const props = defineProps<{
 
 const emit = defineEmits<{ 'update:docs': [v: UploadedDoc[]] }>()
 
+const { state: authState } = useAuth()
+const route = useRoute()
+const router = useRouter()
+const contractId = route.params.id as string
+
 const fileInput = ref<HTMLInputElement | null>(null)
 const dragOver  = ref(false)
 const fileError = ref('')
+
+function viewDocument(doc: UploadedDoc) {
+  if (doc.uploadStatus && doc.uploadStatus !== 'success') return
+
+  if (doc.type === 'pdf' && doc.id) {
+    let basePath = ''
+    if (route.path.startsWith('/admin')) basePath = '/admin'
+    else if (route.path.startsWith('/manager')) basePath = '/manager'
+    else basePath = '/sales'
+
+    router.push(`${basePath}/contracts/${contractId}/documents/${doc.id}`)
+  } else if (doc.previewUrl) {
+    window.open(doc.previewUrl, '_blank')
+  }
+}
 
 const MAX_BYTES = 10 * 1024 * 1024
 
@@ -33,13 +55,90 @@ function validate(f: File): string {
   return ''
 }
 
+async function uploadFile(doc: UploadedDoc, index: number) {
+  if (!doc.file) return
+
+  const updatedValue = [...props.docs]
+  updatedValue[index] = {
+    ...doc,
+    uploadStatus: 'uploading'
+  }
+  emit('update:docs', updatedValue)
+
+  const scanTimer = setTimeout(() => {
+    if (props.docs[index] && props.docs[index].uploadStatus === 'uploading') {
+      const scanningValue = [...props.docs]
+      scanningValue[index] = {
+        ...scanningValue[index],
+        uploadStatus: 'scanning'
+      }
+      emit('update:docs', scanningValue)
+    }
+  }, 450)
+
+  try {
+    const formData = new FormData()
+    formData.append('file', doc.file)
+
+    const res = await fetch(`${import.meta.env.VITE_CONTRACT_API_URL}/documents/upload`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+      body: formData,
+    })
+
+    clearTimeout(scanTimer)
+    const data = await res.json()
+
+    const finalValue = [...props.docs]
+    if (res.ok) {
+      finalValue[index] = {
+        ...finalValue[index],
+        id: data.data.document_id,
+        uploadStatus: 'success'
+      }
+    } else {
+      const msg = data.errors?.file?.[0] || data.message || 'Upload failed.'
+      finalValue[index] = {
+        ...finalValue[index],
+        uploadStatus: 'error',
+        errorMessage: msg
+      }
+    }
+    emit('update:docs', finalValue)
+  } catch (err) {
+    clearTimeout(scanTimer)
+    const finalValue = [...props.docs]
+    finalValue[index] = {
+      ...finalValue[index],
+      uploadStatus: 'error',
+      errorMessage: 'Network error. Failed to scan file.'
+    }
+    emit('update:docs', finalValue)
+  }
+}
+
 function addFile(f: File) {
   const err = validate(f)
   if (err) { fileError.value = err; return }
   fileError.value = ''
   const type       = detectType(f)!
   const previewUrl = type === 'pdf' ? URL.createObjectURL(f) : ''
-  emit('update:docs', [...props.docs, { file: f, name: f.name, size: f.size, type, previewUrl }])
+  const newDoc: UploadedDoc = {
+    file: f,
+    name: f.name,
+    size: f.size,
+    type,
+    previewUrl,
+    uploadStatus: 'uploading'
+  }
+  const newList = [...props.docs, newDoc]
+  emit('update:docs', newList)
+
+  const index = newList.length - 1
+  uploadFile(newDoc, index)
 }
 
 function onFileInput(e: Event) {
@@ -98,29 +197,61 @@ function fmtSize(bytes: number) {
           <!-- Remove button (edit mode only) -->
           <button v-if="isEditing"
             @click="removeDoc(i)"
-            class="absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded-full bg-black/50 hover:bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+            class="absolute top-1.5 right-1.5 z-30 w-5 h-5 rounded-full bg-black/50 hover:bg-red-500 text-white flex items-center justify-center transition">
             <X class="w-3 h-3" />
           </button>
 
           <!-- PDF preview -->
           <template v-if="doc.type === 'pdf'">
-            <div class="w-full h-44 bg-black/4 overflow-hidden">
-              <iframe :src="doc.previewUrl" class="w-full h-full pointer-events-none" />
+            <div @click="viewDocument(doc)" class="w-full h-44 bg-red-50 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-red-100 transition-all border-b border-black/5">
+              <FileType2 class="w-10 h-10 text-red-400" />
+              <span class="text-[10px] font-bold text-red-500 uppercase tracking-wider">PDF</span>
             </div>
           </template>
 
           <!-- DOCX placeholder -->
           <template v-else>
-            <div class="w-full h-44 bg-blue-50 flex flex-col items-center justify-center gap-2">
+            <div @click="viewDocument(doc)" class="w-full h-44 bg-blue-50 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-blue-100 transition-all">
               <FileType2 class="w-10 h-10 text-blue-400" />
               <span class="text-[10px] font-bold text-blue-400 uppercase tracking-wider">DOCX</span>
             </div>
           </template>
 
           <!-- Filename strip -->
-          <div class="px-2 py-1.5 border-t border-black/6 bg-white">
+          <div class="px-2 py-1.5 border-t border-black/6 bg-white z-10">
             <p class="text-[10px] font-medium text-black/60 truncate" :title="doc.name">{{ doc.name }}</p>
             <p class="text-[9px] text-black/30 tabular-nums">{{ fmtSize(doc.size) }}</p>
+          </div>
+
+          <!-- Status Overlay (edit mode only) -->
+          <div v-if="isEditing && doc.uploadStatus && doc.uploadStatus !== 'success'"
+            class="absolute inset-0 h-44 z-20 flex flex-col items-center justify-center gap-2 px-2.5 text-center transition-all duration-300"
+            :class="{
+              'bg-black/70 text-white': doc.uploadStatus === 'uploading',
+              'bg-[#fffbeb] border border-[#fef3c7] text-[#92400e]': doc.uploadStatus === 'scanning',
+              'bg-red-500/90 text-white': doc.uploadStatus === 'error'
+            }">
+            <template v-if="doc.uploadStatus === 'uploading'">
+              <div class="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+              <span class="text-[10px] font-semibold">Uploading...</span>
+            </template>
+            
+            <template v-else-if="doc.uploadStatus === 'scanning'">
+              <div class="animate-spin rounded-full h-5 w-5 border-2 border-[#d97706] border-t-transparent"></div>
+              <span class="text-[10px] font-semibold text-[#b45309]">Scanning file...</span>
+            </template>
+
+            <template v-else-if="doc.uploadStatus === 'error'">
+              <AlertCircle class="w-5 h-5 text-white animate-pulse" />
+              <span class="text-[9px] font-bold uppercase tracking-wide">Blocked</span>
+              <span class="text-[8px] leading-tight max-h-16 overflow-y-auto px-1">{{ doc.errorMessage || 'Malware detected!' }}</span>
+            </template>
+          </div>
+
+          <!-- Success overlay/badge (edit mode only) -->
+          <div v-if="isEditing && doc.uploadStatus === 'success'"
+            class="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 rounded bg-emerald-500 px-1.5 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider shadow-sm select-none">
+            <span>Malware Free</span>
           </div>
 
         </div>

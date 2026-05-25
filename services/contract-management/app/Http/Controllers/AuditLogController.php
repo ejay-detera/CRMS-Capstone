@@ -48,7 +48,38 @@ class AuditLogController extends Controller
         $crmsLogsQuery = AuditLog::query();
         
         if ($request->has('action') && !empty($request->action)) {
-            $crmsLogsQuery->where('action', $request->action);
+            $actionFilter = $request->action;
+            if ($actionFilter === 'Contract Created') {
+                $crmsLogsQuery->where('action', 'created')->where('entity_type', 'Contract');
+            } elseif ($actionFilter === 'Contract Updated') {
+                $crmsLogsQuery->where('action', 'updated')->where('entity_type', 'Contract');
+            } elseif ($actionFilter === 'Contract Deleted') {
+                $crmsLogsQuery->where('action', 'deleted')->where('entity_type', 'Contract');
+            } elseif ($actionFilter === 'Document Uploaded' || $actionFilter === 'document_uploaded') {
+                $crmsLogsQuery->where(function($q) {
+                    $q->where('action', 'document_uploaded')
+                      ->orWhere(function($sq) {
+                          $sq->where('action', 'created')->where('entity_type', 'Document');
+                      });
+                });
+            } elseif ($actionFilter === 'Document Deleted' || $actionFilter === 'document_deleted') {
+                $crmsLogsQuery->where(function($q) {
+                    $q->where('action', 'document_deleted')
+                      ->orWhere(function($sq) {
+                          $sq->where('action', 'deleted')->where('entity_type', 'Document');
+                      });
+                });
+            } elseif ($actionFilter === 'Partner Added') {
+                $crmsLogsQuery->where('action', 'created')->where('entity_type', 'BusinessPartner');
+            } elseif ($actionFilter === 'Partner Updated') {
+                $crmsLogsQuery->where('action', 'updated')->where('entity_type', 'BusinessPartner');
+            } elseif ($actionFilter === 'User Created') {
+                $crmsLogsQuery->where('action', 'user_created');
+            } elseif ($actionFilter === 'Login') {
+                $crmsLogsQuery->where('action', 'Login Success');
+            } else {
+                $crmsLogsQuery->where('action', $actionFilter);
+            }
         }
         if ($request->has('date') && !empty($request->date)) {
             $crmsLogsQuery->whereDate('performed_at', $request->date);
@@ -100,15 +131,48 @@ class AuditLogController extends Controller
             $userRole = $log->user_role ?? ($roleMap[$log->user_id] ?? 'Finance');
 
             $new_data = is_array($log->new_data) ? $log->new_data : [];
+            $old_data = is_array($log->old_data) ? $log->old_data : [];
+
+            // Normalize action name for frontend
+            $action = $log->action;
+            if ($log->action === 'created' && $log->entity_type === 'Contract') {
+                $action = 'Contract Created';
+            } elseif ($log->action === 'updated' && $log->entity_type === 'Contract') {
+                $action = 'Contract Updated';
+            } elseif ($log->action === 'deleted' && $log->entity_type === 'Contract') {
+                $action = 'Contract Deleted';
+            } elseif (($log->action === 'document_uploaded' || $log->action === 'created') && $log->entity_type === 'Document') {
+                $action = 'Document Uploaded';
+            } elseif (($log->action === 'document_deleted' || $log->action === 'deleted') && $log->entity_type === 'Document') {
+                $action = 'Document Deleted';
+            } elseif ($log->action === 'created' && $log->entity_type === 'BusinessPartner') {
+                $action = 'Partner Added';
+            } elseif ($log->action === 'updated' && $log->entity_type === 'BusinessPartner') {
+                $action = 'Partner Updated';
+            } elseif ($log->action === 'user_created') {
+                $action = 'User Created';
+            } elseif ($log->action === 'user_activated' || $log->action === 'user_deactivated') {
+                $action = 'User Updated';
+            }
 
             $description = '';
-            if ($log->action === 'created') {
-                $description = "Created {$log->entity_type} #{$log->entity_id}";
-            } elseif ($log->action === 'updated') {
-                $description = "Updated {$log->entity_type} #{$log->entity_id}";
-            } elseif ($log->action === 'deleted') {
-                $description = "Deleted {$log->entity_type} #{$log->entity_id}";
-            } elseif ($log->action === 'user_created') {
+            if ($action === 'Contract Created') {
+                $description = "Created Contract #{$log->entity_id}";
+            } elseif ($action === 'Contract Updated') {
+                $description = "Updated Contract #{$log->entity_id}";
+            } elseif ($action === 'Contract Deleted') {
+                $description = "Deleted Contract #{$log->entity_id}";
+            } elseif ($action === 'Document Uploaded') {
+                $fileName = $new_data['file_name'] ?? 'Document';
+                $description = "Uploaded Document \"{$fileName}\"";
+            } elseif ($action === 'Document Deleted') {
+                $fileName = $old_data['file_name'] ?? 'Document';
+                $description = "Deleted Document \"{$fileName}\"";
+            } elseif ($action === 'Partner Added') {
+                $description = "Created BusinessPartner #{$log->entity_id}";
+            } elseif ($action === 'Partner Updated') {
+                $description = "Updated BusinessPartner #{$log->entity_id}";
+            } elseif ($action === 'User Created') {
                 $email = $new_data['email'] ?? '';
                 $description = "Created User account for {$email}";
             } elseif ($log->action === 'user_activated') {
@@ -140,7 +204,7 @@ class AuditLogController extends Controller
                 'user_name' => $userName,
                 'user_email' => $userEmail,
                 'role' => $userRole,
-                'action' => $log->action,
+                'action' => $action,
                 'entity_type' => $log->entity_type,
                 'description' => $description,
                 'old_data' => $log->old_data,

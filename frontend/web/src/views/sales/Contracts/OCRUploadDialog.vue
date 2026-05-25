@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { FileText, UploadCloud, X, AlertCircle, CheckCircle2, Loader2 } from 'lucide-vue-next'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 
 defineProps<{ open: boolean }>()
@@ -78,7 +78,7 @@ function handleClose() {
           </div>
           <div>
             <DialogTitle class="text-sm font-bold text-black leading-snug">Autofill with OCR</DialogTitle>
-            <p class="text-xs text-black/40 mt-0.5">Upload a contract PDF to extract its data automatically.</p>
+            <DialogDescription class="text-xs text-black/40 mt-0.5">Upload a contract PDF to extract its data automatically.</DialogDescription>
           </div>
         </div>
       </DialogHeader>

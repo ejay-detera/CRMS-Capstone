@@ -16,7 +16,7 @@ import ContractDocumentsSection from './ContractDocumentsSection.vue'
 const route  = useRoute()
 const router = useRouter()
 const { state: authState, role } = useAuth()
-const isManager = computed(() => role.value === 'Manager' || role.value === 'Admin')
+const isManager = computed(() => role.value === 'Manager' || role.value === 'Admin' || role.value === 'Finance Manager')
 const isOwner   = computed(() => !!contract.value && !contract.value.createdBy.startsWith('User #'))
 const { success, error } = useToast()
 const { state: cacheState, fetchContracts, updateContractInCache } = useApiCache()
@@ -36,6 +36,19 @@ const backPath = computed(() => {
 })
 
 const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+
+function normalizeDocumentUrl(url?: string): string {
+  if (!url) return ''
+  if (url.startsWith('blob:')) return url
+  const baseDomain = apiBase.replace(/\/api$/, '')
+  if (url.startsWith('/storage')) {
+    return `${baseDomain}${url}`
+  }
+  if (url.startsWith('http://localhost/storage')) {
+    return url.replace('http://localhost', baseDomain)
+  }
+  return url
+}
 
 function mapApiToContract(data: any): StoredContract {
   const user = authState.user
@@ -59,9 +72,12 @@ function mapApiToContract(data: any): StoredContract {
     contractLink:    '',
     createdBy,
     docs: (data.documents ?? []).map((d: any): UploadedDoc => ({
+      id: d.document_id || d._id,
       name: d.file_name,
       type: d.file_type as 'pdf' | 'docx',
       size: d.file_size ?? 0,
+      previewUrl: normalizeDocumentUrl(d.document_url),
+      uploadStatus: 'success',
     })),
   }
 }
@@ -152,6 +168,9 @@ const isFormValid = computed(() =>
 )
 
 const contractDocs = ref<UploadedDoc[]>([])
+const isUploadingOrScanFailed = computed(() => {
+  return contractDocs.value.some(d => d.uploadStatus === 'uploading' || d.uploadStatus === 'scanning' || d.uploadStatus === 'error')
+})
 
 function startEdit() {
   if (!contract.value) return
@@ -192,6 +211,7 @@ async function saveEdit() {
       region:        editForm.region,
       start_date:    editForm.startDate,
       end_date:      editForm.endDate,
+      document_ids:  contractDocs.value.filter(d => d.id).map(d => d.id),
     }
     if (isManager.value || isOwner.value) {
       payload.workflow_status = editForm.workflowStatus || null
@@ -278,6 +298,7 @@ async function saveEdit() {
         :days="days"
         :is-editing="isEditing"
         :saving="savingEdit"
+        :disabled="isUploadingOrScanFailed"
         @back="router.push(backPath)"
         @edit="startEdit"
         @save="saveEdit"

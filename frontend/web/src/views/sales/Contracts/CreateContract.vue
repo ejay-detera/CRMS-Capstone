@@ -100,6 +100,10 @@ function isValid() {
   )
 }
 
+const isUploadingOrScanFailed = computed(() => {
+  return contractDocs.value.some(d => d.uploadStatus === 'uploading' || d.uploadStatus === 'scanning' || d.uploadStatus === 'error')
+})
+
 async function handleSubmit() {
   touchAll()
   if (!isValid()) return
@@ -116,11 +120,7 @@ async function handleSubmit() {
       region:        form.region,
       start_date:    form.startDate,
       end_date:      form.endDate,
-      docs: contractDocs.value.map(d => ({
-        file_name: d.name,
-        file_type: d.type,
-        file_size: d.size,
-      })),
+      document_ids:  contractDocs.value.filter(d => d.id).map(d => d.id),
     }
 
     const res = await fetch(`${import.meta.env.VITE_CONTRACT_API_URL}/contracts`, {
@@ -361,7 +361,7 @@ async function handleSubmit() {
           class="h-9 px-5 text-sm border-black/15 text-black/60 hover:text-black">
           Cancel
         </Button>
-        <Button @click="handleSubmit" :disabled="loading"
+        <Button @click="handleSubmit" :disabled="loading || isUploadingOrScanFailed"
           class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           {{ loading ? 'Saving…' : 'Create Contract' }}
         </Button>

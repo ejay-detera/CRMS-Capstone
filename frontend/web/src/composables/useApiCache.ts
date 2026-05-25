@@ -72,6 +72,20 @@ function validateCacheCredentials() {
   }
 }
 
+function normalizeDocumentUrl(url?: string): string {
+  if (!url) return ''
+  if (url.startsWith('blob:')) return url
+  const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+  const baseDomain = apiBase.replace(/\/api$/, '')
+  if (url.startsWith('/storage')) {
+    return `${baseDomain}${url}`
+  }
+  if (url.startsWith('http://localhost/storage')) {
+    return url.replace('http://localhost', baseDomain)
+  }
+  return url
+}
+
 function mapApiContract(d: any, currentUserId: number | null, firstName?: string, lastName?: string): Contract {
   const isCreatedByCurrentUser = currentUserId !== null && d.created_by === currentUserId
   const createdBy = isCreatedByCurrentUser
@@ -94,9 +108,12 @@ function mapApiContract(d: any, currentUserId: number | null, firstName?: string
     contractLink:    '',
     createdBy,
     docs: (d.documents ?? []).map((doc: any) => ({
+      id: doc.document_id || doc._id,
       name: doc.file_name,
       type: doc.file_type as 'pdf' | 'docx',
       size: doc.file_size ?? 0,
+      previewUrl: normalizeDocumentUrl(doc.document_url),
+      uploadStatus: 'success',
     })),
   }
 }
@@ -125,9 +142,12 @@ function mapApiToRequest(d: any, currentUserId: number | null, firstName?: strin
     contractLink:    '',
     createdBy,
     docs: (d.documents ?? []).map((doc: any) => ({
+      id: doc.document_id || doc._id,
       name: doc.file_name,
       type: doc.file_type as 'pdf' | 'docx',
       size: doc.file_size ?? 0,
+      previewUrl: normalizeDocumentUrl(doc.document_url),
+      uploadStatus: 'success',
     })),
     itemCode:        d.item_code      ?? '',
     serialNo:        d.serial_number  ?? '',

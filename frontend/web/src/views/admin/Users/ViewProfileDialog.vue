@@ -11,7 +11,7 @@ const emit  = defineEmits<{ 'update:open': [v: boolean]; edit: [u: User] }>()
 
 <template>
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
-    <DialogContent class="max-w-sm p-0 overflow-hidden gap-0" @pointer-down-outside="$emit('update:open', false)">
+    <DialogContent class="max-w-sm p-0 overflow-hidden gap-0" aria-describedby="undefined" @pointer-down-outside="$emit('update:open', false)">
       <template v-if="user">
 
         <!-- ── Header ─────────────────────────────────────────────── -->
