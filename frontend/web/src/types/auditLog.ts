@@ -5,7 +5,7 @@ export type ActionType =
   | 'Role Updated'      | 'Settings Changed' | 'Login'
   | 'created'           | 'updated'          | 'deleted'
   | 'user_created'      | 'Login Success'    | 'Login Failed'
-  | 'Logout'
+  | 'Logout'            | 'Document Uploaded'| 'Document Deleted'
 
 export interface LogEntry {
   id: string
@@ -43,6 +43,8 @@ export const actionOptions: Array<ActionType | 'All'> = [
   'Role Updated',
   'Settings Changed',
   'Login',
+  'Document Uploaded',
+  'Document Deleted',
 ]
 
 export const actionBadge: Record<ActionType, string> = {
@@ -65,4 +67,6 @@ export const actionBadge: Record<ActionType, string> = {
   'Login Success':     'bg-teal-50 text-teal-700 border-teal-200',
   'Login Failed':      'bg-rose-50 text-rose-700 border-rose-200',
   'Logout':            'bg-slate-50 text-slate-700 border-slate-200',
+  'Document Uploaded': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Document Deleted':  'bg-red-50 text-red-600 border-red-200',
 }

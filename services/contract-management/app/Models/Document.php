@@ -19,6 +19,7 @@ class Document extends Model
 
     protected $fillable = [
         'contract_id',
+        'uuid',
         'file_name',
         'file_path',
         'document_url',

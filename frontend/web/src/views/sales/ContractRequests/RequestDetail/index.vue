@@ -54,11 +54,12 @@ const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
 function normalizeDocumentUrl(url?: string): string {
   if (!url) return ''
   if (url.startsWith('blob:')) return url
+  const baseDomain = apiBase.replace(/\/api$/, '')
   if (url.startsWith('/storage')) {
-    return `${apiBase}${url}`
+    return `${baseDomain}${url}`
   }
   if (url.startsWith('http://localhost/storage')) {
-    return url.replace('http://localhost', apiBase)
+    return url.replace('http://localhost', baseDomain)
   }
   return url
 }
@@ -427,8 +428,9 @@ function fmtSize(bytes: number) {
               :href="safeHref(doc.previewUrl)" target="_blank" rel="noopener noreferrer"
               class="relative w-36 rounded-lg border border-black/8 overflow-hidden shadow-sm bg-white flex flex-col group hover:border-[#2E85D8]/50 transition-colors">
               <template v-if="doc.type === 'pdf'">
-                <div class="w-full h-44 bg-black/4 overflow-hidden relative">
-                  <iframe :src="safeHref(doc.previewUrl)" class="w-full h-full pointer-events-none" />
+                <div class="w-full h-44 bg-red-50 flex flex-col items-center justify-center gap-2 relative group-hover:bg-red-100 transition-all border-b border-black/5">
+                  <FileType2 class="w-10 h-10 text-red-400" />
+                  <span class="text-[10px] font-bold text-red-500 uppercase tracking-wider">PDF</span>
                   <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center">
                     <ExternalLink class="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
                   </div>

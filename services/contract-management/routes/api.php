@@ -21,8 +21,8 @@ Route::middleware(['auth.internal'])->group(function () {
         ->middleware('permission:delete-contracts');
     Route::get('/contract-requests',  [ContractController::class, 'indexRequests']);
 
-    Route::get('/contracts/{id}',    [ContractController::class, 'show']);
-    Route::put('/contracts/{id}',    [ContractController::class, 'update']);
+    Route::get('/contracts/{id}',    [ContractController::class, 'show'])
+        ->middleware('permission:view-contracts');
     Route::patch('/contracts/{id}/status', [ContractController::class, 'updateStatus'])
         ->middleware('role:Manager,Admin,Finance Manager');
 
@@ -36,6 +36,12 @@ Route::middleware(['auth.internal'])->group(function () {
     // Document Upload Route
     Route::post('/documents/upload', \App\Http\Controllers\Api\V1\Documents\UploadController::class)
         ->middleware('permission:create-contracts');
+
+    // Document Retrieve Route
+    Route::get('/documents/{id}/file', [\App\Http\Controllers\Api\V1\Documents\DownloadController::class, 'show'])
+        ->middleware('permission:view-contracts');
+    Route::get('/documents/{id}/presigned-url', [\App\Http\Controllers\Api\V1\Documents\DownloadController::class, 'presignedUrl'])
+        ->middleware('permission:view-contracts');
 
 });
 

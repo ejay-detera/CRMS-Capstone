@@ -39,6 +39,20 @@ class Contract extends Model
         'end_date' => 'date',
     ];
 
+    protected static function booted()
+    {
+        static::deleting(function ($contract) {
+            $associatedDocs = Document::where('contract_id', $contract->contract_id)->get();
+            foreach ($associatedDocs as $doc) {
+                if ($doc->file_path) {
+                    $disk = config('filesystems.default', 'local');
+                    \Illuminate\Support\Facades\Storage::disk($disk)->delete($doc->file_path);
+                }
+                $doc->delete();
+            }
+        });
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(ContractCategory::class, 'category_id', 'category_id');

@@ -203,8 +203,9 @@ function fmtSize(bytes: number) {
 
           <!-- PDF preview -->
           <template v-if="doc.type === 'pdf'">
-            <div @click="viewDocument(doc)" class="w-full h-44 bg-black/4 overflow-hidden cursor-pointer hover:opacity-85 transition-all">
-              <iframe :src="doc.previewUrl" class="w-full h-full pointer-events-none" />
+            <div @click="viewDocument(doc)" class="w-full h-44 bg-red-50 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-red-100 transition-all border-b border-black/5">
+              <FileType2 class="w-10 h-10 text-red-400" />
+              <span class="text-[10px] font-bold text-red-500 uppercase tracking-wider">PDF</span>
             </div>
           </template>
 

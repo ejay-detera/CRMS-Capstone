@@ -76,11 +76,12 @@ function normalizeDocumentUrl(url?: string): string {
   if (!url) return ''
   if (url.startsWith('blob:')) return url
   const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+  const baseDomain = apiBase.replace(/\/api$/, '')
   if (url.startsWith('/storage')) {
-    return `${apiBase}${url}`
+    return `${baseDomain}${url}`
   }
   if (url.startsWith('http://localhost/storage')) {
-    return url.replace('http://localhost', apiBase)
+    return url.replace('http://localhost', baseDomain)
   }
   return url
 }

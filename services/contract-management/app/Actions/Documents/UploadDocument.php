@@ -33,9 +33,13 @@ final readonly class UploadDocument
             ]);
         }
 
-        // 2. Store file using default filesystem disk (object storage abstraction)
+        // 2. Generate UUID and store file using default filesystem disk (object storage abstraction)
         $disk = config('filesystems.default', 'local');
-        $path = Storage::disk($disk)->putFile('contracts/documents', $payload->file);
+        $uuid = (string) \Illuminate\Support\Str::uuid();
+        $extension = strtolower($payload->file->getClientOriginalExtension());
+        $filename = "{$uuid}.{$extension}";
+        
+        $path = Storage::disk($disk)->putFileAs('contracts/documents', $payload->file, $filename);
 
         if (!$path) {
             throw ValidationException::withMessages([
@@ -51,10 +55,11 @@ final readonly class UploadDocument
         // 3. Store metadata record in MongoDB
         $document = Document::create([
             'contract_id' => $payload->contractId,
+            'uuid' => $uuid,
             'file_name' => $payload->file->getClientOriginalName(),
             'file_path' => $path,
             'document_url' => $url,
-            'file_type' => strtolower($payload->file->getClientOriginalExtension()),
+            'file_type' => $extension,
             'file_size' => $payload->file->getSize(),
             'uploaded_by' => $uploadedBy,
             'uploaded_at' => now(),

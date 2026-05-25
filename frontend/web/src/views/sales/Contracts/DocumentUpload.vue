@@ -198,13 +198,11 @@ const fileSizeMB = (bytes: number) => (bytes / 1024 / 1024).toFixed(2)
         class="relative w-36 rounded-lg border border-black/8 bg-white shadow-sm overflow-hidden flex flex-col group">
 
         <!-- PDF thumbnail -->
-        <iframe
-          v-if="doc.type === 'pdf'"
-          :src="doc.previewUrl"
-          class="w-full h-44 block pointer-events-none"
-          style="border: none;"
-          title="PDF preview"
-        />
+        <div v-if="doc.type === 'pdf'"
+          class="flex flex-col items-center justify-center gap-2 h-44 bg-red-50/50">
+          <FileType2 class="w-9 h-9 text-red-500" />
+          <span class="text-[10px] font-bold text-red-600 uppercase tracking-widest">PDF</span>
+        </div>
 
         <!-- DOCX card body -->
         <div v-else

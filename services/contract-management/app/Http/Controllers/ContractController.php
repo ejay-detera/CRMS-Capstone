@@ -281,9 +281,34 @@ class ContractController extends Controller
 
         $contract->update($updatePayload);
 
-        // Link MongoDB documents
-        if (!empty($incoming['document_ids'])) {
-            \App\Models\Document::whereIn('_id', $incoming['document_ids'])
+        // Link MongoDB documents and delete removed ones
+        $incomingDocIds = $incoming['document_ids'] ?? [];
+        
+        $currentDocs = \App\Models\Document::where('contract_id', $contract->contract_id)->get();
+        foreach ($currentDocs as $doc) {
+            $docIdStr = (string)$doc->getKey();
+            if (!in_array($docIdStr, $incomingDocIds)) {
+                if ($doc->file_path) {
+                    $disk = config('filesystems.default', 'local');
+                    \Illuminate\Support\Facades\Storage::disk($disk)->delete($doc->file_path);
+                }
+                
+                $oldDocData = $doc->toArray();
+                $doc->delete();
+                
+                $this->auditLogService->log(
+                    'document_deleted',
+                    'Document',
+                    $docIdStr,
+                    $userId,
+                    $oldDocData,
+                    []
+                );
+            }
+        }
+
+        if (!empty($incomingDocIds)) {
+            \App\Models\Document::whereIn('_id', $incomingDocIds)
                 ->update(['contract_id' => $contract->contract_id]);
         }
 
@@ -317,11 +342,33 @@ class ContractController extends Controller
             return response()->json(['message' => 'Contract not found.'], 404);
         }
 
+        $userId = $request->get('auth_id');
+
+        // Delete all associated documents
+        $associatedDocs = \App\Models\Document::where('contract_id', $contract->contract_id)->get();
+        foreach ($associatedDocs as $doc) {
+            if ($doc->file_path) {
+                $disk = config('filesystems.default', 'local');
+                \Illuminate\Support\Facades\Storage::disk($disk)->delete($doc->file_path);
+            }
+            
+            $oldDocData = $doc->toArray();
+            $doc->delete();
+            
+            $this->auditLogService->log(
+                'document_deleted',
+                'Document',
+                (string)$doc->getKey(),
+                $userId,
+                $oldDocData,
+                []
+            );
+        }
+
         $oldData = $contract->toArray();
         $contract->delete();
 
         // Audit Logging
-        $userId = $request->get('auth_id');
         $this->auditLogService->log(
             'deleted',
             'Contract',
