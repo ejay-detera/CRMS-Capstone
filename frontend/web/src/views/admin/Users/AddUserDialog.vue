@@ -6,12 +6,16 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { Role } from '@/types/user'
 
-const props = defineProps<{ open: boolean }>()
+const props = defineProps<{
+  open: boolean;
+  roles?: { id: number; name: string }[];
+  departments?: { id: number; name: string }[];
+}>()
 const emit  = defineEmits<{ 'update:open': [v: boolean]; submit: [data: any] }>()
 
 const form = reactive({
   firstName: '', lastName: '', middleName: '',
-  email: '', role: '' as Role | '', department: 'Finance',
+  email: '', role: '' as Role | '', department: '',
 })
 const touched = reactive({
   firstName: false, lastName: false, email: false,
@@ -31,7 +35,7 @@ function onNameInput(field: 'firstName' | 'lastName' | 'middleName', e: Event) {
 }
 
 function reset() {
-  Object.assign(form, { firstName: '', lastName: '', middleName: '', email: '', role: '', department: 'Finance' })
+  Object.assign(form, { firstName: '', lastName: '', middleName: '', email: '', role: '', department: '' })
   Object.assign(touched, { firstName: false, lastName: false, email: false })
 }
 
@@ -128,8 +132,7 @@ function submit() {
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Manager">Manager</SelectItem>
-                <SelectItem value="Employee">Employee</SelectItem>
+                <SelectItem v-for="r in roles" :key="r.id" :value="r.name">{{ r.name }}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -140,7 +143,7 @@ function submit() {
                 <SelectValue placeholder="Select department" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Finance">Finance</SelectItem>
+                <SelectItem v-for="d in departments" :key="d.id" :value="d.name">{{ d.name }}</SelectItem>
               </SelectContent>
             </Select>
           </div>

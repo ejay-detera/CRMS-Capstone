@@ -104,7 +104,7 @@ export function useRolePermissions() {
 
   /** Load all available permissions */
   async function fetchAllPermissions() {
-    const data = await apiFetch<any>('/admin/permissions')
+    const data = await apiFetch<any>('/admin/permissions?per_page=100')
     const permissionsArray = Array.isArray(data) ? data : (data.data || [])
     // Only keep CRMS CRUD permissions that appear in the UI map
     allPermissions.value = permissionsArray.filter((p: ApiPermission) => SLUG_UI_MAP[p.slug] !== undefined)

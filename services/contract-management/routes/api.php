@@ -12,36 +12,36 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::get('/dashboard',           [ContractController::class, 'dashboardSummary']);
     // Contracts REST endpoints
     Route::get('/contracts', [\App\Http\Controllers\ContractController::class, 'index'])
-        ->middleware('permission:view-contracts');
+        ->middleware('permission:crms.contracts.view');
     Route::post('/contracts', [\App\Http\Controllers\ContractController::class, 'store'])
-        ->middleware('permission:create-contracts');
+        ->middleware('permission:crms.contracts.create');
     Route::put('/contracts/{id}', [\App\Http\Controllers\ContractController::class, 'update'])
-        ->middleware('permission:edit-contracts');
+        ->middleware('permission:crms.contracts.edit');
     Route::delete('/contracts/{id}', [\App\Http\Controllers\ContractController::class, 'destroy'])
-        ->middleware('permission:delete-contracts');
+        ->middleware('permission:crms.contracts.delete');
     Route::get('/contract-requests',  [ContractController::class, 'indexRequests']);
 
     Route::get('/contracts/{id}',    [ContractController::class, 'show'])
-        ->middleware('permission:view-contracts');
+        ->middleware('permission:crms.contracts.view');
     Route::patch('/contracts/{id}/status', [ContractController::class, 'updateStatus'])
-        ->middleware('role:Manager,Admin,Finance Manager');
+        ->middleware('permission:crms.contracts.approve');
 
     Route::post('/admin/users', [\App\Http\Controllers\AdminUserProxyController::class, 'store'])
-        ->middleware('permission:manage-users');
+        ->middleware('permission:crms.users.create');
 
     // Aggregated Audit Logs Route
     Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])
-        ->middleware('permission:manage-users');
+        ->middleware('permission:crms.users.view');
 
     // Document Upload Route
     Route::post('/documents/upload', \App\Http\Controllers\Api\V1\Documents\UploadController::class)
-        ->middleware('permission:create-contracts');
+        ->middleware('permission:crms.contracts.create');
 
     // Document Retrieve Route
     Route::get('/documents/{id}/file', [\App\Http\Controllers\Api\V1\Documents\DownloadController::class, 'show'])
-        ->middleware('permission:view-contracts');
+        ->middleware('permission:crms.contracts.view');
     Route::get('/documents/{id}/presigned-url', [\App\Http\Controllers\Api\V1\Documents\DownloadController::class, 'presignedUrl'])
-        ->middleware('permission:view-contracts');
+        ->middleware('permission:crms.contracts.view');
 
 });
 

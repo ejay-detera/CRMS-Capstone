@@ -127,7 +127,6 @@ async function exportXLSX() {
     if (res.ok && data.data) {
       const rows = data.data.map((l: any) => ({
         'Log ID': l.id,
-        'Source': l.source.toUpperCase(),
         'User': l.user_name,
         'Email': l.user_email || 'N/A',
         'Role': l.role || 'Finance',
@@ -138,7 +137,6 @@ async function exportXLSX() {
       const ws = XLSX.utils.json_to_sheet(rows)
       ws['!cols'] = [
         { wch: 12 },
-        { wch: 10 },
         { wch: 20 },
         { wch: 25 },
         { wch: 12 },

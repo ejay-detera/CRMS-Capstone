@@ -2,14 +2,20 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 use App\Models\AuditLog;
 
 class AuditLogTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        \Illuminate\Support\Facades\Cache::store('file')->flush();
+    }
 
     /**
      * Test webhook receiver with correct secret.
@@ -25,7 +31,8 @@ class AuditLogTest extends TestCase
             'action' => 'login',
             'entity_type' => 'Session',
             'user_id' => 3,
-            'new_data' => ['email' => 'finance-user@sbsi.com']
+            'new_data' => ['email' => 'finance-user@sbsi.com'],
+            'user_department' => 'Finance'
         ]);
 
         $response->assertStatus(200);
@@ -74,6 +81,7 @@ class AuditLogTest extends TestCase
             'user_name' => 'Jane Doe',
             'user_email' => 'contractor@sbsi.com',
             'user_role' => 'Manager',
+            'user_department' => 'Finance',
             'old_data' => null,
             'new_data' => ['title' => 'Important NDA'],
             'performed_at' => now(),
@@ -87,6 +95,7 @@ class AuditLogTest extends TestCase
             'user_name' => 'Jane Doe',
             'user_email' => 'contractor@sbsi.com',
             'user_role' => 'Manager',
+            'user_department' => 'Finance',
             'old_data' => null,
             'new_data' => ['email' => 'contractor@sbsi.com'],
             'performed_at' => now(),
@@ -101,7 +110,7 @@ class AuditLogTest extends TestCase
                     'id' => 1,
                     'email' => 'admin@sbsi.com',
                     'role' => 'Admin',
-                    'permissions' => ['manage-users'],
+                    'permissions' => ['crms.users.view'],
                     'department' => 'Finance'
                 ]
             ], 200),

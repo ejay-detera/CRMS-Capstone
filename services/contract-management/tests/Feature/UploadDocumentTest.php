@@ -7,7 +7,7 @@ use App\Models\Contract;
 use App\Models\ContractCategory;
 use App\Models\ContractStatus;
 use App\Models\Document;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -15,7 +15,7 @@ use Tests\TestCase;
 
 class UploadDocumentTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -39,7 +39,7 @@ class UploadDocumentTest extends TestCase
                     'last_name' => 'Doe',
                     'role' => $role,
                     'permissions' => $permissions,
-                    'department' => 'Sales',
+                    'department' => 'Finance',
                 ]
             ], 200)
         ]);
@@ -50,7 +50,7 @@ class UploadDocumentTest extends TestCase
      */
     public function test_upload_pdf_document_success()
     {
-        $this->mockAuth('Sales', ['create-contracts']);
+        $this->mockAuth('Sales', ['crms.contracts.create']);
 
         // Create PDF with valid %PDF magic bytes
         $file = UploadedFile::fake()->createWithContent('contract.pdf', "%PDF-1.4\n%EOF");
@@ -103,7 +103,7 @@ class UploadDocumentTest extends TestCase
      */
     public function test_upload_docx_document_success()
     {
-        $this->mockAuth('Manager', ['create-contracts']);
+        $this->mockAuth('Manager', ['crms.contracts.create']);
 
         // Create DOCX with valid PK\x03\x04 zip magic bytes
         $file = UploadedFile::fake()->createWithContent('contract.docx', "PK\x03\x04\n");
@@ -131,7 +131,7 @@ class UploadDocumentTest extends TestCase
      */
     public function test_upload_document_invalid_magic_bytes()
     {
-        $this->mockAuth('Sales', ['create-contracts']);
+        $this->mockAuth('Sales', ['crms.contracts.create']);
 
         // Create PDF with plain text content instead of PDF magic bytes
         $file = UploadedFile::fake()->createWithContent('contract.pdf', "This is plain text and not PDF.");
@@ -157,7 +157,7 @@ class UploadDocumentTest extends TestCase
      */
     public function test_upload_malware_detection()
     {
-        $this->mockAuth('Sales', ['create-contracts']);
+        $this->mockAuth('Sales', ['crms.contracts.create']);
 
         // Create a PDF containing EICAR malware signature
         $eicarString = 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
@@ -184,7 +184,7 @@ class UploadDocumentTest extends TestCase
      */
     public function test_upload_file_exceeds_size_limit()
     {
-        $this->mockAuth('Sales', ['create-contracts']);
+        $this->mockAuth('Sales', ['crms.contracts.create']);
 
         // Create a fake file with 11 MB size
         $file = UploadedFile::fake()->create('heavy.pdf', 11 * 1024, 'application/pdf');
@@ -205,7 +205,7 @@ class UploadDocumentTest extends TestCase
      */
     public function test_link_documents_to_contract()
     {
-        $this->mockAuth('Sales', ['create-contracts']);
+        $this->mockAuth('Sales', ['crms.contracts.create']);
 
         // 1. Create a MongoDB document metadata
         $document = Document::create([
@@ -261,7 +261,7 @@ class UploadDocumentTest extends TestCase
      */
     public function test_update_contract_deletes_removed_document()
     {
-        $this->mockAuth('Sales', ['create-contracts', 'edit-contracts']);
+        $this->mockAuth('Sales', ['crms.contracts.create', 'crms.contracts.edit']);
 
         // 1. Create two MongoDB documents
         $doc1 = Document::create([
@@ -365,7 +365,7 @@ class UploadDocumentTest extends TestCase
      */
     public function test_delete_contract_deletes_associated_documents()
     {
-        $this->mockAuth('Sales', ['create-contracts', 'delete-contracts']);
+        $this->mockAuth('Sales', ['crms.contracts.create', 'crms.contracts.delete']);
 
         // 1. Create a MongoDB document
         $doc = Document::create([
@@ -436,7 +436,7 @@ class UploadDocumentTest extends TestCase
      */
     public function test_document_upload_uses_uuid_file_name()
     {
-        $this->mockAuth('Sales', ['create-contracts']);
+        $this->mockAuth('Sales', ['crms.contracts.create']);
 
         $file = UploadedFile::fake()->createWithContent('original_name.pdf', "%PDF-1.4\n%EOF");
 
@@ -473,7 +473,7 @@ class UploadDocumentTest extends TestCase
      */
     public function test_generate_presigned_url()
     {
-        $this->mockAuth('Sales', ['view-contracts']);
+        $this->mockAuth('Sales', ['crms.contracts.view']);
 
         // Mock temporary URL generation on faked storage disk
         Storage::disk(config('filesystems.default'))->buildTemporaryUrlsUsing(function ($path, $expiration, $options) {

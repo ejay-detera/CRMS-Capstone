@@ -8,6 +8,7 @@ use Tests\TestCase;
 
 class AuthCommunicationTest extends TestCase
 {
+    use RefreshDatabase;
     /**
      * Test that the service correctly communicates with auth-service and allows access.
      */
@@ -21,7 +22,8 @@ class AuthCommunicationTest extends TestCase
                     'id' => 1,
                     'email' => 'test@example.com',
                     'role' => 'Admin',
-                    'permissions' => ['view-vendors', 'manage-vendors']
+                    'permissions' => ['crms.partners.view', 'crms.partners.create'],
+                    'department' => 'Finance'
                 ]
             ], 200)
         ]);
@@ -76,7 +78,8 @@ class AuthCommunicationTest extends TestCase
                     'id' => 1,
                     'email' => 'test@example.com',
                     'role' => 'Sales',
-                    'permissions' => ['view-vendors'] // Lacks 'manage-vendors'
+                    'permissions' => ['crms.partners.view'], // Lacks 'crms.partners.create'
+                    'department' => 'Finance'
                 ]
             ], 200)
         ]);
@@ -88,6 +91,6 @@ class AuthCommunicationTest extends TestCase
         ])->postJson('/api/vendors');
 
         $response->assertStatus(403);
-        $response->assertJsonPath('message', 'Forbidden. You do not have the required permission: manage-vendors');
+        $response->assertJsonPath('message', 'Forbidden. You do not have the required permission: crms.partners.create');
     }
 }

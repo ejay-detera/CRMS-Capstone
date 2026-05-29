@@ -10,12 +10,13 @@ import PartnerDetailDialog from './PartnerDetailDialog.vue'
 import DeleteConfirmDialog from './DeleteConfirmDialog.vue'
 import AddPartnerDialog    from './AddPartnerDialog.vue'
 import type { Partner, TabKey } from '@/types/partner'
+import { initialBusinessPartners, initialSuppliersData } from './mockPartners'
 
 const { success } = useToast()
 
-const businessPartners = ref<Partner[]>([])
+const businessPartners = ref<Partner[]>([...initialBusinessPartners])
 
-const suppliersData = ref<Partner[]>([])
+const suppliersData = ref<Partner[]>([...initialSuppliersData])
 
 const activeTab    = ref<TabKey>('partners')
 const viewMode     = ref<'card' | 'table'>('card')

@@ -11,6 +11,7 @@ import PartnerDetailDialog from '@/views/admin/Partners/PartnerDetailDialog.vue'
 import DeleteConfirmDialog from '@/views/admin/Partners/DeleteConfirmDialog.vue'
 import AddPartnerDialog    from '@/views/admin/Partners/AddPartnerDialog.vue'
 import type { Partner, TabKey } from '@/types/partner'
+import { initialBusinessPartners, initialSuppliersData } from '@/views/admin/Partners/mockPartners'
 
 const { hasPermission } = useAuth()
 const { success } = useToast()
@@ -19,9 +20,9 @@ const { success } = useToast()
 const canCreate = computed(() => hasPermission('crms.partners.create'))
 const canDelete  = computed(() => hasPermission('crms.partners.delete'))
 
-const businessPartners = ref<Partner[]>([])
+const businessPartners = ref<Partner[]>([...initialBusinessPartners])
 
-const suppliersData = ref<Partner[]>([])
+const suppliersData = ref<Partner[]>([...initialSuppliersData])
 
 const activeTab    = ref<TabKey>('partners')
 const viewMode     = ref<'card' | 'table'>('card')

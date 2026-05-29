@@ -41,7 +41,9 @@ return new class extends Migration
 
         // 3. Drop FK on status_id so we can rename it
         Schema::table('contracts', function (Blueprint $table) {
-            $table->dropForeign('contracts_status_id_foreign');
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->dropForeign('contracts_status_id_foreign');
+            }
         });
 
         // 4. Rename status_id → workflow_status_id
@@ -68,7 +70,9 @@ return new class extends Migration
             ->value('status_id') ?? 1;
 
         Schema::table('contracts', function (Blueprint $table) {
-            $table->dropForeign('contracts_workflow_status_id_foreign');
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->dropForeign('contracts_workflow_status_id_foreign');
+            }
         });
 
         DB::table('contracts')->update(['workflow_status_id' => $notarizedId]);
@@ -86,7 +90,9 @@ return new class extends Migration
         });
 
         Schema::table('contracts', function (Blueprint $table) {
-            $table->dropForeign('contracts_approval_status_id_foreign');
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->dropForeign('contracts_approval_status_id_foreign');
+            }
             $table->dropColumn('approval_status_id');
         });
 

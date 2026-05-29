@@ -49,7 +49,6 @@ function formatTimestamp(isoStr: string) {
       <TableHeader class="bg-black/1.8">
         <TableRow class="border-b border-black/4 hover:bg-transparent">
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider pl-6 py-3 w-52">User</TableHead>
-          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3 w-28">Source</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Email</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Action</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Description</TableHead>
@@ -71,9 +70,6 @@ function formatTimestamp(isoStr: string) {
               </div>
             </TableCell>
             <TableCell class="py-4">
-              <div class="h-5 w-16 bg-black/5 rounded-full animate-pulse"></div>
-            </TableCell>
-            <TableCell class="py-4">
               <div class="h-3.5 w-32 bg-black/5 rounded animate-pulse"></div>
             </TableCell>
             <TableCell class="py-4">
@@ -91,7 +87,7 @@ function formatTimestamp(isoStr: string) {
         <!-- No data state -->
         <template v-else-if="paginated.length === 0">
           <TableRow>
-            <TableCell colspan="6" class="text-center py-16">
+            <TableCell colspan="5" class="text-center py-16">
               <p class="text-sm font-medium text-black/30">No log entries found</p>
               <p class="text-xs text-black/20 mt-1">Try adjusting your filters</p>
             </TableCell>
@@ -114,15 +110,6 @@ function formatTimestamp(isoStr: string) {
                   <p class="text-[11px] text-black/35 mt-0.5">{{ log.role || 'Finance' }}</p>
                 </div>
               </div>
-            </TableCell>
-
-            <TableCell class="py-4">
-              <span v-if="log.source === 'crms'" class="text-[10px] font-bold px-2 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-200 uppercase tracking-wider">
-                CRMS
-              </span>
-              <span v-else class="text-[10px] font-bold px-2 py-0.5 rounded border bg-slate-50 text-slate-700 border-slate-200 uppercase tracking-wider">
-                AUTH
-              </span>
             </TableCell>
 
             <TableCell class="py-4 text-sm text-black/55">{{ log.user_email || 'N/A' }}</TableCell>

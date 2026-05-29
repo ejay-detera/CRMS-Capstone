@@ -37,6 +37,10 @@ class AuditLogService
             }
         }
 
+        if ($userDept !== 'Finance') {
+            return;
+        }
+
         AuditLog::create([
             'action' => $action,
             'entity_type' => $entityType,

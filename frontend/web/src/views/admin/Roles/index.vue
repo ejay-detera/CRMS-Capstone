@@ -24,10 +24,10 @@ const {
 
 // ── Role meta (icon + description + locked flag) keyed by role name ──
 const ROLE_META: Record<string, RoleMeta> = {
-  'Admin':        { icon: Shield,    description: 'Full system access. Can manage users, roles, and all data.', locked: true  },
+  'Admin':        { icon: Shield,    description: 'Full system access. Can manage users, roles, and all data.', locked: false },
   'Manager':      { icon: Users,     description: 'Team monitoring, contract oversight, and reporting. Cannot manage users.', locked: false },
   'Sales':        { icon: UserCheck, description: 'Limited access. Can view assigned contracts and log activities only.', locked: false },
-  'Super Admin':  { icon: Shield,    description: 'System-wide access across all modules.', locked: true  },
+  'Super Admin':  { icon: Shield,    description: 'System-wide access across all modules.', locked: false },
   'IT Admin':     { icon: Shield,    description: 'IT infrastructure and user management.', locked: false },
   'Finance':      { icon: Users,     description: 'Finance staff access.',  locked: false },
   'Employee':     { icon: UserCheck, description: 'Regular staff access.',  locked: false },

@@ -2,17 +2,19 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class AdminUserProxyTest extends TestCase
 {
+    use RefreshDatabase;
     public function test_create_user_finance_employee_success()
     {
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
                 'valid' => true,
-                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['manage-users']]
+                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['crms.users.create'], 'department' => 'Finance']
             ]),
             'http://auth-service:8000/api/admin/role-options' => Http::response([
                 ['id' => 10, 'name' => 'Finance Employee'],
@@ -45,7 +47,7 @@ class AdminUserProxyTest extends TestCase
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
                 'valid' => true,
-                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['manage-users']]
+                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['crms.users.create'], 'department' => 'Finance']
             ])
         ]);
 

@@ -12,8 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('documents', function (Blueprint $table) {
-            $table->id('document_id');
+            if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+                $table->id('_id');
+            } else {
+                $table->id('document_id');
+            }
             $table->unsignedBigInteger('contract_id')->nullable();
+            $table->string('uuid')->nullable();
             $table->string('file_name');
             $table->string('file_path');
             $table->string('file_type')->nullable();

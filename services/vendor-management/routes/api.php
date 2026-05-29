@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth.internal'])->group(function () {
     
-    // Example: Only users with 'view-vendors' permission can access this
+    // Example: Only users with 'crms.partners.view' permission can access this
     Route::get('/vendors', function (Request $request) {
         return response()->json([
             'message' => 'Vendor list retrieved successfully',
@@ -15,45 +15,45 @@ Route::middleware(['auth.internal'])->group(function () {
                 ['id' => 2, 'name' => 'Tech Solutions Corp.']
             ]
         ]);
-    })->middleware('permission:view-vendors');
+    })->middleware('permission:crms.partners.view');
 
-    // Example: Only users with 'manage-vendors' permission can create
+    // Example: Only users with 'crms.partners.create' permission can create
     Route::post('/vendors', function (Request $request) {
         return response()->json([
             'message' => 'Vendor created successfully'
         ]);
-    })->middleware('permission:manage-vendors');
+    })->middleware('permission:crms.partners.create');
 
     // Admin User Creation Proxy (Finance Only)
     Route::post('/admin/users', [\App\Http\Controllers\AdminUserProxyController::class, 'store'])
-        ->middleware('permission:manage-users');
+        ->middleware('permission:crms.users.create');
 
     // Suppliers Routes
     Route::get('/suppliers/search', [\App\Http\Controllers\SupplierController::class, 'search'])
-        ->middleware('permission:view-suppliers');
+        ->middleware('permission:crms.partners.view');
     Route::get('/suppliers', [\App\Http\Controllers\SupplierController::class, 'index'])
-        ->middleware('permission:view-suppliers');
+        ->middleware('permission:crms.partners.view');
     Route::get('/suppliers/{id}', [\App\Http\Controllers\SupplierController::class, 'show'])
-        ->middleware('permission:view-suppliers');
+        ->middleware('permission:crms.partners.view');
     Route::post('/suppliers', [\App\Http\Controllers\SupplierController::class, 'store'])
-        ->middleware('permission:manage-suppliers');
+        ->middleware('permission:crms.partners.create');
     Route::put('/suppliers/{id}', [\App\Http\Controllers\SupplierController::class, 'update'])
-        ->middleware('permission:manage-suppliers');
+        ->middleware('permission:crms.partners.edit');
     Route::delete('/suppliers/{id}', [\App\Http\Controllers\SupplierController::class, 'destroy'])
-        ->middleware('permission:manage-suppliers');
+        ->middleware('permission:crms.partners.delete');
 
     // Business Partners Routes
     Route::get('/partners/search', [\App\Http\Controllers\BusinessPartnerController::class, 'search'])
-        ->middleware('permission:view-partners');
+        ->middleware('permission:crms.partners.view');
     Route::get('/partners', [\App\Http\Controllers\BusinessPartnerController::class, 'index'])
-        ->middleware('permission:view-partners');
+        ->middleware('permission:crms.partners.view');
     Route::get('/partners/{id}', [\App\Http\Controllers\BusinessPartnerController::class, 'show'])
-        ->middleware('permission:view-partners');
+        ->middleware('permission:crms.partners.view');
     Route::post('/partners', [\App\Http\Controllers\BusinessPartnerController::class, 'store'])
-        ->middleware('permission:manage-partners');
+        ->middleware('permission:crms.partners.create');
     Route::put('/partners/{id}', [\App\Http\Controllers\BusinessPartnerController::class, 'update'])
-        ->middleware('permission:manage-partners');
+        ->middleware('permission:crms.partners.edit');
     Route::delete('/partners/{id}', [\App\Http\Controllers\BusinessPartnerController::class, 'destroy'])
-        ->middleware('permission:manage-partners');
+        ->middleware('permission:crms.partners.delete');
 
 });

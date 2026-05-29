@@ -12,7 +12,7 @@ class BusinessPartnerCrudTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function mockAuthService(string $role = 'Admin', array $permissions = ['view-partners', 'manage-partners'])
+    protected function mockAuthService(string $role = 'Admin', array $permissions = ['crms.partners.view', 'crms.partners.create', 'crms.partners.edit', 'crms.partners.delete'])
     {
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
@@ -20,7 +20,8 @@ class BusinessPartnerCrudTest extends TestCase
                 'user' => [
                     'id' => 10,
                     'role' => $role,
-                    'permissions' => $permissions
+                    'permissions' => $permissions,
+                    'department' => 'Finance'
                 ]
             ]),
         ]);
@@ -59,7 +60,7 @@ class BusinessPartnerCrudTest extends TestCase
     public function test_non_admin_cannot_create_partner()
     {
         // Mock non-admin who does not have manage-partners permission
-        $this->mockAuthService('Employee', ['view-partners']);
+        $this->mockAuthService('Employee', ['crms.partners.view']);
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer some-token',

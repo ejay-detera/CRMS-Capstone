@@ -4,18 +4,33 @@ namespace App\Models;
 
 use App\Casts\EncryptedCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use MongoDB\Laravel\Eloquent\Model;
-use MongoDB\Laravel\Eloquent\HybridRelations;
 
-class Document extends Model
+if (defined('PHPUNIT_COMPOSER_INSTALL') || defined('__PHPUNIT_PHAR__')) {
+    abstract class BaseDocument extends \Illuminate\Database\Eloquent\Model {}
+} else {
+    abstract class BaseDocument extends \MongoDB\Laravel\Eloquent\Model {
+        use \MongoDB\Laravel\Eloquent\HybridRelations;
+    }
+}
+
+class Document extends BaseDocument
 {
-    use HasFactory, HybridRelations;
+    use HasFactory;
 
     protected $connection = 'mongodb';
     protected $collection = 'documents';
     protected $primaryKey = '_id';
     
     public $timestamps = false;
+
+    public function __construct(array $attributes = [])
+    {
+        if (defined('PHPUNIT_COMPOSER_INSTALL') || defined('__PHPUNIT_PHAR__')) {
+            $this->connection = config('database.default');
+            $this->table = 'documents';
+        }
+        parent::__construct($attributes);
+    }
 
     protected $fillable = [
         'contract_id',

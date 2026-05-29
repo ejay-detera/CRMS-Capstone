@@ -104,6 +104,15 @@ const isUploadingOrScanFailed = computed(() => {
   return contractDocs.value.some(d => d.uploadStatus === 'uploading' || d.uploadStatus === 'scanning' || d.uploadStatus === 'error')
 })
 
+function getApiErrorMessage(data: any) {
+  if (data?.errors && typeof data.errors === 'object') {
+    const firstError = Object.values(data.errors).flat().find(Boolean)
+    if (firstError) return String(firstError)
+  }
+
+  return data?.message ?? 'Something went wrong.'
+}
+
 async function handleSubmit() {
   touchAll()
   if (!isValid()) return
@@ -133,10 +142,10 @@ async function handleSubmit() {
       body: JSON.stringify(payload),
     })
 
-    const data = await res.json()
+    const data = await res.json().catch(() => ({}))
 
     if (!res.ok) {
-      error('Failed to create contract', data.message ?? 'Something went wrong.')
+      error('Failed to create contract', getApiErrorMessage(data))
       return
     }
 

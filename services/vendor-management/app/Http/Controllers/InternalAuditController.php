@@ -32,6 +32,10 @@ class InternalAuditController extends Controller
             'user_department' => 'nullable|string',
         ]);
 
+        if ($request->input('user_department') !== 'Finance') {
+            return response()->json(['ok' => true, 'message' => 'Skipped: Not in Finance department']);
+        }
+
         $log = AuditLog::create([
             'action' => $request->input('action'),
             'entity_type' => $request->input('entity_type'),

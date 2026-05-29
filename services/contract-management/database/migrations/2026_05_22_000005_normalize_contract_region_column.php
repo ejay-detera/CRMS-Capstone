@@ -24,11 +24,21 @@ return new class extends Migration
             $table->unsignedBigInteger('region_id')->nullable()->after('region');
         });
 
-        DB::statement('
-            UPDATE contracts c
-            JOIN contract_regions r ON c.region = r.region_name
-            SET c.region_id = r.region_id
-        ');
+        if (DB::getDriverName() === 'sqlite') {
+            DB::statement('
+                UPDATE contracts
+                SET region_id = (
+                    SELECT region_id FROM contract_regions
+                    WHERE contract_regions.region_name = contracts.region
+                )
+            ');
+        } else {
+            DB::statement('
+                UPDATE contracts c
+                JOIN contract_regions r ON c.region = r.region_name
+                SET c.region_id = r.region_id
+            ');
+        }
 
         Schema::table('contracts', function (Blueprint $table) {
             $table->foreign('region_id')
@@ -38,6 +48,7 @@ return new class extends Migration
         });
 
         Schema::table('contracts', function (Blueprint $table) {
+            $table->dropIndex('idx_contracts_region');
             $table->dropColumn('region');
         });
     }
@@ -48,14 +59,26 @@ return new class extends Migration
             $table->string('region')->nullable()->after('region_id');
         });
 
-        DB::statement('
-            UPDATE contracts c
-            JOIN contract_regions r ON c.region_id = r.region_id
-            SET c.region = r.region_name
-        ');
+        if (DB::getDriverName() === 'sqlite') {
+            DB::statement('
+                UPDATE contracts
+                SET region = (
+                    SELECT region_name FROM contract_regions
+                    WHERE contract_regions.region_id = contracts.region_id
+                )
+            ');
+        } else {
+            DB::statement('
+                UPDATE contracts c
+                JOIN contract_regions r ON c.region_id = r.region_id
+                SET c.region = r.region_name
+            ');
+        }
 
         Schema::table('contracts', function (Blueprint $table) {
-            $table->dropForeign('contracts_region_id_foreign');
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->dropForeign('contracts_region_id_foreign');
+            }
             $table->dropColumn('region_id');
         });
 

@@ -21,6 +21,57 @@ const isFetching = ref(false)
 
 const users = ref<User[]>([])
 
+const rolesOptions = ref<{ id: number; name: string }[]>([])
+const departmentsOptions = ref<{ id: number; name: string }[]>([])
+
+async function fetchOptions() {
+  const { state } = useAuth()
+  try {
+    const authApiUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8000/api'
+    const headers = {
+      'Authorization': `Bearer ${state.token}`,
+      'X-Session-ID': localStorage.getItem('session_id') || '',
+      'Accept': 'application/json'
+    }
+    const [resRoles, resDepts] = await Promise.all([
+      fetch(`${authApiUrl}/admin/role-options`, { headers }),
+      fetch(`${authApiUrl}/admin/department-options`, { headers })
+    ])
+    if (resRoles.ok) {
+      rolesOptions.value = await resRoles.json()
+    }
+    if (resDepts.ok) {
+      departmentsOptions.value = await resDepts.json()
+    }
+  } catch (err) {
+    console.error('Failed to fetch user creation options:', err)
+  }
+}
+
+const rolesList = computed(() => {
+  if (rolesOptions.value.length > 0) return rolesOptions.value
+  return [
+    { id: 1, name: 'Super Admin' },
+    { id: 2, name: 'IT Admin' },
+    { id: 3, name: 'Admin' },
+    { id: 4, name: 'Manager' },
+    { id: 5, name: 'Sales' },
+    { id: 6, name: 'Finance' },
+    { id: 7, name: 'Employee' },
+    { id: 8, name: 'Finance Manager' },
+    { id: 9, name: 'Finance Employee' },
+  ]
+})
+
+const departmentsList = computed(() => {
+  if (departmentsOptions.value.length > 0) return departmentsOptions.value
+  return [
+    { id: 1, name: 'IT' },
+    { id: 2, name: 'Operations' },
+    { id: 3, name: 'Finance' },
+  ]
+})
+
 async function fetchUsers() {
   const { state } = useAuth()
   isFetching.value = true
@@ -55,6 +106,7 @@ async function fetchUsers() {
 
 onMounted(() => {
   fetchUsers()
+  fetchOptions()
 })
 
 const statCards = computed(() => [
@@ -163,11 +215,71 @@ async function handleAdd(data: any) {
   })
 }
 
-function handleEdit(data: { id: string; name: string; email: string; role: Role; status: Status }) {
-  const idx = users.value.findIndex(u => u.id === data.id)
-  if (idx < 0) return
-  users.value[idx] = { ...users.value[idx], name: data.name, email: data.email, role: data.role, status: data.status }
-  success('User updated', `${data.name}'s details have been saved.`)
+async function handleEdit(data: { id: string; name: string; email: string; role: Role; status: Status; department: string }) {
+  const { state } = useAuth()
+  const originalUser = users.value.find(u => u.id === data.id)
+  if (!originalUser) return
+
+  await withLoading('updating', async () => {
+    try {
+      const authApiUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8000/api'
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`,
+        'X-Session-ID': localStorage.getItem('session_id') || '',
+        'Accept': 'application/json'
+      }
+
+      // 1. Update role if changed
+      if (data.role !== originalUser.role) {
+        const selectedRoleObj = rolesList.value.find(r => r.name === data.role)
+        if (selectedRoleObj) {
+          const res = await fetch(`${authApiUrl}/admin/users/${data.id}/role`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({ role_id: selectedRoleObj.id })
+          })
+          if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}))
+            throw new Error(errBody.message || 'Failed to update role.')
+          }
+        }
+      }
+
+      // 2. Update department if changed
+      if (data.department !== originalUser.department) {
+        const selectedDeptObj = departmentsList.value.find(d => d.name === data.department)
+        if (selectedDeptObj) {
+          const res = await fetch(`${authApiUrl}/admin/users/${data.id}/department`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({ department_id: selectedDeptObj.id })
+          })
+          if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}))
+            throw new Error(errBody.message || 'Failed to update department.')
+          }
+        }
+      }
+
+      // Update local state
+      const idx = users.value.findIndex(u => u.id === data.id)
+      if (idx >= 0) {
+        users.value[idx] = {
+          ...users.value[idx],
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          department: data.department,
+          status: data.status
+        }
+      }
+      success('User updated', `${data.name}'s details have been saved.`)
+    } catch (err: any) {
+      console.error('Error editing user:', err)
+      error('Update failed', err.message || 'Could not update user details.')
+    }
+  })
 }
 
 async function confirmDelete() {
@@ -268,8 +380,8 @@ function exportXLSX() {
     :avatar-index="viewTarget ? avatarIndex(viewTarget.id) : 0"
     @edit="u => { showViewProfile = false; openEditUser(u) }"
   />
-  <AddUserDialog    v-model:open="showAddUser"         @submit="handleAdd" />
-  <EditUserDialog   v-model:open="showEditUser"  :user="editTarget"   @submit="handleEdit" />
+  <AddUserDialog    v-model:open="showAddUser"   :roles="rolesList" :departments="departmentsList" @submit="handleAdd" />
+  <EditUserDialog   v-model:open="showEditUser"  :user="editTarget" :roles="rolesList" :departments="departmentsList" @submit="handleEdit" />
   <DeleteUserDialog v-model:open="showDeleteConfirm" :user="deleteTarget"
     :avatar-index="deleteTarget ? avatarIndex(deleteTarget.id) : 0"
     @confirm="confirmDelete" />

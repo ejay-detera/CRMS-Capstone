@@ -6,10 +6,15 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { User, Role, Status } from '@/types/user'
 
-const props = defineProps<{ open: boolean; user: User | null }>()
+const props = defineProps<{
+  open: boolean;
+  user: User | null;
+  roles?: { id: number; name: string }[];
+  departments?: { id: number; name: string }[];
+}>()
 const emit  = defineEmits<{
   'update:open': [v: boolean]
-  submit: [data: { id: string; name: string; email: string; role: Role; status: Status }]
+  submit: [data: { id: string; name: string; email: string; role: Role; status: Status; department: string }]
 }>()
 
 const form = reactive({
@@ -39,7 +44,7 @@ watch(() => props.user, user => {
     email:      user.email,
     role:       user.role,
     status:     user.status,
-    department: 'Sales Department',
+    department: user.department || '',
   })
   Object.assign(touched, { firstName: false, lastName: false, email: false })
 })
@@ -48,7 +53,14 @@ function submit() {
   Object.assign(touched, { firstName: true, lastName: true, email: true })
   if (!form.firstName || !form.lastName || !form.email || !emailValid.value || !form.role || !form.status) return
   const fullName = [form.firstName, form.middleName, form.lastName].filter(Boolean).join(' ')
-  emit('submit', { id: form.id, name: fullName, email: form.email, role: form.role as Role, status: form.status as Status })
+  emit('submit', {
+    id: form.id,
+    name: fullName,
+    email: form.email,
+    role: form.role as Role,
+    status: form.status as Status,
+    department: form.department,
+  })
   emit('update:open', false)
 }
 </script>
@@ -117,9 +129,7 @@ function submit() {
             <Select v-model="form.role">
               <SelectTrigger class="h-9 rounded-md border-black/12 text-sm"><SelectValue placeholder="Select role" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="Admin">Admin</SelectItem>
-                <SelectItem value="Manager">Manager</SelectItem>
-                <SelectItem value="Sales">Sales</SelectItem>
+                <SelectItem v-for="r in roles" :key="r.id" :value="r.name">{{ r.name }}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -140,7 +150,7 @@ function submit() {
           <Select v-model="form.department">
             <SelectTrigger class="h-9 rounded-md border-black/12 text-sm"><SelectValue placeholder="Select department" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="Sales Department">Sales Department</SelectItem>
+              <SelectItem v-for="d in departments" :key="d.id" :value="d.name">{{ d.name }}</SelectItem>
             </SelectContent>
           </Select>
         </div>

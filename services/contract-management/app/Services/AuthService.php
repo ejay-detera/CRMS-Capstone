@@ -12,7 +12,7 @@ class AuthService
 
     public function __construct()
     {
-        $this->baseUrl = config('services.auth.url', env('AUTH_SERVICE_URL', 'http://auth-service:8000/api'));
+        $this->baseUrl = config('services.auth.url', env('AUTH_SERVICE_URL', 'http://shared-nginx-proxy:5173/api'));
     }
 
     /**

@@ -23,7 +23,7 @@ class HasPermission
     {
         $permissions = $request->get('auth_permissions', []);
 
-        if (!$this->hasPermission($permissions, $permission)) {
+        if (!in_array($permission, $permissions)) {
             // Log permission denial
             $userId = $request->get('auth_id');
             $this->auditLogService->log(
@@ -41,61 +41,6 @@ class HasPermission
         }
 
         return $next($request);
-    }
-
-    protected function hasPermission(array $userPermissions, string $requiredPermission): bool
-    {
-        // 1. Direct match
-        if (in_array($requiredPermission, $userPermissions)) {
-            return true;
-        }
-
-        // 2. Resolve requiredPermission alternatives
-        $alts = $this->getAlternatives($requiredPermission);
-        foreach ($alts as $alt) {
-            if (in_array($alt, $userPermissions)) {
-                return true;
-            }
-        }
-
-        // 3. Resolve userPermissions alternatives
-        foreach ($userPermissions as $userPerm) {
-            $userAlts = $this->getAlternatives($userPerm);
-            if (in_array($requiredPermission, $userAlts)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    protected function getAlternatives(string $permission): array
-    {
-        $alts = [];
-
-        // Match dot format: crms.resource.action
-        if (preg_match('/^crms\.([^.]+)\.([^.]+)$/', $permission, $matches)) {
-            $resource = $matches[1];
-            $action = $matches[2];
-            $alts[] = "{$action}-{$resource}";      // view-partners
-            $alts[] = "{$resource}.{$action}";      // partners.view
-            $alts[] = "{$action}_{$resource}";      // view_partners
-            $alts[] = "{$resource}-{$action}";      // partners-view
-            $alts[] = "{$action} {$resource}";      // view partners
-        }
-
-        // Match dash format: action-resource (e.g. view-partners, view-contracts, view-suppliers)
-        if (preg_match('/^([^-]+)-(.+)$/', $permission, $matches)) {
-            $action = $matches[1];
-            $resource = $matches[2];
-            $alts[] = "crms.{$resource}.{$action}";
-            $alts[] = "{$resource}.{$action}";
-            $alts[] = "{$action}_{$resource}";
-            $alts[] = "{$resource}-{$action}";
-            $alts[] = "{$action} {$resource}";
-        }
-
-        return $alts;
     }
 }
 

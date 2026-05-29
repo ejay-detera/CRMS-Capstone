@@ -8,6 +8,8 @@ use Tests\TestCase;
 
 class AuthCommunicationTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_it_communicates_with_auth_service_and_enforces_contract_permissions()
     {
         \Illuminate\Support\Facades\Cache::store('file')->flush();
@@ -19,7 +21,8 @@ class AuthCommunicationTest extends TestCase
                     'id' => 1,
                     'email' => 'manager@example.com',
                     'role' => 'Manager',
-                    'permissions' => ['view-contracts']
+                    'permissions' => ['crms.contracts.view'],
+                    'department' => 'Finance'
                 ]
             ], 200)
         ]);
@@ -66,7 +69,8 @@ class AuthCommunicationTest extends TestCase
                     'id' => 2,
                     'email' => 'sales@example.com',
                     'role' => 'Sales',
-                    'permissions' => [] // No permissions
+                    'permissions' => [], // No permissions
+                    'department' => 'Finance'
                 ]
             ], 200)
         ]);
