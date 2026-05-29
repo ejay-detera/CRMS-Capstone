@@ -1,28 +1,41 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { FileText, CheckCircle2, Clock, XCircle } from 'lucide-vue-next'
+import type { Contract } from '@/types/contract'
 
-const stats = [
-  {
-    label: 'Total Contracts', value: '84', change: '+12.5%', positive: true,
-    icon: FileText,    iconBg: 'bg-[#252578]/8',  iconColor: 'text-[#252578]',
-    sub: 'All time',
-  },
-  {
-    label: 'Active', value: '52', change: '+8.3%', positive: true,
-    icon: CheckCircle2, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600',
-    sub: 'Currently running',
-  },
-  {
-    label: 'Expiring Soon', value: '11', change: '+22.2%', positive: false,
-    icon: Clock,     iconBg: 'bg-amber-50',     iconColor: 'text-amber-600',
-    sub: 'Within 30 days',
-  },
-  {
-    label: 'Expired', value: '21', change: '-5.0%', positive: true,
-    icon: XCircle,   iconBg: 'bg-red-50',       iconColor: 'text-red-500',
-    sub: 'Past end date',
-  },
-]
+const props = defineProps<{
+  contracts: (Contract & { days: number })[]
+}>()
+
+const stats = computed(() => {
+  const total = props.contracts.length
+  const active = props.contracts.filter(c => c.days > 30).length
+  const expiring = props.contracts.filter(c => c.days >= 0 && c.days <= 30).length
+  const expired = props.contracts.filter(c => c.days < 0).length
+
+  return [
+    {
+      label: 'Total Contracts', value: String(total), change: '+12.5%', positive: true,
+      icon: FileText,    iconBg: 'bg-[#252578]/8',  iconColor: 'text-[#252578]',
+      sub: 'All time',
+    },
+    {
+      label: 'Active', value: String(active), change: '+8.3%', positive: true,
+      icon: CheckCircle2, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600',
+      sub: 'Currently running',
+    },
+    {
+      label: 'Expiring Soon', value: String(expiring), change: '+22.2%', positive: false,
+      icon: Clock,     iconBg: 'bg-amber-50',     iconColor: 'text-amber-600',
+      sub: 'Within 30 days',
+    },
+    {
+      label: 'Expired', value: String(expired), change: '-5.0%', positive: true,
+      icon: XCircle,   iconBg: 'bg-red-50',       iconColor: 'text-red-500',
+      sub: 'Past end date',
+    },
+  ]
+})
 </script>
 
 <template>

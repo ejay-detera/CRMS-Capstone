@@ -1,16 +1,35 @@
 <script setup lang="ts">
 import { VisSingleContainer, VisDonut } from '@unovis/vue'
 import { computed } from 'vue'
+import type { Contract } from '@/types/contract'
+
+const props = defineProps<{
+  contracts: Contract[]
+}>()
 
 type StatusItem = { label: string; value: number; color: string }
 
-const data: StatusItem[] = [
-  { label: 'Notarized PDF', value: 19, color: '#252578' },
-  { label: 'Client Review', value: 15, color: '#2E85D8' },
-  { label: 'SBSI Review',   value: 8,  color: '#2F2F73' },
-]
+const data = computed<StatusItem[]>(() => {
+  const counts = {
+    'Notarized PDF': 0,
+    'Client Review': 0,
+    'SBSI Review': 0,
+  }
 
-const total = computed(() => data.reduce((s, d) => s + d.value, 0))
+  props.contracts.forEach(c => {
+    if (c.workflowStatus && c.workflowStatus in counts) {
+      counts[c.workflowStatus as keyof typeof counts]++
+    }
+  })
+
+  return [
+    { label: 'Notarized PDF', value: counts['Notarized PDF'], color: '#252578' },
+    { label: 'Client Review', value: counts['Client Review'], color: '#2E85D8' },
+    { label: 'SBSI Review',   value: counts['SBSI Review'],   color: '#2F2F73' },
+  ]
+})
+
+const total = computed(() => data.value.reduce((s, d) => s + d.value, 0))
 const value = (d: StatusItem) => d.value
 const color = (d: StatusItem) => d.color
 </script>
@@ -43,7 +62,9 @@ const color = (d: StatusItem) => d.color
           </div>
           <div class="flex items-center gap-2">
             <span class="text-xs font-semibold text-black">{{ item.value }}</span>
-            <span class="text-[10px] text-black/30 w-6 text-right">{{ Math.round(item.value / total * 100) }}%</span>
+            <span class="text-[10px] text-black/30 w-6 text-right">
+              {{ total > 0 ? Math.round(item.value / total * 100) : 0 }}%
+            </span>
           </div>
         </div>
       </div>

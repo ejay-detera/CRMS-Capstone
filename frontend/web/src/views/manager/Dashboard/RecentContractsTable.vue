@@ -1,25 +1,33 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight } from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import type { Contract } from '@/types/contract'
+import { fmtDate, workflowStatusBadge, approvalStatusBadge } from '@/types/contract'
 
 const router = useRouter()
 
-type Status = 'Notarized PDF' | 'Client Review' | 'SBSI Review'
+const props = defineProps<{
+  contracts: Contract[]
+}>()
 
-const contracts = [
-  { id: 'CNT-2025-001', partner: 'Philippine National Bank', category: 'Service Agreement',    status: 'Notarized PDF' as Status, endDate: 'Dec 15, 2025' },
-  { id: 'CNT-2025-002', partner: 'Meralco',                  category: 'Equip. Maintenance',   status: 'Client Review' as Status, endDate: 'Nov 30, 2025' },
-  { id: 'CNT-2025-003', partner: 'SM Prime Holdings',        category: 'Equipment Lease',      status: 'SBSI Review'   as Status, endDate: 'Jan 10, 2026' },
-  { id: 'CNT-2025-004', partner: 'Jollibee Foods Corp.',     category: 'Supply Contract',      status: 'Notarized PDF' as Status, endDate: 'Mar 22, 2026' },
-  { id: 'CNT-2025-005', partner: 'Ayala Corporation',        category: 'Partnership Agreement', status: 'Client Review' as Status, endDate: 'Feb 14, 2026' },
-]
+const recentContracts = computed(() => {
+  return props.contracts.slice(0, 5)
+})
 
-const statusBadge: Record<Status, string> = {
-  'Notarized PDF': 'bg-black/5 text-black/55 border-black/10',
-  'Client Review': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  'SBSI Review':   'bg-red-50 text-red-600 border-red-200',
+function getStatusDisplay(c: Contract) {
+  if (c.workflowStatus) {
+    return {
+      text: c.workflowStatus,
+      class: workflowStatusBadge[c.workflowStatus] || 'bg-black/5 text-black/50 border-black/10'
+    }
+  }
+  return {
+    text: c.approvalStatus,
+    class: approvalStatusBadge[c.approvalStatus] || 'bg-black/5 text-black/50 border-black/10'
+  }
 }
 </script>
 
@@ -28,7 +36,7 @@ const statusBadge: Record<Status, string> = {
     <div class="px-6 pt-5 pb-4 border-b border-black/5 flex items-center justify-between">
       <h3 class="text-sm font-semibold text-black">
         Recent Contracts
-        <span class="text-black/30 font-normal">({{ contracts.length }})</span>
+        <span class="text-black/30 font-normal">({{ recentContracts.length }})</span>
       </h3>
       <button
         @click="router.push('/manager/contracts')"
@@ -38,7 +46,10 @@ const statusBadge: Record<Status, string> = {
       </button>
     </div>
 
-    <Table>
+    <div v-if="recentContracts.length === 0" class="p-8 text-center text-sm text-black/40">
+      No contracts found.
+    </div>
+    <Table v-else>
       <TableHeader class="bg-black/1.8">
         <TableRow class="border-b border-black/4 hover:bg-transparent">
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider pl-6 py-3">Contract</TableHead>
@@ -49,22 +60,22 @@ const statusBadge: Record<Status, string> = {
       </TableHeader>
       <TableBody>
         <TableRow
-          v-for="c in contracts"
+          v-for="c in recentContracts"
           :key="c.id"
           class="border-b border-black/4 last:border-0 hover:bg-black/1.2 transition-colors cursor-pointer"
           @click="router.push('/manager/contracts/' + c.id)"
         >
           <TableCell class="pl-6 py-3.5">
-            <p class="text-sm font-medium text-black leading-snug">{{ c.partner }}</p>
+            <p class="text-sm font-medium text-black leading-snug">{{ c.businessPartner }}</p>
             <p class="text-[11px] font-mono text-black/35 mt-0.5">{{ c.id }}</p>
           </TableCell>
           <TableCell class="py-3.5 text-sm text-black/50">{{ c.category }}</TableCell>
           <TableCell class="py-3.5">
-            <Badge variant="outline" class="text-xs font-medium rounded-full px-2.5 py-0.5" :class="statusBadge[c.status]">
-              {{ c.status }}
+            <Badge variant="outline" class="text-xs font-medium rounded-full px-2.5 py-0.5" :class="getStatusDisplay(c).class">
+              {{ getStatusDisplay(c).text }}
             </Badge>
           </TableCell>
-          <TableCell class="py-3.5 text-sm text-black/50">{{ c.endDate }}</TableCell>
+          <TableCell class="py-3.5 text-sm text-black/50">{{ fmtDate(c.endDate) }}</TableCell>
         </TableRow>
       </TableBody>
     </Table>

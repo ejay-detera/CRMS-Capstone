@@ -1,17 +1,40 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { VisXYContainer, VisGroupedBar, VisAxis } from '@unovis/vue'
+import type { Contract } from '@/types/contract'
+
+const props = defineProps<{
+  contracts: Contract[]
+}>()
 
 type RegionData    = { region: string; luzon: number; visayas: number; mindanao: number }
 type RegionFilter  = 'All' | 'Luzon' | 'Visayas' | 'Mindanao'
 
-const allData: RegionData[] = [
-  { region: 'Service Agreement',   luzon: 14, visayas: 8, mindanao: 5 },
-  { region: 'Supply Contract',     luzon: 10, visayas: 7, mindanao: 4 },
-  { region: 'Equip. Maintenance', luzon: 8,  visayas: 5, mindanao: 3 },
-  { region: 'Equipment Lease',     luzon: 5,  visayas: 4, mindanao: 4 },
-  { region: 'Partnership',         luzon: 3,  visayas: 3, mindanao: 3 },
-]
+const allData = computed<RegionData[]>(() => {
+  // Get unique categories (limit to top 5 categories)
+  const categories = Array.from(new Set(props.contracts.map(c => c.category || 'Other'))).slice(0, 5)
+  
+  if (categories.length === 0) {
+    return [
+      { region: 'Service Agreement', luzon: 0, visayas: 0, mindanao: 0 },
+      { region: 'Supply Contract',     luzon: 0, visayas: 0, mindanao: 0 },
+    ]
+  }
+
+  return categories.map(cat => {
+    const catContracts = props.contracts.filter(c => (c.category || 'Other') === cat)
+    const luzon = catContracts.filter(c => c.region === 'Luzon').length
+    const visayas = catContracts.filter(c => c.region === 'Visayas').length
+    const mindanao = catContracts.filter(c => c.region === 'Mindanao').length
+    
+    return {
+      region: cat,
+      luzon,
+      visayas,
+      mindanao
+    }
+  })
+})
 
 const regionFilter = ref<RegionFilter>('All')
 
@@ -48,7 +71,7 @@ const subtitle = computed(() =>
 )
 
 const x = (_: RegionData, i: number) => i
-const xTickFormat = (i: number) => allData[Math.round(i)]?.region ?? ''
+const xTickFormat = (i: number) => allData.value[Math.round(i)]?.region ?? ''
 </script>
 
 <template>

@@ -1,16 +1,21 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Clock, ArrowRight } from 'lucide-vue-next'
+import type { Contract } from '@/types/contract'
 
 const router = useRouter()
 
-const contracts = [
-  { id: 'CNT-2024-089', partner: 'Bio-Tech Logistics',    category: 'Supply Contract',      daysLeft: 5  },
-  { id: 'CNT-2024-112', partner: 'Stellar Lab Equipment', category: 'Equip. Maintenance',   daysLeft: 10 },
-  { id: 'CNT-2024-134', partner: 'BioGenesis Research',   category: 'Partnership Agreement', daysLeft: 13 },
-  { id: 'CNT-2024-201', partner: 'MedTech Solutions',     category: 'Service Agreement',    daysLeft: 18 },
-  { id: 'CNT-2024-256', partner: 'Global Pharma Inc.',    category: 'Equipment Lease',      daysLeft: 26 },
-]
+const props = defineProps<{
+  contracts: (Contract & { days: number })[]
+}>()
+
+const expiringContracts = computed(() => {
+  return props.contracts
+    .filter(c => c.days >= 0 && c.days <= 30)
+    .sort((a, b) => a.days - b.days)
+    .slice(0, 5)
+})
 
 function cls(days: number) {
   if (days <= 7)  return { dot: 'bg-red-500',   badge: 'bg-red-50 text-red-600 border-red-200',     bar: 'bg-red-500'   }
@@ -18,7 +23,7 @@ function cls(days: number) {
   return               { dot: 'bg-[#2E85D8]', badge: 'bg-[#2E85D8]/8 text-[#2E85D8] border-[#2E85D8]/20', bar: 'bg-[#2E85D8]' }
 }
 
-const urgentCount = contracts.filter(c => c.daysLeft <= 14).length
+const urgentCount = computed(() => expiringContracts.value.filter(c => c.days <= 14).length)
 </script>
 
 <template>
@@ -39,35 +44,38 @@ const urgentCount = contracts.filter(c => c.daysLeft <= 14).length
       </button>
     </div>
 
-    <div class="divide-y divide-black/4">
+    <div v-if="expiringContracts.length === 0" class="p-8 text-center text-sm text-black/40">
+      No expiring contracts.
+    </div>
+    <div v-else class="divide-y divide-black/4">
       <div
-        v-for="c in contracts"
+        v-for="c in expiringContracts"
         :key="c.id"
         class="px-6 py-3.5 hover:bg-black/1.2 transition-colors cursor-pointer"
         @click="router.push('/manager/contracts/' + c.id)"
       >
         <div class="flex items-start gap-3">
-          <div class="w-2 h-2 rounded-full shrink-0 mt-1.5" :class="cls(c.daysLeft).dot" />
+          <div class="w-2 h-2 rounded-full shrink-0 mt-1.5" :class="cls(c.days).dot" />
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
-                <p class="text-sm font-medium text-black truncate">{{ c.partner }}</p>
+                <p class="text-sm font-medium text-black truncate">{{ c.businessPartner }}</p>
                 <p class="text-[11px] text-black/35 mt-0.5">{{ c.category }}</p>
               </div>
               <span
                 class="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border shrink-0"
-                :class="cls(c.daysLeft).badge"
+                :class="cls(c.days).badge"
               >
                 <Clock class="w-3 h-3" />
-                {{ c.daysLeft }}d
+                {{ c.days }}d
               </span>
             </div>
             <!-- Progress bar -->
             <div class="mt-2 h-1 rounded-full bg-black/6 overflow-hidden">
               <div
                 class="h-full rounded-full transition-all"
-                :class="cls(c.daysLeft).bar"
-                :style="{ width: `${Math.min(100, Math.round((30 - c.daysLeft) / 30 * 100))}%` }"
+                :class="cls(c.days).bar"
+                :style="{ width: `${Math.min(100, Math.round((30 - c.days) / 30 * 100))}%` }"
               />
             </div>
           </div>

@@ -1,29 +1,45 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { VisXYContainer, VisStackedBar, VisAxis, VisTooltip, VisCrosshair } from '@unovis/vue'
+import type { Contract } from '@/types/contract'
 
-type MonthData = { month: string; count: number }
+const props = defineProps<{
+  contracts: Contract[]
+}>()
+
+type MonthData = { month: string; count: number; yearMonth: string }
 type Range = '6M' | '10M' | '12M'
-
-const allData: MonthData[] = [
-  { month: 'Jun', count: 7  },
-  { month: 'Jul', count: 12 },
-  { month: 'Aug', count: 6  },
-  { month: 'Sep', count: 9  },
-  { month: 'Oct', count: 13 },
-  { month: 'Nov', count: 8  },
-  { month: 'Dec', count: 11 },
-  { month: 'Jan', count: 15 },
-  { month: 'Feb', count: 10 },
-  { month: 'Mar', count: 18 },
-  { month: 'Apr', count: 14 },
-  { month: 'May', count: 16 },
-]
 
 const range = ref<Range>('10M')
 const rangeMap: Record<Range, number> = { '6M': 6, '10M': 10, '12M': 12 }
 
-const data = computed(() => allData.slice(-rangeMap[range.value]))
+const trendData = computed<MonthData[]>(() => {
+  const months: MonthData[] = []
+  const today = new Date()
+  
+  // Generate the last 12 months in chronological order
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
+    const label = d.toLocaleString('en-US', { month: 'short' })
+    const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    months.push({ month: label, count: 0, yearMonth })
+  }
+
+  // Populate counts from contracts
+  props.contracts.forEach(c => {
+    if (!c.startDate) return
+    const cDate = new Date(c.startDate)
+    const ym = `${cDate.getFullYear()}-${String(cDate.getMonth() + 1).padStart(2, '0')}`
+    const found = months.find(m => m.yearMonth === ym)
+    if (found) {
+      found.count++
+    }
+  })
+
+  return months
+})
+
+const data = computed(() => trendData.value.slice(-rangeMap[range.value]))
 
 const x = (_: MonthData, i: number) => i
 const y = (d: MonthData) => d.count

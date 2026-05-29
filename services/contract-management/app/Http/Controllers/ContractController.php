@@ -384,16 +384,20 @@ class ContractController extends Controller
 
     public function dashboardSummary(Request $request)
     {
-        $contracts = Contract::with([
+        $query = Contract::with([
             'documents',
             'category',
             'approvalStatus',
             'workflowStatus',
             'region',
-        ])
-        ->where('created_by', $request->get('auth_id'))
-        ->orderByDesc('created_at')
-        ->get();
+        ]);
+
+        $role = $request->get('auth_role');
+        if (in_array($role, ['Sales', 'Finance Employee'])) {
+            $query->where('created_by', $request->get('auth_id'));
+        }
+
+        $contracts = $query->orderByDesc('created_at')->get();
 
         return response()->json([
             'data' => $contracts->map(fn ($c) => $this->formatContract($c))->values(),

@@ -22,6 +22,8 @@ const dateFilter   = ref('')
 const currentPage  = ref(1)
 const PAGE_SIZE    = 10
 
+const contractApiUrl = import.meta.env.VITE_CONTRACT_API_URL || 'http://localhost:8002/api'
+
 async function fetchAuditLogs() {
   const { state } = useAuth()
   if (!state.token) return
@@ -42,7 +44,7 @@ async function fetchAuditLogs() {
       params.append('search', searchQuery.value.trim())
     }
 
-    const res = await fetch(`http://localhost:8002/api/audit-logs?${params.toString()}`, {
+    const res = await fetch(`${contractApiUrl}/audit-logs?${params.toString()}`, {
       headers: {
         'Authorization': `Bearer ${state.token}`,
         'X-Session-ID': localStorage.getItem('session_id') || '',
@@ -113,7 +115,7 @@ async function exportXLSX() {
       params.append('search', searchQuery.value.trim())
     }
 
-    const res = await fetch(`http://localhost:8002/api/audit-logs?${params.toString()}`, {
+    const res = await fetch(`${contractApiUrl}/audit-logs?${params.toString()}`, {
       headers: {
         'Authorization': `Bearer ${state.token}`,
         'X-Session-ID': localStorage.getItem('session_id') || '',

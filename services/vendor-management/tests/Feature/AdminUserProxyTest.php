@@ -20,8 +20,8 @@ class AdminUserProxyTest extends TestCase
             ]),
             // Mock fetching roles
             'http://auth-service:8000/api/admin/role-options' => Http::response([
-                ['id' => 10, 'name' => 'Employee'],
-                ['id' => 11, 'name' => 'Manager']
+                ['id' => 10, 'name' => 'Finance Employee'],
+                ['id' => 11, 'name' => 'Finance Manager']
             ]),
             // Mock fetching departments
             'http://auth-service:8000/api/admin/department-options' => Http::response([
