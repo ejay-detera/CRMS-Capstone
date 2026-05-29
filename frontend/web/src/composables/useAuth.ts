@@ -155,25 +155,32 @@ export function useAuth() {
 
   const logout = async () => {
     const token = state.token
+    const sessionId = localStorage.getItem('session_id')
 
     // 1. Fire the logout API call FIRST — before clearing state or redirecting.
     //    The previous pattern (redirect → fetch) caused the browser to cancel the
     //    in-flight request the moment window.location.href changed, so the auth
     //    service never received the logout event and no audit log was written.
-    if (token) {
-      try {
-        await fetch('/api/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-          },
-          // keepalive: true tells the browser to let this request outlive the page
-          keepalive: true,
-        })
-      } catch (e) {
-        console.error('Logout API call failed', e)
+    try {
+      const headers: Record<string, string> = {
+        'Accept': 'application/json',
       }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+      if (sessionId) {
+        headers['X-Session-ID'] = sessionId
+      }
+
+      await fetch('/api/logout', {
+        method: 'POST',
+        headers,
+        credentials: 'same-origin',
+        // keepalive: true tells the browser to let this request outlive the page
+        keepalive: true,
+      })
+    } catch (e) {
+      console.error('Logout API call failed', e)
     }
 
     // 2. Clear local state after the API call finishes (or errors)
