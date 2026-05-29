@@ -20,7 +20,7 @@ const contracts = computed(() => cacheState.contracts || [])
 const loading   = computed(() => cacheState.contractsLoading)
 
 async function fetchContracts() {
-  if (!authState.token) return
+  if (!authState.user) return
   try {
     await fetchContractsCached(undefined, true) // Force fetch from backend
   } catch (err) {
@@ -84,7 +84,7 @@ const editTarget = ref<Contract | null>(null)
 function openEdit(c: Contract & { days: number }) { editTarget.value = c; showEdit.value = true }
 
 async function handleEdit(data: Omit<Contract, 'id' | 'createdBy'>) {
-  if (!editTarget.value || !authState.token) return
+  if (!editTarget.value || !authState.user) return
   
   // Clean contract ID from the composite key e.g. "CTR-001" or raw integer ID
   const contractId = editTarget.value.id
@@ -96,7 +96,7 @@ async function handleEdit(data: Omit<Contract, 'id' | 'createdBy'>) {
     const res = await fetch(`${apiBase}/contracts/${contractId}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${authState.token}`,
+        'Authorization': `Bearer ${authState.token || ''}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
@@ -116,7 +116,7 @@ async function handleEdit(data: Omit<Contract, 'id' | 'createdBy'>) {
 }
 
 async function handleDelete(id: string) {
-  if (!authState.token) return
+  if (!authState.user) return
   const contract = contracts.value.find(c => c.id === id)
   if (!contract) return
 
@@ -126,7 +126,7 @@ async function handleDelete(id: string) {
     const res = await fetch(`${apiBase}/contracts/${id}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${authState.token}`,
+        'Authorization': `Bearer ${authState.token || ''}`,
         'Accept': 'application/json'
       }
     })

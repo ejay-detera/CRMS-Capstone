@@ -26,7 +26,7 @@ const contractApiUrl = import.meta.env.VITE_CONTRACT_API_URL || 'http://localhos
 
 async function fetchAuditLogs() {
   const { state } = useAuth()
-  if (!state.token) return
+  if (!state.user) return
 
   isFetching.value = true
   try {
@@ -46,7 +46,7 @@ async function fetchAuditLogs() {
 
     const res = await fetch(`${contractApiUrl}/audit-logs?${params.toString()}`, {
       headers: {
-        'Authorization': `Bearer ${state.token}`,
+        'Authorization': `Bearer ${state.token || ''}`,
         'X-Session-ID': localStorage.getItem('session_id') || '',
         'Accept': 'application/json'
       }
@@ -98,7 +98,7 @@ watch(currentPage, () => {
 
 async function exportXLSX() {
   const { state } = useAuth()
-  if (!state.token) return
+  if (!state.user) return
 
   try {
     const params = new URLSearchParams()
@@ -117,7 +117,7 @@ async function exportXLSX() {
 
     const res = await fetch(`${contractApiUrl}/audit-logs?${params.toString()}`, {
       headers: {
-        'Authorization': `Bearer ${state.token}`,
+        'Authorization': `Bearer ${state.token || ''}`,
         'X-Session-ID': localStorage.getItem('session_id') || '',
         'Accept': 'application/json'
       }

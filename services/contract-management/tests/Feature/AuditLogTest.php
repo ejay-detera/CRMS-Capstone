@@ -62,18 +62,37 @@ class AuditLogTest extends TestCase
      */
     public function test_audit_log_aggregator_success()
     {
-        // 1. Seed a local audit log
+        config(['app.internal_service_secret' => 'crms-internal-secret-key-2026']);
+        putenv('INTERNAL_SERVICE_SECRET=crms-internal-secret-key-2026');
+
+        // 1. Seed two local audit logs: one contract event and one login event
         AuditLog::create([
             'action' => 'created',
             'entity_type' => 'Contract',
             'entity_id' => 12,
             'user_id' => 5,
+            'user_name' => 'Jane Doe',
+            'user_email' => 'contractor@sbsi.com',
+            'user_role' => 'Manager',
             'old_data' => null,
             'new_data' => ['title' => 'Important NDA'],
             'performed_at' => now(),
         ]);
 
-        // 2. Mock external requests
+        AuditLog::create([
+            'action' => 'Login Success',
+            'entity_type' => 'Session',
+            'entity_id' => 0,
+            'user_id' => 5,
+            'user_name' => 'Jane Doe',
+            'user_email' => 'contractor@sbsi.com',
+            'user_role' => 'Manager',
+            'old_data' => null,
+            'new_data' => ['email' => 'contractor@sbsi.com'],
+            'performed_at' => now(),
+        ]);
+
+        // 2. Mock only the user-mapping call (Step 1 fallback), not the removed remote audit log call
         Http::fake([
             // Mock verify token for aggregator accessor (needs manage-users permission)
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
@@ -86,7 +105,7 @@ class AuditLogTest extends TestCase
                     'department' => 'Finance'
                 ]
             ], 200),
-            // Mock auth users mapping API
+            // Mock auth users mapping API (fallback for user name resolution)
             'http://auth-service:8000/api/admin/users?per_page=100' => Http::response([
                 'data' => [
                     [
@@ -100,22 +119,6 @@ class AuditLogTest extends TestCase
                     ]
                 ]
             ], 200),
-            // Mock remote session logs endpoint
-            'http://auth-service:8000/api/internal/audit-logs' => Http::response([
-                'logs' => [
-                    [
-                        'id' => 201,
-                        'user_id' => 5,
-                        'user_email' => 'contractor@sbsi.com',
-                        'first_name' => 'Jane',
-                        'last_name' => 'Doe',
-                        'action' => 'login',
-                        'description' => 'Logged in',
-                        'ip_address' => '127.0.0.1',
-                        'performed_at' => now()->toIso8601String(),
-                    ]
-                ]
-            ], 200)
         ]);
 
         $response = $this->withHeaders([
@@ -128,13 +131,17 @@ class AuditLogTest extends TestCase
             'data', 'total', 'current_page', 'per_page', 'last_page'
         ]);
 
-        // Verify we merged local and remote logs successfully
+        // Verify we have our two seeded local logs
         $data = $response->json()['data'];
         $this->assertGreaterThanOrEqual(2, count($data));
 
-        // Check source markers
-        $sources = collect($data)->pluck('source')->toArray();
+        // All entries must be from the local CRMS store — no 'auth' source rows
+        $sources = collect($data)->pluck('source')->unique()->toArray();
         $this->assertContains('crms', $sources);
-        $this->assertContains('auth', $sources);
+        $this->assertNotContains('auth', $sources);
+
+        // Verify Login Success entry is present
+        $actions = collect($data)->pluck('action')->toArray();
+        $this->assertContains('Login Success', $actions);
     }
 }

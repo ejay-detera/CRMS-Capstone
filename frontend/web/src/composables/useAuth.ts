@@ -25,7 +25,7 @@ const state = reactive<AuthState>({
 })
 
 export function useAuth() {
-  const isAuthenticated = computed(() => !!state.token)
+  const isAuthenticated = computed(() => !!state.user)
   const user = computed(() => state.user)
   // Safely extract role, handling both direct role property and nested profile.role.name
   const role = computed(() => {
@@ -89,28 +89,27 @@ export function useAuth() {
    * role permissions without requiring a re-login.
    */
   const refreshPermissions = async () => {
-    const token = state.token
-    if (!token) return
+    if (!state.user) return
     try {
       // Fetch /api/user and /api/me/permissions in parallel
       const [userRes, permRes] = await Promise.all([
         fetch(`${AUTH_API}/user`, {
           headers: {
             'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`,
             ...(localStorage.getItem('session_id')
               ? { 'X-Session-ID': localStorage.getItem('session_id') as string }
               : {}),
           },
+          credentials: 'same-origin',
         }),
         fetch(`${AUTH_API}/me/permissions`, {
           headers: {
             'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`,
             ...(localStorage.getItem('session_id')
               ? { 'X-Session-ID': localStorage.getItem('session_id') as string }
               : {}),
           },
+          credentials: 'same-origin',
         })
       ])
 
@@ -157,30 +156,35 @@ export function useAuth() {
   const logout = async () => {
     const token = state.token
 
-    // 1. Clear local state INSTANTLY so the user sees no delay
+    // 1. Fire the logout API call FIRST — before clearing state or redirecting.
+    //    The previous pattern (redirect → fetch) caused the browser to cancel the
+    //    in-flight request the moment window.location.href changed, so the auth
+    //    service never received the logout event and no audit log was written.
+    if (token) {
+      try {
+        await fetch('/api/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+          },
+          // keepalive: true tells the browser to let this request outlive the page
+          keepalive: true,
+        })
+      } catch (e) {
+        console.error('Logout API call failed', e)
+      }
+    }
+
+    // 2. Clear local state after the API call finishes (or errors)
     state.user = null
     state.token = null
     localStorage.removeItem('user')
     localStorage.removeItem('session_id')
     localStorage.removeItem('access_token')
 
-    // 2. Redirect immediately
+    // 3. Redirect to login
     window.location.href = '/'
-
-    // 3. Fire and forget the API call in the background
-    if (token) {
-      try {
-        fetch('/api/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-          }
-        })
-      } catch (e) {
-        console.error('Background API logout failed', e)
-      }
-    }
   }
 
   const hasPermission = (permission: string) => {
