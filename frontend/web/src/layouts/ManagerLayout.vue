@@ -27,6 +27,7 @@ import {
   Search,
   User,
   ChevronDown,
+  AlertTriangle,
 } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
 import { ref, watch, computed, onMounted } from "vue";
@@ -41,7 +42,7 @@ const { logout, hasPermission, refreshPermissions, user } = useAuth();
 // always reflect the latest permissions saved by an admin.
 onMounted(() => refreshPermissions())
 
-const contractPaths = ["/manager/contracts", "/manager/contract-requests"];
+const contractPaths = ["/manager/contracts", "/manager/contract-requests", "/manager/expired-contracts"];
 const contractsOpen = ref(contractPaths.includes(route.path));
 
 watch(() => route.path, path => {
@@ -52,6 +53,9 @@ const contractSubItems = computed(() => {
   const items = [];
   if (hasPermission('crms.contracts.view')) {
     items.push({ title: "All Contracts", url: "/manager/contracts", icon: FileText });
+  }
+  if (hasPermission('crms.contracts.view')) {
+    items.push({ title: "Expired Contracts", url: "/manager/expired-contracts", icon: AlertTriangle });
   }
   if (hasPermission('crms.contracts.create')) {
     items.push({ title: "Contract Requests", url: "/manager/contract-requests", icon: FilePlus2 });

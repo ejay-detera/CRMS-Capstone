@@ -21,6 +21,11 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/admin/Contracts/index.vue'),
       },
       {
+        path: 'expired-contracts',
+        name: 'admin-expired-contracts',
+        component: () => import('@/views/admin/ExpiredContracts/index.vue'),
+      },
+      {
         path: 'contracts/:id',
         name: 'admin-contracts-detail',
         component: () => import('@/views/sales/Contracts/ContractDetail/index.vue'),
@@ -101,6 +106,11 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/sales/Contracts/DocumentViewer.vue'),
       },
       {
+        path: 'expired-contracts',
+        name: 'manager-expired-contracts',
+        component: () => import('@/views/admin/ExpiredContracts/index.vue'),
+      },
+      {
         path: 'contract-requests',
         name: 'manager-contract-requests',
         component: () => import('@/views/manager/ContractRequests/index.vue'),
@@ -159,6 +169,11 @@ const routes: Array<RouteRecordRaw> = [
         path: 'contracts/:id/documents/:docId',
         name: 'sales-contracts-document-view',
         component: () => import('@/views/sales/Contracts/DocumentViewer.vue'),
+      },
+      {
+        path: 'expired-contracts',
+        name: 'sales-expired-contracts',
+        component: () => import('@/views/admin/ExpiredContracts/index.vue'),
       },
       {
         path: 'contract-requests',

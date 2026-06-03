@@ -13,6 +13,9 @@ import {
   Pagination, PaginationContent, PaginationEllipsis,
   PaginationItem, PaginationNext, PaginationPrevious,
 } from '@/components/ui/pagination'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select'
 import { approvalStatusBadge, workflowStatusBadge, fmtDate } from '@/types/contract'
 import type { Contract, StatusFilter } from '@/types/contract'
 
@@ -24,6 +27,8 @@ const props = defineProps<{
   paginated:    ContractWithDays[]
   filtered:     ContractWithDays[]
   statusFilter: StatusFilter
+  categoryFilter: string
+  regionFilter:   string
   searchQuery:  string
   currentPage:  number
   itemsPerPage: number
@@ -31,19 +36,28 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  openDetail:            [c: ContractWithDays]
-  'update:statusFilter': [v: StatusFilter]
-  'update:searchQuery':  [v: string]
-  'update:currentPage':  [v: number]
+  openDetail:              [c: ContractWithDays]
+  'update:statusFilter':   [v: StatusFilter]
+  'update:categoryFilter': [v: string]
+  'update:regionFilter':   [v: string]
+  'update:searchQuery':    [v: string]
+  'update:currentPage':    [v: number]
 }>()
 
 const statusOptions: { label: string; value: StatusFilter }[] = [
-  { label: 'All Status',    value: ''             },
   { label: 'Pending',       value: 'Pending'      },
   { label: 'Rejected',      value: 'Rejected'     },
   { label: 'Notarized',     value: 'Notarized PDF'},
   { label: 'SBSI Review',   value: 'SBSI Review'  },
   { label: 'Client Review', value: 'Client Review'},
+]
+
+const categories = [
+  'Service Agreement',
+  'Supply Contract',
+  'Equipment Maintenance',
+  'Equipment Lease',
+  'Partnership Agreement'
 ]
 
 function daysLabel(days: number) {
@@ -64,19 +78,61 @@ function daysLabel(days: number) {
     </div>
 
     <!-- Filters + search -->
-    <div class="flex items-center justify-between px-6 py-3 border-b border-black/5 gap-4">
-      <!-- Status dropdown -->
-      <select
-        :value="statusFilter"
-        @change="emit('update:statusFilter', ($event.target as HTMLSelectElement).value as StatusFilter)"
-        class="h-9 rounded-lg border border-black/10 bg-white px-3 pr-8 text-sm focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition appearance-none cursor-pointer"
-        :class="statusFilter ? 'text-black border-[#252578]/30' : 'text-black/45'">
-        <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
-          {{ opt.label }}
-        </option>
-      </select>
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-6 py-4 border-b border-black/5 bg-black/[0.005]">
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Category Filter -->
+        <div class="w-44">
+          <Select
+            :model-value="categoryFilter || '__all__'"
+            @update:model-value="(v) => emit('update:categoryFilter', (v as string) === '__all__' ? '' : (v as string))"
+          >
+            <SelectTrigger class="h-9 rounded-md text-sm border-black/10 bg-white text-black/70 focus:ring-[#2E85D8]/15">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">All Categories</SelectItem>
+              <SelectItem v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div class="relative w-56 shrink-0">
+        <!-- Region Filter -->
+        <div class="w-40">
+          <Select
+            :model-value="regionFilter || '__all__'"
+            @update:model-value="(v) => emit('update:regionFilter', (v as string) === '__all__' ? '' : (v as string))"
+          >
+            <SelectTrigger class="h-9 rounded-md text-sm border-black/10 bg-white text-black/70 focus:ring-[#2E85D8]/15">
+              <SelectValue placeholder="All Regions" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">All Regions</SelectItem>
+              <SelectItem value="Luzon">Luzon</SelectItem>
+              <SelectItem value="Visayas">Visayas</SelectItem>
+              <SelectItem value="Mindanao">Mindanao</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="w-44">
+          <Select
+            :model-value="statusFilter || '__all__'"
+            @update:model-value="(v) => emit('update:statusFilter', (v as string) === '__all__' ? '' : (v as StatusFilter))"
+          >
+            <SelectTrigger class="h-9 rounded-md text-sm border-black/10 bg-white text-black/70 focus:ring-[#2E85D8]/15">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">All Status</SelectItem>
+              <SelectItem v-for="opt in statusOptions.filter(o => o.value !== '')" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <!-- Search query input -->
+      <div class="relative w-full lg:w-64">
         <Search class="w-3.5 h-3.5 text-black/30 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input :value="searchQuery"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"

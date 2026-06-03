@@ -1,55 +1,39 @@
 <script setup lang="ts">
-import { Search, MoreHorizontal, Eye, Pencil, Trash2, AlertTriangle, Clock } from 'lucide-vue-next'
+import { Search, Eye, AlertTriangle } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select'
 import {
   Pagination, PaginationContent, PaginationEllipsis,
   PaginationItem, PaginationNext, PaginationPrevious,
 } from '@/components/ui/pagination'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select'
-import { approvalStatusBadge, workflowStatusBadge, fmtDate } from '@/types/contract'
-import type { Contract, FilterTab, StatusFilter } from '@/types/contract'
-
-type ContractWithDays = Contract & { days: number }
+import { workflowStatusBadge, fmtDate, remainingDays } from '@/types/contract'
+import type { Contract } from '@/types/contract'
 
 const props = defineProps<{
-  paginated:      ContractWithDays[]
-  filtered:       ContractWithDays[]
-  activeFilter:   FilterTab
-  searchQuery:    string
-  categoryFilter: string
-  regionFilter:   string
-  statusFilter:   StatusFilter
-  currentPage:    number
-  itemsPerPage:   number
-  loading?:       boolean
+  contracts:            Contract[]
+  total:                number
+  loading:              boolean
+  searchQuery:          string
+  categoryFilter:       string
+  regionFilter:         string
+  workflowStatusFilter: string
+  currentPage:          number
+  itemsPerPage:         number
 }>()
 
 const emit = defineEmits<{
-  openDetail:              [c: ContractWithDays]
-  openEdit:                [c: ContractWithDays]
-  delete:                  [id: string]
-  'update:activeFilter':   [v: FilterTab]
-  'update:searchQuery':    [v: string]
-  'update:categoryFilter': [v: string]
-  'update:regionFilter':   [v: string]
-  'update:statusFilter':   [v: StatusFilter]
-  'update:currentPage':    [v: number]
+  (e: 'openDetail', c: Contract): void
+  (e: 'update:searchQuery', v: string): void
+  (e: 'update:categoryFilter', v: string): void
+  (e: 'update:regionFilter', v: string): void
+  (e: 'update:workflowStatusFilter', v: string): void
+  (e: 'update:currentPage', v: number): void
 }>()
-
-const filterTabs: { label: string; value: FilterTab }[] = [
-  { label: 'All',           value: 'all'      },
-  { label: 'Active',        value: 'active'   },
-  { label: 'Expiring Soon', value: 'expiring' },
-]
 
 const categories = [
   'Service Agreement',
@@ -58,21 +42,6 @@ const categories = [
   'Equipment Lease',
   'Partnership Agreement'
 ]
-
-const statusOptions: { label: string; value: StatusFilter }[] = [
-  { label: 'Pending',       value: 'Pending'      },
-  { label: 'Approved',      value: 'Approved'     },
-  { label: 'Rejected',      value: 'Rejected'     },
-  { label: 'Notarized PDF', value: 'Notarized PDF'},
-  { label: 'SBSI Review',   value: 'SBSI Review'  },
-  { label: 'Client Review', value: 'Client Review'},
-]
-
-function daysLabel(days: number) {
-  if (days < 0)   return { text: 'Expired',       cls: 'text-red-500' }
-  if (days <= 30) return { text: `${days}d left`, cls: 'text-amber-500' }
-  return                 { text: `${days}d left`, cls: 'text-black/45' }
-}
 
 const palette = ['#252578', '#2E85D8', '#2F2F73']
 function initials(name: string) {
@@ -83,33 +52,26 @@ function avatarColor(name: string) {
   for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
   return palette[h % palette.length]
 }
+
+function overdueDaysLabel(endDate: string) {
+  const days = remainingDays(endDate)
+  const absDays = Math.abs(days)
+  return `${absDays} ${absDays === 1 ? 'day' : 'days'} overdue`
+}
 </script>
 
 <template>
   <div class="bg-white rounded-lg border border-black/8 shadow-sm overflow-hidden">
-
     <!-- Section heading -->
     <div class="px-6 pt-5 pb-4 border-b border-black/5">
       <h2 class="text-sm font-semibold text-black">
-        All Contracts <span class="text-black/30 font-normal">({{ loading ? 0 : filtered.length }})</span>
+        Overdue Contracts <span class="text-black/30 font-normal">({{ loading ? 0 : total }})</span>
       </h2>
     </div>
 
-    <!-- Filters + search -->
+    <!-- Filters + Search -->
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-6 py-4 border-b border-black/5 bg-black/[0.005]">
       <div class="flex flex-wrap items-center gap-3">
-        <!-- Tabs -->
-        <div class="flex items-center gap-0.5 bg-black/4 rounded-md p-1">
-          <button v-for="tab in filterTabs" :key="tab.value"
-            @click="emit('update:activeFilter', tab.value)"
-            class="flex items-center gap-1.5 px-4 py-1.5 text-sm rounded transition-all font-medium"
-            :class="activeFilter === tab.value
-              ? 'bg-white text-black shadow-sm'
-              : 'text-black/40 hover:text-black/60'">
-            {{ tab.label }}
-          </button>
-        </div>
-
         <!-- Category Filter -->
         <div class="w-44">
           <Select
@@ -144,18 +106,20 @@ function avatarColor(name: string) {
           </Select>
         </div>
 
-        <!-- Status Filter -->
+        <!-- Workflow Status Filter -->
         <div class="w-44">
           <Select
-            :model-value="statusFilter || '__all__'"
-            @update:model-value="(v) => emit('update:statusFilter', (v as string) === '__all__' ? '' : (v as StatusFilter))"
+            :model-value="workflowStatusFilter || '__all__'"
+            @update:model-value="(v) => emit('update:workflowStatusFilter', (v as string) === '__all__' ? '' : (v as string))"
           >
             <SelectTrigger class="h-9 rounded-md text-sm border-black/10 bg-white text-black/70 focus:ring-[#2E85D8]/15">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">All Status</SelectItem>
-              <SelectItem v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+              <SelectItem value="Notarized PDF">Notarized PDF</SelectItem>
+              <SelectItem value="Client Review">Client Review</SelectItem>
+              <SelectItem value="SBSI Review">SBSI Review</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -164,22 +128,25 @@ function avatarColor(name: string) {
       <!-- Search query input -->
       <div class="relative w-full lg:w-64">
         <Search class="w-3.5 h-3.5 text-black/30 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-        <input :value="searchQuery"
+        <input
+          :value="searchQuery"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"
-          type="text" placeholder="Search contracts..."
-          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
+          type="text"
+          placeholder="Search partner, code..."
+          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition"
+        />
       </div>
     </div>
 
     <!-- Table -->
     <Table>
-      <TableHeader class="bg-black/1.8">
-        <TableRow class="border-b border-black/4 hover:bg-transparent">
+      <TableHeader class="bg-black/[0.018]">
+        <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3 pl-6 w-56">Contract</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Category</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Region</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">End Date</TableHead>
-          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Remaining</TableHead>
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Days Overdue</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Sales Rep</TableHead>
           <TableHead class="w-12 py-3" />
@@ -189,60 +156,44 @@ function avatarColor(name: string) {
       <TableBody>
         <template v-if="loading">
           <TableRow v-for="i in itemsPerPage" :key="i" class="border-b border-black/4 last:border-0">
-            <!-- Contract ID + Partner -->
             <TableCell class="py-4 pl-6">
               <div class="h-4 w-32 bg-black/5 animate-pulse rounded mb-1.5"></div>
               <div class="h-3 w-16 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Category -->
             <TableCell class="py-4">
               <div class="h-4 w-24 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Region -->
             <TableCell class="py-4">
               <div class="h-4 w-16 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- End Date -->
             <TableCell class="py-4">
               <div class="h-4 w-20 bg-black/5 animate-pulse rounded mb-1.5"></div>
               <div class="h-3 w-28 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Remaining Days -->
             <TableCell class="py-4">
               <div class="h-4 w-16 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Status -->
             <TableCell class="py-4">
-              <div class="flex flex-col gap-1">
-                <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
-                <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
-              </div>
+              <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
             </TableCell>
-
-            <!-- Sales Rep -->
             <TableCell class="py-4">
               <div class="flex items-center gap-2">
                 <div class="w-7 h-7 rounded-full bg-black/5 animate-pulse shrink-0"></div>
                 <div class="h-3 w-24 bg-black/5 animate-pulse rounded"></div>
               </div>
             </TableCell>
-
-            <!-- Actions -->
             <TableCell class="py-4 pr-4">
               <div class="h-8 w-8 bg-black/5 animate-pulse rounded ml-auto"></div>
             </TableCell>
           </TableRow>
         </template>
         <template v-else>
-          <TableRow v-for="c in paginated" :key="c.id"
-            class="border-b border-black/4 last:border-0 transition-colors hover:bg-black/1.2 cursor-pointer"
-            @click="emit('openDetail', c)">
-
+          <TableRow
+            v-for="c in contracts"
+            :key="c.id"
+            class="border-b border-black/4 last:border-0 transition-colors hover:bg-black/[0.012] cursor-pointer"
+            @click="emit('openDetail', c)"
+          >
             <!-- Contract ID + Partner -->
             <TableCell class="py-4 pl-6">
               <p class="text-sm font-medium text-black leading-snug">{{ c.businessPartner }}</p>
@@ -261,28 +212,20 @@ function avatarColor(name: string) {
               <p class="text-xs text-black/35 mt-0.5">from {{ fmtDate(c.startDate) }}</p>
             </TableCell>
 
-            <!-- Remaining Days -->
+            <!-- Days Overdue -->
             <TableCell class="py-4">
-              <span class="inline-flex items-center gap-1 text-sm font-medium" :class="daysLabel(c.days).cls">
-                <AlertTriangle v-if="c.days < 0"        class="w-3.5 h-3.5 shrink-0" />
-                <Clock         v-else-if="c.days <= 15" class="w-3.5 h-3.5 shrink-0" />
-                {{ daysLabel(c.days).text }}
+              <span class="inline-flex items-center gap-1 text-sm font-medium text-red-500">
+                <AlertTriangle class="w-3.5 h-3.5 shrink-0" />
+                {{ overdueDaysLabel(c.endDate) }}
               </span>
             </TableCell>
 
             <!-- Status -->
             <TableCell class="py-4" @click.stop>
-              <div class="flex flex-col gap-1">
-                <span class="text-xs font-medium px-2.5 py-0.5 rounded-full border whitespace-nowrap w-fit"
-                  :class="approvalStatusBadge[c.approvalStatus]">
-                  {{ c.approvalStatus }}
-                </span>
-                <span v-if="c.workflowStatus"
-                  class="text-xs font-medium px-2.5 py-0.5 rounded-full border whitespace-nowrap w-fit"
-                  :class="workflowStatusBadge[c.workflowStatus]">
-                  {{ c.workflowStatus }}
-                </span>
-              </div>
+              <span class="text-xs font-medium px-2.5 py-0.5 rounded-full border whitespace-nowrap w-fit block"
+                :class="c.workflowStatus ? workflowStatusBadge[c.workflowStatus] : 'bg-black/5 text-black/50 border-black/10'">
+                {{ c.workflowStatus || '—' }}
+              </span>
             </TableCell>
 
             <!-- Sales Rep -->
@@ -296,38 +239,23 @@ function avatarColor(name: string) {
               </div>
             </TableCell>
 
-            <!-- Actions -->
-            <TableCell class="py-4 pr-4" @click.stop>
-              <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <Button variant="ghost" size="icon"
-                    class="h-8 w-8 text-black/25 hover:text-black hover:bg-black/5 data-[state=open]:bg-black/5 data-[state=open]:text-black">
-                    <MoreHorizontal class="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" class="w-44">
-                  <DropdownMenuLabel class="text-xs font-semibold text-black/38 pb-1">Actions</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem @click="emit('openDetail', c)" class="gap-2.5 text-sm cursor-pointer">
-                    <Eye class="w-3.5 h-3.5 text-black/40" /> View details
-                  </DropdownMenuItem>
-                  <DropdownMenuItem @click="emit('openEdit', c)" class="gap-2.5 text-sm cursor-pointer">
-                    <Pencil class="w-3.5 h-3.5 text-black/40" /> Edit contract
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem @click="emit('delete', c.id)"
-                    class="gap-2.5 text-sm cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
-                    <Trash2 class="w-3.5 h-3.5" /> Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            <!-- Actions (View details) -->
+            <TableCell class="py-4 pr-4 text-right" @click.stop>
+              <Button
+                variant="ghost"
+                size="icon"
+                @click="emit('openDetail', c)"
+                class="h-8 w-8 text-black/25 hover:text-black hover:bg-black/5"
+              >
+                <Eye class="w-4 h-4" />
+              </Button>
             </TableCell>
           </TableRow>
 
-          <TableRow v-if="paginated.length === 0">
+          <TableRow v-if="contracts.length === 0">
             <TableCell colspan="8" class="text-center py-16">
-              <p class="text-sm font-semibold text-black/28">No contracts found</p>
-              <p class="text-xs text-black/20 mt-1">Try a different filter or search term</p>
+              <p class="text-sm font-semibold text-black/28">No expired contracts found</p>
+              <p class="text-xs text-black/20 mt-1">Try relaxing your filters or search term</p>
             </TableCell>
           </TableRow>
         </template>
@@ -335,8 +263,13 @@ function avatarColor(name: string) {
     </Table>
 
     <!-- Pagination -->
-    <Pagination :total="loading ? itemsPerPage : filtered.length" :sibling-count="1" :items-per-page="itemsPerPage"
-      :page="currentPage" @update:page="emit('update:currentPage', $event)">
+    <Pagination
+      :total="loading ? itemsPerPage : total"
+      :sibling-count="1"
+      :items-per-page="itemsPerPage"
+      :page="currentPage"
+      @update:page="emit('update:currentPage', $event)"
+    >
       <div class="grid grid-cols-3 items-center px-6 py-4 border-t border-black/5">
         <div class="flex justify-start"><PaginationPrevious /></div>
         <div class="flex justify-center">
@@ -356,6 +289,5 @@ function avatarColor(name: string) {
         <div class="flex justify-end"><PaginationNext /></div>
       </div>
     </Pagination>
-
   </div>
 </template>

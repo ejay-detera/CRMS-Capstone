@@ -28,8 +28,7 @@ function avatarColor(name: string) {
 
 <template>
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
-    <DialogContent class="max-w-md p-0 overflow-hidden gap-0" @pointer-down-outside="$emit('update:open', false)">
-      <template v-if="contract">
+    <DialogContent v-if="contract" class="max-w-md p-0 overflow-hidden gap-0" @pointer-down-outside="$emit('update:open', false)">
 
         <!-- Header -->
         <div class="px-5 pt-5 pb-4 border-b border-black/6">
@@ -155,7 +154,6 @@ function avatarColor(name: string) {
           </Button>
         </div>
 
-      </template>
     </DialogContent>
   </Dialog>
 </template>

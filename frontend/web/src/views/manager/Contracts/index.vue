@@ -75,10 +75,12 @@ onMounted(() => {
 
 // ── Filter / search / pagination ─────────────────────────────────────────────
 
-const statusFilter = ref<StatusFilter>('')
-const searchQuery  = ref('')
-const currentPage  = ref(1)
-const itemsPerPage = 10
+const statusFilter   = ref<StatusFilter>('')
+const searchQuery    = ref('')
+const categoryFilter  = ref('')
+const regionFilter    = ref('')
+const currentPage    = ref(1)
+const itemsPerPage   = 10
 
 const withDays = computed(() =>
   contracts.value.map(c => ({ ...c, days: remainingDays(c.endDate) }))
@@ -95,14 +97,16 @@ const statCardList = computed(() => [
   { label: 'All Contracts', value: statCards.value.total,    valueClass: 'text-black', change: '+2.1%', positive: true  },
   { label: 'Active',        value: statCards.value.active,   valueClass: 'text-black', change: '+4.0%', positive: true  },
   { label: 'Expiring Soon', value: statCards.value.expiring, valueClass: 'text-black', change: '+5.2%', positive: true  },
-  { label: 'Expired',       value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false },
+  { label: 'Expired',       value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false, link: '/manager/expired-contracts' },
 ])
 
 const approvalStatuses = new Set(['Pending', 'Approved', 'Rejected'])
 
 const filtered = computed(() => {
-  const q  = searchQuery.value.toLowerCase()
-  const sf = statusFilter.value
+  const q   = searchQuery.value.toLowerCase()
+  const sf  = statusFilter.value
+  const cat = categoryFilter.value
+  const reg = regionFilter.value
   return withDays.value.filter(c => {
     const bySearch = !q || c.id.toLowerCase().includes(q)
       || c.businessPartner.toLowerCase().includes(q)
@@ -112,11 +116,13 @@ const filtered = computed(() => {
       : approvalStatuses.has(sf)
         ? c.approvalStatus === sf
         : c.workflowStatus === sf
-    return bySearch && byStatus
+    const byCategory = !cat || c.category === cat
+    const byRegion = !reg || c.region === reg
+    return bySearch && byStatus && byCategory && byRegion
   })
 })
 
-watch([statusFilter, searchQuery], () => { currentPage.value = 1 })
+watch([statusFilter, searchQuery, categoryFilter, regionFilter], () => { currentPage.value = 1 })
 
 const paginated = computed(() =>
   filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
@@ -175,8 +181,14 @@ function exportXLSX() {
         </div>
       </template>
       <template v-else>
-        <div v-for="card in statCardList" :key="card.label"
-          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
+        <component
+          v-for="card in statCardList"
+          :key="card.label"
+          :is="card.link ? 'router-link' : 'div'"
+          v-bind="card.link ? { to: card.link } : {}"
+          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm"
+          :class="card.link ? 'block hover:border-[#2E85D8]/50 hover:shadow-md cursor-pointer transition-all duration-200' : ''"
+        >
           <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
           <div class="flex items-end justify-between gap-2">
             <span class="text-3xl font-semibold tabular-nums" :class="card.valueClass">{{ card.value }}</span>
@@ -185,7 +197,7 @@ function exportXLSX() {
               {{ card.change }}
             </span>
           </div>
-        </div>
+        </component>
       </template>
     </div>
 
@@ -196,11 +208,15 @@ function exportXLSX() {
       :filtered="filtered"
       :status-filter="statusFilter"
       :status-options="statusOptions"
+      :category-filter="categoryFilter"
+      :region-filter="regionFilter"
       :search-query="searchQuery"
       :current-page="currentPage"
       :items-per-page="itemsPerPage"
       @open-detail="openDetail"
       @update:status-filter="statusFilter = $event"
+      @update:category-filter="categoryFilter = $event"
+      @update:region-filter="regionFilter = $event"
       @update:search-query="searchQuery = $event"
       @update:current-page="currentPage = $event"
     />
