@@ -28,7 +28,7 @@ const formattedTime = computed(() =>
   now.value.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 )
 
-const userFirstName = computed(() => authState.user?.first_name || 'Shadrack')
+const userFirstName = computed(() => authState.user?.profile?.first_name || authState.user?.first_name || 'Sales Rep')
 
 import { useApiCache } from '@/composables/useApiCache'
 
@@ -36,7 +36,8 @@ const { state: cacheState, fetchDashboard } = useApiCache()
 
 // ── Cached live data ─────────────────────────────────────────────
 const contracts = computed(() => cacheState.contracts || [])
-const recentRequests = computed(() => (cacheState.requests || []).slice(0, 6))
+const requests = computed(() => cacheState.requests || [])
+const recentRequests = computed(() => requests.value.slice(0, 6))
 const loading = computed(() => cacheState.contractsLoading || cacheState.requestsLoading)
 
 async function fetchDashboardData() {
@@ -54,10 +55,10 @@ onMounted(() => {
 const withDays = computed(() => contracts.value.map(c => ({ ...c, days: remainingDays(c.endDate) })))
 
 const statCards = computed(() => [
-  { label: 'My Contracts',    value: withDays.value.length },
-  { label: 'Pending',         value: recentRequests.value.filter(r => r.status === 'Pending' || r.status === 'Under Review').length },
-  { label: 'Expiring Soon',   value: withDays.value.filter(c => c.days >= 0 && c.days <= 30).length },
-  { label: 'Approved',        value: recentRequests.value.filter(r => r.status === 'Approved').length },
+  { label: 'My Contracts',    value: withDays.value.filter(c => c.approvalStatus === 'Approved').length },
+  { label: 'Pending',         value: requests.value.filter(r => r.status === 'Pending' || r.status === 'Under Review').length },
+  { label: 'Expiring Soon',   value: withDays.value.filter(c => c.approvalStatus === 'Approved' && c.days >= 0 && c.days <= 30).length },
+  { label: 'Approved',        value: requests.value.filter(r => r.status === 'Approved').length },
 ])
 </script>
 

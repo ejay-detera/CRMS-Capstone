@@ -52,8 +52,10 @@ function normalizeDocumentUrl(url?: string): string {
 
 function mapApiToContract(data: any): StoredContract {
   const user = authState.user
+  const firstName = (user as any)?.profile?.first_name || user?.first_name
+  const lastName = (user as any)?.profile?.last_name || user?.last_name
   const createdBy = (user && data.created_by === user.id)
-    ? `${user.first_name} ${user.last_name}`.trim()
+    ? `${firstName || ''} ${lastName || ''}`.trim() || 'Me'
     : `User #${data.created_by}`
 
   return {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useApiCache } from '@/composables/useApiCache'
 import { useToast } from '@/composables/useToast'
@@ -35,7 +35,7 @@ const formattedTime = computed(() =>
   now.value.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 )
 
-const userFirstName = computed(() => authState.user?.first_name || 'Shadrack')
+const userFirstName = computed(() => authState.user?.profile?.first_name || authState.user?.first_name || 'Manager')
 
 const contracts = computed(() => cacheState.contracts || [])
 const loading = computed(() => cacheState.contractsLoading)
@@ -52,11 +52,11 @@ async function fetchDashboardData() {
   }
 }
 
-onMounted(() => {
-  if (canViewContracts.value) {
+watch(canViewContracts, (canView) => {
+  if (canView) {
     fetchDashboardData()
   }
-})
+}, { immediate: true })
 </script>
 
 <template>

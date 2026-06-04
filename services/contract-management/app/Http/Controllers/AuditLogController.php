@@ -46,7 +46,7 @@ class AuditLogController extends Controller
         }
 
         // 2. Fetch local CRMS logs
-        $crmsLogsQuery = AuditLog::query()->where('user_department', 'Finance');
+        $crmsLogsQuery = AuditLog::query()->whereIn('user_department', ['Finance', 'Sales']);
         
         if ($request->has('action') && !empty($request->action)) {
             $actionFilter = $request->action;

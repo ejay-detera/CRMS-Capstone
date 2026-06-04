@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search, MoreHorizontal, Eye, Pencil, Trash2, AlertTriangle, Clock } from 'lucide-vue-next'
+import { Search, MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -15,8 +15,9 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select'
-import { approvalStatusBadge, workflowStatusBadge, fmtDate } from '@/types/contract'
+import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus } from '@/types/contract'
 import type { Contract, FilterTab, StatusFilter } from '@/types/contract'
+import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
 
 type ContractWithDays = Contract & { days: number }
 
@@ -68,11 +69,6 @@ const statusOptions: { label: string; value: StatusFilter }[] = [
   { label: 'Client Review', value: 'Client Review'},
 ]
 
-function daysLabel(days: number) {
-  if (days < 0)   return { text: 'Expired',       cls: 'text-red-500' }
-  if (days <= 30) return { text: `${days}d left`, cls: 'text-amber-500' }
-  return                 { text: `${days}d left`, cls: 'text-black/45' }
-}
 
 const palette = ['#252578', '#2E85D8', '#2F2F73']
 function initials(name: string) {
@@ -213,7 +209,7 @@ function avatarColor(name: string) {
 
             <!-- Remaining Days -->
             <TableCell class="py-4">
-              <div class="h-4 w-16 bg-black/5 animate-pulse rounded"></div>
+              <div class="h-5 w-24 bg-black/5 animate-pulse rounded-full"></div>
             </TableCell>
 
             <!-- Status -->
@@ -263,11 +259,7 @@ function avatarColor(name: string) {
 
             <!-- Remaining Days -->
             <TableCell class="py-4">
-              <span class="inline-flex items-center gap-1 text-sm font-medium" :class="daysLabel(c.days).cls">
-                <AlertTriangle v-if="c.days < 0"        class="w-3.5 h-3.5 shrink-0" />
-                <Clock         v-else-if="c.days <= 15" class="w-3.5 h-3.5 shrink-0" />
-                {{ daysLabel(c.days).text }}
-              </span>
+              <ContractLifecycleBadge :status="deriveLifecycleStatus(c.days)" :days="c.days" />
             </TableCell>
 
             <!-- Status -->

@@ -22,7 +22,7 @@ class InternalAuditController extends Controller
         $request->validate([
             'action' => 'required|string',
             'entity_type' => 'required|string',
-            'entity_id' => 'nullable|string',
+            'entity_id' => 'nullable',
             'user_id' => 'nullable|integer',
             'old_data' => 'nullable|array',
             'new_data' => 'nullable|array',
@@ -32,8 +32,8 @@ class InternalAuditController extends Controller
             'user_department' => 'nullable|string',
         ]);
 
-        if ($request->input('user_department') !== 'Finance') {
-            return response()->json(['ok' => true, 'message' => 'Skipped: Not in Finance department']);
+        if (!in_array($request->input('user_department'), ['Finance', 'Sales'])) {
+            return response()->json(['ok' => true, 'message' => 'Skipped: Not in Finance or Sales department']);
         }
 
         $log = AuditLog::create([

@@ -56,3 +56,14 @@ export function remainingDays(endDate: string): number {
 export function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
+
+export type ContractLifecycleStatus = 'active' | 'expiring' | 'expired'
+
+export const EXPIRING_THRESHOLD_DAYS = 30
+
+export function deriveLifecycleStatus(days: number): ContractLifecycleStatus {
+  if (days < 0) return 'expired'
+  if (days <= EXPIRING_THRESHOLD_DAYS) return 'expiring'
+  return 'active'
+}
+

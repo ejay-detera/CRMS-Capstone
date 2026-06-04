@@ -14,7 +14,7 @@ const props = defineProps<{
 }>()
 
 const recentContracts = computed(() => {
-  return props.contracts.slice(0, 5)
+  return props.contracts.filter(c => c.approvalStatus === 'Approved').slice(0, 5)
 })
 
 function getStatusDisplay(c: Contract) {

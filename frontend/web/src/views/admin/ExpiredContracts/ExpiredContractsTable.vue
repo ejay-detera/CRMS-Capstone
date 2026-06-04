@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search, Eye, AlertTriangle } from 'lucide-vue-next'
+import { Search, Eye } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/pagination'
 import { workflowStatusBadge, fmtDate, remainingDays } from '@/types/contract'
 import type { Contract } from '@/types/contract'
+import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
 
 const props = defineProps<{
   contracts:            Contract[]
@@ -53,11 +54,7 @@ function avatarColor(name: string) {
   return palette[h % palette.length]
 }
 
-function overdueDaysLabel(endDate: string) {
-  const days = remainingDays(endDate)
-  const absDays = Math.abs(days)
-  return `${absDays} ${absDays === 1 ? 'day' : 'days'} overdue`
-}
+
 </script>
 
 <template>
@@ -214,10 +211,7 @@ function overdueDaysLabel(endDate: string) {
 
             <!-- Days Overdue -->
             <TableCell class="py-4">
-              <span class="inline-flex items-center gap-1 text-sm font-medium text-red-500">
-                <AlertTriangle class="w-3.5 h-3.5 shrink-0" />
-                {{ overdueDaysLabel(c.endDate) }}
-              </span>
+              <ContractLifecycleBadge status="expired" :days="remainingDays(c.endDate)" />
             </TableCell>
 
             <!-- Status -->

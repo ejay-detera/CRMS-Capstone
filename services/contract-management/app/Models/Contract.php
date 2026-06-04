@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use MongoDB\Laravel\Eloquent\HybridRelations;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Carbon\Carbon;
 
 class Contract extends Model
 {
@@ -76,5 +78,31 @@ class Contract extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class, 'contract_id', 'contract_id');
+    }
+
+    /**
+     * Get the contract's lifecycle status.
+     *
+     * NOTE: This is intentionally kept out of $appends to prevent it from being
+     * serialized automatically into audit log snapshots (toArray() calls).
+     * It must be explicitly mapped in controllers/resources where needed.
+     */
+    protected function lifecycleStatus(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                if (!$this->end_date) {
+                    return 'active';
+                }
+
+                $days = (int) Carbon::today()->diffInDays($this->end_date, false);
+
+                return match (true) {
+                    $days < 0 => 'expired',
+                    $days <= 30 => 'expiring',
+                    default => 'active',
+                };
+            }
+        );
     }
 }

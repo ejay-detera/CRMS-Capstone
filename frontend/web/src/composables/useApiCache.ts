@@ -158,8 +158,10 @@ function mapApiToRequest(d: any, currentUserId: number | null, firstName?: strin
 async function fetchDashboard(force = false): Promise<void> {
   validateCacheCredentials()
 
+  const { role } = useAuth()
+  const isManagerOrAdmin = ['Admin', 'Manager', 'Finance Manager'].includes(role.value || '')
   const userId = state.cachedUserId
-  const scope  = userId ? `user-${userId}` : 'all'
+  const scope  = isManagerOrAdmin ? 'all' : (userId ? `user-${userId}` : 'all')
 
   if (
     state.contracts !== null && state.contractsScope === scope &&
@@ -185,10 +187,12 @@ async function fetchDashboard(force = false): Promise<void> {
 
     const json = await res.json()
     const user = authState.user
+    const firstName = (user as any)?.profile?.first_name || user?.first_name
+    const lastName = (user as any)?.profile?.last_name || user?.last_name
     const data: any[] = json.data ?? []
 
-    state.contracts = data.map(d => mapApiContract(d, state.cachedUserId, user?.first_name, user?.last_name))
-    state.requests  = data.map(d => mapApiToRequest(d, state.cachedUserId, user?.first_name, user?.last_name))
+    state.contracts = data.map(d => mapApiContract(d, state.cachedUserId, firstName, lastName))
+    state.requests  = data.map(d => mapApiToRequest(d, state.cachedUserId, firstName, lastName))
     state.contractsScope = scope
     state.requestsScope  = scope
   } finally {
@@ -229,8 +233,10 @@ async function fetchContracts(userId?: number, force = false): Promise<Contract[
 
     const json = await res.json()
     const user = authState.user
+    const firstName = (user as any)?.profile?.first_name || user?.first_name
+    const lastName = (user as any)?.profile?.last_name || user?.last_name
     state.contracts = (json.data ?? []).map((d: any) =>
-      mapApiContract(d, state.cachedUserId, user?.first_name, user?.last_name)
+      mapApiContract(d, state.cachedUserId, firstName, lastName)
     )
     state.contractsScope = scope
   } catch (err) {
@@ -275,8 +281,10 @@ async function fetchRequests(userId?: number, force = false): Promise<ContractRe
 
     const json = await res.json()
     const user = authState.user
+    const firstName = (user as any)?.profile?.first_name || user?.first_name
+    const lastName = (user as any)?.profile?.last_name || user?.last_name
     state.requests = (json.data ?? []).map((d: any) =>
-      mapApiToRequest(d, state.cachedUserId, user?.first_name, user?.last_name)
+      mapApiToRequest(d, state.cachedUserId, firstName, lastName)
     )
     state.requestsScope = scope
   } catch (err) {

@@ -1,19 +1,15 @@
 <script setup lang="ts">
-import { FileText, ExternalLink, MapPin, Hash, Cpu, Barcode, CalendarDays, Clock, AlertTriangle, User } from 'lucide-vue-next'
+import { FileText, ExternalLink, MapPin, Hash, Cpu, Barcode, CalendarDays, User } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { approvalStatusBadge, workflowStatusBadge, fmtDate } from '@/types/contract'
+import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus } from '@/types/contract'
 import type { Contract } from '@/types/contract'
 import { safeHref } from '@/utils/sanitize'
+import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
 
 defineProps<{ open: boolean; contract: (Contract & { days: number }) | null }>()
 defineEmits<{ 'update:open': [v: boolean] }>()
 
-function daysDisplay(days: number) {
-  if (days < 0)   return { text: `Expired ${Math.abs(days)}d ago`, cls: 'bg-red-50 text-red-600 border-red-200', icon: AlertTriangle }
-  if (days <= 30) return { text: `${days} days left`,              cls: 'bg-amber-50 text-amber-600 border-amber-200', icon: Clock }
-  return                 { text: `${days} days left`,              cls: 'bg-black/4 text-black/55 border-black/10', icon: Clock }
-}
 
 const palette = ['#252578', '#2E85D8', '#2F2F73']
 function initials(name: string) {
@@ -67,11 +63,7 @@ function avatarColor(name: string) {
           </div>
           <div class="px-4 py-3">
             <p class="text-[9px] font-bold text-black/30 uppercase tracking-widest mb-1">Remaining</p>
-            <span class="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full border"
-              :class="daysDisplay(contract.days).cls">
-              <component :is="daysDisplay(contract.days).icon" class="w-3 h-3" />
-              {{ contract.days < 0 ? 'Expired' : `${contract.days}d` }}
-            </span>
+            <ContractLifecycleBadge :status="deriveLifecycleStatus(contract.days)" :days="contract.days" size="md" />
           </div>
         </div>
 

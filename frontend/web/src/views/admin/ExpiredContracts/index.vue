@@ -98,8 +98,10 @@ async function fetchExpired(isManual = false) {
     const json = await res.json()
     if (res.ok) {
       const user = authState.user
+      const firstName = (user as any)?.profile?.first_name || user?.first_name
+      const lastName = (user as any)?.profile?.last_name || user?.last_name
       contracts.value = (json.data ?? []).map((d: any) =>
-        mapApiContract(d, user?.id || null, user?.first_name, user?.last_name)
+        mapApiContract(d, user?.id || null, firstName, lastName)
       )
       total.value = json.meta?.total ?? 0
       lastRefreshed.value = new Date()
@@ -138,8 +140,10 @@ async function exportXLSX() {
     const json = await res.json()
     if (res.ok) {
       const user = authState.user
+      const firstName = (user as any)?.profile?.first_name || user?.first_name
+      const lastName = (user as any)?.profile?.last_name || user?.last_name
       const allContracts = (json.data ?? []).map((d: any) =>
-        mapApiContract(d, user?.id || null, user?.first_name, user?.last_name)
+        mapApiContract(d, user?.id || null, firstName, lastName)
       )
       const rows = allContracts.map((c: Contract) => ({
         'Contract ID': c.id,

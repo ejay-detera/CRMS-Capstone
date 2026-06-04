@@ -255,8 +255,10 @@ async function saveEdit() {
     if (!res.ok) { error('Failed to save', data.message ?? 'Something went wrong.'); return }
 
     const user = authState.user
+    const firstName = (user as any)?.profile?.first_name || user?.first_name
+    const lastName = (user as any)?.profile?.last_name || user?.last_name
     const createdBy = (user && data.data.created_by === user.id)
-      ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Me'
+      ? `${firstName || ''} ${lastName || ''}`.trim() || 'Me'
       : data.data.created_by ? `User #${data.data.created_by}` : '—'
 
     const updated: ContractRequest = {

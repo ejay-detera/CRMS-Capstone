@@ -12,7 +12,7 @@ const props = defineProps<{
 
 const expiringContracts = computed(() => {
   return props.contracts
-    .filter(c => c.days >= 0 && c.days <= 30)
+    .filter(c => c.approvalStatus === 'Approved' && c.days >= 0 && c.days <= 30)
     .sort((a, b) => a.days - b.days)
     .slice(0, 5)
 })

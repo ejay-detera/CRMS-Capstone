@@ -34,10 +34,11 @@ class ContractController extends Controller
             'serial_number'   => $contract->serial_number,
             'sbu_number'      => $contract->sbu_number,
             'region'          => $contract->region?->region_name,
-            'start_date'      => $contract->start_date?->toDateString(),
-            'end_date'        => $contract->end_date?->toDateString(),
-            'created_by'      => $contract->created_by,
-            'documents'       => $contract->documents->map(fn ($d) => [
+            'start_date'       => $contract->start_date?->toDateString(),
+            'end_date'         => $contract->end_date?->toDateString(),
+            'lifecycle_status' => $contract->lifecycle_status,
+            'created_by'       => $contract->created_by,
+            'documents'        => $contract->documents->map(fn ($d) => [
                 'document_id'  => (string) ($d->document_id ?? $d->_id),
                 'file_name'    => $d->file_name,
                 'file_type'    => $d->file_type,

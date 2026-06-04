@@ -43,12 +43,17 @@ const withDays = computed(() =>
   contracts.value.map(c => ({ ...c, days: remainingDays(c.endDate) }))
 )
 
-const statCards = computed(() => ({
-  total:    withDays.value.length,
-  active:   withDays.value.filter(c => c.days > 30).length,
-  expiring: withDays.value.filter(c => c.days >= 0 && c.days <= 30).length,
-  expired:  withDays.value.filter(c => c.days < 0).length,
-}))
+const statCards = computed(() => {
+  const activeCount = withDays.value.filter(c => c.days > 30).length
+  const expiringCount = withDays.value.filter(c => c.days >= 0 && c.days <= 30).length
+  const expiredCount = withDays.value.filter(c => c.days < 0).length
+  return {
+    total:    activeCount + expiringCount,
+    active:   activeCount,
+    expiring: expiringCount,
+    expired:  expiredCount,
+  }
+})
 
 const statCardList = computed(() => [
   { label: 'My Contracts',  value: statCards.value.total,    valueClass: 'text-black', change: '+2.1%', positive: true  },
@@ -75,7 +80,8 @@ const filtered = computed(() => {
         : c.workflowStatus === sf
     const byCategory = !cat || c.category === cat
     const byRegion = !reg || c.region === reg
-    return bySearch && byStatus && byCategory && byRegion
+    const byNotExpired = c.days >= 0
+    return bySearch && byStatus && byCategory && byRegion && byNotExpired
   })
 })
 
@@ -119,8 +125,8 @@ function exportXLSX() {
           class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
-        <Button @click="router.push('/sales/contracts/create')" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
-          <Plus class="w-5 h-5" />
+        <Button @click="router.push('/sales/contracts/create')" class="group h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm transition-all duration-200 hover:scale-105 active:scale-95">
+          <Plus class="w-5 h-5 transition-transform duration-300 group-hover:rotate-90" />
         </Button>
       </div>
     </div>

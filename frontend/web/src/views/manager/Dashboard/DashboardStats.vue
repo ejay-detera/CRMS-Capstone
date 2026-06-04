@@ -8,10 +8,11 @@ const props = defineProps<{
 }>()
 
 const stats = computed(() => {
-  const total = props.contracts.length
-  const active = props.contracts.filter(c => c.days > 30).length
-  const expiring = props.contracts.filter(c => c.days >= 0 && c.days <= 30).length
-  const expired = props.contracts.filter(c => c.days < 0).length
+  const approvedContracts = props.contracts.filter(c => c.approvalStatus === 'Approved')
+  const total = approvedContracts.length
+  const active = approvedContracts.filter(c => c.days > 30).length
+  const expiring = approvedContracts.filter(c => c.days >= 0 && c.days <= 30).length
+  const expired = approvedContracts.filter(c => c.days < 0).length
 
   return [
     {
