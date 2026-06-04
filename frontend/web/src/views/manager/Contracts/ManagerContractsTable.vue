@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search, MoreHorizontal, Eye, Pencil, AlertTriangle, Clock } from 'lucide-vue-next'
+import { Search, MoreHorizontal, Eye, Pencil } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,7 +16,8 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select'
-import { approvalStatusBadge, workflowStatusBadge, fmtDate } from '@/types/contract'
+import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus } from '@/types/contract'
+import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
 import type { Contract, StatusFilter } from '@/types/contract'
 
 type ContractWithDays = Contract & { days: number }
@@ -63,11 +64,6 @@ const categories = [
   'Partnership Agreement'
 ]
 
-function daysLabel(days: number) {
-  if (days < 0)   return { text: 'Expired',       cls: 'text-red-500' }
-  if (days <= 30) return { text: `${days}d left`, cls: 'text-amber-500' }
-  return                 { text: `${days}d left`, cls: 'text-black/45' }
-}
 </script>
 
 <template>
@@ -222,11 +218,7 @@ function daysLabel(days: number) {
 
             <!-- Remaining Days -->
             <TableCell class="py-4">
-              <span class="inline-flex items-center gap-1 text-sm font-medium" :class="daysLabel(c.days).cls">
-                <AlertTriangle v-if="c.days < 0"        class="w-3.5 h-3.5 shrink-0" />
-                <Clock         v-else-if="c.days <= 15" class="w-3.5 h-3.5 shrink-0" />
-                {{ daysLabel(c.days).text }}
-              </span>
+              <ContractLifecycleBadge :status="deriveLifecycleStatus(c.days)" :days="c.days" />
             </TableCell>
 
             <!-- Status -->
