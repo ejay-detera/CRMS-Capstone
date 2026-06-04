@@ -43,12 +43,15 @@ class BusinessPartnerController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'bp_code' => 'required|string|max:100',
-            'partner_name' => 'required|string|max:255',
+            'bp_code'        => 'required|string|max:100',
+            'partner_name'   => 'required|string|max:255',
+            'industry'       => 'nullable|string|max:100',
+            'contact_person' => 'nullable|string|max:255',
             'contact_number' => 'nullable|string',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
-            'region' => 'nullable|string|max:100',
+            'email'          => 'nullable|email|max:255',
+            'address'        => 'nullable|string',
+            'region'         => 'nullable|string|max:100',
+            'status'         => 'nullable|string|in:Active,Inactive,Suspended',
         ]);
 
         if ($validator->fails()) {
@@ -122,12 +125,15 @@ class BusinessPartnerController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'bp_code' => 'required|string|max:100',
-            'partner_name' => 'required|string|max:255',
+            'bp_code'        => 'required|string|max:100',
+            'partner_name'   => 'required|string|max:255',
+            'industry'       => 'nullable|string|max:100',
+            'contact_person' => 'nullable|string|max:255',
             'contact_number' => 'nullable|string',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
-            'region' => 'nullable|string|max:100',
+            'email'          => 'nullable|email|max:255',
+            'address'        => 'nullable|string',
+            'region'         => 'nullable|string|max:100',
+            'status'         => 'nullable|string|in:Active,Inactive,Suspended',
         ]);
 
         if ($validator->fails()) {

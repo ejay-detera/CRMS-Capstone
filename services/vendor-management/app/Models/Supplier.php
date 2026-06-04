@@ -19,10 +19,13 @@ class Supplier extends Model
     protected $fillable = [
         'supplier_name',
         'tin_number',
+        'industry',
+        'contact_person',
         'contact_number',
         'email',
         'address',
         'region',
+        'status',
     ];
 
     protected $casts = [

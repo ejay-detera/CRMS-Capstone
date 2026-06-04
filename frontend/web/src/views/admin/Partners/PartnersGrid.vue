@@ -4,6 +4,15 @@ import type { Partner, TabKey } from '@/types/partner'
 
 defineProps<{ partners: Partner[]; activeTab: TabKey }>()
 const emit = defineEmits<{ openDetail: [p: Partner] }>()
+
+function statusClass(status: string) {
+  switch (status) {
+    case 'Active':    return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    case 'Inactive':  return 'bg-black/4 text-black/35 border-black/8'
+    case 'Suspended': return 'bg-amber-50 text-amber-700 border-amber-200'
+    default:          return 'bg-black/4 text-black/35 border-black/8'
+  }
+}
 </script>
 
 <template>
@@ -18,29 +27,24 @@ const emit = defineEmits<{ openDetail: [p: Partner] }>()
         <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-[#252578]/8 text-[#252578]">
           <component :is="activeTab === 'partners' ? Building2 : Truck" class="w-5 h-5" />
         </div>
-        <span class="text-xs font-medium px-2.5 py-0.5 rounded-full border"
-          :class="partner.status === 'Active'
-            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-            : 'bg-black/4 text-black/35 border-black/8'">
+        <span class="text-xs font-medium px-2.5 py-0.5 rounded-full border" :class="statusClass(partner.status)">
           {{ partner.status }}
         </span>
       </div>
       <p class="text-sm font-semibold text-black leading-snug group-hover:text-[#252578] transition-colors">{{ partner.name }}</p>
-      <p class="text-xs text-black/40 mt-0.5 mb-4">{{ partner.industry }}</p>
+      <p class="text-xs text-black/40 mt-0.5 mb-4">{{ partner.industry || '—' }}</p>
       <div class="space-y-1.5 border-t border-black/5 pt-3">
         <div class="flex items-center justify-between text-xs">
           <span class="text-black/40">Region</span>
-          <span class="font-medium text-black">{{ partner.region }}</span>
+          <span class="font-medium text-black">{{ partner.region ?? '—' }}</span>
         </div>
         <div class="flex items-center justify-between text-xs">
-          <span class="text-black/40">Contracts</span>
-          <span class="font-semibold" :class="partner.contracts > 0 ? 'text-[#2E85D8]' : 'text-black/35'">
-            {{ partner.contracts }} active
-          </span>
+          <span class="text-black/40">Contact</span>
+          <span class="font-medium text-black truncate max-w-[120px] text-right">{{ partner.contactPerson || '—' }}</span>
         </div>
         <div class="flex items-center justify-between text-xs">
-          <span class="text-black/40">Total Value</span>
-          <span class="font-medium text-black">{{ partner.totalValue }}</span>
+          <span class="text-black/40">Phone</span>
+          <span class="font-medium text-black tabular-nums">{{ partner.phone || '—' }}</span>
         </div>
       </div>
     </button>

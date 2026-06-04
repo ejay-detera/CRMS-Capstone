@@ -1,19 +1,19 @@
 export type TabKey  = 'partners' | 'suppliers'
 export type Region  = 'Luzon' | 'Visayas' | 'Mindanao'
-export type Status  = 'Active' | 'Inactive'
+export type Status  = 'Active' | 'Inactive' | 'Suspended'
 
 export interface Partner {
-  id:            string
+  id:            number
   name:          string
   industry:      string
-  region:        Region
+  region:        Region | null
   status:        Status
-  contracts:     number
-  totalValue:    string
   contactPerson: string
   email:         string
   phone:         string
   address:       string
+  bpCode:        string | null
+  tinNumber:     string | null
 }
 
 export interface AddPartnerForm {
@@ -25,4 +25,5 @@ export interface AddPartnerForm {
   email:         string
   phone:         string
   address:       string
+  tinNumber:     string
 }

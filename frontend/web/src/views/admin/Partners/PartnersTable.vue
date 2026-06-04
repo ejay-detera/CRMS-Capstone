@@ -1,5 +1,6 @@
-﻿<script setup lang="ts">
-import { Building2, Truck, MoreHorizontal, Eye, Trash2 } from 'lucide-vue-next'
+<script setup lang="ts">
+import { computed } from 'vue'
+import { Building2, Truck, MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -18,19 +19,36 @@ const props = defineProps<{
   paginated:       Partner[]
   filtered:        Partner[]
   activeTab:       TabKey
-  selectedIds:     string[]
+  selectedIds:     number[]
   allPageSelected: boolean
   currentPage:     number
   itemsPerPage:    number
+  canEdit?:        boolean
+  canDelete?:      boolean
 }>()
 
 const emit = defineEmits<{
   openDetail:      [p: Partner]
+  openEdit:        [p: Partner]
   openDelete:      [p: Partner]
-  toggleRow:       [id: string]
+  toggleRow:       [id: number]
   toggleSelectAll: []
   'update:currentPage': [page: number]
 }>()
+
+function displayId(p: Partner) {
+  const prefix = props.activeTab === 'partners' ? 'BP' : 'SP'
+  return `${prefix}-${String(p.id).padStart(4, '0')}`
+}
+
+function statusClass(status: string) {
+  switch (status) {
+    case 'Active':    return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    case 'Inactive':  return 'bg-black/4 text-black/35 border-black/8'
+    case 'Suspended': return 'bg-amber-50 text-amber-700 border-amber-200'
+    default:          return 'bg-black/4 text-black/35 border-black/8'
+  }
+}
 </script>
 
 <template>
@@ -53,8 +71,7 @@ const emit = defineEmits<{
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Name</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Industry</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Region</TableHead>
-          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Contracts</TableHead>
-          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Total Value</TableHead>
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Contact</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
           <TableHead class="w-14 py-3" />
         </TableRow>
@@ -79,23 +96,18 @@ const emit = defineEmits<{
               </div>
               <div>
                 <p class="text-sm font-medium text-black leading-snug">{{ partner.name }}</p>
-                <p class="text-xs text-black/35 mt-0.5">{{ partner.id }}</p>
+                <p class="text-xs text-black/35 mt-0.5 font-mono">{{ displayId(partner) }}</p>
               </div>
             </div>
           </TableCell>
-          <TableCell class="py-4 text-sm text-black/60">{{ partner.industry }}</TableCell>
-          <TableCell class="py-4 text-sm text-black/60">{{ partner.region }}</TableCell>
+          <TableCell class="py-4 text-sm text-black/60">{{ partner.industry || '—' }}</TableCell>
+          <TableCell class="py-4 text-sm text-black/60">{{ partner.region ?? '—' }}</TableCell>
           <TableCell class="py-4">
-            <span class="text-sm font-semibold" :class="partner.contracts > 0 ? 'text-[#2E85D8]' : 'text-black/30'">
-              {{ partner.contracts }} active
-            </span>
+            <div class="text-sm text-black/70">{{ partner.contactPerson || '—' }}</div>
+            <div class="text-xs text-black/35 mt-0.5">{{ partner.phone || '' }}</div>
           </TableCell>
-          <TableCell class="py-4 text-sm font-medium text-black">{{ partner.totalValue }}</TableCell>
           <TableCell class="py-4">
-            <span class="text-xs font-medium px-2.5 py-0.5 rounded-full border"
-              :class="partner.status === 'Active'
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : 'bg-black/4 text-black/35 border-black/8'">
+            <span class="text-xs font-medium px-2.5 py-0.5 rounded-full border" :class="statusClass(partner.status)">
               {{ partner.status }}
             </span>
           </TableCell>
@@ -113,18 +125,23 @@ const emit = defineEmits<{
                 <DropdownMenuItem @click="emit('openDetail', partner)" class="gap-2.5 text-sm cursor-pointer">
                   <Eye class="w-3.5 h-3.5 text-black/40" /> View details
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem @click="emit('openDelete', partner)"
-                  class="gap-2.5 text-sm cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
-                  <Trash2 class="w-3.5 h-3.5" /> Delete
-                </DropdownMenuItem>
+                <template v-if="canEdit || canDelete">
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem v-if="canEdit" @click="emit('openEdit', partner)" class="gap-2.5 text-sm cursor-pointer">
+                    <Pencil class="w-3.5 h-3.5 text-black/40" /> Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem v-if="canDelete" @click="emit('openDelete', partner)"
+                    class="gap-2.5 text-sm cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
+                    <Trash2 class="w-3.5 h-3.5" /> Delete
+                  </DropdownMenuItem>
+                </template>
               </DropdownMenuContent>
             </DropdownMenu>
           </TableCell>
         </TableRow>
 
         <TableRow v-if="paginated.length === 0">
-          <TableCell colspan="8" class="text-center py-16">
+          <TableCell colspan="7" class="text-center py-16">
             <p class="text-sm font-semibold text-black/28">No records found</p>
             <p class="text-xs text-black/20 mt-1">Try a different search or region filter</p>
           </TableCell>

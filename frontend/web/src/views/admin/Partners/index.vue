@@ -1,44 +1,83 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Building2, Truck, Search, LayoutGrid, List, Plus, Upload } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
+import { useVendorService } from '@/composables/useVendorService'
 import PartnersGrid       from './PartnersGrid.vue'
 import PartnersTable      from './PartnersTable.vue'
 import PartnerDetailDialog from './PartnerDetailDialog.vue'
 import DeleteConfirmDialog from './DeleteConfirmDialog.vue'
 import AddPartnerDialog    from './AddPartnerDialog.vue'
-import type { Partner, TabKey } from '@/types/partner'
-import { initialBusinessPartners, initialSuppliersData } from './mockPartners'
+import type { Partner, TabKey, AddPartnerForm } from '@/types/partner'
 
-const { success } = useToast()
+const { success, error, warning } = useToast()
+const {
+  fetchPartners, createPartner, updatePartner, deletePartner,
+  fetchSuppliers, createSupplier, updateSupplier, deleteSupplier,
+} = useVendorService()
 
-const businessPartners = ref<Partner[]>([...initialBusinessPartners])
+const businessPartners = ref<Partner[]>([])
+const suppliersData    = ref<Partner[]>([])
+const loading          = ref(false)
 
-const suppliersData = ref<Partner[]>([...initialSuppliersData])
+async function loadData() {
+  loading.value = true
+  try {
+    const [p, s] = await Promise.all([fetchPartners(), fetchSuppliers()])
+    businessPartners.value = p
+    suppliersData.value    = s
+  } catch {
+    error('Load failed', 'Could not load partners and suppliers from server.')
+  } finally {
+    loading.value = false
+  }
+}
 
-const activeTab    = ref<TabKey>('partners')
-const viewMode     = ref<'card' | 'table'>('card')
-const search       = ref('')
-const regionFilter = ref('All')
-const regions      = ['All', 'Luzon', 'Visayas', 'Mindanao']
+onMounted(loadData)
 
-const source   = computed(() => activeTab.value === 'partners' ? businessPartners.value : suppliersData.value)
+const activeTab      = ref<TabKey>('partners')
+const viewMode       = ref<'card' | 'table'>('card')
+const search         = ref('')
+const regionFilter   = ref('All')
+const statusFilter   = ref('All')
+const industryFilter = ref('All')
+const regions        = ['All', 'Luzon', 'Visayas', 'Mindanao']
+const statusOptions  = ['All', 'Active', 'Inactive', 'Suspended'] as const
+
+const source = computed(() => activeTab.value === 'partners' ? businessPartners.value : suppliersData.value)
+
+const industries = computed(() => {
+  const vals = source.value.map(p => p.industry).filter(Boolean)
+  return ['All', ...[...new Set(vals)].sort()]
+})
+
 const filtered = computed(() =>
   source.value.filter(p => {
     const q = search.value.toLowerCase()
-    return (!q || p.name.toLowerCase().includes(q) || p.industry.toLowerCase().includes(q))
-      && (regionFilter.value === 'All' || p.region === regionFilter.value)
+    return (
+      (!q || p.name.toLowerCase().includes(q) || p.industry.toLowerCase().includes(q)) &&
+      (regionFilter.value   === 'All' || p.region   === regionFilter.value) &&
+      (statusFilter.value   === 'All' || p.status   === statusFilter.value) &&
+      (industryFilter.value === 'All' || p.industry === industryFilter.value)
+    )
   })
 )
 
 const currentPage  = ref(1)
-const itemsPerPage = 8
-watch([activeTab, search, regionFilter], () => { currentPage.value = 1 })
+const itemsPerPage = 15
+watch([search, regionFilter, statusFilter, industryFilter], () => { currentPage.value = 1 })
+watch(activeTab, () => {
+  search.value         = ''
+  regionFilter.value   = 'All'
+  statusFilter.value   = 'All'
+  industryFilter.value = 'All'
+  currentPage.value    = 1
+})
 const paginated = computed(() => filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage))
 
-const selectedIds     = ref<string[]>([])
+const selectedIds     = ref<number[]>([])
 const allPageSelected = computed(() =>
   paginated.value.length > 0 && paginated.value.every(p => selectedIds.value.includes(p.id))
 )
@@ -47,7 +86,7 @@ function toggleSelectAll() {
   if (allPageSelected.value) selectedIds.value = selectedIds.value.filter(id => !ids.includes(id))
   else ids.forEach(id => { if (!selectedIds.value.includes(id)) selectedIds.value.push(id) })
 }
-function toggleRow(id: string) {
+function toggleRow(id: number) {
   const i = selectedIds.value.indexOf(id)
   i >= 0 ? selectedIds.value.splice(i, 1) : selectedIds.value.push(id)
 }
@@ -59,33 +98,86 @@ function openDetail(p: Partner) { selectedPartner.value = p; showDetail.value = 
 const showDelete   = ref(false)
 const deleteTarget = ref<Partner | null>(null)
 function openDelete(p: Partner) { deleteTarget.value = p; showDelete.value = true }
-function confirmDelete() {
+async function confirmDelete() {
   if (!deleteTarget.value) return
-  const list = activeTab.value === 'partners' ? businessPartners : suppliersData
-  const idx  = list.value.findIndex(p => p.id === deleteTarget.value!.id)
-  if (idx >= 0) list.value.splice(idx, 1)
-  selectedIds.value = selectedIds.value.filter(id => id !== deleteTarget.value!.id)
-  const name = deleteTarget.value.name
+  const target = deleteTarget.value
   showDelete.value  = false
   deleteTarget.value = null
-  success('Entry deleted', `${name} has been removed.`)
+  try {
+    if (activeTab.value === 'partners') {
+      await deletePartner(target.id)
+      businessPartners.value = businessPartners.value.filter(p => p.id !== target.id)
+    } else {
+      await deleteSupplier(target.id)
+      suppliersData.value = suppliersData.value.filter(p => p.id !== target.id)
+    }
+    selectedIds.value = selectedIds.value.filter(id => id !== target.id)
+    success('Entry deleted', `${target.name} has been removed.`)
+  } catch {
+    error('Delete failed', `Could not delete ${target.name}. Please try again.`)
+  }
 }
 
-const showAdd = ref(false)
-function handleAdd(partial: Omit<Partner, 'contracts' | 'totalValue'>) {
-  const list   = activeTab.value === 'partners' ? businessPartners : suppliersData
-  const prefix = activeTab.value === 'partners' ? 'BP' : 'SP'
-  const pad    = String(list.value.length + 1).padStart(3, '0')
-  list.value.push({ ...partial, id: `${prefix}-${pad}`, contracts: 0, totalValue: '₱0' })
-  success(`${activeTab.value === 'partners' ? 'Partner' : 'Supplier'} added`, `${partial.name} has been added successfully.`)
+const showAdd   = ref(false)
+const editTarget = ref<Partner | null>(null)
+function openEdit(p: Partner) { editTarget.value = p; showAdd.value = true }
+
+async function handleSubmit(form: AddPartnerForm) {
+  try {
+    if (editTarget.value) {
+      if (activeTab.value === 'partners') {
+        const { partner, warnings } = await updatePartner(editTarget.value.id, form, editTarget.value.bpCode)
+        const idx = businessPartners.value.findIndex(p => p.id === editTarget.value!.id)
+        if (idx >= 0) businessPartners.value[idx] = partner
+        success('Partner updated', `${partner.name} has been updated.`)
+        if (warnings.length) warning('Duplicate warning', warnings[0].message)
+      } else {
+        const { partner, warnings } = await updateSupplier(editTarget.value.id, form)
+        const idx = suppliersData.value.findIndex(p => p.id === editTarget.value!.id)
+        if (idx >= 0) suppliersData.value[idx] = partner
+        success('Supplier updated', `${partner.name} has been updated.`)
+        if (warnings.length) warning('Duplicate warning', warnings[0].message)
+      }
+    } else {
+      if (activeTab.value === 'partners') {
+        const { partner, warnings } = await createPartner(form)
+        businessPartners.value.push(partner)
+        success('Partner added', `${partner.name} has been added successfully.`)
+        if (warnings.length) warning('Duplicate warning', warnings[0].message)
+      } else {
+        const { partner, warnings } = await createSupplier(form)
+        suppliersData.value.push(partner)
+        success('Supplier added', `${partner.name} has been added successfully.`)
+        if (warnings.length) warning('Duplicate warning', warnings[0].message)
+      }
+    }
+  } catch (err: any) {
+    const msg = err?.message ?? 'An error occurred. Please try again.'
+    error('Save failed', msg)
+  } finally {
+    editTarget.value = null
+  }
+}
+
+function onDialogClose(val: boolean) {
+  showAdd.value = val
+  if (!val) editTarget.value = null
 }
 
 function exportXLSX() {
   const type = activeTab.value === 'partners' ? 'Business Partner' : 'Supplier'
   const rows = filtered.value.map(p => ({
-    'ID': p.id, 'Name': p.name, 'Type': type, 'Industry': p.industry, 'Region': p.region,
-    'Contracts': p.contracts, 'Total Value': p.totalValue, 'Status': p.status,
-    'Contact Person': p.contactPerson, 'Email': p.email, 'Phone': p.phone, 'Address': p.address,
+    'ID':             p.id,
+    'Name':           p.name,
+    'Type':           type,
+    'Industry':       p.industry,
+    'Region':         p.region ?? '',
+    'Status':         p.status,
+    'Contact Person': p.contactPerson,
+    'Phone':          p.phone,
+    'Email':          p.email,
+    'Address':        p.address,
+    ...(activeTab.value === 'partners' ? { 'BP Code': p.bpCode ?? '' } : { 'TIN': p.tinNumber ?? '' }),
   }))
   const ws = XLSX.utils.json_to_sheet(rows)
   const wb = XLSX.utils.book_new()
@@ -115,12 +207,12 @@ function exportXLSX() {
 
     <div class="flex items-center gap-3">
       <div class="flex items-center gap-0.5 bg-black/4 rounded-md p-1">
-        <button @click="activeTab = 'partners'; search = ''; regionFilter = 'All'"
+        <button @click="activeTab = 'partners'"
           class="flex items-center gap-2 px-4 py-1.5 text-sm rounded transition-all font-medium"
           :class="activeTab === 'partners' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'">
           <Building2 class="w-3.5 h-3.5" /> Business Partners ({{ businessPartners.length }})
         </button>
-        <button @click="activeTab = 'suppliers'; search = ''; regionFilter = 'All'"
+        <button @click="activeTab = 'suppliers'"
           class="flex items-center gap-2 px-4 py-1.5 text-sm rounded transition-all font-medium"
           :class="activeTab === 'suppliers' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'">
           <Truck class="w-3.5 h-3.5" /> Suppliers ({{ suppliersData.length }})
@@ -138,6 +230,15 @@ function exportXLSX() {
       </div>
     </div>
 
+    <!-- Status filter pills -->
+    <div class="flex items-center gap-0.5 bg-black/4 rounded-md p-1 w-fit">
+      <button v-for="s in statusOptions" :key="s" @click="statusFilter = s"
+        class="px-3 py-1.5 text-sm rounded transition-all font-medium"
+        :class="statusFilter === s ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'">
+        {{ s }}
+      </button>
+    </div>
+
     <div class="flex items-center gap-3">
       <div class="relative flex-1">
         <Search class="w-3.5 h-3.5 text-black/30 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -148,22 +249,34 @@ function exportXLSX() {
         class="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors">
         <option v-for="r in regions" :key="r" :value="r">{{ r === 'All' ? 'All Regions' : r }}</option>
       </select>
+      <select v-model="industryFilter"
+        class="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors">
+        <option v-for="ind in industries" :key="ind" :value="ind">{{ ind === 'All' ? 'All Industries' : ind }}</option>
+      </select>
     </div>
 
-    <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" @open-detail="openDetail" />
-
-    <PartnersTable v-else
-      :paginated="paginated" :filtered="filtered" :active-tab="activeTab"
-      :selected-ids="selectedIds" :all-page-selected="allPageSelected"
-      :current-page="currentPage" :items-per-page="itemsPerPage"
-      @open-detail="openDetail" @open-delete="openDelete"
-      @toggle-row="toggleRow" @toggle-select-all="toggleSelectAll"
-      @update:current-page="currentPage = $event"
-    />
+    <div v-if="loading" class="py-20 text-center">
+      <p class="text-sm text-black/40">Loading…</p>
+    </div>
+    <template v-else>
+      <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" @open-detail="openDetail" />
+      <PartnersTable v-else
+        :paginated="paginated" :filtered="filtered" :active-tab="activeTab"
+        :selected-ids="selectedIds" :all-page-selected="allPageSelected"
+        :current-page="currentPage" :items-per-page="itemsPerPage"
+        :can-edit="true" :can-delete="true"
+        @open-detail="openDetail" @open-edit="openEdit" @open-delete="openDelete"
+        @toggle-row="toggleRow" @toggle-select-all="toggleSelectAll"
+        @update:current-page="currentPage = $event"
+      />
+    </template>
 
   </div>
 
   <PartnerDetailDialog v-model:open="showDetail" :partner="selectedPartner" :active-tab="activeTab" />
-  <DeleteConfirmDialog v-model:open="showDelete" :partner="deleteTarget"   :active-tab="activeTab" @confirm="confirmDelete" />
-  <AddPartnerDialog    v-model:open="showAdd"    :active-tab="activeTab"   @submit="handleAdd" />
+  <DeleteConfirmDialog v-model:open="showDelete" :partner="deleteTarget" :active-tab="activeTab" @confirm="confirmDelete" />
+  <AddPartnerDialog
+    :open="showAdd" :active-tab="activeTab" :edit-target="editTarget"
+    @update:open="onDialogClose" @submit="handleSubmit"
+  />
 </template>

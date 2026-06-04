@@ -16,10 +16,13 @@ class BusinessPartner extends Model
     protected $fillable = [
         'bp_code',
         'partner_name',
+        'industry',
+        'contact_person',
         'contact_number',
         'email',
         'address',
         'region',
+        'status',
         'created_by',
     ];
 
