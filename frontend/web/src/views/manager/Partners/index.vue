@@ -20,7 +20,6 @@ const canCreate = computed(() => hasPermission('crms.partners.create'))
 const canDelete = computed(() => hasPermission('crms.partners.delete'))
 
 const {
-  loading,
   partners,
   totalItems,
   fetchPartners,

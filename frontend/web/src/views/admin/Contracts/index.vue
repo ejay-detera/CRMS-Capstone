@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Plus, Upload } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
@@ -7,11 +8,10 @@ import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { useApiCache } from '@/composables/useApiCache'
 import ContractsTable       from './ContractsTable.vue'
-import ContractDetailDialog  from './ContractDetailDialog.vue'
-import EditContractDialog    from './EditContractDialog.vue'
 import { remainingDays } from '@/types/contract'
 import type { Contract, FilterTab, StatusFilter } from '@/types/contract'
 
+const router = useRouter()
 const { success, error } = useToast()
 const { state: authState } = useAuth()
 const { state: cacheState, fetchContracts: fetchContractsCached } = useApiCache()
@@ -95,44 +95,12 @@ const paginated = computed(() =>
   filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
 )
 
-const showDetail   = ref(false)
-const detailTarget = ref<(Contract & { days: number }) | null>(null)
-function openDetail(c: Contract & { days: number }) { detailTarget.value = c; showDetail.value = true }
+function openDetail(c: Contract & { days: number }) {
+  router.push(`/admin/contracts/${c.id}`)
+}
 
-const showEdit   = ref(false)
-const editTarget = ref<Contract | null>(null)
-function openEdit(c: Contract & { days: number }) { editTarget.value = c; showEdit.value = true }
-
-async function handleEdit(data: Omit<Contract, 'id' | 'createdBy'>) {
-  if (!editTarget.value || !authState.user) return
-  
-  // Clean contract ID from the composite key e.g. "CTR-001" or raw integer ID
-  const contractId = editTarget.value.id
-  if (!contractId) return
-
-  const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
-
-  try {
-    const res = await fetch(`${apiBase}/contracts/${contractId}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${authState.token || ''}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(data)
-    })
-    const json = await res.json()
-    if (res.ok) {
-      await fetchContracts()
-      success('Contract updated', `${data.businessPartner}'s contract has been saved.`)
-    } else {
-      error('Update failed', json.message || 'Could not update contract.')
-    }
-  } catch (err) {
-    console.error('Failed to update contract:', err)
-    error('Update failed', 'Connection to contract service failed.')
-  }
+function openEdit(c: Contract & { days: number }) {
+  router.push(`/admin/contracts/${c.id}?edit=1`)
 }
 
 async function handleDelete(id: string) {
@@ -255,7 +223,4 @@ function exportXLSX() {
     />
 
   </div>
-
-  <EditContractDialog   v-model:open="showEdit"   :contract="editTarget"   @submit="handleEdit" />
-  <ContractDetailDialog v-model:open="showDetail" :contract="detailTarget" />
 </template>

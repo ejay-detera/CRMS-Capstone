@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { RefreshCw, Upload, AlertTriangle } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import ExpiredContractsTable from './ExpiredContractsTable.vue'
-import ContractDetailDialog from '../Contracts/ContractDetailDialog.vue'
 import { remainingDays } from '@/types/contract'
 import type { Contract, ContractRegion, ContractApprovalStatus, ContractWorkflowStatus } from '@/types/contract'
 
+const route = useRoute()
+const router = useRouter()
 const { success, error } = useToast()
 const { state: authState } = useAuth()
 
@@ -196,15 +198,13 @@ onUnmounted(() => {
   }
 })
 
-// Detail dialog state
-const showDetail = ref(false)
-const detailTarget = ref<(Contract & { days: number }) | null>(null)
 function openDetail(c: Contract) {
-  detailTarget.value = {
-    ...c,
-    days: remainingDays(c.endDate)
-  }
-  showDetail.value = true
+  const prefix = route.path.startsWith('/admin')
+    ? 'admin'
+    : route.path.startsWith('/manager')
+      ? 'manager'
+      : 'sales'
+  router.push(`/${prefix}/contracts/${c.id}`)
 }
 
 const formattedRefreshedTime = computed(() => {
@@ -281,10 +281,5 @@ const formattedRefreshedTime = computed(() => {
       @openDetail="openDetail"
     />
 
-    <!-- Detail Dialog -->
-    <ContractDetailDialog
-      v-model:open="showDetail"
-      :contract="detailTarget"
-    />
   </div>
 </template>

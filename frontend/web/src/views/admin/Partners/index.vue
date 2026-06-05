@@ -17,7 +17,6 @@ const { success, error } = useToast()
 const { state: authState } = useAuth()
 
 const {
-  loading,
   partners,
   totalItems,
   fetchPartners,
