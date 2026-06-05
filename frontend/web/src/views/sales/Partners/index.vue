@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { Building2, Truck, Search, LayoutGrid, List, Upload } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import { useVendorService } from '@/composables/useVendorService'
-import PartnersGrid        from '@/views/admin/Partners/PartnersGrid.vue'
-import PartnersTable       from '@/views/admin/Partners/PartnersTable.vue'
-import PartnerDetailDialog from '@/views/admin/Partners/PartnerDetailDialog.vue'
+import PartnersGrid  from '@/views/admin/Partners/PartnersGrid.vue'
+import PartnersTable from '@/views/admin/Partners/PartnersTable.vue'
 import type { Partner, TabKey } from '@/types/partner'
 
-const { success, error } = useToast()
+const router = useRouter()
+const { error } = useToast()
 const { fetchPartners, fetchSuppliers } = useVendorService()
 
 const businessPartners = ref<Partner[]>([])
@@ -86,9 +87,10 @@ function toggleRow(id: number) {
   i >= 0 ? selectedIds.value.splice(i, 1) : selectedIds.value.push(id)
 }
 
-const showDetail      = ref(false)
-const selectedPartner = ref<Partner | null>(null)
-function openDetail(p: Partner) { selectedPartner.value = p; showDetail.value = true }
+function openDetail(p: Partner) {
+  const type = activeTab.value === 'partners' ? 'bp' : 'sp'
+  router.push(`/sales/partners/${type}/${p.id}`)
+}
 
 function exportXLSX() {
   const type = activeTab.value === 'partners' ? 'Business Partner' : 'Supplier'
@@ -193,5 +195,4 @@ function exportXLSX() {
 
   </div>
 
-  <PartnerDetailDialog v-model:open="showDetail" :partner="selectedPartner" :active-tab="activeTab" />
 </template>

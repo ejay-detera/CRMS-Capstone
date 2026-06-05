@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { Building2, Truck, Search, LayoutGrid, List, Plus, Upload } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import { useVendorService } from '@/composables/useVendorService'
-import PartnersGrid       from './PartnersGrid.vue'
-import PartnersTable      from './PartnersTable.vue'
-import PartnerDetailDialog from './PartnerDetailDialog.vue'
+import PartnersGrid        from './PartnersGrid.vue'
+import PartnersTable       from './PartnersTable.vue'
 import DeleteConfirmDialog from './DeleteConfirmDialog.vue'
 import AddPartnerDialog    from './AddPartnerDialog.vue'
 import type { Partner, TabKey, AddPartnerForm } from '@/types/partner'
 
+const router = useRouter()
 const { success, error, warning } = useToast()
 const {
   fetchPartners, createPartner, updatePartner, deletePartner,
@@ -91,9 +92,10 @@ function toggleRow(id: number) {
   i >= 0 ? selectedIds.value.splice(i, 1) : selectedIds.value.push(id)
 }
 
-const showDetail      = ref(false)
-const selectedPartner = ref<Partner | null>(null)
-function openDetail(p: Partner) { selectedPartner.value = p; showDetail.value = true }
+function openDetail(p: Partner) {
+  const type = activeTab.value === 'partners' ? 'bp' : 'sp'
+  router.push(`/admin/partners/${type}/${p.id}`)
+}
 
 const showDelete   = ref(false)
 const deleteTarget = ref<Partner | null>(null)
@@ -123,17 +125,18 @@ const editTarget = ref<Partner | null>(null)
 function openEdit(p: Partner) { editTarget.value = p; showAdd.value = true }
 
 async function handleSubmit(form: AddPartnerForm) {
+  const target = editTarget.value
   try {
-    if (editTarget.value) {
+    if (target) {
       if (activeTab.value === 'partners') {
-        const { partner, warnings } = await updatePartner(editTarget.value.id, form, editTarget.value.bpCode)
-        const idx = businessPartners.value.findIndex(p => p.id === editTarget.value!.id)
+        const { partner, warnings } = await updatePartner(target.id, form, target.bpCode)
+        const idx = businessPartners.value.findIndex(p => p.id === target.id)
         if (idx >= 0) businessPartners.value[idx] = partner
         success('Partner updated', `${partner.name} has been updated.`)
         if (warnings.length) warning('Duplicate warning', warnings[0].message)
       } else {
-        const { partner, warnings } = await updateSupplier(editTarget.value.id, form)
-        const idx = suppliersData.value.findIndex(p => p.id === editTarget.value!.id)
+        const { partner, warnings } = await updateSupplier(target.id, form)
+        const idx = suppliersData.value.findIndex(p => p.id === target.id)
         if (idx >= 0) suppliersData.value[idx] = partner
         success('Supplier updated', `${partner.name} has been updated.`)
         if (warnings.length) warning('Duplicate warning', warnings[0].message)
@@ -273,7 +276,6 @@ function exportXLSX() {
 
   </div>
 
-  <PartnerDetailDialog v-model:open="showDetail" :partner="selectedPartner" :active-tab="activeTab" />
   <DeleteConfirmDialog v-model:open="showDelete" :partner="deleteTarget" :active-tab="activeTab" @confirm="confirmDelete" />
   <AddPartnerDialog
     :open="showAdd" :active-tab="activeTab" :edit-target="editTarget"
