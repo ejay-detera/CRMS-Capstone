@@ -39,4 +39,20 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::delete('/partners/{id}', [\App\Http\Controllers\BusinessPartnerController::class, 'destroy'])
         ->middleware('permission:crms.partners.delete');
 
+    // Supplier–Contract Associations
+    Route::get('/suppliers/{id}/contracts', \App\Http\Controllers\Api\V1\SupplierContracts\IndexController::class)
+        ->middleware('permission:crms.partners.view');
+    Route::post('/suppliers/{id}/contracts', \App\Http\Controllers\Api\V1\SupplierContracts\StoreController::class)
+        ->middleware('permission:crms.partners.edit');
+    Route::delete('/suppliers/{id}/contracts/{contractId}', \App\Http\Controllers\Api\V1\SupplierContracts\DestroyController::class)
+        ->middleware('permission:crms.partners.edit');
+
+    // Partner–Contract Associations
+    Route::get('/partners/{id}/contracts', \App\Http\Controllers\Api\V1\PartnerContracts\IndexController::class)
+        ->middleware('permission:crms.partners.view');
+    Route::post('/partners/{id}/contracts', \App\Http\Controllers\Api\V1\PartnerContracts\StoreController::class)
+        ->middleware('permission:crms.partners.edit');
+    Route::delete('/partners/{id}/contracts/{contractId}', \App\Http\Controllers\Api\V1\PartnerContracts\DestroyController::class)
+        ->middleware('permission:crms.partners.edit');
+
 });

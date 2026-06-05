@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Plus, Upload } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
@@ -7,11 +8,10 @@ import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { useApiCache } from '@/composables/useApiCache'
 import ContractsTable       from './ContractsTable.vue'
-import ContractDetailDialog  from './ContractDetailDialog.vue'
-import EditContractDialog    from './EditContractDialog.vue'
 import { remainingDays } from '@/types/contract'
 import type { Contract, FilterTab, StatusFilter } from '@/types/contract'
 
+const router = useRouter()
 const { success, error } = useToast()
 const { state: authState } = useAuth()
 const { state: cacheState, fetchContracts: fetchContractsCached } = useApiCache()
@@ -50,7 +50,7 @@ const statCards = computed(() => {
   const expiringCount = withDays.value.filter(c => c.days >= 0 && c.days <= 30).length
   const expiredCount = withDays.value.filter(c => c.days < 0).length
   return {
-    total:    activeCount + expiringCount,
+    total:    activeCount + expiringCount + expiredCount,
     active:   activeCount,
     expiring: expiringCount,
     expired:  expiredCount,
@@ -58,10 +58,10 @@ const statCards = computed(() => {
 })
 
 const statCardList = computed(() => [
-  { label: 'Total Contracts', value: statCards.value.total,    valueClass: 'text-black', change: '+2.1%', positive: true  },
-  { label: 'Active',          value: statCards.value.active,   valueClass: 'text-black', change: '+4.0%', positive: true  },
-  { label: 'Expiring Soon',   value: statCards.value.expiring, valueClass: 'text-black', change: '+5.2%', positive: true  },
-  { label: 'Expired',         value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false, link: '/admin/expired-contracts' },
+  { label: 'Total Contracts', value: statCards.value.total,    valueClass: 'text-black', change: '+2.1%', positive: true, filter: 'all' as FilterTab },
+  { label: 'Active',          value: statCards.value.active,   valueClass: 'text-black', change: '+4.0%', positive: true, filter: 'active' as FilterTab },
+  { label: 'Expiring Soon',   value: statCards.value.expiring, valueClass: 'text-black', change: '+5.2%', positive: true, filter: 'expiring' as FilterTab },
+  { label: 'Expired',         value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false, filter: 'expired' as FilterTab },
 ])
 
 const approvalStatuses = new Set(['Pending', 'Approved', 'Rejected'])
@@ -74,7 +74,7 @@ const filtered = computed(() => {
   return withDays.value.filter(c => {
     const bySearch = !q || c.id.toLowerCase().includes(q) || c.businessPartner.toLowerCase().includes(q) || c.category.toLowerCase().includes(q)
     const byFilter =
-      activeFilter.value === 'all'      ? c.days >= 0 :
+      activeFilter.value === 'all'      ? true :
       activeFilter.value === 'active'   ? c.days > 30 :
       activeFilter.value === 'expiring' ? c.days >= 0 && c.days <= 30 :
       c.days < 0
@@ -95,44 +95,12 @@ const paginated = computed(() =>
   filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
 )
 
-const showDetail   = ref(false)
-const detailTarget = ref<(Contract & { days: number }) | null>(null)
-function openDetail(c: Contract & { days: number }) { detailTarget.value = c; showDetail.value = true }
+function openDetail(c: Contract & { days: number }) {
+  router.push(`/admin/contracts/${c.id}`)
+}
 
-const showEdit   = ref(false)
-const editTarget = ref<Contract | null>(null)
-function openEdit(c: Contract & { days: number }) { editTarget.value = c; showEdit.value = true }
-
-async function handleEdit(data: Omit<Contract, 'id' | 'createdBy'>) {
-  if (!editTarget.value || !authState.user) return
-  
-  // Clean contract ID from the composite key e.g. "CTR-001" or raw integer ID
-  const contractId = editTarget.value.id
-  if (!contractId) return
-
-  const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
-
-  try {
-    const res = await fetch(`${apiBase}/contracts/${contractId}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${authState.token || ''}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(data)
-    })
-    const json = await res.json()
-    if (res.ok) {
-      await fetchContracts()
-      success('Contract updated', `${data.businessPartner}'s contract has been saved.`)
-    } else {
-      error('Update failed', json.message || 'Could not update contract.')
-    }
-  } catch (err) {
-    console.error('Failed to update contract:', err)
-    error('Update failed', 'Connection to contract service failed.')
-  }
+function openEdit(c: Contract & { days: number }) {
+  router.push(`/admin/contracts/${c.id}?edit=1`)
 }
 
 async function handleDelete(id: string) {
@@ -211,13 +179,12 @@ function exportXLSX() {
         </div>
       </template>
       <template v-else>
-        <component
+        <div
           v-for="card in statCardList"
           :key="card.label"
-          :is="card.link ? 'router-link' : 'div'"
-          v-bind="card.link ? { to: card.link } : {}"
-          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm"
-          :class="card.link ? 'block hover:border-[#2E85D8]/50 hover:shadow-md cursor-pointer transition-all duration-200' : ''"
+          @click="activeFilter = card.filter"
+          class="bg-white rounded-lg border px-6 py-5 shadow-sm block hover:shadow-md cursor-pointer transition-all duration-200"
+          :class="activeFilter === card.filter ? 'border-[#2E85D8]' : 'border-black/8'"
         >
           <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
           <div class="flex items-end justify-between gap-2">
@@ -227,7 +194,7 @@ function exportXLSX() {
               {{ card.change }}
             </span>
           </div>
-        </component>
+        </div>
       </template>
     </div>
 
@@ -255,7 +222,4 @@ function exportXLSX() {
     />
 
   </div>
-
-  <EditContractDialog   v-model:open="showEdit"   :contract="editTarget"   @submit="handleEdit" />
-  <ContractDetailDialog v-model:open="showDetail" :contract="detailTarget" />
 </template>

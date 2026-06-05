@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, computed, ref } from 'vue'
+import { reactive, computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, ScanLine } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
@@ -160,6 +160,59 @@ async function handleSubmit() {
     loading.value = false
   }
 }
+
+import { onClickOutside } from '@vueuse/core'
+
+const partnerNames = ref<string[]>([])
+
+async function fetchPartnerNames() {
+  try {
+    const apiBase = import.meta.env.VITE_VENDOR_API_URL || 'http://localhost:8001/api'
+    const headers = {
+      'Authorization': `Bearer ${authState.token || ''}`,
+      'Accept': 'application/json'
+    }
+    const [resP, resS] = await Promise.all([
+      fetch(`${apiBase}/partners?per_page=100`, { headers }),
+      fetch(`${apiBase}/suppliers?per_page=100`, { headers })
+    ])
+    let names: string[] = []
+    if (resP.ok) {
+      const json = await resP.json()
+      names = names.concat((json.data || []).map((p: any) => p.partner_name))
+    }
+    if (resS.ok) {
+      const json = await resS.json()
+      names = names.concat((json.data || []).map((s: any) => s.supplier_name))
+    }
+    partnerNames.value = Array.from(new Set(names))
+  } catch (err) {
+    console.error('Failed to fetch partner names:', err)
+  }
+}
+
+onMounted(() => {
+  fetchPartnerNames()
+})
+
+const showSuggestions = ref(false)
+const suggestionsContainer = ref<HTMLElement | null>(null)
+
+const partnerSuggestions = computed(() => {
+  const query = form.businessPartner.trim().toLowerCase()
+  if (!query) return partnerNames.value
+  return partnerNames.value.filter(name => name.toLowerCase().includes(query))
+})
+
+function selectSuggestion(name: string) {
+  form.businessPartner = name
+  showSuggestions.value = false
+  touched.businessPartner = true
+}
+
+onClickOutside(suggestionsContainer, () => {
+  showSuggestions.value = false
+})
 </script>
 
 <template>
@@ -193,16 +246,33 @@ async function handleSubmit() {
           <!-- Business Partner -->
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-black/55">Business Partner <span class="text-red-500">*</span></label>
-            <input
-              v-model="form.businessPartner"
-              @blur="touched.businessPartner = true"
-              type="text"
-              placeholder="e.g. Globe Telecom"
-              class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="errors.businessPartner
-                ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
-            />
+            <div class="relative w-full" ref="suggestionsContainer">
+              <input
+                v-model="form.businessPartner"
+                @focus="showSuggestions = true"
+                @blur="touched.businessPartner = true"
+                type="text"
+                placeholder="e.g. Globe Telecom"
+                class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition w-full"
+                :class="errors.businessPartner
+                  ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
+                  : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+              />
+              <div
+                v-if="showSuggestions && partnerSuggestions.length > 0"
+                class="absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-48 overflow-y-auto bg-white border border-black/8 rounded-lg shadow-lg py-1 font-poppins divide-y divide-black/[0.04]"
+              >
+                <button
+                  v-for="name in partnerSuggestions"
+                  :key="name"
+                  type="button"
+                  @click="selectSuggestion(name)"
+                  class="w-full text-left px-3.5 py-2 text-xs text-black/75 hover:bg-black/[0.03] hover:text-[#2E85D8] font-medium transition-colors"
+                >
+                  {{ name }}
+                </button>
+              </div>
+            </div>
             <p v-if="errors.businessPartner" class="text-xs text-red-500">{{ errors.businessPartner }}</p>
           </div>
 

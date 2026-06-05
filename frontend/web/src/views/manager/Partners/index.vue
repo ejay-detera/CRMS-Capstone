@@ -75,10 +75,10 @@ const paginated = computed(() => filtered.value.slice((currentPage.value - 1) * 
 
 const selectedIds     = ref<number[]>([])
 const allPageSelected = computed(() =>
-  paginated.value.length > 0 && paginated.value.every(p => selectedIds.value.includes(p.id))
+  partners.value.length > 0 && partners.value.every(p => selectedIds.value.includes(p.id))
 )
 function toggleSelectAll() {
-  const ids = paginated.value.map(p => p.id)
+  const ids = partners.value.map(p => p.id)
   if (allPageSelected.value) selectedIds.value = selectedIds.value.filter(id => !ids.includes(id))
   else ids.forEach(id => { if (!selectedIds.value.includes(id)) selectedIds.value.push(id) })
 }
@@ -112,7 +112,38 @@ function exportXLSX() {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, type === 'Business Partner' ? 'Partners' : 'Suppliers')
   XLSX.writeFile(wb, `sbsi-${activeTab.value}.xlsx`)
-  success('Export complete', `${filtered.value.length} records exported.`)
+  success('Export complete', `${partners.value.length} records exported.`)
+}
+
+async function handleDetachContract(associationId: string) {
+  if (!selectedPartner.value || !selectedPartner.value.db_id) return
+  const foundContract = selectedPartner.value.linkedContracts?.find(c => c.associationId === associationId)
+  if (foundContract) {
+    try {
+      await detachContract(activeTab.value, selectedPartner.value.db_id, foundContract.contractId)
+      const contracts = await fetchVendorContracts(activeTab.value, selectedPartner.value.db_id)
+      selectedPartner.value.linkedContracts = contracts
+      selectedPartner.value.contracts = contracts.length
+      loadData()
+      success('Contract unlinked', 'The contract has been detached successfully.')
+    } catch (err: any) {
+      error('Detach failed', err.message || 'Could not detach contract.')
+    }
+  }
+}
+
+async function handleLinkContract(contractId: string) {
+  if (!selectedPartner.value || !selectedPartner.value.db_id) return
+  try {
+    await linkContract(activeTab.value, selectedPartner.value.db_id, contractId)
+    const contracts = await fetchVendorContracts(activeTab.value, selectedPartner.value.db_id)
+    selectedPartner.value.linkedContracts = contracts
+    selectedPartner.value.contracts = contracts.length
+    loadData()
+    success('Contract linked', `Contract is now associated with ${selectedPartner.value.name}.`)
+  } catch (err: any) {
+    error('Link failed', err.message || 'Could not link contract.')
+  }
 }
 </script>
 
@@ -134,12 +165,12 @@ function exportXLSX() {
         <button @click="activeTab = 'partners'"
           class="flex items-center gap-2 px-4 py-1.5 text-sm rounded transition-all font-medium"
           :class="activeTab === 'partners' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'">
-          <Building2 class="w-3.5 h-3.5" /> Business Partners ({{ businessPartners.length }})
+          <Building2 class="w-3.5 h-3.5" /> Business Partners ({{ partnersCount }})
         </button>
         <button @click="activeTab = 'suppliers'"
           class="flex items-center gap-2 px-4 py-1.5 text-sm rounded transition-all font-medium"
           :class="activeTab === 'suppliers' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'">
-          <Truck class="w-3.5 h-3.5" /> Suppliers ({{ suppliersData.length }})
+          <Truck class="w-3.5 h-3.5" /> Suppliers ({{ suppliersCount }})
         </button>
       </div>
       <div class="ml-auto flex items-center gap-0.5 bg-black/4 rounded-lg p-1">
@@ -181,7 +212,7 @@ function exportXLSX() {
 
     <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" :loading="loading" @open-detail="openDetail" />
     <PartnersTable v-else
-      :paginated="paginated" :filtered="filtered" :active-tab="activeTab"
+      :paginated="partners" :filtered="filtered" :active-tab="activeTab"
       :selected-ids="selectedIds" :all-page-selected="allPageSelected"
       :current-page="currentPage" :items-per-page="itemsPerPage"
       :loading="loading"

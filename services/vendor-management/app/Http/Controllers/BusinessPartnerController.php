@@ -19,18 +19,21 @@ class BusinessPartnerController extends Controller
         $this->auditLogService = $auditLogService;
     }
 
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
-        $query = BusinessPartner::query();
+        $query = BusinessPartner::query()->withCount('associations');
 
-        if ($request->has('region')) {
+        if ($request->filled('region') && $request->region !== 'All') {
             $query->where('region', $request->region);
         }
 
-        if ($request->has('partner_name')) {
+        if ($request->filled('search')) {
+            $search = $request->query('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('partner_name', 'like', '%' . $search . '%')
+                  ->orWhere('industry', 'like', '%' . $search . '%');
+            });
+        } elseif ($request->filled('partner_name')) {
             $query->where('partner_name', 'like', $request->partner_name . '%');
         }
 

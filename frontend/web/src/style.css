@@ -142,6 +142,27 @@
     background: rgba(0, 0, 0, 0.3);
   }
 
+  /* Premium scrollbar styling for modals */
+  .modal-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(46, 133, 216, 0.25) transparent;
+  }
+  .modal-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .modal-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .modal-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(46, 133, 216, 0.25); /* #2E85D8 with opacity */
+    border-radius: 9999px;
+    transition: background 0.2s ease-in-out;
+  }
+  .modal-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(37, 37, 120, 0.45); /* #252578 with opacity */
+  }
+
   /* Dark themed scrollbars for the sidebar */
   [class*="bg-[#252578]"]::-webkit-scrollbar-thumb,
   [class*="bg-[#2F2F73]"]::-webkit-scrollbar-thumb,

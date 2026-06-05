@@ -35,7 +35,7 @@ const formattedTime = computed(() =>
   now.value.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 )
 
-const userFirstName = computed(() => authState.user?.profile?.first_name || authState.user?.first_name || 'Manager')
+const userFirstName = computed(() => (authState.user as any)?.profile?.first_name || authState.user?.first_name || 'Manager')
 
 const contracts = computed(() => cacheState.contracts || [])
 const loading = computed(() => cacheState.contractsLoading)

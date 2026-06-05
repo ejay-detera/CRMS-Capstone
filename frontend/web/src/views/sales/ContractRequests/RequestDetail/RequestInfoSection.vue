@@ -42,6 +42,34 @@ const categories = [
   'Equipment Lease',
   'Equipment Maintenance',
 ]
+
+import { ref, computed } from 'vue'
+import { initialBusinessPartners, initialSuppliersData } from '@/views/admin/Partners/mockPartners'
+import { onClickOutside } from '@vueuse/core'
+
+const showSuggestions = ref(false)
+const suggestionsContainer = ref<HTMLElement | null>(null)
+
+const partnerSuggestions = computed(() => {
+  const allNames = [
+    ...initialBusinessPartners.map(p => p.name),
+    ...initialSuppliersData.map(s => s.name)
+  ]
+  const uniqueNames = Array.from(new Set(allNames))
+  const query = props.editForm.businessPartner.trim().toLowerCase()
+  if (!query) return uniqueNames
+  return uniqueNames.filter(name => name.toLowerCase().includes(query))
+})
+
+function selectSuggestion(name: string) {
+  props.editForm.businessPartner = name
+  showSuggestions.value = false
+  props.touched.businessPartner = true
+}
+
+onClickOutside(suggestionsContainer, () => {
+  showSuggestions.value = false
+})
 </script>
 
 <template>
@@ -59,10 +87,28 @@ const categories = [
           </label>
           <p v-if="!isEditing" class="text-sm text-black py-1">{{ request.businessPartner }}</p>
           <template v-else>
-            <input v-model="editForm.businessPartner" @blur="touched.businessPartner = true"
-              type="text" placeholder="e.g. Globe Telecom"
-              class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="fieldCls('businessPartner', !editForm.businessPartner)" />
+            <div class="relative w-full" ref="suggestionsContainer">
+              <input v-model="editForm.businessPartner"
+                @focus="showSuggestions = true"
+                @blur="touched.businessPartner = true"
+                type="text" placeholder="e.g. Globe Telecom"
+                class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition w-full"
+                :class="fieldCls('businessPartner', !editForm.businessPartner)" />
+              <div
+                v-if="showSuggestions && partnerSuggestions.length > 0"
+                class="absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-48 overflow-y-auto bg-white border border-black/8 rounded-lg shadow-lg py-1 font-poppins divide-y divide-black/[0.04]"
+              >
+                <button
+                  v-for="name in partnerSuggestions"
+                  :key="name"
+                  type="button"
+                  @click="selectSuggestion(name)"
+                  class="w-full text-left px-3.5 py-2 text-xs text-black/75 hover:bg-black/[0.03] hover:text-[#2E85D8] font-medium transition-colors"
+                >
+                  {{ name }}
+                </button>
+              </div>
+            </div>
             <p v-if="touched.businessPartner && !editForm.businessPartner" class="text-xs text-red-500">Business partner is required.</p>
           </template>
         </div>

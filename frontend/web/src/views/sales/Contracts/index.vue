@@ -8,7 +8,7 @@ import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import SalesContractsTable  from './SalesContractsTable.vue'
 import { remainingDays } from '@/types/contract'
-import type { Contract, StatusFilter } from '@/types/contract'
+import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
 
 const router = useRouter()
 const { success, error } = useToast()
@@ -32,6 +32,7 @@ async function fetchContracts() {
 
 onMounted(fetchContracts)
 
+const activeFilter   = ref<FilterTab>('all')
 const statusFilter   = ref<StatusFilter>('')
 const searchQuery    = ref('')
 const categoryFilter  = ref('')
@@ -48,7 +49,7 @@ const statCards = computed(() => {
   const expiringCount = withDays.value.filter(c => c.days >= 0 && c.days <= 30).length
   const expiredCount = withDays.value.filter(c => c.days < 0).length
   return {
-    total:    activeCount + expiringCount,
+    total:    activeCount + expiringCount + expiredCount,
     active:   activeCount,
     expiring: expiringCount,
     expired:  expiredCount,
@@ -56,10 +57,10 @@ const statCards = computed(() => {
 })
 
 const statCardList = computed(() => [
-  { label: 'My Contracts',  value: statCards.value.total,    valueClass: 'text-black', change: '+2.1%', positive: true  },
-  { label: 'Active',        value: statCards.value.active,   valueClass: 'text-black', change: '+4.0%', positive: true  },
-  { label: 'Expiring Soon', value: statCards.value.expiring, valueClass: 'text-black', change: '+5.2%', positive: true  },
-  { label: 'Expired',       value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false, link: '/sales/expired-contracts' },
+  { label: 'My Contracts',  value: statCards.value.total,    valueClass: 'text-black', change: '+2.1%', positive: true, filter: 'all' as FilterTab  },
+  { label: 'Active',        value: statCards.value.active,   valueClass: 'text-black', change: '+4.0%', positive: true, filter: 'active' as FilterTab  },
+  { label: 'Expiring Soon', value: statCards.value.expiring, valueClass: 'text-black', change: '+5.2%', positive: true, filter: 'expiring' as FilterTab  },
+  { label: 'Expired',       value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false, filter: 'expired' as FilterTab },
 ])
 
 const approvalStatuses = new Set(['Pending', 'Approved', 'Rejected'])
@@ -80,12 +81,16 @@ const filtered = computed(() => {
         : c.workflowStatus === sf
     const byCategory = !cat || c.category === cat
     const byRegion = !reg || c.region === reg
-    const byNotExpired = c.days >= 0
-    return bySearch && byStatus && byCategory && byRegion && byNotExpired
+    const byFilter =
+      activeFilter.value === 'all'      ? true :
+      activeFilter.value === 'active'   ? c.days > 30 :
+      activeFilter.value === 'expiring' ? c.days >= 0 && c.days <= 30 :
+      c.days < 0
+    return bySearch && byStatus && byCategory && byRegion && byFilter
   })
 })
 
-watch([statusFilter, searchQuery, categoryFilter, regionFilter], () => { currentPage.value = 1 })
+watch([activeFilter, statusFilter, searchQuery, categoryFilter, regionFilter], () => { currentPage.value = 1 })
 
 const paginated = computed(() =>
   filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
@@ -144,33 +149,22 @@ function exportXLSX() {
         </div>
       </template>
       <template v-else>
-        <template v-for="card in statCardList" :key="card.label">
-          <router-link v-if="card.link"
-            :to="card.link"
-            class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm block hover:border-[#2E85D8]/50 hover:shadow-md cursor-pointer transition-all duration-200"
-          >
-            <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
-            <div class="flex items-end justify-between gap-2">
-              <span class="text-3xl font-semibold tabular-nums" :class="card.valueClass">{{ card.value }}</span>
-              <span class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
-                :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
-                {{ card.change }}
-              </span>
-            </div>
-          </router-link>
-          <div v-else
-            class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm"
-          >
-            <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
-            <div class="flex items-end justify-between gap-2">
-              <span class="text-3xl font-semibold tabular-nums" :class="card.valueClass">{{ card.value }}</span>
-              <span class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
-                :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
-                {{ card.change }}
-              </span>
-            </div>
+        <div
+          v-for="card in statCardList"
+          :key="card.label"
+          @click="activeFilter = card.filter"
+          class="bg-white rounded-lg border px-6 py-5 shadow-sm block hover:shadow-md cursor-pointer transition-all duration-200"
+          :class="activeFilter === card.filter ? 'border-[#2E85D8]' : 'border-black/8'"
+        >
+          <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
+          <div class="flex items-end justify-between gap-2">
+            <span class="text-3xl font-semibold tabular-nums" :class="card.valueClass">{{ card.value }}</span>
+            <span class="text-xs font-medium px-2 py-0.5 rounded-md mb-0.5 shrink-0"
+              :class="card.positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
+              {{ card.change }}
+            </span>
           </div>
-        </template>
+        </div>
       </template>
     </div>
 
@@ -179,6 +173,7 @@ function exportXLSX() {
       :loading="loading"
       :paginated="paginated"
       :filtered="filtered"
+      :active-filter="activeFilter"
       :status-filter="statusFilter"
       :category-filter="categoryFilter"
       :region-filter="regionFilter"
@@ -186,6 +181,7 @@ function exportXLSX() {
       :current-page="currentPage"
       :items-per-page="itemsPerPage"
       @open-detail="openDetail"
+      @update:active-filter="activeFilter = $event"
       @update:status-filter="statusFilter = $event"
       @update:category-filter="categoryFilter = $event"
       @update:region-filter="regionFilter = $event"

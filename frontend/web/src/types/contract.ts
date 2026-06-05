@@ -53,6 +53,53 @@ export function remainingDays(endDate: string): number {
   return Math.floor((end.getTime() - today.getTime()) / 86_400_000)
 }
 
+export function formatRemainingTime(endDateStr: string): string {
+  if (!endDateStr) return '—'
+  const end = new Date(endDateStr)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  end.setHours(0, 0, 0, 0)
+
+  const diffTime = end.getTime() - today.getTime()
+  const diffDays = Math.floor(diffTime / 86_400_000)
+
+  if (diffDays === 0) {
+    return '0 days'
+  }
+
+  const isOverdue = diffDays < 0
+  const targetDate = isOverdue ? today : end
+  const baseDate = isOverdue ? end : today
+
+  let years = targetDate.getFullYear() - baseDate.getFullYear()
+  let months = targetDate.getMonth() - baseDate.getMonth()
+  let days = targetDate.getDate() - baseDate.getDate()
+
+  if (days < 0) {
+    const prevMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 0)
+    days += prevMonth.getDate()
+    months -= 1
+  }
+
+  if (months < 0) {
+    months += 12
+    years -= 1
+  }
+
+  const totalMonths = years * 12 + months
+
+  const parts: string[] = []
+  if (totalMonths > 0) {
+    parts.push(`${totalMonths} ${totalMonths === 1 ? 'month' : 'months'}`)
+  }
+  if (days > 0) {
+    parts.push(`${days} ${days === 1 ? 'day' : 'days'}`)
+  }
+
+  const resultStr = parts.join(', ') || '0 days'
+  return isOverdue ? `${resultStr} overdue` : `${resultStr} remaining`
+}
+
 export function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }

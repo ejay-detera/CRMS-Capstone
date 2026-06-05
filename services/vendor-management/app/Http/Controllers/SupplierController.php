@@ -19,18 +19,21 @@ class SupplierController extends Controller
         $this->auditLogService = $auditLogService;
     }
 
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
-        $query = Supplier::query();
+        $query = Supplier::query()->withCount('associations');
 
-        if ($request->has('region')) {
+        if ($request->filled('region') && $request->region !== 'All') {
             $query->where('region', $request->region);
         }
 
-        if ($request->has('supplier_name')) {
+        if ($request->filled('search')) {
+            $search = $request->query('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('supplier_name', 'like', '%' . $search . '%')
+                  ->orWhere('industry', 'like', '%' . $search . '%');
+            });
+        } elseif ($request->filled('supplier_name')) {
             $query->where('supplier_name', 'like', $request->supplier_name . '%');
         }
 

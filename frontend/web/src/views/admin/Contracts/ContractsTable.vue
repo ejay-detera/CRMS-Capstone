@@ -15,7 +15,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select'
-import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus } from '@/types/contract'
+import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus, formatRemainingTime } from '@/types/contract'
 import type { Contract, FilterTab, StatusFilter } from '@/types/contract'
 import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
 
@@ -50,6 +50,7 @@ const filterTabs: { label: string; value: FilterTab }[] = [
   { label: 'All',           value: 'all'      },
   { label: 'Active',        value: 'active'   },
   { label: 'Expiring Soon', value: 'expiring' },
+  { label: 'Expired',       value: 'expired'  },
 ]
 
 const categories = [
@@ -175,7 +176,8 @@ function avatarColor(name: string) {
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Category</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Region</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">End Date</TableHead>
-          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Remaining</TableHead>
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Remaining Time</TableHead>
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Contract State</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Sales Rep</TableHead>
           <TableHead class="w-12 py-3" />
@@ -207,7 +209,12 @@ function avatarColor(name: string) {
               <div class="h-3 w-28 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
 
-            <!-- Remaining Days -->
+            <!-- Remaining Time -->
+            <TableCell class="py-4">
+              <div class="h-4 w-24 bg-black/5 animate-pulse rounded"></div>
+            </TableCell>
+
+            <!-- Contract State -->
             <TableCell class="py-4">
               <div class="h-5 w-24 bg-black/5 animate-pulse rounded-full"></div>
             </TableCell>
@@ -257,9 +264,12 @@ function avatarColor(name: string) {
               <p class="text-xs text-black/35 mt-0.5">from {{ fmtDate(c.startDate) }}</p>
             </TableCell>
 
-            <!-- Remaining Days -->
+            <!-- Remaining Time -->
+            <TableCell class="py-4 text-sm text-black/60">{{ formatRemainingTime(c.endDate) }}</TableCell>
+
+            <!-- Contract State -->
             <TableCell class="py-4">
-              <ContractLifecycleBadge :status="deriveLifecycleStatus(c.days)" :days="c.days" />
+              <ContractLifecycleBadge :status="deriveLifecycleStatus(c.days)" />
             </TableCell>
 
             <!-- Status -->
@@ -317,7 +327,7 @@ function avatarColor(name: string) {
           </TableRow>
 
           <TableRow v-if="paginated.length === 0">
-            <TableCell colspan="8" class="text-center py-16">
+            <TableCell colspan="9" class="text-center py-16">
               <p class="text-sm font-semibold text-black/28">No contracts found</p>
               <p class="text-xs text-black/20 mt-1">Try a different filter or search term</p>
             </TableCell>

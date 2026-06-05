@@ -11,6 +11,7 @@ use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ContractController extends Controller
 {
@@ -80,6 +81,58 @@ class ContractController extends Controller
         return response()->json([
             'data' => $contracts->map(fn ($c) => $this->formatContract($c))->values(),
         ]);
+    }
+
+    private function autoLinkVendor(int $contractId, string $bpName, ?int $userId): void
+    {
+        if (!Schema::hasTable('vendor_contract_associations')) {
+            return;
+        }
+
+        // 1. Try to find in business_partners
+        if (Schema::hasTable('business_partners')) {
+            $partner = DB::table('business_partners')
+                ->where('partner_name', $bpName)
+                ->first();
+
+            if ($partner) {
+                DB::table('vendor_contract_associations')->updateOrInsert(
+                    [
+                        'vendor_type' => 'partner',
+                        'vendor_id'   => $partner->partner_id,
+                        'contract_id' => $contractId,
+                    ],
+                    [
+                        'attached_by' => $userId,
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ]
+                );
+                return;
+            }
+        }
+
+        // 2. Try to find in suppliers
+        if (Schema::hasTable('suppliers')) {
+            $supplier = DB::table('suppliers')
+                ->where('supplier_name', $bpName)
+                ->first();
+
+            if ($supplier) {
+                DB::table('vendor_contract_associations')->updateOrInsert(
+                    [
+                        'vendor_type' => 'supplier',
+                        'vendor_id'   => $supplier->supplier_id,
+                        'contract_id' => $contractId,
+                    ],
+                    [
+                        'attached_by' => $userId,
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ]
+                );
+            }
+        }
     }
 
     /**
@@ -176,6 +229,9 @@ class ContractController extends Controller
             \App\Models\Document::whereIn('_id', $incoming['document_ids'])
                 ->update(['contract_id' => $contract->contract_id]);
         }
+
+        // Auto-link to business partner/supplier if exists
+        $this->autoLinkVendor((int) $contract->contract_id, $contract->bp_name, (int) $userId);
 
         // Audit Logging
         $this->auditLogService->log(
@@ -312,6 +368,12 @@ class ContractController extends Controller
             \App\Models\Document::whereIn('_id', $incomingDocIds)
                 ->update(['contract_id' => $contract->contract_id]);
         }
+
+        // Clear old associations and re-link
+        if (Schema::hasTable('vendor_contract_associations')) {
+            DB::table('vendor_contract_associations')->where('contract_id', $contract->contract_id)->delete();
+        }
+        $this->autoLinkVendor((int) $contract->contract_id, $contract->bp_name, (int) $userId);
 
         // Audit Logging
         $this->auditLogService->log(
@@ -499,88 +561,4 @@ class ContractController extends Controller
             'data'    => $this->formatContract($contract),
         ]);
     }
-
-    /**
-     * Display a listing of expired contracts.
-     */
-    public function indexExpired(Request $request)
-    {
-        $query = Contract::with([
-            'documents',
-            'category',
-            'approvalStatus',
-            'workflowStatus',
-            'region',
-        ]);
-
-        $query->where('end_date', '<', now()->toDateString());
-
-        if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('bp_name', 'like', $search . '%')
-                  ->orWhere('item_code', 'like', $search . '%');
-            });
-        }
-
-        // Sales and Finance Employee can only ever see their own contracts
-        $role = $request->get('auth_role');
-        if (in_array($role, ['Sales', 'Finance Employee'])) {
-            $query->where('created_by', $request->get('auth_id'));
-        }
-
-        if ($request->has('category') && !empty($request->category)) {
-            $category = $request->category;
-            $query->whereHas('category', function ($q) use ($category) {
-                $q->where('category_name', $category)
-                  ->orWhere('category_id', $category);
-            });
-        }
-
-        if ($request->has('region') && !empty($request->region)) {
-            $region = $request->region;
-            $query->whereHas('region', function ($q) use ($region) {
-                $q->where('region_name', $region)
-                  ->orWhere('region_id', $region);
-            });
-        }
-
-        if ($request->has('approval_status') && !empty($request->approval_status)) {
-            $approvalStatus = $request->approval_status;
-            $query->whereHas('approvalStatus', function ($q) use ($approvalStatus) {
-                $q->where('status_name', $approvalStatus)
-                  ->orWhere('approval_status_id', $approvalStatus);
-            });
-        }
-
-        if ($request->has('workflow_status') && !empty($request->workflow_status)) {
-            $workflowStatus = $request->workflow_status;
-            $query->whereHas('workflowStatus', function ($q) use ($workflowStatus) {
-                $q->where('status_name', $workflowStatus)
-                  ->orWhere('workflow_status_id', $workflowStatus);
-            });
-        }
-
-        $query->orderBy('end_date', 'asc');
-
-        $perPage = $request->integer('per_page', 50);
-        $contracts = $query->paginate($perPage);
-
-        return response()->json([
-            'data' => collect($contracts->items())->map(fn ($c) => $this->formatContract($c))->values(),
-            'meta' => [
-                'current_page' => $contracts->currentPage(),
-                'last_page' => $contracts->lastPage(),
-                'per_page' => $contracts->perPage(),
-                'total' => $contracts->total(),
-            ],
-            'links' => [
-                'first' => $contracts->url(1),
-                'last' => $contracts->url($contracts->lastPage()),
-                'prev' => $contracts->previousPageUrl(),
-                'next' => $contracts->nextPageUrl(),
-            ]
-        ]);
-    }
 }
-

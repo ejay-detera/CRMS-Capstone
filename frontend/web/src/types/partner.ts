@@ -1,29 +1,67 @@
-export type TabKey  = 'partners' | 'suppliers'
-export type Region  = 'Luzon' | 'Visayas' | 'Mindanao'
-export type Status  = 'Active' | 'Inactive' | 'Suspended'
+export type TabKey = 'partners' | 'suppliers'
+export type Region = 'Luzon' | 'Visayas' | 'Mindanao'
+export type Status = 'Active' | 'Inactive' | 'Suspended'
 
 export interface Partner {
-  id:            number
-  name:          string
-  industry:      string
-  region:        Region | null
-  status:        Status
+  id: string
+  db_id?: number
+  name: string
+  industry: string
+  region: Region | null
+  status: Status
   contactPerson: string
-  email:         string
-  phone:         string
-  address:       string
-  bpCode:        string | null
-  tinNumber:     string | null
+  email: string
+  phone: string
+  address: string
+  linkedContracts?: LinkedContract[]
 }
 
 export interface AddPartnerForm {
-  name:          string
-  industry:      string
-  region:        Region | ''
-  status:        Status
+  name: string
+  industry: string
+  region: Region | ''
+  status: Status
   contactPerson: string
-  email:         string
-  phone:         string
-  address:       string
-  tinNumber:     string
+  email: string
+  phone: string
+  address: string
+  tinNumber: string
+}
+
+export type EngagementStatus = 'active' | 'expiring' | 'expired'
+
+export interface LinkedContract {
+  associationId: string
+  contractId: string
+  description: string
+  businessPartner: string
+  startDate: string
+  endDate: string
+  engagementStatus: EngagementStatus
+  attachedBy: string  // display name
+}
+
+export const engagementBadge: Record<EngagementStatus, string> = {
+  active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  expiring: 'bg-amber-50 text-amber-700 border-amber-200',
+  expired: 'bg-black/5 text-black/40 border-black/10',
+}
+
+export type EngagementStatus = 'active' | 'expiring' | 'expired'
+
+export interface LinkedContract {
+  associationId: string
+  contractId: string
+  description: string
+  businessPartner: string
+  startDate: string
+  endDate: string
+  engagementStatus: EngagementStatus
+  attachedBy: string  // display name
+}
+
+export const engagementBadge: Record<EngagementStatus, string> = {
+  active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  expiring: 'bg-amber-50 text-amber-700 border-amber-200',
+  expired: 'bg-black/5 text-black/40 border-black/10',
 }

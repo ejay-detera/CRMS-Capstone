@@ -26,7 +26,7 @@ const statusClass = computed(() => {
 
 <template>
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
-    <DialogContent class="max-w-sm p-0 overflow-hidden gap-0" @pointer-down-outside="$emit('update:open', false)">
+    <DialogContent class="max-w-2xl p-0 overflow-hidden gap-0" @pointer-down-outside="$emit('update:open', false)">
       <template v-if="partner">
 
         <!-- Header -->
@@ -99,7 +99,24 @@ const statusClass = computed(() => {
           </div>
         </div>
 
+          <!-- ── Linked Contracts Panel ────────────────────────────── -->
+          <PartnerLinkedContracts
+            :contracts="partner.linkedContracts || []"
+            :vendor-type="activeTab"
+            @open-associate="showAssociateModal = true"
+            @detach="emit('detach-contract', $event)"
+          />
+
+        </div>
       </template>
     </DialogContent>
   </Dialog>
+
+  <!-- Associate Contract Modal -->
+  <AssociateContractModal
+    :open="showAssociateModal"
+    :already-linked="alreadyLinkedContractIds"
+    @update:open="showAssociateModal = $event"
+    @submit="emit('link-contract', $event)"
+  />
 </template>

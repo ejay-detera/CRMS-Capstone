@@ -16,9 +16,9 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select'
-import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus } from '@/types/contract'
+import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus, formatRemainingTime } from '@/types/contract'
 import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
-import type { Contract, StatusFilter } from '@/types/contract'
+import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
 
 type ContractWithDays = Contract & { days: number }
 
@@ -27,6 +27,7 @@ const router = useRouter()
 const props = defineProps<{
   paginated:    ContractWithDays[]
   filtered:     ContractWithDays[]
+  activeFilter: FilterTab
   statusFilter: StatusFilter
   categoryFilter: string
   regionFilter:   string
@@ -38,12 +39,20 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   openDetail:              [c: ContractWithDays]
+  'update:activeFilter':   [v: FilterTab]
   'update:statusFilter':   [v: StatusFilter]
   'update:categoryFilter': [v: string]
   'update:regionFilter':   [v: string]
   'update:searchQuery':    [v: string]
   'update:currentPage':    [v: number]
 }>()
+
+const filterTabs: { label: string; value: FilterTab }[] = [
+  { label: 'All',           value: 'all'      },
+  { label: 'Active',        value: 'active'   },
+  { label: 'Expiring Soon', value: 'expiring' },
+  { label: 'Expired',       value: 'expired'  },
+]
 
 const statusOptions: { label: string; value: StatusFilter }[] = [
   { label: 'Pending',       value: 'Pending'      },
@@ -76,6 +85,18 @@ const categories = [
     <!-- Filters + search -->
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-6 py-4 border-b border-black/5 bg-black/[0.005]">
       <div class="flex flex-wrap items-center gap-3">
+        <!-- Tabs -->
+        <div class="flex items-center gap-0.5 bg-black/4 rounded-md p-1">
+          <button v-for="tab in filterTabs" :key="tab.value"
+            @click="emit('update:activeFilter', tab.value)"
+            class="flex items-center gap-1.5 px-4 py-1.5 text-sm rounded transition-all font-medium"
+            :class="activeFilter === tab.value
+              ? 'bg-white text-black shadow-sm'
+              : 'text-black/40 hover:text-black/60'">
+            {{ tab.label }}
+          </button>
+        </div>
+
         <!-- Category Filter -->
         <div class="w-44">
           <Select
@@ -146,7 +167,8 @@ const categories = [
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Category</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Region</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">End Date</TableHead>
-          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Remaining</TableHead>
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Remaining Time</TableHead>
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Contract State</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
           <TableHead class="w-12 py-3" />
         </TableRow>
@@ -177,9 +199,14 @@ const categories = [
               <div class="h-3 w-28 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
 
-            <!-- Remaining Days -->
+            <!-- Remaining Time -->
             <TableCell class="py-4">
-              <div class="h-4 w-16 bg-black/5 animate-pulse rounded"></div>
+              <div class="h-4 w-24 bg-black/5 animate-pulse rounded"></div>
+            </TableCell>
+
+            <!-- Contract State -->
+            <TableCell class="py-4">
+              <div class="h-5 w-24 bg-black/5 animate-pulse rounded-full"></div>
             </TableCell>
 
             <!-- Status -->
@@ -219,9 +246,12 @@ const categories = [
               <p class="text-xs text-black/35 mt-0.5">from {{ fmtDate(c.startDate) }}</p>
             </TableCell>
 
-            <!-- Remaining Days -->
+            <!-- Remaining Time -->
+            <TableCell class="py-4 text-sm text-black/60">{{ formatRemainingTime(c.endDate) }}</TableCell>
+
+            <!-- Contract State -->
             <TableCell class="py-4">
-              <ContractLifecycleBadge :status="deriveLifecycleStatus(c.days)" :days="c.days" />
+              <ContractLifecycleBadge :status="deriveLifecycleStatus(c.days)" />
             </TableCell>
 
             <!-- Status -->
@@ -263,7 +293,7 @@ const categories = [
           </TableRow>
 
           <TableRow v-if="paginated.length === 0">
-            <TableCell colspan="7" class="text-center py-16">
+            <TableCell colspan="8" class="text-center py-16">
               <p class="text-sm font-semibold text-black/28">No contracts found</p>
               <p class="text-xs text-black/20 mt-1">Try a different filter or search term</p>
             </TableCell>
