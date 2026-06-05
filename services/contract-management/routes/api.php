@@ -13,8 +13,6 @@ Route::middleware(['auth.internal'])->group(function () {
     // Contracts REST endpoints
     Route::get('/contracts', [\App\Http\Controllers\ContractController::class, 'index'])
         ->middleware('permission:crms.contracts.view');
-    Route::get('/contracts/expired', [ContractController::class, 'indexExpired'])
-        ->middleware('permission:crms.contracts.view');
     Route::post('/contracts', [\App\Http\Controllers\ContractController::class, 'store'])
         ->middleware('permission:crms.contracts.create');
     Route::put('/contracts/{id}', [\App\Http\Controllers\ContractController::class, 'update'])

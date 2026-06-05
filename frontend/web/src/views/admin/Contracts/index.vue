@@ -50,7 +50,7 @@ const statCards = computed(() => {
   const expiringCount = withDays.value.filter(c => c.days >= 0 && c.days <= 30).length
   const expiredCount = withDays.value.filter(c => c.days < 0).length
   return {
-    total:    activeCount + expiringCount,
+    total:    activeCount + expiringCount + expiredCount,
     active:   activeCount,
     expiring: expiringCount,
     expired:  expiredCount,
@@ -58,10 +58,10 @@ const statCards = computed(() => {
 })
 
 const statCardList = computed(() => [
-  { label: 'Total Contracts', value: statCards.value.total,    valueClass: 'text-black', change: '+2.1%', positive: true  },
-  { label: 'Active',          value: statCards.value.active,   valueClass: 'text-black', change: '+4.0%', positive: true  },
-  { label: 'Expiring Soon',   value: statCards.value.expiring, valueClass: 'text-black', change: '+5.2%', positive: true  },
-  { label: 'Expired',         value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false, link: '/admin/expired-contracts' },
+  { label: 'Total Contracts', value: statCards.value.total,    valueClass: 'text-black', change: '+2.1%', positive: true, filter: 'all' as FilterTab },
+  { label: 'Active',          value: statCards.value.active,   valueClass: 'text-black', change: '+4.0%', positive: true, filter: 'active' as FilterTab },
+  { label: 'Expiring Soon',   value: statCards.value.expiring, valueClass: 'text-black', change: '+5.2%', positive: true, filter: 'expiring' as FilterTab },
+  { label: 'Expired',         value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false, filter: 'expired' as FilterTab },
 ])
 
 const approvalStatuses = new Set(['Pending', 'Approved', 'Rejected'])
@@ -74,7 +74,7 @@ const filtered = computed(() => {
   return withDays.value.filter(c => {
     const bySearch = !q || c.id.toLowerCase().includes(q) || c.businessPartner.toLowerCase().includes(q) || c.category.toLowerCase().includes(q)
     const byFilter =
-      activeFilter.value === 'all'      ? c.days >= 0 :
+      activeFilter.value === 'all'      ? true :
       activeFilter.value === 'active'   ? c.days > 30 :
       activeFilter.value === 'expiring' ? c.days >= 0 && c.days <= 30 :
       c.days < 0
@@ -179,13 +179,12 @@ function exportXLSX() {
         </div>
       </template>
       <template v-else>
-        <component
+        <div
           v-for="card in statCardList"
           :key="card.label"
-          :is="card.link ? 'router-link' : 'div'"
-          v-bind="card.link ? { to: card.link } : {}"
-          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm"
-          :class="card.link ? 'block hover:border-[#2E85D8]/50 hover:shadow-md cursor-pointer transition-all duration-200' : ''"
+          @click="activeFilter = card.filter"
+          class="bg-white rounded-lg border px-6 py-5 shadow-sm block hover:shadow-md cursor-pointer transition-all duration-200"
+          :class="activeFilter === card.filter ? 'border-[#2E85D8]' : 'border-black/8'"
         >
           <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
           <div class="flex items-end justify-between gap-2">
@@ -195,7 +194,7 @@ function exportXLSX() {
               {{ card.change }}
             </span>
           </div>
-        </component>
+        </div>
       </template>
     </div>
 

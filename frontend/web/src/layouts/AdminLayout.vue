@@ -8,9 +8,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
   SidebarProvider,
   SidebarTrigger,
   SidebarHeader,
@@ -34,8 +31,6 @@ import {
   Search,
   Bell,
   User,
-  ChevronDown,
-  AlertTriangle,
 } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
 import { ref, computed, watch } from "vue";
@@ -46,7 +41,7 @@ const route  = useRoute();
 const router = useRouter();
 const { user: authUser, logout } = useAuth();
 
-const contractPaths = ["/admin/contracts", "/admin/expired-contracts"];
+const contractPaths = ["/admin/contracts"];
 const contractsOpen = ref(contractPaths.some(p => route.path.startsWith(p)));
 
 watch(() => route.path, path => {
@@ -59,14 +54,7 @@ const navGroups = [
     label: "Main",
     items: [
       { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
-      {
-        title: "Contracts",
-        icon: FileText,
-        children: [
-          { title: "All Contracts", url: "/admin/contracts", icon: FileText },
-          { title: "Expired Contracts", url: "/admin/expired-contracts", icon: AlertTriangle }
-        ]
-      },
+      { title: "Contracts", url: "/admin/contracts", icon: FileText },
     ],
   },
   {
@@ -142,77 +130,27 @@ const searchQuery = ref("");
           <SidebarGroupContent>
             <SidebarMenu class="gap-0.5">
               <SidebarMenuItem v-for="item in group.items" :key="item.title">
-                <template v-if="item.children">
-                  <!-- Collapsible parent button -->
-                  <button
-                    @click="contractsOpen = !contractsOpen"
-                    class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 group-data-[collapsible=icon]:justify-center text-left"
-                    :class="contractPaths.some(p => route.path.startsWith(p))
-                      ? 'bg-[#2F2F73] text-white'
-                      : 'text-white/45 hover:text-white/80 hover:bg-white/10'"
-                  >
-                    <component
-                      :is="item.icon"
-                      class="w-4 h-4 shrink-0 group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5"
-                      :class="contractPaths.some(p => route.path.startsWith(p)) ? 'text-white' : 'text-white/45'"
-                    />
-                    <span
-                      class="text-sm font-medium flex-1 text-left group-data-[collapsible=icon]:hidden"
-                      :class="contractPaths.some(p => route.path.startsWith(p)) ? 'text-white font-semibold' : 'text-white/45'"
-                    >
-                      {{ item.title }}
-                    </span>
-                    <ChevronDown
-                      class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-data-[collapsible=icon]:hidden"
-                      :class="[contractsOpen ? 'rotate-180' : 'rotate-0', contractPaths.some(p => route.path.startsWith(p)) ? 'text-white' : 'text-white/45']"
-                    />
-                  </button>
-
-                  <!-- Sub-items -->
-                  <SidebarMenuSub v-show="contractsOpen">
-                    <SidebarMenuSubItem v-for="sub in item.children" :key="sub.title">
-                      <SidebarMenuSubButton as-child :is-active="route.path === sub.url" class="h-8">
-                        <router-link
-                          :to="sub.url"
-                          class="flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm transition-all duration-150"
-                          :class="route.path === sub.url
-                            ? 'text-white font-medium'
-                            : 'text-white/45 hover:text-white/75'"
-                        >
-                          <component
-                            :is="sub.icon"
-                            class="w-3.5 h-3.5 shrink-0"
-                            :class="route.path === sub.url ? 'text-white' : 'text-white/40'"
-                          />
-                          <span>{{ sub.title }}</span>
-                        </router-link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  </SidebarMenuSub>
-                </template>
-
                 <SidebarMenuButton
-                  v-else
                   as-child
-                  :is-active="route.path === item.url"
+                  :is-active="item.url === '/admin/dashboard' ? route.path === item.url : route.path.startsWith(item.url)"
                   class="h-auto p-0 rounded-lg"
                 >
                   <component
                     :is="'router-link'"
                     :to="item.url"
                     class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 group-data-[collapsible=icon]:justify-center"
-                    :class="route.path === item.url
+                    :class="(item.url === '/admin/dashboard' ? route.path === item.url : route.path.startsWith(item.url))
                       ? 'bg-[#2F2F73] text-white'
                       : 'text-white/45 hover:text-white/80 hover:bg-white/10'"
                   >
                     <component
                       :is="item.icon"
                       class="w-4 h-4 shrink-0 group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5"
-                      :class="route.path === item.url ? 'text-white' : 'text-white/45'"
+                      :class="(item.url === '/admin/dashboard' ? route.path === item.url : route.path.startsWith(item.url)) ? 'text-white' : 'text-white/45'"
                     />
                     <span
                       class="text-sm font-medium flex-1 text-left group-data-[collapsible=icon]:hidden"
-                      :class="route.path === item.url ? 'text-white' : 'text-white/45'"
+                      :class="(item.url === '/admin/dashboard' ? route.path === item.url : route.path.startsWith(item.url)) ? 'text-white' : 'text-white/45'"
                     >
                       {{ item.title }}
                     </span>
