@@ -23,6 +23,8 @@ return new class extends Migration
 
             $table->unique(['vendor_type', 'vendor_id', 'contract_id'], 'vendor_contract_unique');
             $table->index(['vendor_type', 'vendor_id'], 'vendor_contract_index');
+            $table->index('contract_id');
+            $table->index('attached_by');
             $table->foreign('contract_id')
                   ->references('contract_id')
                   ->on('contracts')

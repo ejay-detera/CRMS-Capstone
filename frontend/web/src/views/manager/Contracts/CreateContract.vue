@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, computed, ref } from 'vue'
+import { reactive, computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, ScanLine } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
@@ -161,21 +161,47 @@ async function handleSubmit() {
   }
 }
 
-import { initialBusinessPartners, initialSuppliersData } from '@/views/admin/Partners/mockPartners'
 import { onClickOutside } from '@vueuse/core'
+
+const partnerNames = ref<string[]>([])
+
+async function fetchPartnerNames() {
+  try {
+    const apiBase = import.meta.env.VITE_VENDOR_API_URL || 'http://localhost:8001/api'
+    const headers = {
+      'Authorization': `Bearer ${authState.token || ''}`,
+      'Accept': 'application/json'
+    }
+    const [resP, resS] = await Promise.all([
+      fetch(`${apiBase}/partners?per_page=100`, { headers }),
+      fetch(`${apiBase}/suppliers?per_page=100`, { headers })
+    ])
+    let names: string[] = []
+    if (resP.ok) {
+      const json = await resP.json()
+      names = names.concat((json.data || []).map((p: any) => p.partner_name))
+    }
+    if (resS.ok) {
+      const json = await resS.json()
+      names = names.concat((json.data || []).map((s: any) => s.supplier_name))
+    }
+    partnerNames.value = Array.from(new Set(names))
+  } catch (err) {
+    console.error('Failed to fetch partner names:', err)
+  }
+}
+
+onMounted(() => {
+  fetchPartnerNames()
+})
 
 const showSuggestions = ref(false)
 const suggestionsContainer = ref<HTMLElement | null>(null)
 
 const partnerSuggestions = computed(() => {
-  const allNames = [
-    ...initialBusinessPartners.map(p => p.name),
-    ...initialSuppliersData.map(s => s.name)
-  ]
-  const uniqueNames = Array.from(new Set(allNames))
   const query = form.businessPartner.trim().toLowerCase()
-  if (!query) return uniqueNames
-  return uniqueNames.filter(name => name.toLowerCase().includes(query))
+  if (!query) return partnerNames.value
+  return partnerNames.value.filter(name => name.toLowerCase().includes(query))
 })
 
 function selectSuggestion(name: string) {

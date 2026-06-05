@@ -4,6 +4,7 @@ export type Status  = 'Active' | 'Inactive'
 
 export interface Partner {
   id:            string
+  db_id?:        number
   name:          string
   industry:      string
   region:        Region

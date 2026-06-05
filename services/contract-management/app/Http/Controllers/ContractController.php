@@ -11,6 +11,7 @@ use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ContractController extends Controller
 {
@@ -80,6 +81,58 @@ class ContractController extends Controller
         return response()->json([
             'data' => $contracts->map(fn ($c) => $this->formatContract($c))->values(),
         ]);
+    }
+
+    private function autoLinkVendor(int $contractId, string $bpName, ?int $userId): void
+    {
+        if (!Schema::hasTable('vendor_contract_associations')) {
+            return;
+        }
+
+        // 1. Try to find in business_partners
+        if (Schema::hasTable('business_partners')) {
+            $partner = DB::table('business_partners')
+                ->where('partner_name', $bpName)
+                ->first();
+
+            if ($partner) {
+                DB::table('vendor_contract_associations')->updateOrInsert(
+                    [
+                        'vendor_type' => 'partner',
+                        'vendor_id'   => $partner->partner_id,
+                        'contract_id' => $contractId,
+                    ],
+                    [
+                        'attached_by' => $userId,
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ]
+                );
+                return;
+            }
+        }
+
+        // 2. Try to find in suppliers
+        if (Schema::hasTable('suppliers')) {
+            $supplier = DB::table('suppliers')
+                ->where('supplier_name', $bpName)
+                ->first();
+
+            if ($supplier) {
+                DB::table('vendor_contract_associations')->updateOrInsert(
+                    [
+                        'vendor_type' => 'supplier',
+                        'vendor_id'   => $supplier->supplier_id,
+                        'contract_id' => $contractId,
+                    ],
+                    [
+                        'attached_by' => $userId,
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ]
+                );
+            }
+        }
     }
 
     /**
@@ -176,6 +229,9 @@ class ContractController extends Controller
             \App\Models\Document::whereIn('_id', $incoming['document_ids'])
                 ->update(['contract_id' => $contract->contract_id]);
         }
+
+        // Auto-link to business partner/supplier if exists
+        $this->autoLinkVendor((int) $contract->contract_id, $contract->bp_name, (int) $userId);
 
         // Audit Logging
         $this->auditLogService->log(
@@ -312,6 +368,12 @@ class ContractController extends Controller
             \App\Models\Document::whereIn('_id', $incomingDocIds)
                 ->update(['contract_id' => $contract->contract_id]);
         }
+
+        // Clear old associations and re-link
+        if (Schema::hasTable('vendor_contract_associations')) {
+            DB::table('vendor_contract_associations')->where('contract_id', $contract->contract_id)->delete();
+        }
+        $this->autoLinkVendor((int) $contract->contract_id, $contract->bp_name, (int) $userId);
 
         // Audit Logging
         $this->auditLogService->log(

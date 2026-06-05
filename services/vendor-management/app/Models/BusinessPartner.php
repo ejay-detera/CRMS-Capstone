@@ -21,14 +21,24 @@ class BusinessPartner extends Model
         'address',
         'region',
         'created_by',
+        'industry',
+        'status',
+        'contact_person',
     ];
 
     protected $casts = [
         'contact_number' => EncryptedCast::class,
         'email' => EncryptedCast::class,
         'address' => EncryptedCast::class,
+        'contact_person' => EncryptedCast::class,
         'created_by' => 'integer',
     ];
+
+    public function associations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(VendorContractAssociation::class, 'vendor_id', 'partner_id')
+            ->where('vendor_type', 'partner');
+    }
 
     protected static function booted(): void
     {

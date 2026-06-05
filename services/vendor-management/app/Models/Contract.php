@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\EncryptedCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -35,5 +36,7 @@ class Contract extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'created_by' => 'integer',
+        'bp_name' => EncryptedCast::class,
+        'description' => EncryptedCast::class,
     ];
 }

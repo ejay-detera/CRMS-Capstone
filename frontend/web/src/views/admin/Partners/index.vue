@@ -1,22 +1,32 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { Building2, Truck, Search, LayoutGrid, List, Plus, Upload } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
+import { usePartners } from '@/composables/usePartners'
 import PartnersGrid       from './PartnersGrid.vue'
 import PartnersTable      from './PartnersTable.vue'
 import PartnerDetailDialog from './PartnerDetailDialog.vue'
 import DeleteConfirmDialog from './DeleteConfirmDialog.vue'
 import AddPartnerDialog    from './AddPartnerDialog.vue'
 import type { Partner, TabKey } from '@/types/partner'
-import { initialBusinessPartners, initialSuppliersData } from './mockPartners'
 
-const { success } = useToast()
+const { success, error } = useToast()
+const { state: authState } = useAuth()
 
-const businessPartners = ref<Partner[]>([...initialBusinessPartners])
-
-const suppliersData = ref<Partner[]>([...initialSuppliersData])
+const {
+  loading,
+  partners,
+  totalItems,
+  fetchPartners,
+  fetchVendorContracts,
+  addPartner,
+  deletePartner,
+  linkContract,
+  detachContract
+} = usePartners()
 
 const activeTab    = ref<TabKey>('partners')
 const viewMode     = ref<'card' | 'table'>('card')
@@ -24,26 +34,66 @@ const search       = ref('')
 const regionFilter = ref('All')
 const regions      = ['All', 'Luzon', 'Visayas', 'Mindanao']
 
-const source   = computed(() => activeTab.value === 'partners' ? businessPartners.value : suppliersData.value)
-const filtered = computed(() =>
-  source.value.filter(p => {
-    const q = search.value.toLowerCase()
-    return (!q || p.name.toLowerCase().includes(q) || p.industry.toLowerCase().includes(q))
-      && (regionFilter.value === 'All' || p.region === regionFilter.value)
-  })
-)
+const partnersCount = ref(0)
+const suppliersCount = ref(0)
+
+const filtered = computed(() => new Array(totalItems.value))
 
 const currentPage  = ref(1)
 const itemsPerPage = 8
-watch([activeTab, search, regionFilter], () => { currentPage.value = 1 })
-const paginated = computed(() => filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage))
+
+async function loadData() {
+  try {
+    await fetchPartners(activeTab.value, currentPage.value, itemsPerPage, search.value, regionFilter.value)
+  } catch (err) {
+    error('Fetch failed', 'Could not load data from server.')
+  }
+}
+
+async function fetchCounts() {
+  try {
+    const apiBase = import.meta.env.VITE_VENDOR_API_URL || 'http://localhost:8001/api'
+    const headers = {
+      'Authorization': `Bearer ${authState.token || ''}`,
+      'Accept': 'application/json'
+    }
+    const [resP, resS] = await Promise.all([
+      fetch(`${apiBase}/partners?per_page=1`, { headers }),
+      fetch(`${apiBase}/suppliers?per_page=1`, { headers })
+    ])
+    if (resP.ok) {
+      const json = await resP.json()
+      partnersCount.value = json.total || 0
+    }
+    if (resS.ok) {
+      const json = await resS.json()
+      suppliersCount.value = json.total || 0
+    }
+  } catch (err) {
+    console.error('Failed to fetch counts:', err)
+  }
+}
+
+watch([activeTab, search, regionFilter], () => {
+  currentPage.value = 1
+  loadData()
+})
+
+watch(currentPage, () => {
+  loadData()
+})
+
+onMounted(() => {
+  loadData()
+  fetchCounts()
+})
 
 const selectedIds     = ref<string[]>([])
 const allPageSelected = computed(() =>
-  paginated.value.length > 0 && paginated.value.every(p => selectedIds.value.includes(p.id))
+  partners.value.length > 0 && partners.value.every(p => selectedIds.value.includes(p.id))
 )
 function toggleSelectAll() {
-  const ids = paginated.value.map(p => p.id)
+  const ids = partners.value.map(p => p.id)
   if (allPageSelected.value) selectedIds.value = selectedIds.value.filter(id => !ids.includes(id))
   else ids.forEach(id => { if (!selectedIds.value.includes(id)) selectedIds.value.push(id) })
 }
@@ -54,35 +104,53 @@ function toggleRow(id: string) {
 
 const showDetail      = ref(false)
 const selectedPartner = ref<Partner | null>(null)
-function openDetail(p: Partner) { selectedPartner.value = p; showDetail.value = true }
+
+async function openDetail(p: Partner) {
+  selectedPartner.value = p
+  showDetail.value = true
+  if (p.db_id) {
+    const contracts = await fetchVendorContracts(activeTab.value, p.db_id)
+    if (selectedPartner.value && selectedPartner.value.id === p.id) {
+      selectedPartner.value.linkedContracts = contracts
+    }
+  }
+}
 
 const showDelete   = ref(false)
 const deleteTarget = ref<Partner | null>(null)
 function openDelete(p: Partner) { deleteTarget.value = p; showDelete.value = true }
-function confirmDelete() {
-  if (!deleteTarget.value) return
-  const list = activeTab.value === 'partners' ? businessPartners : suppliersData
-  const idx  = list.value.findIndex(p => p.id === deleteTarget.value!.id)
-  if (idx >= 0) list.value.splice(idx, 1)
-  selectedIds.value = selectedIds.value.filter(id => id !== deleteTarget.value!.id)
+
+async function confirmDelete() {
+  if (!deleteTarget.value || !deleteTarget.value.db_id) return
   const name = deleteTarget.value.name
-  showDelete.value  = false
-  deleteTarget.value = null
-  success('Entry deleted', `${name} has been removed.`)
+  try {
+    await deletePartner(activeTab.value, deleteTarget.value.db_id)
+    showDelete.value  = false
+    deleteTarget.value = null
+    success('Entry deleted', `${name} has been removed.`)
+    loadData()
+    fetchCounts()
+  } catch (err: any) {
+    error('Delete failed', err.message || 'Could not delete entry.')
+  }
 }
 
 const showAdd = ref(false)
-function handleAdd(partial: Omit<Partner, 'contracts' | 'totalValue'>) {
-  const list   = activeTab.value === 'partners' ? businessPartners : suppliersData
-  const prefix = activeTab.value === 'partners' ? 'BP' : 'SP'
-  const pad    = String(list.value.length + 1).padStart(3, '0')
-  list.value.push({ ...partial, id: `${prefix}-${pad}`, contracts: 0, totalValue: '₱0' })
-  success(`${activeTab.value === 'partners' ? 'Partner' : 'Supplier'} added`, `${partial.name} has been added successfully.`)
+async function handleAdd(partial: Omit<Partner, 'contracts' | 'totalValue'>) {
+  try {
+    await addPartner(activeTab.value, partial)
+    success(`${activeTab.value === 'partners' ? 'Partner' : 'Supplier'} added`, `${partial.name} has been added successfully.`)
+    showAdd.value = false
+    loadData()
+    fetchCounts()
+  } catch (err: any) {
+    error('Addition failed', err.message || 'Could not add entry.')
+  }
 }
 
 function exportXLSX() {
   const type = activeTab.value === 'partners' ? 'Business Partner' : 'Supplier'
-  const rows = filtered.value.map(p => ({
+  const rows = partners.value.map(p => ({
     'ID': p.id, 'Name': p.name, 'Type': type, 'Industry': p.industry, 'Region': p.region,
     'Contracts': p.contracts, 'Total Value': p.totalValue, 'Status': p.status,
     'Contact Person': p.contactPerson, 'Email': p.email, 'Phone': p.phone, 'Address': p.address,
@@ -91,58 +159,40 @@ function exportXLSX() {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, type === 'Business Partner' ? 'Partners' : 'Suppliers')
   XLSX.writeFile(wb, `sbsi-${activeTab.value}.xlsx`)
-  success('Export complete', `${filtered.value.length} records exported.`)
+  success('Export complete', `${partners.value.length} records exported.`)
 }
 
-function handleDetachContract(associationId: string) {
-  if (!selectedPartner.value) return
-  const list = activeTab.value === 'partners' ? businessPartners : suppliersData
-  const partner = list.value.find(p => p.id === selectedPartner.value!.id)
-  if (partner && partner.linkedContracts) {
-    partner.linkedContracts = partner.linkedContracts.filter(c => c.associationId !== associationId)
-    partner.contracts = partner.linkedContracts.filter(c => c.engagementStatus === 'active').length
-    selectedPartner.value = { ...partner }
-    success('Contract unlinked', 'The contract has been detached successfully.')
-  }
-}
-
-function handleLinkContract(contractId: string) {
-  if (!selectedPartner.value) return
-  const list = activeTab.value === 'partners' ? businessPartners : suppliersData
-  const partner = list.value.find(p => p.id === selectedPartner.value!.id)
-  if (partner) {
-    if (!partner.linkedContracts) partner.linkedContracts = []
-
-    const mockAvailableContracts = [
-      { contractId: 'CON-2026-001', description: 'Core Banking IT Infrastructure Services', startDate: '2026-01-01', endDate: '2027-01-01', engagementStatus: 'active' },
-      { contractId: 'CON-2026-002', description: 'Cash Management System Integration Upgrade', startDate: '2026-03-01', endDate: '2027-03-01', engagementStatus: 'active' },
-      { contractId: 'CON-2025-001', description: 'ATM Maintenance Agreement Phase 1', startDate: '2025-01-01', endDate: '2025-12-31', engagementStatus: 'expired' },
-      { contractId: 'CON-2026-003', description: 'Personal Protective Equipment Supply', startDate: '2026-05-01', endDate: '2026-06-30', engagementStatus: 'expiring' },
-      { contractId: 'CON-2026-004', description: 'Office General Supplies Delivery Q2-Q3', startDate: '2026-04-01', endDate: '2026-09-30', engagementStatus: 'active' },
-      { contractId: 'CON-2026-005', description: 'Cloud Data Warehouse Hosting Subscription', startDate: '2026-02-01', endDate: '2027-02-01', engagementStatus: 'active' },
-      { contractId: 'CON-2026-006', description: 'Cybersecurity Threat Detection Services', startDate: '2026-05-15', endDate: '2026-06-15', engagementStatus: 'expiring' },
-      { contractId: 'CON-2025-002', description: 'Annual Security Auditing & Compliance', startDate: '2025-06-01', endDate: '2026-05-31', engagementStatus: 'expired' },
-    ]
-
-    const contractInfo = mockAvailableContracts.find(c => c.contractId === contractId)
-    if (contractInfo) {
-      const newAssoc = {
-        associationId: String(Date.now()),
-        contractId: contractInfo.contractId,
-        description: contractInfo.description,
-        businessPartner: partner.name,
-        startDate: contractInfo.startDate,
-        endDate: contractInfo.endDate,
-        engagementStatus: contractInfo.engagementStatus as any,
-        attachedBy: 'John Doe (Manager)'
-      }
-      partner.linkedContracts.push(newAssoc)
-      partner.contracts = partner.linkedContracts.filter(c => c.engagementStatus === 'active').length
-      selectedPartner.value = { ...partner }
-      success('Contract linked', `${contractId} is now associated with ${partner.name}.`)
+async function handleDetachContract(associationId: string) {
+  if (!selectedPartner.value || !selectedPartner.value.db_id) return
+  const foundContract = selectedPartner.value.linkedContracts?.find(c => c.associationId === associationId)
+  if (foundContract) {
+    try {
+      await detachContract(activeTab.value, selectedPartner.value.db_id, foundContract.contractId)
+      const contracts = await fetchVendorContracts(activeTab.value, selectedPartner.value.db_id)
+      selectedPartner.value.linkedContracts = contracts
+      selectedPartner.value.contracts = contracts.length
+      loadData()
+      success('Contract unlinked', 'The contract has been detached successfully.')
+    } catch (err: any) {
+      error('Detach failed', err.message || 'Could not detach contract.')
     }
   }
 }
+
+async function handleLinkContract(contractId: string) {
+  if (!selectedPartner.value || !selectedPartner.value.db_id) return
+  try {
+    await linkContract(activeTab.value, selectedPartner.value.db_id, contractId)
+    const contracts = await fetchVendorContracts(activeTab.value, selectedPartner.value.db_id)
+    selectedPartner.value.linkedContracts = contracts
+    selectedPartner.value.contracts = contracts.length
+    loadData()
+    success('Contract linked', `Contract is now associated with ${selectedPartner.value.name}.`)
+  } catch (err: any) {
+    error('Link failed', err.message || 'Could not link contract.')
+  }
+}
+
 </script>
 
 <template>
@@ -168,12 +218,12 @@ function handleLinkContract(contractId: string) {
         <button @click="activeTab = 'partners'; search = ''; regionFilter = 'All'"
           class="flex items-center gap-2 px-4 py-1.5 text-sm rounded transition-all font-medium"
           :class="activeTab === 'partners' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'">
-          <Building2 class="w-3.5 h-3.5" /> Business Partners ({{ businessPartners.length }})
+          <Building2 class="w-3.5 h-3.5" /> Business Partners ({{ partnersCount }})
         </button>
         <button @click="activeTab = 'suppliers'; search = ''; regionFilter = 'All'"
           class="flex items-center gap-2 px-4 py-1.5 text-sm rounded transition-all font-medium"
           :class="activeTab === 'suppliers' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'">
-          <Truck class="w-3.5 h-3.5" /> Suppliers ({{ suppliersData.length }})
+          <Truck class="w-3.5 h-3.5" /> Suppliers ({{ suppliersCount }})
         </button>
       </div>
       <div class="ml-auto flex items-center gap-0.5 bg-black/4 rounded-lg p-1">
@@ -200,10 +250,10 @@ function handleLinkContract(contractId: string) {
       </select>
     </div>
 
-    <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" @open-detail="openDetail" />
+    <PartnersGrid v-if="viewMode === 'card'" :partners="partners" :active-tab="activeTab" @open-detail="openDetail" />
 
     <PartnersTable v-else
-      :paginated="paginated" :filtered="filtered" :active-tab="activeTab"
+      :paginated="partners" :filtered="filtered" :active-tab="activeTab"
       :selected-ids="selectedIds" :all-page-selected="allPageSelected"
       :current-page="currentPage" :items-per-page="itemsPerPage"
       @open-detail="openDetail" @open-delete="openDelete"

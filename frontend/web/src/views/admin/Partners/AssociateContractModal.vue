@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Search, Link2 } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { engagementBadge } from '@/types/partner'
+import { useApiCache } from '@/composables/useApiCache'
+import { remainingDays, deriveLifecycleStatus } from '@/types/contract'
 
 interface ContractListItem {
   contractId: string
@@ -22,25 +24,41 @@ const emit = defineEmits<{
   (e: 'submit', contractId: string): void
 }>()
 
+const { fetchContracts, state: cacheState } = useApiCache()
+
 const search = ref('')
 const selected = ref<string | null>(null)
 const touched = ref(false)
 
-const mockAvailableContracts: ContractListItem[] = [
-  { contractId: 'CON-2026-001', description: 'Core Banking IT Infrastructure Services', startDate: '2026-01-01', endDate: '2027-01-01', engagementStatus: 'active' },
-  { contractId: 'CON-2026-002', description: 'Cash Management System Integration Upgrade', startDate: '2026-03-01', endDate: '2027-03-01', engagementStatus: 'active' },
-  { contractId: 'CON-2025-001', description: 'ATM Maintenance Agreement Phase 1', startDate: '2025-01-01', endDate: '2025-12-31', engagementStatus: 'expired' },
-  { contractId: 'CON-2026-003', description: 'Personal Protective Equipment Supply', startDate: '2026-05-01', endDate: '2026-06-30', engagementStatus: 'expiring' },
-  { contractId: 'CON-2026-004', description: 'Office General Supplies Delivery Q2-Q3', startDate: '2026-04-01', endDate: '2026-09-30', engagementStatus: 'active' },
-  { contractId: 'CON-2026-005', description: 'Cloud Data Warehouse Hosting Subscription', startDate: '2026-02-01', endDate: '2027-02-01', engagementStatus: 'active' },
-  { contractId: 'CON-2026-006', description: 'Cybersecurity Threat Detection Services', startDate: '2026-05-15', endDate: '2026-06-15', engagementStatus: 'expiring' },
-  { contractId: 'CON-2025-002', description: 'Annual Security Auditing & Compliance', startDate: '2025-06-01', endDate: '2026-05-31', engagementStatus: 'expired' },
-]
+watch(() => props.open, async (open) => {
+  if (open) {
+    try {
+      await fetchContracts()
+    } catch (err) {
+      console.error('Failed to fetch contracts:', err)
+    }
+  }
+})
+
+const availableContracts = computed<ContractListItem[]>(() => {
+  const list = cacheState.contracts || []
+  return list.map(c => {
+    const days = remainingDays(c.endDate)
+    const status = deriveLifecycleStatus(days)
+    return {
+      contractId: c.id,
+      description: c.description,
+      startDate: c.startDate,
+      endDate: c.endDate,
+      engagementStatus: status
+    }
+  })
+})
 
 const filteredContracts = computed(() => {
   const q = search.value.trim().toLowerCase()
-  if (!q) return mockAvailableContracts
-  return mockAvailableContracts.filter(c =>
+  if (!q) return availableContracts.value
+  return availableContracts.value.filter(c =>
     c.contractId.toLowerCase().includes(q) ||
     c.description.toLowerCase().includes(q)
   )
