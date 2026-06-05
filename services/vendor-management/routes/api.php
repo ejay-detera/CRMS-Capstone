@@ -1,28 +1,11 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth.internal'])->group(function () {
-    
-    // Example: Only users with 'crms.partners.view' permission can access this
-    Route::get('/vendors', function (Request $request) {
-        return response()->json([
-            'message' => 'Vendor list retrieved successfully',
-            'user' => $request->get('auth_user'),
-            'data' => [
-                ['id' => 1, 'name' => 'Global Logistics Inc.'],
-                ['id' => 2, 'name' => 'Tech Solutions Corp.']
-            ]
-        ]);
-    })->middleware('permission:crms.partners.view');
+// Internal webhook — uses X-Internal-Secret, not Bearer token
+Route::post('/internal/audit', [\App\Http\Controllers\InternalAuditController::class, 'receive']);
 
-    // Example: Only users with 'crms.partners.create' permission can create
-    Route::post('/vendors', function (Request $request) {
-        return response()->json([
-            'message' => 'Vendor created successfully'
-        ]);
-    })->middleware('permission:crms.partners.create');
+Route::middleware(['auth.internal'])->group(function () {
 
     // Admin User Creation Proxy (Finance Only)
     Route::post('/admin/users', [\App\Http\Controllers\AdminUserProxyController::class, 'store'])

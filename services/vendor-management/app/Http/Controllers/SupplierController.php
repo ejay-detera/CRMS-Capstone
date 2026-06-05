@@ -34,7 +34,13 @@ class SupplierController extends Controller
             $query->where('supplier_name', 'like', $request->supplier_name . '%');
         }
 
-        return response()->json($query->paginate(15));
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $perPage = min((int) $request->input('per_page', 15), 100);
+
+        return response()->json($query->paginate($perPage));
     }
 
     /**

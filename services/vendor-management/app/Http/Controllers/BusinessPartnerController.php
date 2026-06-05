@@ -34,7 +34,13 @@ class BusinessPartnerController extends Controller
             $query->where('partner_name', 'like', $request->partner_name . '%');
         }
 
-        return response()->json($query->paginate(15));
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $perPage = min((int) $request->input('per_page', 15), 100);
+
+        return response()->json($query->paginate($perPage));
     }
 
     /**
