@@ -11,7 +11,7 @@ import PartnersTable from '@/views/admin/Partners/PartnersTable.vue'
 import type { Partner, TabKey } from '@/types/partner'
 
 const router = useRouter()
-const { error } = useToast()
+const { success, error } = useToast()
 const { fetchPartners, fetchSuppliers } = useVendorService()
 
 const businessPartners = ref<Partner[]>([])
@@ -41,6 +41,9 @@ const statusFilter   = ref('All')
 const industryFilter = ref('All')
 const regions        = ['All', 'Luzon', 'Visayas', 'Mindanao']
 const statusOptions  = ['All', 'Active', 'Inactive', 'Suspended'] as const
+
+const partnersCount = computed(() => businessPartners.value.length)
+const suppliersCount = computed(() => suppliersData.value.length)
 
 const source = computed(() => activeTab.value === 'partners' ? businessPartners.value : suppliersData.value)
 
@@ -73,16 +76,16 @@ watch(activeTab, () => {
 })
 const paginated = computed(() => filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage))
 
-const selectedIds     = ref<number[]>([])
+const selectedIds     = ref<(string | number)[]>([])
 const allPageSelected = computed(() =>
-  partners.value.length > 0 && partners.value.every(p => selectedIds.value.includes(p.id))
+  source.value.length > 0 && source.value.every(p => selectedIds.value.includes(p.id))
 )
 function toggleSelectAll() {
-  const ids = partners.value.map(p => p.id)
-  if (allPageSelected.value) selectedIds.value = selectedIds.value.filter(id => !ids.includes(id))
+  const ids = source.value.map(p => String(p.id))
+  if (allPageSelected.value) selectedIds.value = selectedIds.value.filter(id => !ids.includes(String(id)))
   else ids.forEach(id => { if (!selectedIds.value.includes(id)) selectedIds.value.push(id) })
 }
-function toggleRow(id: number) {
+function toggleRow(id: string | number) {
   const i = selectedIds.value.indexOf(id)
   i >= 0 ? selectedIds.value.splice(i, 1) : selectedIds.value.push(id)
 }
@@ -112,38 +115,7 @@ function exportXLSX() {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, type === 'Business Partner' ? 'Partners' : 'Suppliers')
   XLSX.writeFile(wb, `sbsi-${activeTab.value}.xlsx`)
-  success('Export complete', `${partners.value.length} records exported.`)
-}
-
-async function handleDetachContract(associationId: string) {
-  if (!selectedPartner.value || !selectedPartner.value.db_id) return
-  const foundContract = selectedPartner.value.linkedContracts?.find(c => c.associationId === associationId)
-  if (foundContract) {
-    try {
-      await detachContract(activeTab.value, selectedPartner.value.db_id, foundContract.contractId)
-      const contracts = await fetchVendorContracts(activeTab.value, selectedPartner.value.db_id)
-      selectedPartner.value.linkedContracts = contracts
-      selectedPartner.value.contracts = contracts.length
-      loadData()
-      success('Contract unlinked', 'The contract has been detached successfully.')
-    } catch (err: any) {
-      error('Detach failed', err.message || 'Could not detach contract.')
-    }
-  }
-}
-
-async function handleLinkContract(contractId: string) {
-  if (!selectedPartner.value || !selectedPartner.value.db_id) return
-  try {
-    await linkContract(activeTab.value, selectedPartner.value.db_id, contractId)
-    const contracts = await fetchVendorContracts(activeTab.value, selectedPartner.value.db_id)
-    selectedPartner.value.linkedContracts = contracts
-    selectedPartner.value.contracts = contracts.length
-    loadData()
-    success('Contract linked', `Contract is now associated with ${selectedPartner.value.name}.`)
-  } catch (err: any) {
-    error('Link failed', err.message || 'Could not link contract.')
-  }
+  success('Export complete', `${filtered.value.length} records exported.`)
 }
 </script>
 
@@ -212,7 +184,7 @@ async function handleLinkContract(contractId: string) {
 
     <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" :loading="loading" @open-detail="openDetail" />
     <PartnersTable v-else
-      :paginated="partners" :filtered="filtered" :active-tab="activeTab"
+      :paginated="paginated" :filtered="filtered" :active-tab="activeTab"
       :selected-ids="selectedIds" :all-page-selected="allPageSelected"
       :current-page="currentPage" :items-per-page="itemsPerPage"
       :loading="loading"
@@ -222,5 +194,4 @@ async function handleLinkContract(contractId: string) {
     />
 
   </div>
-
 </template>

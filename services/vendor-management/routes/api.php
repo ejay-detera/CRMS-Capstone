@@ -55,4 +55,8 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::delete('/partners/{id}/contracts/{contractId}', \App\Http\Controllers\Api\V1\PartnerContracts\DestroyController::class)
         ->middleware('permission:crms.partners.edit');
 
+    // Returns all contract IDs already linked to any vendor (used for frontend pre-filtering)
+    Route::get('/vendor-contracts/linked-ids', \App\Http\Controllers\Api\V1\LinkedContractIdsController::class)
+        ->middleware('permission:crms.partners.view');
+
 });

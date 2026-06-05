@@ -8,13 +8,17 @@ import {
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useVendorService } from '@/composables/useVendorService'
+import { usePartners } from '@/composables/usePartners'
 import AddPartnerDialog from '@/views/admin/Partners/AddPartnerDialog.vue'
+import PartnerLinkedContracts from '@/views/admin/Partners/PartnerLinkedContracts.vue'
+import AssociateContractModal from '@/views/admin/Partners/AssociateContractModal.vue'
 import type { Partner, TabKey, AddPartnerForm } from '@/types/partner'
 
 const route  = useRoute()
 const router = useRouter()
 const { success, error, warning } = useToast()
 const { fetchPartnerById, fetchSupplierById, updatePartner, updateSupplier } = useVendorService()
+const { fetchVendorContracts, fetchLinkedContractIds, linkContract, detachContract } = usePartners()
 
 const code = route.params.code as string
 const type = code.startsWith('BP') ? 'bp' : 'sp'
@@ -25,11 +29,54 @@ const partner   = ref<Partner | null>(null)
 const loading   = ref(true)
 const isAdmin   = computed(() => route.path.startsWith('/admin'))
 
+const showAssociateModal = ref(false)
+const alreadyLinkedContractIds = computed(() =>
+  partner.value?.linkedContracts?.map(c => c.contractId) || []
+)
+const globallyLinkedContractIds = ref<string[]>([])
+
 const backPath = computed(() =>
   route.path.startsWith('/admin')   ? '/admin/partners'
 : route.path.startsWith('/manager') ? '/manager/partners'
 : '/sales/partners'
 )
+
+async function handleDetachContract(associationId: string) {
+  if (!partner.value) return
+  const dbId = Number(partner.value.id)
+  const foundContract = partner.value.linkedContracts?.find(c => c.associationId === associationId)
+  if (foundContract) {
+    try {
+      await detachContract(activeTab.value, dbId, foundContract.contractId)
+      const [contracts, linkedIds] = await Promise.all([
+        fetchVendorContracts(activeTab.value, dbId),
+        fetchLinkedContractIds()
+      ])
+      partner.value.linkedContracts = contracts
+      globallyLinkedContractIds.value = linkedIds
+      success('Contract unlinked', 'The contract has been detached successfully.')
+    } catch (err: any) {
+      error('Detach failed', err.message || 'Could not detach contract.')
+    }
+  }
+}
+
+async function handleLinkContract(contractId: string) {
+  if (!partner.value) return
+  const dbId = Number(partner.value.id)
+  try {
+    await linkContract(activeTab.value, dbId, contractId)
+    const [contracts, linkedIds] = await Promise.all([
+      fetchVendorContracts(activeTab.value, dbId),
+      fetchLinkedContractIds()
+    ])
+    partner.value.linkedContracts = contracts
+    globallyLinkedContractIds.value = linkedIds
+    success('Contract linked', `Contract is now associated with ${partner.value.name}.`)
+  } catch (err: any) {
+    error('Link failed', err.message || 'Could not link contract.')
+  }
+}
 
 async function loadPartner() {
   loading.value = true
@@ -37,6 +84,16 @@ async function loadPartner() {
     partner.value = type === 'bp'
       ? await fetchPartnerById(id)
       : await fetchSupplierById(id)
+    
+    if (partner.value) {
+      const dbId = Number(partner.value.id)
+      const [contracts, linkedIds] = await Promise.all([
+        fetchVendorContracts(activeTab.value, dbId),
+        fetchLinkedContractIds()
+      ])
+      partner.value.linkedContracts = contracts
+      globallyLinkedContractIds.value = linkedIds
+    }
   } catch {
     partner.value = null
   } finally {
@@ -63,15 +120,15 @@ function onEditClose(val: boolean) {
 
 async function handleSubmit(form: AddPartnerForm) {
   const target = editTarget.value
-  if (!target) return
+  if (!target || !target.db_id) return
   try {
     if (activeTab.value === 'partners') {
-      const { partner: updated, warnings } = await updatePartner(target.id, form, target.bpCode)
+      const { partner: updated, warnings } = await updatePartner(target.db_id, form, target.bpCode ?? null)
       partner.value = updated
       success('Partner updated', `${updated.name} has been updated.`)
       if (warnings.length) warning('Duplicate warning', warnings[0].message)
     } else {
-      const { partner: updated, warnings } = await updateSupplier(target.id, form)
+      const { partner: updated, warnings } = await updateSupplier(target.db_id, form)
       partner.value = updated
       success('Supplier updated', `${updated.name} has been updated.`)
       if (warnings.length) warning('Duplicate warning', warnings[0].message)
@@ -269,6 +326,17 @@ const statusClass = computed(() => {
         </div>
       </div>
 
+      <!-- Linked Contracts -->
+      <div class="bg-white rounded-xl border border-black/8 shadow-sm p-6">
+        <PartnerLinkedContracts
+          :contracts="partner.linkedContracts || []"
+          :vendor-type="activeTab"
+          :can-manage="isAdmin"
+          @open-associate="showAssociateModal = true"
+          @detach="handleDetachContract"
+        />
+      </div>
+
     </template>
   </div>
 
@@ -279,5 +347,13 @@ const statusClass = computed(() => {
     :edit-target="editTarget"
     @update:open="onEditClose"
     @submit="handleSubmit"
+  />
+
+  <AssociateContractModal
+    :open="showAssociateModal"
+    :already-linked="alreadyLinkedContractIds"
+    :globally-linked="globallyLinkedContractIds"
+    @update:open="showAssociateModal = $event"
+    @submit="handleLinkContract"
   />
 </template>

@@ -1,31 +1,30 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Building2, Truck, Search, LayoutGrid, List, Plus, Upload } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
-import { useAuth } from '@/composables/useAuth'
 import { usePartners } from '@/composables/usePartners'
+import { useVendorService } from '@/composables/useVendorService'
 import PartnersGrid       from './PartnersGrid.vue'
 import PartnersTable      from './PartnersTable.vue'
-import PartnerDetailDialog from './PartnerDetailDialog.vue'
 import DeleteConfirmDialog from './DeleteConfirmDialog.vue'
 import AddPartnerDialog    from './AddPartnerDialog.vue'
-import type { Partner, TabKey } from '@/types/partner'
+import type { Partner, TabKey, AddPartnerForm } from '@/types/partner'
 
-const { success, error } = useToast()
-const { state: authState } = useAuth()
+const router = useRouter()
+const { success, error, warning } = useToast()
 
 const {
   partners,
+  loading,
   totalItems,
   fetchPartners,
-  fetchVendorContracts,
-  addPartner,
-  deletePartner,
-  linkContract,
-  detachContract
+  deletePartner
 } = usePartners()
+
+const { createPartner, updatePartner, createSupplier, updateSupplier } = useVendorService()
 
 const activeTab      = ref<TabKey>('partners')
 const viewMode       = ref<'card' | 'table'>('card')
@@ -39,10 +38,25 @@ const statusOptions  = ['All', 'Active', 'Inactive', 'Suspended'] as const
 const partnersCount = ref(0)
 const suppliersCount = ref(0)
 
-const filtered = computed(() => new Array(totalItems.value))
+const source = computed(() => partners.value)
+
+const industries = computed(() => {
+  const vals = partners.value.map(p => p.industry).filter(Boolean)
+  return ['All', ...[...new Set(vals)].sort()]
+})
+
+const filtered = computed(() =>
+  partners.value.filter(p => {
+    return (
+      (statusFilter.value === 'All' || p.status === statusFilter.value) &&
+      (industryFilter.value === 'All' || p.industry === industryFilter.value)
+    )
+  })
+)
 
 const currentPage  = ref(1)
 const itemsPerPage = 15
+
 watch([search, regionFilter, statusFilter, industryFilter], () => { currentPage.value = 1 })
 watch(activeTab, () => {
   search.value         = ''
@@ -51,25 +65,50 @@ watch(activeTab, () => {
   industryFilter.value = 'All'
   currentPage.value    = 1
 })
-const paginated = computed(() => filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage))
 
-const selectedIds     = ref<number[]>([])
+watch(
+  [activeTab, currentPage, search, regionFilter],
+  async ([tab, page, q, region]) => {
+    await fetchPartners(tab, page, itemsPerPage, q, region)
+  }
+)
+
+watch([activeTab, totalItems], () => {
+  if (activeTab.value === 'partners') {
+    partnersCount.value = totalItems.value
+  } else {
+    suppliersCount.value = totalItems.value
+  }
+}, { immediate: true })
+
+onMounted(async () => {
+  try {
+    await fetchPartners('suppliers', 1, 1)
+    suppliersCount.value = totalItems.value
+    await fetchPartners('partners', 1, itemsPerPage)
+    partnersCount.value = totalItems.value
+  } catch (err) {
+    console.error(err)
+  }
+})
+
+const selectedIds     = ref<(string | number)[]>([])
 const allPageSelected = computed(() =>
   partners.value.length > 0 && partners.value.every(p => selectedIds.value.includes(p.id))
 )
 function toggleSelectAll() {
-  const ids = partners.value.map(p => p.id)
-  if (allPageSelected.value) selectedIds.value = selectedIds.value.filter(id => !ids.includes(id))
+  const ids = partners.value.map(p => String(p.id))
+  if (allPageSelected.value) selectedIds.value = selectedIds.value.filter(id => !ids.includes(String(id)))
   else ids.forEach(id => { if (!selectedIds.value.includes(id)) selectedIds.value.push(id) })
 }
-function toggleRow(id: number) {
+function toggleRow(id: string | number) {
   const i = selectedIds.value.indexOf(id)
   i >= 0 ? selectedIds.value.splice(i, 1) : selectedIds.value.push(id)
 }
 
 function openDetail(p: Partner) {
   const prefix = activeTab.value === 'partners' ? 'BP' : 'SP'
-  const code   = `${prefix}-${String(p.id).padStart(4, '0')}`
+  const code   = `${prefix}-${String(p.db_id || p.id).padStart(4, '0')}`
   router.push(`/admin/partners/${code}`)
 }
 
@@ -82,12 +121,9 @@ async function confirmDelete() {
   showDelete.value  = false
   deleteTarget.value = null
   try {
-    if (activeTab.value === 'partners') {
-      await deletePartner(target.id)
-      businessPartners.value = businessPartners.value.filter(p => p.id !== target.id)
-    } else {
-      await deleteSupplier(target.id)
-      suppliersData.value = suppliersData.value.filter(p => p.id !== target.id)
+    if (target.db_id) {
+      await deletePartner(activeTab.value, target.db_id)
+      await fetchPartners(activeTab.value, currentPage.value, itemsPerPage, search.value, regionFilter.value)
     }
     selectedIds.value = selectedIds.value.filter(id => id !== target.id)
     success('Entry deleted', `${target.name} has been removed.`)
@@ -103,33 +139,28 @@ function openEdit(p: Partner) { editTarget.value = p; showAdd.value = true }
 async function handleSubmit(form: AddPartnerForm) {
   const target = editTarget.value
   try {
-    if (target) {
+    if (target && target.db_id) {
       if (activeTab.value === 'partners') {
-        const { partner, warnings } = await updatePartner(target.id, form, target.bpCode)
-        const idx = businessPartners.value.findIndex(p => p.id === target.id)
-        if (idx >= 0) businessPartners.value[idx] = partner
-        success('Partner updated', `${partner.name} has been updated.`)
+        const { partner: updated, warnings } = await updatePartner(target.db_id, form, target.bpCode ?? null)
+        success('Partner updated', `${updated.name} has been updated.`)
         if (warnings.length) warning('Duplicate warning', warnings[0].message)
       } else {
-        const { partner, warnings } = await updateSupplier(target.id, form)
-        const idx = suppliersData.value.findIndex(p => p.id === target.id)
-        if (idx >= 0) suppliersData.value[idx] = partner
-        success('Supplier updated', `${partner.name} has been updated.`)
+        const { partner: updated, warnings } = await updateSupplier(target.db_id, form)
+        success('Supplier updated', `${updated.name} has been updated.`)
         if (warnings.length) warning('Duplicate warning', warnings[0].message)
       }
     } else {
       if (activeTab.value === 'partners') {
-        const { partner, warnings } = await createPartner(form)
-        businessPartners.value.push(partner)
-        success('Partner added', `${partner.name} has been added successfully.`)
+        const { partner: created, warnings } = await createPartner(form)
+        success('Partner added', `${created.name} has been added successfully.`)
         if (warnings.length) warning('Duplicate warning', warnings[0].message)
       } else {
-        const { partner, warnings } = await createSupplier(form)
-        suppliersData.value.push(partner)
-        success('Supplier added', `${partner.name} has been added successfully.`)
+        const { partner: created, warnings } = await createSupplier(form)
+        success('Supplier added', `${created.name} has been added successfully.`)
         if (warnings.length) warning('Duplicate warning', warnings[0].message)
       }
     }
+    await fetchPartners(activeTab.value, currentPage.value, itemsPerPage, search.value, regionFilter.value)
   } catch (err: any) {
     const msg = err?.message ?? 'An error occurred. Please try again.'
     error('Save failed', msg)
@@ -162,40 +193,8 @@ function exportXLSX() {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, type === 'Business Partner' ? 'Partners' : 'Suppliers')
   XLSX.writeFile(wb, `sbsi-${activeTab.value}.xlsx`)
-  success('Export complete', `${partners.value.length} records exported.`)
+  success('Export complete', `${filtered.value.length} records exported.`)
 }
-
-async function handleDetachContract(associationId: string) {
-  if (!selectedPartner.value || !selectedPartner.value.db_id) return
-  const foundContract = selectedPartner.value.linkedContracts?.find(c => c.associationId === associationId)
-  if (foundContract) {
-    try {
-      await detachContract(activeTab.value, selectedPartner.value.db_id, foundContract.contractId)
-      const contracts = await fetchVendorContracts(activeTab.value, selectedPartner.value.db_id)
-      selectedPartner.value.linkedContracts = contracts
-      selectedPartner.value.contracts = contracts.length
-      loadData()
-      success('Contract unlinked', 'The contract has been detached successfully.')
-    } catch (err: any) {
-      error('Detach failed', err.message || 'Could not detach contract.')
-    }
-  }
-}
-
-async function handleLinkContract(contractId: string) {
-  if (!selectedPartner.value || !selectedPartner.value.db_id) return
-  try {
-    await linkContract(activeTab.value, selectedPartner.value.db_id, contractId)
-    const contracts = await fetchVendorContracts(activeTab.value, selectedPartner.value.db_id)
-    selectedPartner.value.linkedContracts = contracts
-    selectedPartner.value.contracts = contracts.length
-    loadData()
-    success('Contract linked', `Contract is now associated with ${selectedPartner.value.name}.`)
-  } catch (err: any) {
-    error('Link failed', err.message || 'Could not link contract.')
-  }
-}
-
 </script>
 
 <template>
@@ -268,7 +267,7 @@ async function handleLinkContract(contractId: string) {
 
     <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" :loading="loading" @open-detail="openDetail" />
     <PartnersTable v-else
-      :paginated="partners" :filtered="filtered" :active-tab="activeTab"
+      :paginated="filtered" :filtered="filtered" :active-tab="activeTab"
       :selected-ids="selectedIds" :all-page-selected="allPageSelected"
       :current-page="currentPage" :items-per-page="itemsPerPage"
       :can-edit="true" :can-delete="true" :loading="loading"

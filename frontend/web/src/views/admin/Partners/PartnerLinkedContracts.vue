@@ -4,6 +4,7 @@ import { type LinkedContract, engagementBadge } from '@/types/partner'
 defineProps<{
   contracts: LinkedContract[]
   vendorType: 'partners' | 'suppliers'
+  canManage?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -23,6 +24,7 @@ const emit = defineEmits<{
         </span>
       </div>
       <button
+        v-if="canManage"
         type="button"
         @click="emit('open-associate')"
         class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-[#2E85D8] hover:bg-[#252578] rounded transition-colors"
@@ -38,6 +40,7 @@ const emit = defineEmits<{
     >
       <p class="text-sm text-black/40 mb-3">No contracts linked to this {{ vendorType === 'partners' ? 'business partner' : 'supplier' }} yet.</p>
       <button
+        v-if="canManage"
         type="button"
         @click="emit('open-associate')"
         class="text-xs font-medium text-[#2E85D8] hover:text-[#252578] hover:underline"
@@ -55,7 +58,7 @@ const emit = defineEmits<{
             <th class="px-4 py-2 text-xs font-semibold text-black/50">Description</th>
             <th class="px-4 py-2 text-xs font-semibold text-black/50 w-[180px]">Period</th>
             <th class="px-4 py-2 text-xs font-semibold text-black/50 w-[100px]">Status</th>
-            <th class="px-4 py-2 text-xs font-semibold text-black/50 w-[80px] text-right">Actions</th>
+            <th v-if="canManage" class="px-4 py-2 text-xs font-semibold text-black/50 w-[80px] text-right">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-black/[0.04]">
@@ -77,7 +80,7 @@ const emit = defineEmits<{
                 {{ c.engagementStatus }}
               </span>
             </td>
-            <td class="px-4 py-3 text-xs text-right">
+            <td v-if="canManage" class="px-4 py-3 text-xs text-right">
               <button
                 type="button"
                 @click="emit('detach', c.associationId)"

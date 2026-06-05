@@ -97,7 +97,7 @@ export function formatRemainingTime(endDateStr: string): string {
   }
 
   const resultStr = parts.join(', ') || '0 days'
-  return isOverdue ? `${resultStr} overdue` : `${resultStr} remaining`
+  return isOverdue ? `${resultStr} overdue` : `${resultStr} left`
 }
 
 export function fmtDate(iso: string): string {

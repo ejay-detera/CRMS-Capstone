@@ -16,7 +16,8 @@ interface ContractListItem {
 
 const props = defineProps<{
   open: boolean
-  alreadyLinked: string[]
+  alreadyLinked: string[]      // IDs already linked to THIS vendor
+  globallyLinked?: string[]    // IDs linked to ANY vendor (globally taken)
 }>()
 
 const emit = defineEmits<{
@@ -64,9 +65,14 @@ const filteredContracts = computed(() => {
   )
 })
 
-const isAlreadyLinked = (contractId: string) => {
-  return props.alreadyLinked.includes(contractId)
-}
+const isLinkedToThisVendor = (contractId: string) =>
+  props.alreadyLinked.includes(contractId)
+
+const isLinkedToOtherVendor = (contractId: string) =>
+  !!(props.globallyLinked?.includes(contractId)) && !props.alreadyLinked.includes(contractId)
+
+const isAlreadyLinked = (contractId: string) =>
+  isLinkedToThisVendor(contractId) || isLinkedToOtherVendor(contractId)
 
 const selectContract = (contractId: string) => {
   selected.value = contractId
@@ -136,8 +142,11 @@ const handleSubmit = () => {
               >
                 {{ c.engagementStatus }}
               </span>
-              <span v-if="isAlreadyLinked(c.contractId)" class="text-[9px] text-black/35 font-medium italic">
-                (Already Linked)
+              <span v-if="isLinkedToThisVendor(c.contractId)" class="text-[9px] text-black/35 font-medium italic">
+                (Linked to This Vendor)
+              </span>
+              <span v-else-if="isLinkedToOtherVendor(c.contractId)" class="text-[9px] text-amber-500 font-medium italic">
+                (Assigned to Another Vendor)
               </span>
             </div>
             <p class="text-xs text-black/70 font-semibold truncate">

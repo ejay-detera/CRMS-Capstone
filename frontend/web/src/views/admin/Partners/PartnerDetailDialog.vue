@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Building2, Truck, Phone, Mail, User, MapPin, Hash, Tag } from 'lucide-vue-next'
+import { Building2, Truck, Phone, Mail, User, MapPin } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import type { Partner, TabKey } from '@/types/partner'
 
@@ -98,25 +98,7 @@ const statusClass = computed(() => {
             </div>
           </div>
         </div>
-
-          <!-- ── Linked Contracts Panel ────────────────────────────── -->
-          <PartnerLinkedContracts
-            :contracts="partner.linkedContracts || []"
-            :vendor-type="activeTab"
-            @open-associate="showAssociateModal = true"
-            @detach="emit('detach-contract', $event)"
-          />
-
-        </div>
       </template>
     </DialogContent>
   </Dialog>
-
-  <!-- Associate Contract Modal -->
-  <AssociateContractModal
-    :open="showAssociateModal"
-    :already-linked="alreadyLinkedContractIds"
-    @update:open="showAssociateModal = $event"
-    @submit="emit('link-contract', $event)"
-  />
 </template>

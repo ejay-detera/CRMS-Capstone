@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+
 import { Building2, Truck, MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,7 +19,7 @@ const props = defineProps<{
   paginated:       Partner[]
   filtered:        Partner[]
   activeTab:       TabKey
-  selectedIds:     number[]
+  selectedIds:     (string | number)[]
   allPageSelected: boolean
   currentPage:     number
   itemsPerPage:    number
@@ -32,7 +32,7 @@ const emit = defineEmits<{
   openDetail:      [p: Partner]
   openEdit:        [p: Partner]
   openDelete:      [p: Partner]
-  toggleRow:       [id: number]
+  toggleRow:       [id: string | number]
   toggleSelectAll: []
   'update:currentPage': [page: number]
 }>()

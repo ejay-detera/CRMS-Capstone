@@ -249,6 +249,23 @@ export function usePartners() {
     }
   }
 
+  const fetchLinkedContractIds = async (): Promise<string[]> => {
+    try {
+      const apiBase = import.meta.env.VITE_VENDOR_API_URL || 'http://localhost:8001/api'
+      const res = await fetch(`${apiBase}/vendor-contracts/linked-ids`, {
+        headers: {
+          'Authorization': `Bearer ${authState.token || ''}`,
+          'Accept': 'application/json'
+        }
+      })
+      if (!res.ok) return []
+      const json = await res.json()
+      return (json.data || []) as string[]
+    } catch {
+      return []
+    }
+  }
+
   return {
     loading,
     partners,
@@ -256,6 +273,7 @@ export function usePartners() {
     lastPage,
     fetchPartners,
     fetchVendorContracts,
+    fetchLinkedContractIds,
     addPartner,
     deletePartner,
     linkContract,
