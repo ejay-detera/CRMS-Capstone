@@ -19,11 +19,17 @@ final class UploadController extends Controller
         UploadDocumentRequest $request,
         UploadDocument $action
     ): JsonResponse {
-        $document = $action->handle($request->toPayload());
+        $result = $action->handle($request->toPayload());
 
-        return response()->json([
+        $response = [
             'message' => 'Document uploaded and scanned successfully.',
-            'data' => new DocumentResource($document),
-        ], 201);
+            'data' => new DocumentResource($result->document),
+        ];
+
+        if ($result->scanWarning !== null) {
+            $response['scan_warning'] = $result->scanWarning;
+        }
+
+        return response()->json($response, 201);
     }
 }

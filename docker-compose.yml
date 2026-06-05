@@ -77,6 +77,8 @@ services:
     command: sh -c "composer install --no-scripts && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
     environment:
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
+      - CLAMD_HOST=clamav
+      - CLAMD_PORT=3310
     depends_on:
       mysql:
         condition: service_healthy
@@ -84,6 +86,8 @@ services:
         condition: service_started
       redis:
         condition: service_started
+      clamav:
+        condition: service_healthy
     networks:
       - shared-capstone-network
 
@@ -119,6 +123,24 @@ services:
     networks:
       - shared-capstone-network
 
+  # ── ClamAV Antivirus Daemon ──────────────────────
+  clamav:
+    image: clamav/clamav:1.4_base
+    environment:
+      - CLAMAV_NO_FRESHCLAMD=false
+      - CLAMAV_NO_CLAMD=false
+      - CLAMAV_NO_MILTERD=true
+    volumes:
+      - clamav_db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    networks:
+      - shared-capstone-network
+
   # ── Vue Frontend ───────────────────────────────
   web:
     image: node:22-alpine
@@ -146,3 +168,4 @@ volumes:
   search-vendor:
   notification-vendor:
   web-node-modules:
+  clamav_db:

@@ -10,6 +10,7 @@ export interface UploadedDoc {
   id?:         string
   uploadStatus?: 'uploading' | 'scanning' | 'success' | 'error'
   errorMessage?: string
+  scanWarning?: string
 }
 export type ContractRegion = 'Luzon' | 'Visayas' | 'Mindanao'
 export type FilterTab      = 'all' | 'active' | 'expiring' | 'expired'

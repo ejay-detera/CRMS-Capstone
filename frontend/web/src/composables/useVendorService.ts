@@ -1,5 +1,5 @@
 import { useAuth } from './useAuth'
-import type { Partner, AddPartnerForm, Region } from '@/types/partner'
+import type { Partner, AddPartnerForm } from '@/types/partner'
 
 const BASE_URL = import.meta.env.VITE_VENDOR_API_URL as string
 

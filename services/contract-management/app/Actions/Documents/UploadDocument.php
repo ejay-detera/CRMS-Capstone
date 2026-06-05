@@ -6,6 +6,7 @@ namespace App\Actions\Documents;
 
 use App\Models\Document;
 use App\Payloads\Documents\UploadDocumentPayload;
+use App\Payloads\Documents\UploadDocumentResult;
 use App\Services\AuditLogService;
 use App\Services\MalwareScannerService;
 use Illuminate\Support\Facades\Storage;
@@ -23,11 +24,11 @@ final readonly class UploadDocument
      *
      * @throws ValidationException
      */
-    public function handle(UploadDocumentPayload $payload): Document
+    public function handle(UploadDocumentPayload $payload): UploadDocumentResult
     {
-        // 1. Run Malware Scan (throws ValidationException if signature is detected)
-        $isClean = $this->malwareScanner->scan($payload->file);
-        if (!$isClean) {
+        // 1. Run Malware Scan (blocks only when a malware signature is detected)
+        $scanResult = $this->malwareScanner->scan($payload->file);
+        if ($scanResult->isInfected) {
             throw ValidationException::withMessages([
                 'file' => ['Malware detected! This file is blocked.'],
             ]);
@@ -75,6 +76,6 @@ final readonly class UploadDocument
             $document->toArray()
         );
 
-        return $document;
+        return new UploadDocumentResult($document, $scanResult->warning);
     }
 }

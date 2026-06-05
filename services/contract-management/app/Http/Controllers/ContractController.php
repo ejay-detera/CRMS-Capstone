@@ -228,6 +228,19 @@ class ContractController extends Controller
         if (!empty($incoming['document_ids'])) {
             \App\Models\Document::whereIn('_id', $incoming['document_ids'])
                 ->update(['contract_id' => $contract->contract_id]);
+
+            // Audit log each linked document
+            foreach ($incoming['document_ids'] as $docId) {
+                $this->auditLogService->log(
+                    'document_linked',
+                    'Document',
+                    $docId,
+                    $userId,
+                    [],
+                    ['contract_id' => $contract->contract_id],
+                    $request->get('auth_department')
+                );
+            }
         }
 
         // Auto-link to business partner/supplier if exists
@@ -367,6 +380,22 @@ class ContractController extends Controller
         if (!empty($incomingDocIds)) {
             \App\Models\Document::whereIn('_id', $incomingDocIds)
                 ->update(['contract_id' => $contract->contract_id]);
+
+            // Audit log only newly linked documents (not ones that were already linked)
+            $previouslyLinkedIds = $currentDocs->map(fn ($d) => (string) $d->getKey())->toArray();
+            foreach ($incomingDocIds as $docId) {
+                if (!in_array($docId, $previouslyLinkedIds)) {
+                    $this->auditLogService->log(
+                        'document_linked',
+                        'Document',
+                        $docId,
+                        $userId,
+                        [],
+                        ['contract_id' => $contract->contract_id],
+                        $request->get('auth_department')
+                    );
+                }
+            }
         }
 
         // Clear old associations and re-link

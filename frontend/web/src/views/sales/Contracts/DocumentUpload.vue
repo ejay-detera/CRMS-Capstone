@@ -78,7 +78,8 @@ async function uploadFile(doc: UploadedDoc, index: number) {
       finalValue[index] = {
         ...finalValue[index],
         id: data.data.document_id,
-        uploadStatus: 'success'
+        uploadStatus: 'success',
+        scanWarning: data.scan_warning
       }
     } else {
       // 3. Error (Malware detected or validation failure)
@@ -250,8 +251,9 @@ const fileSizeMB = (bytes: number) => (bytes / 1024 / 1024).toFixed(2)
 
         <!-- Success overlay/badge -->
         <div v-if="doc.uploadStatus === 'success'"
-          class="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 rounded bg-emerald-500 px-1.5 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider shadow-sm select-none">
-          <span>Malware Free</span>
+          class="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 rounded bg-[#2E85D8] px-1.5 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider shadow-sm select-none"
+          :title="doc.scanWarning || 'Malware scan completed successfully.'">
+          <span>{{ doc.scanWarning ? 'Scan Skipped' : 'Malware Free' }}</span>
         </div>
 
       </div>

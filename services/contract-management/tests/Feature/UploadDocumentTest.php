@@ -7,10 +7,13 @@ use App\Models\Contract;
 use App\Models\ContractCategory;
 use App\Models\ContractStatus;
 use App\Models\Document;
+use App\Services\MalwareScanResult;
+use App\Services\MalwareScannerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class UploadDocumentTest extends TestCase
@@ -22,6 +25,15 @@ class UploadDocumentTest extends TestCase
         parent::setUp();
         Storage::fake(config('filesystems.default', 'local'));
         \Illuminate\Support\Facades\Cache::store('file')->flush();
+        $this->mockCleanMalwareScan();
+    }
+
+    protected function mockCleanMalwareScan(): void
+    {
+        $this->mock(MalwareScannerService::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('scan')
+                ->andReturn(MalwareScanResult::clean());
+        });
     }
 
     /**
@@ -158,6 +170,10 @@ class UploadDocumentTest extends TestCase
     public function test_upload_malware_detection()
     {
         $this->mockAuth('Sales', ['crms.contracts.create']);
+        $this->mock(MalwareScannerService::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('scan')
+                ->andReturn(MalwareScanResult::infected('Eicar-Signature'));
+        });
 
         // Create a PDF containing EICAR malware signature
         $eicarString = 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
@@ -177,6 +193,37 @@ class UploadDocumentTest extends TestCase
                 'file' => ['Malware detected! This file is blocked.']
             ]
         ]);
+    }
+
+    /**
+     * Test scanner outage fail-open behaviour.
+     */
+    public function test_upload_allows_file_when_malware_scanner_is_unavailable()
+    {
+        $this->mockAuth('Sales', ['crms.contracts.create']);
+        $warning = 'The antivirus scanner is currently unavailable, so this file was uploaded without a malware scan.';
+
+        $this->mock(MalwareScannerService::class, function (MockInterface $mock) use ($warning): void {
+            $mock->shouldReceive('scan')
+                ->andReturn(MalwareScanResult::unavailable($warning));
+        });
+
+        $file = UploadedFile::fake()->createWithContent('contract.pdf', "%PDF-1.4\n%EOF");
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer valid-token',
+            'Accept' => 'application/json'
+        ])->postJson('/api/documents/upload', [
+            'file' => $file,
+        ]);
+
+        $response->assertStatus(201);
+        $response->assertJsonPath('scan_warning', $warning);
+
+        $docId = $response->json('data.document_id');
+        $this->assertNotNull(Document::find($docId));
+
+        Document::destroy($docId);
     }
 
     /**
