@@ -54,7 +54,7 @@ function err(field: keyof typeof touched, extra = true) {
 
 <template>
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
-    <DialogContent class="max-w-lg p-0 overflow-hidden" @pointer-down-outside="$emit('update:open', false)">
+    <DialogContent class="max-w-lg p-0 overflow-y-auto max-h-[90vh] modal-scrollbar" @pointer-down-outside="$emit('update:open', false)">
 
       <!-- Header -->
       <div class="px-6 pt-6 pb-5 border-b border-black/6">

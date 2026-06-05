@@ -93,6 +93,56 @@ function exportXLSX() {
   XLSX.writeFile(wb, `sbsi-${activeTab.value}.xlsx`)
   success('Export complete', `${filtered.value.length} records exported.`)
 }
+
+function handleDetachContract(associationId: string) {
+  if (!selectedPartner.value) return
+  const list = activeTab.value === 'partners' ? businessPartners : suppliersData
+  const partner = list.value.find(p => p.id === selectedPartner.value!.id)
+  if (partner && partner.linkedContracts) {
+    partner.linkedContracts = partner.linkedContracts.filter(c => c.associationId !== associationId)
+    partner.contracts = partner.linkedContracts.filter(c => c.engagementStatus === 'active').length
+    selectedPartner.value = { ...partner }
+    success('Contract unlinked', 'The contract has been detached successfully.')
+  }
+}
+
+function handleLinkContract(contractId: string) {
+  if (!selectedPartner.value) return
+  const list = activeTab.value === 'partners' ? businessPartners : suppliersData
+  const partner = list.value.find(p => p.id === selectedPartner.value!.id)
+  if (partner) {
+    if (!partner.linkedContracts) partner.linkedContracts = []
+
+    const mockAvailableContracts = [
+      { contractId: 'CON-2026-001', description: 'Core Banking IT Infrastructure Services', startDate: '2026-01-01', endDate: '2027-01-01', engagementStatus: 'active' },
+      { contractId: 'CON-2026-002', description: 'Cash Management System Integration Upgrade', startDate: '2026-03-01', endDate: '2027-03-01', engagementStatus: 'active' },
+      { contractId: 'CON-2025-001', description: 'ATM Maintenance Agreement Phase 1', startDate: '2025-01-01', endDate: '2025-12-31', engagementStatus: 'expired' },
+      { contractId: 'CON-2026-003', description: 'Personal Protective Equipment Supply', startDate: '2026-05-01', endDate: '2026-06-30', engagementStatus: 'expiring' },
+      { contractId: 'CON-2026-004', description: 'Office General Supplies Delivery Q2-Q3', startDate: '2026-04-01', endDate: '2026-09-30', engagementStatus: 'active' },
+      { contractId: 'CON-2026-005', description: 'Cloud Data Warehouse Hosting Subscription', startDate: '2026-02-01', endDate: '2027-02-01', engagementStatus: 'active' },
+      { contractId: 'CON-2026-006', description: 'Cybersecurity Threat Detection Services', startDate: '2026-05-15', endDate: '2026-06-15', engagementStatus: 'expiring' },
+      { contractId: 'CON-2025-002', description: 'Annual Security Auditing & Compliance', startDate: '2025-06-01', endDate: '2026-05-31', engagementStatus: 'expired' },
+    ]
+
+    const contractInfo = mockAvailableContracts.find(c => c.contractId === contractId)
+    if (contractInfo) {
+      const newAssoc = {
+        associationId: String(Date.now()),
+        contractId: contractInfo.contractId,
+        description: contractInfo.description,
+        businessPartner: partner.name,
+        startDate: contractInfo.startDate,
+        endDate: contractInfo.endDate,
+        engagementStatus: contractInfo.engagementStatus as any,
+        attachedBy: 'John Doe (Manager)'
+      }
+      partner.linkedContracts.push(newAssoc)
+      partner.contracts = partner.linkedContracts.filter(c => c.engagementStatus === 'active').length
+      selectedPartner.value = { ...partner }
+      success('Contract linked', `${contractId} is now associated with ${partner.name}.`)
+    }
+  }
+}
 </script>
 
 <template>
@@ -163,7 +213,13 @@ function exportXLSX() {
 
   </div>
 
-  <PartnerDetailDialog v-model:open="showDetail" :partner="selectedPartner" :active-tab="activeTab" />
+  <PartnerDetailDialog
+    v-model:open="showDetail"
+    :partner="selectedPartner"
+    :active-tab="activeTab"
+    @detach-contract="handleDetachContract"
+    @link-contract="handleLinkContract"
+  />
   <DeleteConfirmDialog v-model:open="showDelete" :partner="deleteTarget"   :active-tab="activeTab" @confirm="confirmDelete" />
   <AddPartnerDialog    v-model:open="showAdd"    :active-tab="activeTab"   @submit="handleAdd" />
 </template>

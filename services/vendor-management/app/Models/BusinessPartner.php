@@ -29,4 +29,13 @@ class BusinessPartner extends Model
         'address' => EncryptedCast::class,
         'created_by' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        static::deleting(function (BusinessPartner $partner): void {
+            VendorContractAssociation::where('vendor_type', 'partner')
+                ->where('vendor_id', $partner->partner_id)
+                ->delete();
+        });
+    }
 }

@@ -30,4 +30,13 @@ class Supplier extends Model
         'email' => EncryptedCast::class,
         'address' => EncryptedCast::class,
     ];
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Supplier $supplier): void {
+            VendorContractAssociation::where('vendor_type', 'supplier')
+                ->where('vendor_id', $supplier->supplier_id)
+                ->delete();
+        });
+    }
 }
