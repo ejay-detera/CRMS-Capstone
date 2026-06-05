@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { Partner, TabKey, AddPartnerForm } from '@/types/partner'
 
 const props = defineProps<{
-  open:        boolean
-  activeTab:   TabKey
-  editTarget?: Partner | null
+  open:          boolean
+  activeTab:     TabKey
+  editTarget?:   Partner | null
+  existingNames?: string[]
 }>()
 const emit = defineEmits<{
   'update:open': [v: boolean]
@@ -31,8 +32,14 @@ const emailValid = computed(() =>
   !form.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
 )
 const phoneValid = computed(() =>
-  !form.phone || /^[+]?[\d\s\-(). ]{7,}$/.test(form.phone)
+  !form.phone || /^\d{7,11}$/.test(form.phone)
 )
+const isDuplicate = computed(() => {
+  if (!props.existingNames || !form.name.trim()) return false
+  const lower    = form.name.trim().toLowerCase()
+  const editName = (props.editTarget?.name ?? '').toLowerCase()
+  return lower !== editName && props.existingNames.some(n => n.toLowerCase() === lower)
+})
 
 function onNameInput(field: 'contactPerson', e: Event) {
   const el = e.target as HTMLInputElement
@@ -40,6 +47,14 @@ function onNameInput(field: 'contactPerson', e: Event) {
   form[field] = clean
   el.value = clean
   touched[field] = true
+}
+
+function onPhoneInput(e: Event) {
+  const el     = e.target as HTMLInputElement
+  const digits = el.value.replace(/\D/g, '').slice(0, 11)
+  form.phone   = digits
+  el.value     = digits
+  touched.phone = true
 }
 
 function reset() {
@@ -70,7 +85,7 @@ watch(() => props.open, open => {
 
 function submit() {
   Object.keys(touched).forEach(k => ((touched as Record<string, boolean>)[k] = true))
-  if (!form.name || !form.industry || !form.region || !form.contactPerson || !emailValid.value || !phoneValid.value || !form.address) return
+  if (!form.name || form.name.trim().length < 2 || isDuplicate.value || !form.industry || !form.region || !form.contactPerson || !emailValid.value || !phoneValid.value || !form.address) return
   emit('submit', { ...form })
   emit('update:open', false)
 }
@@ -108,8 +123,13 @@ function err(field: keyof typeof touched, extra = true) {
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Name <span class="text-red-500">*</span></label>
           <input v-model="form.name" @blur="touched.name = true" type="text" placeholder="Organisation name" maxlength="100"
-            :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', err('name', !form.name)]" />
+            :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
+              (touched.name && (!form.name || form.name.trim().length < 2)) || isDuplicate
+                ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15'
+                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
           <p v-if="touched.name && !form.name" class="text-xs text-red-500">Name is required.</p>
+          <p v-else-if="touched.name && form.name.trim().length < 2" class="text-xs text-red-500">Name must be at least 2 characters.</p>
+          <p v-else-if="isDuplicate" class="text-xs text-red-500">This name is already registered.</p>
         </div>
 
         <!-- Industry + Region -->
@@ -148,10 +168,11 @@ function err(field: keyof typeof touched, extra = true) {
           </div>
           <div class="space-y-1.5">
             <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Phone <span class="text-red-500">*</span></label>
-            <input v-model="form.phone" @blur="touched.phone = true" type="tel" placeholder="+63 2 8xxx xxxx" maxlength="20"
+            <input :value="form.phone" @input="onPhoneInput" @blur="touched.phone = true"
+              type="text" inputmode="numeric" placeholder="09xxxxxxxxx"
               :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', err('phone', !form.phone || !phoneValid)]" />
             <p v-if="touched.phone && !form.phone" class="text-xs text-red-500">Required.</p>
-            <p v-else-if="touched.phone && !phoneValid" class="text-xs text-red-500">Enter a valid phone number.</p>
+            <p v-else-if="touched.phone && !phoneValid" class="text-xs text-red-500">Phone number must be 7–11 digits.</p>
           </div>
         </div>
 

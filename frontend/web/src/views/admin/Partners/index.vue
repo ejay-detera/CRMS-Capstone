@@ -275,6 +275,7 @@ function exportXLSX() {
   <DeleteConfirmDialog v-model:open="showDelete" :partner="deleteTarget" :active-tab="activeTab" @confirm="confirmDelete" />
   <AddPartnerDialog
     :open="showAdd" :active-tab="activeTab" :edit-target="editTarget"
+    :existing-names="source.map(p => p.name)"
     @update:open="onDialogClose" @submit="handleSubmit"
   />
 </template>
