@@ -118,6 +118,14 @@ class AuditLogController extends Controller
                 $action = 'Partner Added';
             } elseif ($log->action === 'updated' && $log->entity_type === 'BusinessPartner') {
                 $action = 'Partner Updated';
+            } elseif ($log->action === 'deleted' && $log->entity_type === 'BusinessPartner') {
+                $action = 'Partner Deleted';
+            } elseif ($log->action === 'created' && $log->entity_type === 'Supplier') {
+                $action = 'Partner Added';
+            } elseif ($log->action === 'updated' && $log->entity_type === 'Supplier') {
+                $action = 'Partner Updated';
+            } elseif ($log->action === 'deleted' && $log->entity_type === 'Supplier') {
+                $action = 'Partner Deleted';
             } elseif ($log->action === 'user_created') {
                 $action = 'User Created';
             } elseif ($log->action === 'user_activated' || $log->action === 'user_deactivated') {
@@ -137,10 +145,13 @@ class AuditLogController extends Controller
             } elseif ($action === 'Document Deleted') {
                 $fileName = $old_data['file_name'] ?? 'Document';
                 $description = "Deleted Document \"{$fileName}\"";
-            } elseif ($action === 'Partner Added') {
-                $description = "Created BusinessPartner #{$log->entity_id}";
-            } elseif ($action === 'Partner Updated') {
-                $description = "Updated BusinessPartner #{$log->entity_id}";
+            } elseif (in_array($action, ['Partner Added', 'Partner Updated', 'Partner Deleted'])) {
+                $entityName = $new_data['partner_name'] ?? $new_data['supplier_name']
+                           ?? $old_data['partner_name'] ?? $old_data['supplier_name'] ?? null;
+                $entityType = $log->entity_type === 'Supplier' ? 'Supplier' : 'Business Partner';
+                $label      = $entityName ? "({$entityName})" : "#{$log->entity_id}";
+                $verb       = $action === 'Partner Added' ? 'Created' : ($action === 'Partner Deleted' ? 'Deleted' : 'Updated');
+                $description = "{$verb} {$entityType} {$label}";
             } elseif ($action === 'User Created') {
                 $email = $new_data['email'] ?? '';
                 $description = "Created User account for {$email}";

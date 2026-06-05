@@ -133,7 +133,7 @@ function formatTimestamp(isoStr: string) {
       </TableBody>
     </Table>
 
-    <Pagination v-if="totalPages > 1" :total="totalLogs ?? filtered.length" :sibling-count="1"
+    <Pagination :total="totalLogs ?? filtered.length" :sibling-count="1"
       :items-per-page="pageSize" :page="currentPage" @update:page="emit('update:currentPage', $event)">
       <div class="grid grid-cols-3 items-center px-6 py-4 border-t border-black/5">
         <div class="flex justify-start"><PaginationPrevious /></div>
