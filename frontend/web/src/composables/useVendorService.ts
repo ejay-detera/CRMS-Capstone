@@ -106,6 +106,13 @@ async function updatePartner(id: number, form: AddPartnerForm, bpCode: string | 
   return { partner: mapPartner(json.data), warnings: json.warnings ?? [] }
 }
 
+async function fetchPartnerById(id: number): Promise<Partner> {
+  const res = await fetch(`${BASE_URL}/partners/${id}`, { headers: makeHeaders() })
+  const json = await res.json()
+  if (!res.ok) throw json
+  return mapPartner(json.data)
+}
+
 async function deletePartner(id: number): Promise<void> {
   const res = await fetch(`${BASE_URL}/partners/${id}`, {
     method: 'DELETE',
@@ -166,6 +173,13 @@ async function updateSupplier(id: number, form: AddPartnerForm): Promise<{ partn
   return { partner: mapSupplier(json.data), warnings: json.warnings ?? [] }
 }
 
+async function fetchSupplierById(id: number): Promise<Partner> {
+  const res = await fetch(`${BASE_URL}/suppliers/${id}`, { headers: makeHeaders() })
+  const json = await res.json()
+  if (!res.ok) throw json
+  return mapSupplier(json.data)
+}
+
 async function deleteSupplier(id: number): Promise<void> {
   const res = await fetch(`${BASE_URL}/suppliers/${id}`, {
     method: 'DELETE',
@@ -180,10 +194,12 @@ async function deleteSupplier(id: number): Promise<void> {
 export function useVendorService() {
   return {
     fetchPartners,
+    fetchPartnerById,
     createPartner,
     updatePartner,
     deletePartner,
     fetchSuppliers,
+    fetchSupplierById,
     createSupplier,
     updateSupplier,
     deleteSupplier,

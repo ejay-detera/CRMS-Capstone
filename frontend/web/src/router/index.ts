@@ -51,6 +51,11 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/admin/Partners/index.vue'),
       },
       {
+        path: 'partners/:type/:id',
+        name: 'admin-partners-detail',
+        component: () => import('@/views/admin/Partners/PartnerDetail/index.vue'),
+      },
+      {
         path: 'notifications',
         name: 'admin-notifications',
         component: () => import('@/views/admin/Notifications/index.vue'),
@@ -131,6 +136,11 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/manager/Partners/index.vue'),
       },
       {
+        path: 'partners/:type/:id',
+        name: 'manager-partners-detail',
+        component: () => import('@/views/admin/Partners/PartnerDetail/index.vue'),
+      },
+      {
         path: 'profile',
         name: 'manager-profile',
         component: () => import('@/views/manager/Profile/index.vue'),
@@ -194,6 +204,12 @@ const routes: Array<RouteRecordRaw> = [
         path: 'partners',
         name: 'sales-partners',
         component: () => import('@/views/sales/Partners/index.vue'),
+        meta: { requiresPermission: 'crms.partners.view' },
+      },
+      {
+        path: 'partners/:type/:id',
+        name: 'sales-partners-detail',
+        component: () => import('@/views/admin/Partners/PartnerDetail/index.vue'),
         meta: { requiresPermission: 'crms.partners.view' },
       },
       {
