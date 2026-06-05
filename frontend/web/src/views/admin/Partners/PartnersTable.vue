@@ -25,6 +25,7 @@ const props = defineProps<{
   itemsPerPage:    number
   canEdit?:        boolean
   canDelete?:      boolean
+  loading?:        boolean
 }>()
 
 const emit = defineEmits<{
@@ -78,6 +79,35 @@ function statusClass(status: string) {
       </TableHeader>
 
       <TableBody>
+        <template v-if="props.loading">
+          <TableRow v-for="i in props.itemsPerPage" :key="'sk-' + i"
+            class="border-b border-black/4 last:border-0 hover:bg-transparent">
+            <TableCell class="pl-6 py-4">
+              <div class="w-4 h-4 bg-black/5 animate-pulse rounded" />
+            </TableCell>
+            <TableCell class="py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-black/5 animate-pulse shrink-0" />
+                <div class="space-y-1.5">
+                  <div class="h-3.5 w-28 bg-black/5 animate-pulse rounded" />
+                  <div class="h-2.5 w-16 bg-black/5 animate-pulse rounded" />
+                </div>
+              </div>
+            </TableCell>
+            <TableCell class="py-4"><div class="h-3.5 w-24 bg-black/5 animate-pulse rounded" /></TableCell>
+            <TableCell class="py-4"><div class="h-3.5 w-16 bg-black/5 animate-pulse rounded" /></TableCell>
+            <TableCell class="py-4">
+              <div class="space-y-1.5">
+                <div class="h-3.5 w-24 bg-black/5 animate-pulse rounded" />
+                <div class="h-2.5 w-20 bg-black/5 animate-pulse rounded" />
+              </div>
+            </TableCell>
+            <TableCell class="py-4"><div class="h-5 w-16 bg-black/5 animate-pulse rounded-full" /></TableCell>
+            <TableCell class="py-4 pr-4"><div class="w-8 h-8 bg-black/5 animate-pulse rounded" /></TableCell>
+          </TableRow>
+        </template>
+
+        <template v-else>
         <TableRow
           v-for="partner in paginated"
           :key="partner.id"
@@ -146,6 +176,7 @@ function statusClass(status: string) {
             <p class="text-xs text-black/20 mt-1">Try a different search or region filter</p>
           </TableCell>
         </TableRow>
+        </template>
       </TableBody>
     </Table>
 

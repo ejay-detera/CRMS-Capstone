@@ -2,7 +2,7 @@
 import { Building2, Truck } from 'lucide-vue-next'
 import type { Partner, TabKey } from '@/types/partner'
 
-defineProps<{ partners: Partner[]; activeTab: TabKey }>()
+defineProps<{ partners: Partner[]; activeTab: TabKey; loading?: boolean }>()
 const emit = defineEmits<{ openDetail: [p: Partner] }>()
 
 function statusClass(status: string) {
@@ -17,6 +17,36 @@ function statusClass(status: string) {
 
 <template>
   <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+
+    <template v-if="loading">
+      <div v-for="i in 8" :key="i"
+        class="bg-white rounded-xl border border-black/8 shadow-sm p-5 space-y-4">
+        <div class="flex items-start justify-between">
+          <div class="w-10 h-10 bg-black/5 animate-pulse rounded-xl" />
+          <div class="h-5 w-16 bg-black/5 animate-pulse rounded-full" />
+        </div>
+        <div class="space-y-2">
+          <div class="h-4 w-36 bg-black/5 animate-pulse rounded" />
+          <div class="h-3 w-24 bg-black/5 animate-pulse rounded" />
+        </div>
+        <div class="border-t border-black/5 pt-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="h-3 w-12 bg-black/5 animate-pulse rounded" />
+            <div class="h-3 w-16 bg-black/5 animate-pulse rounded" />
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="h-3 w-14 bg-black/5 animate-pulse rounded" />
+            <div class="h-3 w-20 bg-black/5 animate-pulse rounded" />
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="h-3 w-10 bg-black/5 animate-pulse rounded" />
+            <div class="h-3 w-24 bg-black/5 animate-pulse rounded" />
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template v-else>
     <button
       v-for="partner in partners"
       :key="partner.id"
@@ -53,5 +83,6 @@ function statusClass(status: string) {
       <p class="text-sm font-medium text-black/40">No results found.</p>
       <p class="text-xs text-black/25 mt-1">Try adjusting your search or region filter.</p>
     </div>
+    </template>
   </div>
 </template>

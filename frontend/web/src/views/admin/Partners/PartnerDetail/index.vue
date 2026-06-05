@@ -16,8 +16,9 @@ const router = useRouter()
 const { success, error, warning } = useToast()
 const { fetchPartnerById, fetchSupplierById, updatePartner, updateSupplier } = useVendorService()
 
-const type = route.params.type as string          // 'bp' | 'sp'
-const id   = Number(route.params.id)
+const code = route.params.code as string
+const type = code.startsWith('BP') ? 'bp' : 'sp'
+const id   = parseInt(code.split('-')[1])
 const activeTab = computed<TabKey>(() => type === 'bp' ? 'partners' : 'suppliers')
 
 const partner   = ref<Partner | null>(null)

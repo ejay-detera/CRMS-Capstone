@@ -20,7 +20,7 @@ const searchQuery  = ref('')
 const actionFilter = ref<ActionType | 'All'>('All')
 const dateFilter   = ref('')
 const currentPage  = ref(1)
-const PAGE_SIZE    = 10
+const PAGE_SIZE    = 15
 
 const contractApiUrl = import.meta.env.VITE_CONTRACT_API_URL || 'http://localhost:8002/api'
 

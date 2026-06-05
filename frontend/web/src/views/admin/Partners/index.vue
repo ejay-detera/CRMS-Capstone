@@ -93,8 +93,9 @@ function toggleRow(id: number) {
 }
 
 function openDetail(p: Partner) {
-  const type = activeTab.value === 'partners' ? 'bp' : 'sp'
-  router.push(`/admin/partners/${type}/${p.id}`)
+  const prefix = activeTab.value === 'partners' ? 'BP' : 'SP'
+  const code   = `${prefix}-${String(p.id).padStart(4, '0')}`
+  router.push(`/admin/partners/${code}`)
 }
 
 const showDelete   = ref(false)
@@ -258,21 +259,16 @@ function exportXLSX() {
       </select>
     </div>
 
-    <div v-if="loading" class="py-20 text-center">
-      <p class="text-sm text-black/40">Loading…</p>
-    </div>
-    <template v-else>
-      <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" @open-detail="openDetail" />
-      <PartnersTable v-else
-        :paginated="paginated" :filtered="filtered" :active-tab="activeTab"
-        :selected-ids="selectedIds" :all-page-selected="allPageSelected"
-        :current-page="currentPage" :items-per-page="itemsPerPage"
-        :can-edit="true" :can-delete="true"
-        @open-detail="openDetail" @open-edit="openEdit" @open-delete="openDelete"
-        @toggle-row="toggleRow" @toggle-select-all="toggleSelectAll"
-        @update:current-page="currentPage = $event"
-      />
-    </template>
+    <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" :loading="loading" @open-detail="openDetail" />
+    <PartnersTable v-else
+      :paginated="paginated" :filtered="filtered" :active-tab="activeTab"
+      :selected-ids="selectedIds" :all-page-selected="allPageSelected"
+      :current-page="currentPage" :items-per-page="itemsPerPage"
+      :can-edit="true" :can-delete="true" :loading="loading"
+      @open-detail="openDetail" @open-edit="openEdit" @open-delete="openDelete"
+      @toggle-row="toggleRow" @toggle-select-all="toggleSelectAll"
+      @update:current-page="currentPage = $event"
+    />
 
   </div>
 
