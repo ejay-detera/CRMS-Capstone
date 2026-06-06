@@ -1,11 +1,17 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { inject } from 'vue'
-import { Send, FileText } from 'lucide-vue-next'
+import { Send, FileText, Clock } from 'lucide-vue-next'
 import type { SystemCfg } from './index.vue'
 import SettingCard from '@/components/shared/SettingCard.vue'
 import ToggleRow   from '@/components/shared/ToggleRow.vue'
 
 const cfg = inject<SystemCfg>('cfg')!
+
+const expiryThresholds = [
+  { label: '3 months (90 days) before expiry', sublabel: 'First warning — far-in-advance notice', type: 'expiry_90' },
+  { label: '1 month (30 days) before expiry',  sublabel: 'Second warning — action window approaching', type: 'expiry_30' },
+  { label: '1 day before expiry',               sublabel: 'Final warning — urgent action required', type: 'expiry_1' },
+]
 </script>
 
 <template>
@@ -27,19 +33,28 @@ const cfg = inject<SystemCfg>('cfg')!
         <div class="px-6 py-4 space-y-3">
           <ToggleRow v-model="cfg.contractExpiryAlerts"
             label="Contract Expiry Alerts"
-            description="Notify users when contracts are approaching expiry." />
-          <div v-if="cfg.contractExpiryAlerts" class="bg-black/2 rounded-lg border border-black/6 p-4">
-            <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Days before expiry to notify</label>
-            <div class="relative mt-2">
-              <input v-model.number="cfg.daysBeforeExpiry" type="number" min="1" max="365"
-                class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-12 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors" />
-              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/35 pointer-events-none">days</span>
+            description="Notify Admin, Manager, and Sales users when contracts are approaching expiry." />
+
+          <div v-if="cfg.contractExpiryAlerts" class="bg-black/2 rounded-lg border border-black/6 overflow-hidden">
+            <div class="px-4 py-2.5 border-b border-black/6 flex items-center gap-2">
+              <Clock class="w-3.5 h-3.5 text-black/40" />
+              <span class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Notification Schedule</span>
             </div>
+            <ul class="divide-y divide-black/4">
+              <li v-for="t in expiryThresholds" :key="t.type"
+                class="flex items-center gap-3 px-4 py-3">
+                <span class="w-2 h-2 rounded-full bg-[#2E85D8] shrink-0" />
+                <div>
+                  <p class="text-sm font-medium text-black">{{ t.label }}</p>
+                  <p class="text-xs text-black/40 mt-0.5">{{ t.sublabel }}</p>
+                </div>
+              </li>
+            </ul>
           </div>
         </div>
 
-        <ToggleRow v-model="cfg.approvalAlerts"    label="Approval Request Alerts" description="Notify managers when a contract request is submitted." />
-        <ToggleRow v-model="cfg.renewalReminders"  label="Renewal Reminders"       description="Send reminders when contracts are due for renewal." />
+        <ToggleRow v-model="cfg.approvalAlerts"   label="Approval Request Alerts" description="Notify managers when a contract request is submitted." />
+        <ToggleRow v-model="cfg.renewalReminders" label="Renewal Reminders"       description="Send reminders when contracts are due for renewal." />
       </div>
     </SettingCard>
 

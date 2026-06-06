@@ -1,29 +1,18 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { CheckCheck } from 'lucide-vue-next'
 import NotificationList from '@/components/shared/NotificationList.vue'
-import type { Notification, TabKey } from '@/types/notification'
+import { useNotifications } from '@/composables/useNotifications'
+import type { TabKey } from '@/types/notification'
 
-const rawNotifications = ref<Notification[]>([
-  { id: 'N-001', type: 'contract',  message: 'Contract CNT-2025-001 with Philippine National Bank has been approved and notarized.',                            timestamp: 'Just now',     isRead: false, isFavorite: false, isArchived: false },
-  { id: 'N-002', type: 'reminder',  message: 'Reminder: Contract CNT-2024-089 with Bio-Tech Logistics is expiring in 5 days. Please review before renewal.',   timestamp: '1 hour ago',   isRead: false, isFavorite: true,  isArchived: false },
-  { id: 'N-003', type: 'contract',  message: 'Contract CNT-2025-003 with SM Prime Holdings has been submitted for SBSI Review.',                               timestamp: '3 hours ago',  isRead: false, isFavorite: false, isArchived: false },
-  { id: 'N-004', type: 'reminder',  message: 'Reminder: Contract CNT-2024-112 with Stellar Lab Equipment expires in 10 days.',                                  timestamp: '1 day ago',    isRead: true,  isFavorite: true,  isArchived: false },
-  { id: 'N-005', type: 'contract',  message: 'Contract CNT-2025-002 with Meralco has been updated to Client Review status.',                                    timestamp: '2 days ago',   isRead: true,  isFavorite: false, isArchived: false },
-  { id: 'N-006', type: 'partner',   message: 'Business partner Ayala Corporation has updated their contact information and account manager.',                   timestamp: '5 days ago',   isRead: true,  isFavorite: false, isArchived: false },
-  { id: 'N-007', type: 'contract',  message: 'Contract CNT-2025-004 with Jollibee Foods Corp. has been successfully created and is pending notarization.',      timestamp: '07 Feb, 2025', isRead: true,  isFavorite: false, isArchived: false },
-  { id: 'N-008', type: 'reminder',  message: 'Reminder: Review the contract proposal for BioGenesis Research currently under negotiation.',                     timestamp: '05 Feb, 2025', isRead: true,  isFavorite: true,  isArchived: false },
-  { id: 'N-009', type: 'system',    message: 'System maintenance is scheduled for Feb 20, 2025 from 12:00 AM to 2:00 AM. Expect brief downtime.',              timestamp: '01 Feb, 2025', isRead: true,  isFavorite: false, isArchived: true  },
-  { id: 'N-010', type: 'contract',  message: 'Contract CNT-2024-256 with Global Pharma Inc. is expiring in 26 days. Renewal recommended.',                     timestamp: '28 Jan, 2025', isRead: true,  isFavorite: false, isArchived: false },
-])
+const { notifications, loading, unreadCount, fetchNotifications, markRead, markAllRead, updateState } = useNotifications()
 
 const activeTab   = ref<TabKey>('all')
 const searchQuery = ref('')
 
-const allCount      = computed(() => rawNotifications.value.filter(n => !n.isArchived).length)
-const archiveCount  = computed(() => rawNotifications.value.filter(n => n.isArchived).length)
-const favoriteCount = computed(() => rawNotifications.value.filter(n => n.isFavorite && !n.isArchived).length)
-const unreadCount   = computed(() => rawNotifications.value.filter(n => !n.isRead && !n.isArchived).length)
+const allCount      = computed(() => notifications.value.filter(n => !n.isArchived).length)
+const archiveCount  = computed(() => notifications.value.filter(n => n.isArchived).length)
+const favoriteCount = computed(() => notifications.value.filter(n => n.isFavorite && !n.isArchived).length)
 
 const tabs = computed(() => [
   { key: 'all'      as TabKey, label: 'All',     count: allCount.value      },
@@ -32,7 +21,7 @@ const tabs = computed(() => [
 ])
 
 const filtered = computed(() => {
-  let list = rawNotifications.value
+  let list = notifications.value
   if (activeTab.value === 'all')      list = list.filter(n => !n.isArchived)
   if (activeTab.value === 'archive')  list = list.filter(n =>  n.isArchived)
   if (activeTab.value === 'favorite') list = list.filter(n =>  n.isFavorite && !n.isArchived)
@@ -43,21 +32,11 @@ const filtered = computed(() => {
   return list
 })
 
-function toggleRead(id: string) {
-  const n = rawNotifications.value.find(x => x.id === id)
-  if (n) n.isRead = !n.isRead
-}
-function toggleFavorite(id: string) {
-  const n = rawNotifications.value.find(x => x.id === id)
-  if (n) n.isFavorite = !n.isFavorite
-}
-function deleteNotif(id: string) {
-  const idx = rawNotifications.value.findIndex(x => x.id === id)
-  if (idx >= 0) rawNotifications.value.splice(idx, 1)
-}
-function markAllRead() {
-  rawNotifications.value.filter(n => !n.isRead && !n.isArchived).forEach(n => { n.isRead = true })
-}
+function toggleRead(id: string)     { markRead(id) }
+function toggleFavorite(id: string) { const n = notifications.value.find(x => x.id === id); if (n) updateState(id, { isFavorite: !n.isFavorite }) }
+function deleteNotif(id: string)    { updateState(id, { isArchived: true }) }
+
+onMounted(fetchNotifications)
 </script>
 
 <template>
@@ -66,7 +45,7 @@ function markAllRead() {
     <div class="flex items-start justify-between">
       <div>
         <h1 class="text-xl font-semibold text-black">Notifications</h1>
-        <p class="text-sm text-black/40 mt-0.5">View and manage all your notifications.</p>
+        <p class="text-sm text-black/40 mt-0.5">View and manage all system notifications.</p>
       </div>
       <button v-if="unreadCount > 0" @click="markAllRead"
         class="flex items-center gap-2 text-sm font-medium text-[#2E85D8] hover:text-[#252578] transition-colors">

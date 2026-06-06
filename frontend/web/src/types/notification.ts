@@ -2,13 +2,15 @@ export type NotifType = 'contract' | 'user' | 'partner' | 'system' | 'reminder'
 export type TabKey    = 'all' | 'archive' | 'favorite'
 
 export interface Notification {
-  id:         string
-  type:       NotifType
-  message:    string
-  timestamp:  string
-  isRead:     boolean
-  isFavorite: boolean
-  isArchived: boolean
+  id:           string
+  type:         NotifType
+  message:      string
+  timestamp:    string
+  isRead:       boolean
+  isFavorite:   boolean
+  isArchived:   boolean
+  contractId?:  number | null
+  notifType?:   string
 }
 
 export const typeColor: Record<NotifType, string> = {

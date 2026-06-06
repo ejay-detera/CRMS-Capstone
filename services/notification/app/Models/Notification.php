@@ -22,11 +22,18 @@ class Notification extends Model
         'message',
         'notification_date',
         'is_read',
+        'notification_type',
+        'target_roles',
     ];
 
     protected $casts = [
-        'message' => EncryptedCast::class,
+        'message'           => EncryptedCast::class,
         'notification_date' => 'datetime',
-        'is_read' => 'boolean',
+        'is_read'           => 'boolean',
     ];
+
+    public function reads(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(NotificationRead::class, 'notification_id', 'notification_id');
+    }
 }

@@ -29,8 +29,9 @@ import {
   ChevronDown,
 } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
-import { ref, watch, computed, onMounted } from "vue";
+import { ref, watch, computed, onMounted, onUnmounted } from "vue";
 import { useAuth } from "@/composables/useAuth";
+import { useNotifications } from "@/composables/useNotifications";
 import logoUrl from "@/assets/sbsi logo.png";
 
 const route  = useRoute();
@@ -40,6 +41,13 @@ const { logout, hasPermission, refreshPermissions, user } = useAuth();
 // Refresh permissions every time the layout mounts so sidebar items
 // always reflect the latest permissions saved by an admin.
 onMounted(() => refreshPermissions())
+
+const { notifications, unreadCount, fetchNotifications, markAllRead } = useNotifications();
+const recentNotifs = computed(() => notifications.value.filter(n => !n.isArchived).slice(0, 5));
+
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+onMounted(() => { fetchNotifications(); pollTimer = setInterval(fetchNotifications, 60000); });
+onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
 const contractPaths = ["/sales/contracts", "/sales/contract-requests"];
 const contractsOpen = ref(contractPaths.includes(route.path));
@@ -293,14 +301,38 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
             <PopoverTrigger as-child>
               <button class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors text-black/60 relative">
                 <Bell class="w-4.5 h-4.5" />
-                <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#2E85D8] border-2 border-white"></span>
+                <span v-if="unreadCount > 0"
+                  class="absolute top-1 right-1 min-w-[16px] h-4 rounded-full bg-[#2E85D8] border-2 border-white flex items-center justify-center text-[9px] font-bold text-white px-0.5">
+                  {{ unreadCount > 9 ? '9+' : unreadCount }}
+                </span>
               </button>
             </PopoverTrigger>
-            <PopoverContent class="w-72 p-4" align="end">
-              <div class="text-center py-4">
-                <Bell class="w-8 h-8 mx-auto text-black/30 mb-2" />
-                <p class="text-sm font-medium text-black">No notifications</p>
-                <p class="text-xs text-black/50 mt-1">You're all caught up!</p>
+            <PopoverContent class="w-80 p-0" align="end">
+              <div class="flex items-center justify-between px-4 py-3 border-b border-black/6">
+                <p class="text-sm font-semibold text-black">Notifications</p>
+                <button v-if="unreadCount > 0" @click="markAllRead"
+                  class="text-xs text-[#2E85D8] hover:text-[#252578] transition-colors font-medium">
+                  Mark all read
+                </button>
+              </div>
+              <div v-if="recentNotifs.length === 0" class="text-center py-8">
+                <Bell class="w-7 h-7 mx-auto text-black/25 mb-2" />
+                <p class="text-sm text-black/40">You're all caught up!</p>
+              </div>
+              <ul v-else class="divide-y divide-black/4 max-h-72 overflow-y-auto">
+                <li v-for="n in recentNotifs" :key="n.id"
+                  class="flex items-start gap-3 px-4 py-3 hover:bg-black/2 transition-colors"
+                  :class="{ 'bg-[#2E85D8]/4': !n.isRead }">
+                  <span class="mt-0.5 w-1.5 h-1.5 rounded-full shrink-0"
+                    :class="n.isRead ? 'bg-transparent' : 'bg-[#2E85D8]'" />
+                  <p class="text-xs text-black/70 leading-relaxed line-clamp-2">{{ n.message }}</p>
+                </li>
+              </ul>
+              <div class="px-4 py-2.5 border-t border-black/6">
+                <button @click="router.push('/sales/notifications')"
+                  class="w-full text-xs text-center text-[#2E85D8] hover:text-[#252578] font-medium transition-colors">
+                  View all notifications
+                </button>
               </div>
             </PopoverContent>
           </Popover>
