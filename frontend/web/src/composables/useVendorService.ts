@@ -15,6 +15,7 @@ function makeHeaders(): HeadersInit {
 function mapPartner(d: any): Partner {
   return {
     id:            d.partner_id,
+    db_id:         d.partner_id,
     name:          d.partner_name   ?? '',
     industry:      d.industry       ?? '',
     region:        (d.region        ?? null) as Partner['region'],
@@ -31,6 +32,7 @@ function mapPartner(d: any): Partner {
 function mapSupplier(d: any): Partner {
   return {
     id:            d.supplier_id,
+    db_id:         d.supplier_id,
     name:          d.supplier_name  ?? '',
     industry:      d.industry       ?? '',
     region:        (d.region        ?? null) as Partner['region'],
