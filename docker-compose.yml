@@ -3,6 +3,7 @@ services:
   # ── Databases ──────────────────────────────────
   mysql:
     image: mysql:8.0
+    container_name: crms-mysql
     ports:
       - "3307:3306"
     environment:
@@ -20,6 +21,7 @@ services:
 
   mongodb:
     image: mongo:7
+    container_name: crms-mongodb
     ports:
       - "27017:27017"
     volumes:
@@ -29,6 +31,7 @@ services:
 
   redis:
     image: redis:7
+    container_name: crms-redis
     ports:
       - "6379:6379"
     networks:
@@ -36,6 +39,7 @@ services:
 
   elasticsearch:
     image: elasticsearch:8.13.0
+    container_name: crms-elasticsearch
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
@@ -49,6 +53,7 @@ services:
   # ── Laravel Services ───────────────────────────
   vendor-management:
     build: ./services/vendor-management
+    container_name: crms-vendor-management
     volumes:
       - ./services/vendor-management:/var/www/html
       - vendor-management-vendor:/var/www/html/vendor
@@ -69,15 +74,16 @@ services:
 
   contract-management:
     build: ./services/contract-management
+    container_name: crms-contract-management
     volumes:
       - ./services/contract-management:/var/www/html
       - contract-management-vendor:/var/www/html/vendor
     ports:
       - "8002:8000"
-    command: sh -c "composer install --no-scripts && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "composer install --no-scripts && php artisan migrate --force && (php artisan schedule:work &) && php artisan serve --host=0.0.0.0 --port=8000"
     environment:
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
-      - CLAMD_HOST=clamav
+      - CLAMD_HOST=crms-clamav
       - CLAMD_PORT=3310
     depends_on:
       mysql:
@@ -93,6 +99,7 @@ services:
 
   search:
     build: ./services/search
+    container_name: crms-search
     volumes:
       - ./services/search:/var/www/html
       - search-vendor:/var/www/html/vendor
@@ -109,6 +116,7 @@ services:
 
   notification:
     build: ./services/notification
+    container_name: crms-notification
     volumes:
       - ./services/notification:/var/www/html
       - notification-vendor:/var/www/html/vendor
@@ -128,6 +136,7 @@ services:
   # ── ClamAV Antivirus Daemon ──────────────────────
   clamav:
     image: clamav/clamav:1.4_base
+    container_name: crms-clamav
     environment:
       - CLAMAV_NO_FRESHCLAMD=false
       - CLAMAV_NO_CLAMD=false
@@ -146,11 +155,11 @@ services:
   # ── Vue Frontend ───────────────────────────────
   web:
     image: node:22-alpine
+    container_name: crms-web
     working_dir: /app
     volumes:
       - ./frontend/web:/app
       - web-node-modules:/app/node_modules
-    container_name: crms-web
     expose:
       - "5001"
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5001"

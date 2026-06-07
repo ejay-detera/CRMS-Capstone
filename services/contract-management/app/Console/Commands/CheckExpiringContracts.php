@@ -16,43 +16,42 @@ class CheckExpiringContracts extends Command
     {
         $today = Carbon::today();
 
-        $thresholds = [
-            90 => ['type' => 'expiry_90', 'label' => '3 months'],
-            30 => ['type' => 'expiry_30', 'label' => '1 month'],
-            1  => ['type' => 'expiry_1',  'label' => 'tomorrow'],
-        ];
+        $contracts = Contract::whereDate('end_date', '>=', $today)
+            ->whereDate('end_date', '<=', $today->copy()->addDays(90))
+            ->get();
 
         $pushed = 0;
 
-        foreach ($thresholds as $days => $meta) {
-            $targetDate = $today->copy()->addDays($days);
+        foreach ($contracts as $contract) {
+            $date     = $contract->end_date->format('M d, Y');
+            $serial   = $contract->serial_number ?? "Contract #{$contract->contract_id}";
+            $daysLeft = (int) $today->diffInDays($contract->end_date);
 
-            $contracts = Contract::whereDate('end_date', '>=', $today)
-                ->whereDate('end_date', '<=', $targetDate)
-                ->get();
+            // Pick the single most urgent threshold that applies — a contract
+            // expiring tomorrow also falls within the 30/90-day windows, but
+            // should only trigger one notification, not all three.
+            if ($daysLeft <= 1) {
+                $type   = 'expiry_1';
+                $phrase = 'is expiring tomorrow';
+            } elseif ($daysLeft <= 30) {
+                $type   = 'expiry_30';
+                $phrase = 'is less than a month away from expiring';
+            } else {
+                $type   = 'expiry_90';
+                $phrase = 'is less than 90 days away from expiring';
+            }
 
-            foreach ($contracts as $contract) {
-                $date     = $contract->end_date->format('M d, Y');
-                $serial   = $contract->serial_number ?? "Contract #{$contract->contract_id}";
-                $daysLeft = (int) $today->diffInDays($contract->end_date);
+            $message      = "Contract {$serial} {$phrase} (on {$date}).";
+            $salesMessage = "Your contract {$serial} {$phrase} (on {$date}).";
 
-                $message = $daysLeft <= 1
-                    ? "Contract {$serial} is expiring tomorrow on {$date}."
-                    : "Contract {$serial} is expiring in {$daysLeft} day(s) on {$date}.";
+            // Role groupings mirror the frontend router's layout access rules (router/index.ts):
+            // /manager → Manager, Finance Manager · /sales → Sales, Employee, Finance Employee, Finance
+            $okBroadcast = $notif->push($contract->contract_id, $type, $message, 'Admin,Manager,Finance Manager');
+            $okSales     = $notif->push($contract->contract_id, $type, $salesMessage, 'Sales,Employee,Finance Employee,Finance', (int) $contract->created_by);
 
-                $salesMessage = $daysLeft <= 1
-                    ? "Your contract {$serial} is expiring tomorrow on {$date}."
-                    : "Your contract {$serial} is expiring in {$daysLeft} day(s) on {$date}.";
-
-                // Role groupings mirror the frontend router's layout access rules (router/index.ts):
-                // /manager → Manager, Finance Manager · /sales → Sales, Employee, Finance Employee, Finance
-                $okBroadcast = $notif->push($contract->contract_id, $meta['type'], $message, 'Admin,Manager,Finance Manager');
-                $okSales     = $notif->push($contract->contract_id, $meta['type'], $salesMessage, 'Sales,Employee,Finance Employee,Finance', (int) $contract->created_by);
-
-                if ($okBroadcast || $okSales) {
-                    $pushed++;
-                    $this->line("  Sent [{$meta['type']}] for contract {$serial} (new or existing)");
-                }
+            if ($okBroadcast || $okSales) {
+                $pushed++;
+                $this->line("  Sent [{$type}] for contract {$serial} (new or existing)");
             }
         }
 
