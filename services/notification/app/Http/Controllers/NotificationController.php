@@ -20,6 +20,7 @@ class NotificationController extends Controller
             'notification_type' => 'required|string|max:20',
             'target_roles'      => 'required|string|max:255',
             'message'           => 'required|string',
+            'target_user_id'    => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -34,6 +35,7 @@ class NotificationController extends Controller
             [
                 'contract_id'       => $data['contract_id'] ?? null,
                 'notification_type' => $data['notification_type'],
+                'target_user_id'    => $data['target_user_id'] ?? null,
             ],
             [
                 'target_roles'      => $data['target_roles'],
@@ -55,12 +57,14 @@ class NotificationController extends Controller
         $userId   = $request->input('auth_id');
         $userRole = $request->input('auth_role');
 
-        // Get all broadcast notifications that target this user's role
+        // Get notifications targeting this user's role; for user-scoped ones also match auth_id
         $notifications = Notification::orderByDesc('notification_date')->get()
-            ->filter(function (Notification $n) use ($userRole) {
+            ->filter(function (Notification $n) use ($userRole, $userId) {
                 if (!$n->target_roles) return false;
                 $roles = array_map('trim', explode(',', $n->target_roles));
-                return in_array($userRole, $roles, true);
+                if (!in_array($userRole, $roles, true)) return false;
+                if ($n->target_user_id !== null && (int) $n->target_user_id !== (int) $userId) return false;
+                return true;
             })
             ->values();
 
@@ -117,10 +121,12 @@ class NotificationController extends Controller
         $userRole = $request->input('auth_role');
 
         $notifIds = Notification::orderByDesc('notification_date')->get()
-            ->filter(function (Notification $n) use ($userRole) {
+            ->filter(function (Notification $n) use ($userRole, $userId) {
                 if (!$n->target_roles) return false;
                 $roles = array_map('trim', explode(',', $n->target_roles));
-                return in_array($userRole, $roles, true);
+                if (!in_array($userRole, $roles, true)) return false;
+                if ($n->target_user_id !== null && (int) $n->target_user_id !== (int) $userId) return false;
+                return true;
             })
             ->pluck('notification_id')
             ->all();

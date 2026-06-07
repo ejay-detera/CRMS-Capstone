@@ -40,9 +40,16 @@ class CheckExpiringContracts extends Command
                     ? "Contract {$serial} is expiring tomorrow on {$date}."
                     : "Contract {$serial} is expiring in {$daysLeft} day(s) on {$date}.";
 
-                $ok = $notif->push($contract->contract_id, $meta['type'], $message);
+                $salesMessage = $daysLeft <= 1
+                    ? "Your contract {$serial} is expiring tomorrow on {$date}."
+                    : "Your contract {$serial} is expiring in {$daysLeft} day(s) on {$date}.";
 
-                if ($ok) {
+                // Role groupings mirror the frontend router's layout access rules (router/index.ts):
+                // /manager → Manager, Finance Manager · /sales → Sales, Employee, Finance Employee, Finance
+                $okBroadcast = $notif->push($contract->contract_id, $meta['type'], $message, 'Admin,Manager,Finance Manager');
+                $okSales     = $notif->push($contract->contract_id, $meta['type'], $salesMessage, 'Sales,Employee,Finance Employee,Finance', (int) $contract->created_by);
+
+                if ($okBroadcast || $okSales) {
                     $pushed++;
                     $this->line("  Sent [{$meta['type']}] for contract {$serial} (new or existing)");
                 }

@@ -16,18 +16,29 @@ class NotificationService
         $this->secret  = env('INTERNAL_SERVICE_SECRET', '');
     }
 
-    public function push(int $contractId, string $type, string $message): bool
-    {
+    public function push(
+        int $contractId,
+        string $type,
+        string $message,
+        string $targetRoles = 'Admin,Manager',
+        ?int $targetUserId = null
+    ): bool {
         try {
+            $payload = [
+                'contract_id'       => $contractId,
+                'notification_type' => $type,
+                'target_roles'      => $targetRoles,
+                'message'           => $message,
+            ];
+
+            if ($targetUserId !== null) {
+                $payload['target_user_id'] = $targetUserId;
+            }
+
             $response = Http::withHeaders([
                 'Accept'            => 'application/json',
                 'X-Internal-Secret' => $this->secret,
-            ])->post("{$this->baseUrl}/internal/push", [
-                'contract_id'       => $contractId,
-                'notification_type' => $type,
-                'target_roles'      => 'Admin,Manager,Sales',
-                'message'           => $message,
-            ]);
+            ])->post("{$this->baseUrl}/internal/push", $payload);
 
             if (!$response->successful()) {
                 Log::warning('Notification push failed', [

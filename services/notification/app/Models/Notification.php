@@ -24,6 +24,7 @@ class Notification extends Model
         'is_read',
         'notification_type',
         'target_roles',
+        'target_user_id',
     ];
 
     protected $casts = [
