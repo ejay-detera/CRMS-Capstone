@@ -82,7 +82,7 @@ final class EmailDispatchTest extends TestCase
 
         $job->handle(new \App\Services\AuthService());
 
-        Mail::assertQueued(\App\Mail\ContractExpiryMail::class, function ($mail) {
+        Mail::assertSent(\App\Mail\ContractExpiryMail::class, function ($mail) {
             return $mail->hasTo('sales@example.com')
                 && $mail->recipientName === 'John Doe'
                 && $mail->messageText === 'Test message';

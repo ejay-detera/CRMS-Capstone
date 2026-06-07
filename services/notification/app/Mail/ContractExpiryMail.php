@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-final class ContractExpiryMail extends Mailable implements ShouldQueue
+final class ContractExpiryMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -22,7 +21,8 @@ final class ContractExpiryMail extends Mailable implements ShouldQueue
         public string $recipientName,
         public string $messageText,
         public string $notificationType,
-        public ?int $contractId
+        public ?int $contractId,
+        public ?string $userRole = null
     ) {}
 
     /**

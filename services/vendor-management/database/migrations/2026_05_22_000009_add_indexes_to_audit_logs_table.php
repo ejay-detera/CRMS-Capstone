@@ -11,12 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('audit_logs', function (Blueprint $table) {
-            $table->index('performed_at');           // for ORDER BY / date filter
-            $table->index('user_id');               // for user filter
-            $table->index('entity_type');           // for action-type filter
-            $table->index(['user_id', 'performed_at']); // composite for user+date queries
-        });
+        try {
+            Schema::table('audit_logs', function (Blueprint $table) {
+                $table->index('performed_at');           // for ORDER BY / date filter
+                $table->index('user_id');               // for user filter
+                $table->index('entity_type');           // for action-type filter
+                $table->index(['user_id', 'performed_at']); // composite for user+date queries
+            });
+        } catch (\Exception $e) {
+            // Ignore if indexes already exist
+        }
     }
 
     /**

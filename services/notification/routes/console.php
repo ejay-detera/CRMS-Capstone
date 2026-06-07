@@ -26,34 +26,65 @@ Artisan::command('notifications:queue-past-emails', function () {
 
     $notifications = \App\Models\Notification::all();
     $dispatchedCount = 0;
+    $authService = app(\App\Services\AuthService::class);
 
     foreach ($notifications as $notification) {
-        // We only skip if there is an email log with a status of 'sent' or 'skipped'
-        $logExists = \App\Models\EmailSendLog::where('notification_id', $notification->notification_id)
-            ->whereIn('status', ['sent', 'skipped'])
-            ->exists();
+        if ($notification->target_user_id !== null) {
+            $userId = (int) $notification->target_user_id;
 
-        if (!$logExists) {
-            $this->info("Dispatching email for notification ID: {$notification->notification_id} (Type: {$notification->notification_type})");
+            // Check if already sent or skipped for this specific user, contract, and type
+            $logExists = \App\Models\EmailSendLog::where('user_id', $userId)
+                ->whereIn('status', ['sent', 'skipped'])
+                ->whereHas('notification', function ($query) use ($notification) {
+                    $query->where('contract_id', $notification->contract_id)
+                          ->where('notification_type', $notification->notification_type);
+                })
+                ->exists();
 
-            if ($notification->target_user_id !== null) {
+            if (!$logExists) {
+                $this->info("Dispatching email for notification ID: {$notification->notification_id} (Type: {$notification->notification_type}) to User: {$userId}");
+
                 \App\Jobs\SendContractExpiryEmail::dispatch(
-                    (int) $notification->target_user_id,
+                    $userId,
                     (int) $notification->notification_id,
                     $notification->contract_id ? (int) $notification->contract_id : null,
                     $notification->message,
                     $notification->notification_type
                 );
-            } else {
-                \App\Jobs\SendBroadcastExpiryEmails::dispatch(
-                    $notification->target_roles,
-                    (int) $notification->notification_id,
-                    $notification->contract_id ? (int) $notification->contract_id : null,
-                    $notification->message,
-                    $notification->notification_type
-                );
+                $dispatchedCount++;
             }
-            $dispatchedCount++;
+        } else {
+            // Broadcast notification: check for each user matching target roles
+            $roles = array_filter(array_map('trim', explode(',', $notification->target_roles)));
+            if (empty($roles)) {
+                continue;
+            }
+
+            $users = $authService->getUsersByRoles($roles);
+            foreach ($users as $user) {
+                $userId = (int) $user['id'];
+
+                $logExists = \App\Models\EmailSendLog::where('user_id', $userId)
+                    ->whereIn('status', ['sent', 'skipped'])
+                    ->whereHas('notification', function ($query) use ($notification) {
+                        $query->where('contract_id', $notification->contract_id)
+                              ->where('notification_type', $notification->notification_type);
+                    })
+                    ->exists();
+
+                if (!$logExists) {
+                    $this->info("Dispatching broadcast email for notification ID: {$notification->notification_id} (Type: {$notification->notification_type}) to User: {$userId}");
+
+                    \App\Jobs\SendContractExpiryEmail::dispatch(
+                        $userId,
+                        (int) $notification->notification_id,
+                        $notification->contract_id ? (int) $notification->contract_id : null,
+                        $notification->message,
+                        $notification->notification_type
+                    );
+                    $dispatchedCount++;
+                }
+            }
         }
     }
 

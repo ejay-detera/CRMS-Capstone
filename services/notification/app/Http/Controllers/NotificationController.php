@@ -29,21 +29,36 @@ class NotificationController extends Controller
 
         $data = $validator->validated();
 
-        // firstOrCreate: only inserts once per (contract_id, notification_type).
-        // If the record already exists it is returned unchanged — timestamp and read state are preserved.
-        $notification = Notification::firstOrCreate(
-            [
+        $notification = Notification::where('contract_id', $data['contract_id'] ?? null)
+            ->where('notification_type', $data['notification_type'])
+            ->where('target_user_id', $data['target_user_id'] ?? null)
+            ->first();
+
+        if ($notification) {
+            $notification->wasRecentlyCreated = false;
+
+            // If the last notification was sent 7 or more days ago, update it to act as a weekly reminder
+            if ($notification->notification_date && now()->diffInDays($notification->notification_date) >= 7) {
+                $notification->update([
+                    'notification_date' => now(),
+                    'is_read'           => false,
+                ]);
+
+                // Delete reads records to reset unread state for all users
+                NotificationRead::where('notification_id', $notification->notification_id)->delete();
+            }
+        } else {
+            $notification = Notification::create([
                 'contract_id'       => $data['contract_id'] ?? null,
                 'notification_type' => $data['notification_type'],
                 'target_user_id'    => $data['target_user_id'] ?? null,
-            ],
-            [
                 'target_roles'      => $data['target_roles'],
                 'message'           => $data['message'],
                 'notification_date' => now(),
                 'is_read'           => false,
-            ]
-        );
+            ]);
+            $notification->wasRecentlyCreated = true;
+        }
 
         if ($notification->wasRecentlyCreated) {
             if ($notification->target_user_id !== null) {

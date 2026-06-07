@@ -58,6 +58,19 @@ final class SendBroadcastExpiryEmails implements ShouldQueue
         foreach ($users as $user) {
             $userId = (int) $user['id'];
             
+            // Check if already sent or skipped to avoid redundant dispatching
+            $alreadySent = \App\Models\EmailSendLog::where('user_id', $userId)
+                ->whereIn('status', ['sent', 'skipped'])
+                ->whereHas('notification', function ($query) {
+                    $query->where('contract_id', $this->contractId)
+                          ->where('notification_type', $this->notificationType);
+                })
+                ->exists();
+
+            if ($alreadySent) {
+                continue;
+            }
+
             SendContractExpiryEmail::dispatch(
                 $userId,
                 $this->notificationId,

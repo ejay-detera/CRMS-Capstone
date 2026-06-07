@@ -46,4 +46,12 @@ final class EmailSendLog extends Model
      * Disable the updated_at timestamp.
      */
     public const UPDATED_AT = null;
+
+    /**
+     * Get the notification associated with the log.
+     */
+    public function notification(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Notification::class, 'notification_id', 'notification_id');
+    }
 }

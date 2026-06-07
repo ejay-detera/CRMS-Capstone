@@ -52,6 +52,29 @@ final class SendContractExpiryEmail implements ShouldQueue
             $recipientName = 'User';
         }
 
+        // Avoid sending duplicate emails for the same contract and threshold type to this user
+        $alreadySent = EmailSendLog::where('user_id', $this->userId)
+            ->whereIn('status', ['sent', 'skipped'])
+            ->whereHas('notification', function ($query) {
+                $query->where('contract_id', $this->contractId)
+                      ->where('notification_type', $this->notificationType);
+            })
+            ->exists();
+
+        if ($alreadySent) {
+            Log::info("Email already sent or skipped for user {$this->userId} for contract {$this->contractId} (Type: {$this->notificationType}). Skipping email send.");
+            EmailSendLog::create([
+                'notification_id' => $this->notificationId,
+                'user_id' => $this->userId,
+                'recipient_email' => $recipientEmail,
+                'subject' => $this->getSubject(),
+                'status' => 'skipped',
+                'error_message' => 'Email already sent or skipped for this threshold.',
+                'sent_at' => null,
+            ]);
+            return;
+        }
+
         // Check preferences
         $pref = EmailPreference::where('user_id', $this->userId)->first();
         if ($pref) {
@@ -87,7 +110,8 @@ final class SendContractExpiryEmail implements ShouldQueue
                 $recipientName,
                 $this->messageText,
                 $this->notificationType,
-                $this->contractId
+                $this->contractId,
+                $userInfo['role'] ?? null
             );
 
             Mail::to($recipientEmail)->send($mailable);

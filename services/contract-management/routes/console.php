@@ -9,5 +9,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Check every minute; firstOrCreate in the notification service prevents duplicates
+// Check every minute; the notification service handles in-app weekly reminders and restricts email alerts to once
 Schedule::command(CheckExpiringContracts::class)->everyMinute();

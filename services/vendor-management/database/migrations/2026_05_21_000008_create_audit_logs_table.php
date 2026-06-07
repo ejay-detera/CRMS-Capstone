@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('audit_logs', function (Blueprint $table) {
-            $table->id('audit_id');
-            $table->string('action', 50); // created, updated, deleted
-            $table->string('entity_type', 100); // Supplier, BusinessPartner
-            $table->unsignedBigInteger('entity_id');
-            $table->unsignedBigInteger('user_id')->nullable();
-            $table->json('old_data')->nullable();
-            $table->json('new_data')->nullable();
-            $table->timestamp('performed_at')->useCurrent();
-        });
+        if (!Schema::hasTable('audit_logs')) {
+            Schema::create('audit_logs', function (Blueprint $table) {
+                $table->id('audit_id');
+                $table->string('action', 50); // created, updated, deleted
+                $table->string('entity_type', 100); // Supplier, BusinessPartner
+                $table->unsignedBigInteger('entity_id');
+                $table->unsignedBigInteger('user_id')->nullable();
+                $table->json('old_data')->nullable();
+                $table->json('new_data')->nullable();
+                $table->timestamp('performed_at')->useCurrent();
+            });
+        }
     }
 
     /**
