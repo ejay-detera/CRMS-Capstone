@@ -1,5 +1,5 @@
 export type NotifType = 'contract' | 'user' | 'partner' | 'system' | 'reminder'
-export type TabKey    = 'all' | 'archive' | 'favorite'
+export type TabKey    = 'all' | 'archive' | 'favorite' | 'email_logs'
 
 export interface Notification {
   id:           string
@@ -11,6 +11,23 @@ export interface Notification {
   isArchived:   boolean
   contractId?:  number | null
   notifType?:   string
+}
+
+export interface EmailPreference {
+  emailNotificationsEnabled: boolean
+  contractExpiryAlerts: boolean
+}
+
+export interface EmailSendLog {
+  id: number
+  notificationId: number
+  userId: number
+  recipientEmail: string
+  subject: string
+  status: 'sent' | 'failed' | 'skipped'
+  errorMessage: string | null
+  sentAt: string | null
+  createdAt: string
 }
 
 export const typeColor: Record<NotifType, string> = {

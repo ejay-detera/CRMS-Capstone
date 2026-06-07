@@ -10,7 +10,12 @@ class ValidateInternalSecret
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $secret = env('INTERNAL_SERVICE_SECRET');
+        $secret = config('app.internal_service_secret');
+
+        \Illuminate\Support\Facades\Log::info('Internal Secret check', [
+            'env_secret' => $secret,
+            'header_secret' => $request->header('X-Internal-Secret'),
+        ]);
 
         if (!$secret || $request->header('X-Internal-Secret') !== $secret) {
             return response()->json(['message' => 'Unauthorized internal request.'], 401);

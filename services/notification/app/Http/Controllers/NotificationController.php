@@ -45,6 +45,26 @@ class NotificationController extends Controller
             ]
         );
 
+        if ($notification->wasRecentlyCreated) {
+            if ($notification->target_user_id !== null) {
+                \App\Jobs\SendContractExpiryEmail::dispatch(
+                    (int) $notification->target_user_id,
+                    (int) $notification->notification_id,
+                    $notification->contract_id ? (int) $notification->contract_id : null,
+                    $notification->message,
+                    $notification->notification_type
+                );
+            } else {
+                \App\Jobs\SendBroadcastExpiryEmails::dispatch(
+                    $notification->target_roles,
+                    (int) $notification->notification_id,
+                    $notification->contract_id ? (int) $notification->contract_id : null,
+                    $notification->message,
+                    $notification->notification_type
+                );
+            }
+        }
+
         $status = $notification->wasRecentlyCreated ? 201 : 200;
         return response()->json(['data' => $notification], $status);
     }

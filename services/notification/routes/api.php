@@ -14,4 +14,10 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
     Route::patch('/notifications/{id}/state', [NotificationController::class, 'updateState']);
+    
+    // Email Preferences & Logs
+    Route::get('/email-preferences', App\Http\Controllers\Api\V1\EmailPreferences\ShowController::class);
+    Route::put('/email-preferences', App\Http\Controllers\Api\V1\EmailPreferences\UpdateController::class);
+    Route::get('/email-logs', App\Http\Controllers\Api\V1\EmailLogs\IndexController::class);
 });
+

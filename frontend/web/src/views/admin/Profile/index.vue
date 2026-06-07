@@ -2,6 +2,7 @@
 import { reactive, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
+import { useEmailPreferences } from '@/composables/useEmailPreferences'
 import ProfileHero       from './ProfileHero.vue'
 import PersonalInfoCard  from './PersonalInfoCard.vue'
 import SecurityCard      from './SecurityCard.vue'
@@ -9,6 +10,7 @@ import PreferencesCard   from './PreferencesCard.vue'
 
 const { error: showError, success: showSuccess } = useToast()
 const { state } = useAuth()
+const { preferences: apiPrefs, fetchPreferences, savePreferences } = useEmailPreferences()
 
 const profile = reactive({
   firstName:  '',
@@ -50,8 +52,11 @@ function loadProfile() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadProfile()
+  await fetchPreferences()
+  preferences.emailNotifications = apiPrefs.value.emailNotificationsEnabled
+  preferences.contractExpiry = apiPrefs.value.contractExpiryAlerts
 })
 
 async function handleProfileSave(data: Partial<typeof profile>) {
@@ -140,8 +145,16 @@ async function handlePasswordChange(data: { current: string, next: string }) {
   }
 }
 
-function handlePreferencesSave() {
-  showSuccess('Preferences saved', 'Your settings have been applied.')
+async function handlePreferencesSave() {
+  const success = await savePreferences({
+    emailNotificationsEnabled: preferences.emailNotifications,
+    contractExpiryAlerts: preferences.contractExpiry,
+  })
+  if (success) {
+    showSuccess('Preferences saved', 'Your notification settings have been updated.')
+  } else {
+    showError('Save failed', 'Could not save notification preferences.')
+  }
 }
 </script>
 

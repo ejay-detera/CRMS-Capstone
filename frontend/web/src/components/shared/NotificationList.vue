@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { Bell, Search } from 'lucide-vue-next'
 import NotificationItem from './NotificationItem.vue'
 import type { Notification, TabKey } from '@/types/notification'
@@ -56,22 +56,25 @@ const emit = defineEmits<{
     </div>
 
     <div class="divide-y divide-black/4">
-      <div v-if="filtered.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
-        <div class="w-12 h-12 rounded-full bg-black/4 flex items-center justify-center mb-3">
-          <Bell class="w-5 h-5 text-black/30" />
+      <slot v-if="activeTab === 'email_logs'" name="email-logs" />
+      <template v-else>
+        <div v-if="filtered.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
+          <div class="w-12 h-12 rounded-full bg-black/4 flex items-center justify-center mb-3">
+            <Bell class="w-5 h-5 text-black/30" />
+          </div>
+          <p class="text-sm font-medium text-black/50">No notifications</p>
+          <p class="text-xs text-black/30 mt-0.5">You're all caught up!</p>
         </div>
-        <p class="text-sm font-medium text-black/50">No notifications</p>
-        <p class="text-xs text-black/30 mt-0.5">You're all caught up!</p>
-      </div>
 
-      <NotificationItem
-        v-for="notif in filtered"
-        :key="notif.id"
-        :notif="notif"
-        @toggle-read="emit('toggle-read', $event)"
-        @toggle-favorite="emit('toggle-favorite', $event)"
-        @delete="emit('delete', $event)"
-      />
+        <NotificationItem
+          v-for="notif in filtered"
+          :key="notif.id"
+          :notif="notif"
+          @toggle-read="emit('toggle-read', $event)"
+          @toggle-favorite="emit('toggle-favorite', $event)"
+          @delete="emit('delete', $event)"
+        />
+      </template>
     </div>
 
   </div>

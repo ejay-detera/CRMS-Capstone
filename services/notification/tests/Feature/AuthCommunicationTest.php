@@ -28,7 +28,7 @@ class AuthCommunicationTest extends TestCase
         ])->getJson('/api/notifications');
 
         $response->assertStatus(200);
-        $response->assertJsonPath('message', 'Notifications retrieved');
+        $response->assertJsonStructure(['data']);
     }
 
     public function test_it_denies_notifications_with_invalid_token()

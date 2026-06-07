@@ -20,3 +20,42 @@ Artisan::command('mail:test {email}', function (string $email) {
         $this->error("Failed to send email: " . $e->getMessage());
     }
 })->purpose('Send a test email using configured SMTP credentials');
+
+Artisan::command('notifications:queue-past-emails', function () {
+    $this->info("Checking for past notifications without sent email logs...");
+
+    $notifications = \App\Models\Notification::all();
+    $dispatchedCount = 0;
+
+    foreach ($notifications as $notification) {
+        // We only skip if there is an email log with a status of 'sent' or 'skipped'
+        $logExists = \App\Models\EmailSendLog::where('notification_id', $notification->notification_id)
+            ->whereIn('status', ['sent', 'skipped'])
+            ->exists();
+
+        if (!$logExists) {
+            $this->info("Dispatching email for notification ID: {$notification->notification_id} (Type: {$notification->notification_type})");
+
+            if ($notification->target_user_id !== null) {
+                \App\Jobs\SendContractExpiryEmail::dispatch(
+                    (int) $notification->target_user_id,
+                    (int) $notification->notification_id,
+                    $notification->contract_id ? (int) $notification->contract_id : null,
+                    $notification->message,
+                    $notification->notification_type
+                );
+            } else {
+                \App\Jobs\SendBroadcastExpiryEmails::dispatch(
+                    $notification->target_roles,
+                    (int) $notification->notification_id,
+                    $notification->contract_id ? (int) $notification->contract_id : null,
+                    $notification->message,
+                    $notification->notification_type
+                );
+            }
+            $dispatchedCount++;
+        }
+    }
+
+    $this->info("Successfully dispatched {$dispatchedCount} email jobs for past notifications.");
+})->purpose('Queue emails for past notifications that have not been sent yet');

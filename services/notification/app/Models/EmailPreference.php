@@ -1,0 +1,37 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+final class EmailPreference extends Model
+{
+    use HasFactory;
+
+    protected $table = 'email_preferences';
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'user_id',
+        'email_notifications_enabled',
+        'contract_expiry_alerts',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'user_id' => 'integer',
+        'email_notifications_enabled' => 'boolean',
+        'contract_expiry_alerts' => 'boolean',
+    ];
+}

@@ -118,6 +118,8 @@ return [
     |
     */
 
+    'internal_service_secret' => env('INTERNAL_SERVICE_SECRET'),
+
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),

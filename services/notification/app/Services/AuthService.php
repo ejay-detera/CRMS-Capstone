@@ -1,19 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class AuthService
+final class AuthService
 {
     protected string $baseUrl;
+    protected string $secret;
 
     public function __construct()
     {
-        $this->baseUrl = config('services.auth.url', env('AUTH_SERVICE_URL', 'http://auth-service:8000/api'));
+        $this->baseUrl = env('AUTH_SERVICE_URL', 'http://auth-service:8000/api');
+        $this->secret  = config('app.internal_service_secret', '');
     }
 
+    /**
+     * Verify a token with the auth-service.
+     */
     public function verifyToken(string $token): ?array
     {
         try {
@@ -32,6 +39,71 @@ class AuthService
         } catch (\Exception $e) {
             Log::error('Auth service connection error in notification', ['message' => $e->getMessage()]);
             return null;
+        }
+    }
+
+    /**
+     * Get user email and profile details by user ID internally.
+     */
+    public function getUserInfo(int $userId): ?array
+    {
+        try {
+            $response = Http::withHeaders([
+                'Accept'            => 'application/json',
+                'X-Internal-Secret' => $this->secret,
+            ])->get("{$this->baseUrl}/internal/users/{$userId}");
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+
+            Log::warning("Auth service internal user lookup failed", [
+                'user_id' => $userId,
+                'status'  => $response->status(),
+                'body'    => $response->body(),
+            ]);
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Auth service user lookup connection error', [
+                'user_id' => $userId,
+                'message' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Get all active users belonging to any of the specified roles.
+     *
+     * @param array<int, string> $roles
+     * @return array<int, array{id: int, email: string, first_name: string, last_name: string}>
+     */
+    public function getUsersByRoles(array $roles): array
+    {
+        try {
+            $response = Http::withHeaders([
+                'Accept'            => 'application/json',
+                'X-Internal-Secret' => $this->secret,
+            ])->get("{$this->baseUrl}/internal/users-by-roles", [
+                'roles' => implode(',', $roles),
+            ]);
+
+            if ($response->successful()) {
+                return $response->json('data') ?? [];
+            }
+
+            Log::warning("Auth service internal users-by-roles lookup failed", [
+                'roles'  => $roles,
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+            return [];
+        } catch (\Exception $e) {
+            Log::error('Auth service users-by-roles connection error', [
+                'roles'   => $roles,
+                'message' => $e->getMessage(),
+            ]);
+            return [];
         }
     }
 }
