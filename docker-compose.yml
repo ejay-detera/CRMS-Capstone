@@ -37,16 +37,16 @@ services:
     networks:
       - shared-capstone-network
 
-  elasticsearch:
-    image: elasticsearch:8.13.0
-    container_name: crms-elasticsearch
+  meilisearch:
+    image: getmeili/meilisearch:v1.8
+    container_name: crms-meilisearch
     environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-changeme}
+      - MEILI_ENV=development
     ports:
-      - "9200:9200"
+      - "7700:7700"
     volumes:
-      - es_data:/usr/share/elasticsearch/data
+      - meili_data:/meili_data
     networks:
       - shared-capstone-network
 
@@ -80,11 +80,9 @@ services:
       - contract-management-vendor:/var/www/html/vendor
     ports:
       - "8002:8000"
-    command: sh -c "composer install --no-scripts && php artisan migrate --force && (php artisan schedule:work &) && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "composer install --no-scripts && php artisan migrate --force && (php artisan schedule:work &) && (php artisan queue:work --sleep=3 --tries=3 --timeout=60 &) && php artisan serve --host=0.0.0.0 --port=8000"
     environment:
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
-      - CLAMD_HOST=crms-clamav
-      - CLAMD_PORT=3310
     depends_on:
       mysql:
         condition: service_healthy
@@ -92,8 +90,6 @@ services:
         condition: service_started
       redis:
         condition: service_started
-      clamav:
-        condition: service_healthy
     networks:
       - shared-capstone-network
 
@@ -105,9 +101,9 @@ services:
       - search-vendor:/var/www/html/vendor
     ports:
       - "8003:8000"
-    command: sh -c "composer install --no-scripts && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "composer install --no-scripts && php artisan migrate --force && php artisan meilisearch:seed --guard && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
-      elasticsearch:
+      meilisearch:
         condition: service_started
       mysql:
         condition: service_healthy
@@ -137,6 +133,8 @@ services:
   clamav:
     image: clamav/clamav:1.4_base
     container_name: crms-clamav
+    profiles:
+      - scanning
     environment:
       - CLAMAV_NO_FRESHCLAMD=false
       - CLAMAV_NO_CLAMD=false
@@ -173,7 +171,7 @@ networks:
 volumes:
   mysql_data:
   mongo_data:
-  es_data:
+  meili_data:
   vendor-management-vendor:
   contract-management-vendor:
   search-vendor:

@@ -62,6 +62,7 @@ class UploadDocumentTest extends TestCase
      */
     public function test_upload_pdf_document_success()
     {
+        \Illuminate\Support\Facades\Queue::fake();
         $this->mockAuth('Sales', ['crms.contracts.create']);
 
         // Create PDF with valid %PDF magic bytes
@@ -75,7 +76,8 @@ class UploadDocumentTest extends TestCase
         ]);
 
         $response->assertStatus(201);
-        $response->assertJsonPath('message', 'Document uploaded and scanned successfully.');
+        $response->assertJsonPath('message', 'Document uploaded. Antivirus scan queued.');
+        $response->assertJsonPath('scan_status', 'pending');
         $response->assertJsonStructure([
             'data' => [
                 'document_id',
@@ -98,6 +100,9 @@ class UploadDocumentTest extends TestCase
         // Verify MongoDB metadata record exists
         $this->assertNotNull(Document::find($docId));
 
+        // Verify job was dispatched
+        \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\ScanUploadedDocument::class);
+
         // Verify Audit Log is created in MySQL
         $this->assertDatabaseHas('audit_logs', [
             'action' => 'document_uploaded',
@@ -115,6 +120,7 @@ class UploadDocumentTest extends TestCase
      */
     public function test_upload_docx_document_success()
     {
+        \Illuminate\Support\Facades\Queue::fake();
         $this->mockAuth('Manager', ['crms.contracts.create']);
 
         // Create DOCX with valid PK\x03\x04 zip magic bytes
@@ -128,11 +134,14 @@ class UploadDocumentTest extends TestCase
         ]);
 
         $response->assertStatus(201);
+        $response->assertJsonPath('scan_status', 'pending');
         
         $data = $response->json()['data'];
         $docId = $data['document_id'];
 
         $this->assertNotNull(Document::find($docId));
+
+        \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\ScanUploadedDocument::class);
 
         // Cleanup MongoDB record
         Document::destroy($docId);
@@ -143,6 +152,7 @@ class UploadDocumentTest extends TestCase
      */
     public function test_upload_document_invalid_magic_bytes()
     {
+        \Illuminate\Support\Facades\Queue::fake();
         $this->mockAuth('Sales', ['crms.contracts.create']);
 
         // Create PDF with plain text content instead of PDF magic bytes
@@ -165,65 +175,117 @@ class UploadDocumentTest extends TestCase
     }
 
     /**
-     * Test malware scan hook rejection.
+     * Test the ScanUploadedDocument job when scan is clean.
      */
-    public function test_upload_malware_detection()
+    public function test_scan_uploaded_document_job_clean()
     {
-        $this->mockAuth('Sales', ['crms.contracts.create']);
-        $this->mock(MalwareScannerService::class, function (MockInterface $mock): void {
-            $mock->shouldReceive('scan')
-                ->andReturn(MalwareScanResult::infected('Eicar-Signature'));
-        });
+        $file = UploadedFile::fake()->createWithContent('contract.pdf', "%PDF-1.4\n%EOF");
+        $disk = config('filesystems.default', 'local');
+        $path = Storage::disk($disk)->putFileAs('contracts/documents', $file, 'test.pdf');
 
-        // Create a PDF containing EICAR malware signature
-        $eicarString = 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
-        $file = UploadedFile::fake()->createWithContent('contract.pdf', "%PDF-1.4\n" . $eicarString);
-
-        $response = $this->withHeaders([
-            'Authorization' => 'Bearer valid-token',
-            'Accept' => 'application/json'
-        ])->postJson('/api/documents/upload', [
-            'file' => $file,
+        $document = Document::create([
+            'file_name' => 'contract.pdf',
+            'file_path' => $path,
+            'scan_status' => 'pending',
         ]);
 
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['file']);
-        $response->assertJsonFragment([
-            'errors' => [
-                'file' => ['Malware detected! This file is blocked.']
-            ]
-        ]);
+        $mockScanner = \Mockery::mock(MalwareScannerService::class);
+        $mockScanner->shouldReceive('scanPath')
+            ->once()
+            ->andReturn(MalwareScanResult::clean());
+
+        $job = new \App\Jobs\ScanUploadedDocument((string) $document->getKey(), $path);
+        $job->handle($mockScanner);
+
+        $document->refresh();
+        $this->assertEquals('clean', $document->scan_status);
+        Storage::disk($disk)->assertExists($path);
     }
 
     /**
-     * Test scanner outage fail-open behaviour.
+     * Test the ScanUploadedDocument job when malware is detected.
      */
-    public function test_upload_allows_file_when_malware_scanner_is_unavailable()
+    public function test_scan_uploaded_document_job_infected()
     {
-        $this->mockAuth('Sales', ['crms.contracts.create']);
-        $warning = 'The antivirus scanner is currently unavailable, so this file was uploaded without a malware scan.';
+        $file = UploadedFile::fake()->createWithContent('infected.pdf', "%PDF-1.4\nEICAR");
+        $disk = config('filesystems.default', 'local');
+        $path = Storage::disk($disk)->putFileAs('contracts/documents', $file, 'test.pdf');
 
-        $this->mock(MalwareScannerService::class, function (MockInterface $mock) use ($warning): void {
-            $mock->shouldReceive('scan')
-                ->andReturn(MalwareScanResult::unavailable($warning));
-        });
-
-        $file = UploadedFile::fake()->createWithContent('contract.pdf', "%PDF-1.4\n%EOF");
-
-        $response = $this->withHeaders([
-            'Authorization' => 'Bearer valid-token',
-            'Accept' => 'application/json'
-        ])->postJson('/api/documents/upload', [
-            'file' => $file,
+        $document = Document::create([
+            'file_name' => 'infected.pdf',
+            'file_path' => $path,
+            'scan_status' => 'pending',
         ]);
 
-        $response->assertStatus(201);
-        $response->assertJsonPath('scan_warning', $warning);
+        $mockScanner = \Mockery::mock(MalwareScannerService::class);
+        $mockScanner->shouldReceive('scanPath')
+            ->once()
+            ->andReturn(MalwareScanResult::infected('Eicar-Signature'));
 
-        $docId = $response->json('data.document_id');
-        $this->assertNotNull(Document::find($docId));
+        $job = new \App\Jobs\ScanUploadedDocument((string) $document->getKey(), $path);
+        $job->handle($mockScanner);
 
-        Document::destroy($docId);
+        $document->refresh();
+        $this->assertEquals('infected', $document->scan_status);
+        $this->assertEquals('Eicar-Signature', $document->scan_result);
+        $this->assertNull($document->file_path);
+        Storage::disk($disk)->assertMissing($path);
+    }
+
+    /**
+     * Test the ScanUploadedDocument job when scanner is unavailable.
+     */
+    public function test_scan_uploaded_document_job_unavailable()
+    {
+        $file = UploadedFile::fake()->createWithContent('contract.pdf', "%PDF-1.4\n%EOF");
+        $disk = config('filesystems.default', 'local');
+        $path = Storage::disk($disk)->putFileAs('contracts/documents', $file, 'test.pdf');
+
+        $document = Document::create([
+            'file_name' => 'contract.pdf',
+            'file_path' => $path,
+            'scan_status' => 'pending',
+        ]);
+
+        $mockScanner = \Mockery::mock(MalwareScannerService::class);
+        $mockScanner->shouldReceive('scanPath')
+            ->once()
+            ->andReturn(MalwareScanResult::unavailable('Scanner error'));
+
+        $job = new \App\Jobs\ScanUploadedDocument((string) $document->getKey(), $path);
+        $job->handle($mockScanner);
+
+        $document->refresh();
+        $this->assertEquals('unavailable', $document->scan_status);
+        Storage::disk($disk)->assertExists($path);
+    }
+
+    /**
+     * Test the ScanUploadedDocument job when disabled via config.
+     */
+    public function test_scan_uploaded_document_job_skipped_when_disabled()
+    {
+        $file = UploadedFile::fake()->createWithContent('contract.pdf', "%PDF-1.4\n%EOF");
+        $disk = config('filesystems.default', 'local');
+        $path = Storage::disk($disk)->putFileAs('contracts/documents', $file, 'test.pdf');
+
+        $document = Document::create([
+            'file_name' => 'contract.pdf',
+            'file_path' => $path,
+            'scan_status' => 'pending',
+        ]);
+
+        config(['clamav.enabled' => false]);
+
+        $mockScanner = \Mockery::mock(MalwareScannerService::class);
+        $mockScanner->shouldNotReceive('scanPath');
+
+        $job = new \App\Jobs\ScanUploadedDocument((string) $document->getKey(), $path);
+        $job->handle($mockScanner);
+
+        $document->refresh();
+        $this->assertEquals('skipped', $document->scan_status);
+        Storage::disk($disk)->assertExists($path);
     }
 
     /**
@@ -483,6 +545,7 @@ class UploadDocumentTest extends TestCase
      */
     public function test_document_upload_uses_uuid_file_name()
     {
+        \Illuminate\Support\Facades\Queue::fake();
         $this->mockAuth('Sales', ['crms.contracts.create']);
 
         $file = UploadedFile::fake()->createWithContent('original_name.pdf', "%PDF-1.4\n%EOF");

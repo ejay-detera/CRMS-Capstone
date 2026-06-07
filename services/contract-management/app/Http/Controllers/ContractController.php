@@ -8,6 +8,8 @@ use App\Models\ContractStatus;
 use App\Models\ContractApprovalStatus;
 use App\Models\ContractRegion;
 use App\Services\AuditLogService;
+use App\Jobs\SyncContractToMeilisearch;
+use App\Jobs\RemoveContractFromMeilisearch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -259,6 +261,8 @@ class ContractController extends Controller
 
         $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
 
+        SyncContractToMeilisearch::dispatch($this->formatContract($contract));
+
         return response()->json([
             'message' => 'Contract created successfully.',
             'data'    => $this->formatContract($contract)
@@ -417,6 +421,8 @@ class ContractController extends Controller
 
         $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
 
+        SyncContractToMeilisearch::dispatch($this->formatContract($contract));
+
         return response()->json([
             'message' => 'Contract updated successfully.',
             'data'    => $this->formatContract($contract),
@@ -470,6 +476,8 @@ class ContractController extends Controller
             [],
             $request->get('auth_department')
         );
+
+        RemoveContractFromMeilisearch::dispatch((int) $id);
 
         return response()->json(['message' => 'Contract deleted successfully.']);
     }

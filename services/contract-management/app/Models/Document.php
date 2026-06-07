@@ -42,6 +42,8 @@ class Document extends BaseDocument
         'file_size',
         'uploaded_by',
         'uploaded_at',
+        'scan_status',
+        'scan_result',
     ];
 
     protected $casts = [

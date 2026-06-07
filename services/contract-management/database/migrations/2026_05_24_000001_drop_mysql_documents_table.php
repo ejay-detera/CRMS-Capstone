@@ -35,6 +35,8 @@ return new class extends Migration
             $table->integer('file_size')->nullable();
             $table->unsignedBigInteger('uploaded_by')->nullable();
             $table->timestamp('uploaded_at')->useCurrent();
+            $table->string('scan_status')->nullable();
+            $table->string('scan_result')->nullable();
 
             $table->foreign('contract_id')->references('contract_id')->on('contracts')->onDelete('cascade');
         });

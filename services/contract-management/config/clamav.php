@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 return [
+    'enabled' => (bool) env('CLAMAV_ENABLED', true),
+
     /*
     |--------------------------------------------------------------------------
     | ClamAV Daemon Connection

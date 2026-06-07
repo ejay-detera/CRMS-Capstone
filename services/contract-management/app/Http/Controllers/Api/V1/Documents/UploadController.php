@@ -21,15 +21,10 @@ final class UploadController extends Controller
     ): JsonResponse {
         $result = $action->handle($request->toPayload());
 
-        $response = [
-            'message' => 'Document uploaded and scanned successfully.',
-            'data' => new DocumentResource($result->document),
-        ];
-
-        if ($result->scanWarning !== null) {
-            $response['scan_warning'] = $result->scanWarning;
-        }
-
-        return response()->json($response, 201);
+        return response()->json([
+            'message'     => 'Document uploaded. Antivirus scan queued.',
+            'data'        => new DocumentResource($result->document),
+            'scan_status' => 'pending',
+        ], 201);
     }
 }

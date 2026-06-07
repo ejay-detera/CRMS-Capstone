@@ -8,14 +8,13 @@ use App\Models\Document;
 use App\Payloads\Documents\UploadDocumentPayload;
 use App\Payloads\Documents\UploadDocumentResult;
 use App\Services\AuditLogService;
-use App\Services\MalwareScannerService;
+use App\Jobs\ScanUploadedDocument;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 final readonly class UploadDocument
 {
     public function __construct(
-        private MalwareScannerService $malwareScanner,
         private AuditLogService $auditLogService
     ) {}
 
@@ -26,15 +25,7 @@ final readonly class UploadDocument
      */
     public function handle(UploadDocumentPayload $payload): UploadDocumentResult
     {
-        // 1. Run Malware Scan (blocks only when a malware signature is detected)
-        $scanResult = $this->malwareScanner->scan($payload->file);
-        if ($scanResult->isInfected) {
-            throw ValidationException::withMessages([
-                'file' => ['Malware detected! This file is blocked.'],
-            ]);
-        }
-
-        // 2. Generate UUID and store file using default filesystem disk (object storage abstraction)
+        // 1. Generate UUID and store file using default filesystem disk (object storage abstraction)
         $disk = config('filesystems.default', 'local');
         $uuid = (string) \Illuminate\Support\Str::uuid();
         $extension = strtolower($payload->file->getClientOriginalExtension());
@@ -53,7 +44,7 @@ final readonly class UploadDocument
 
         $uploadedBy = request()->get('auth_id');
 
-        // 3. Store metadata record in MongoDB
+        // 2. Store metadata record in MongoDB
         $document = Document::create([
             'contract_id' => $payload->contractId,
             'uuid' => $uuid,
@@ -64,7 +55,11 @@ final readonly class UploadDocument
             'file_size' => $payload->file->getSize(),
             'uploaded_by' => $uploadedBy,
             'uploaded_at' => now(),
+            'scan_status' => 'pending',
         ]);
+
+        // 3. Dispatch async ClamAV scan job
+        ScanUploadedDocument::dispatch((string) $document->getKey(), $path);
 
         // 4. Audit Log Hook on Document Upload
         $this->auditLogService->log(
@@ -76,6 +71,6 @@ final readonly class UploadDocument
             $document->toArray()
         );
 
-        return new UploadDocumentResult($document, $scanResult->warning);
+        return new UploadDocumentResult($document, null);
     }
 }

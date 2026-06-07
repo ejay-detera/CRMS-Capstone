@@ -10,8 +10,10 @@ class AuthCommunicationTest extends TestCase
 {
     public function test_it_communicates_with_auth_service_for_search()
     {
+        $baseUrl = config('services.auth.url', env('AUTH_SERVICE_URL', 'http://auth-service:8000/api'));
+
         Http::fake([
-            'http://auth-service:8000/api/internal/verify-token' => Http::response([
+            "{$baseUrl}/internal/verify-token" => Http::response([
                 'valid' => true,
                 'user' => [
                     'id' => 1,
@@ -28,7 +30,7 @@ class AuthCommunicationTest extends TestCase
         ])->getJson('/api/search?q=test');
 
         $response->assertStatus(200);
-        $response->assertJsonPath('message', 'Search results retrieved');
+        $response->assertJsonStructure(['data', 'query', 'total']);
     }
 
     public function test_it_blocks_search_without_token()
