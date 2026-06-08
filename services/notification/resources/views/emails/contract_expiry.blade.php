@@ -6,367 +6,263 @@
     <title>Contract Expiry Notice</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Fallbacks and resets */
+        body, table, td, a { font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body {
-            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: #F3F4F9;
-            padding: 40px 16px;
             margin: 0;
-            color: #2F2F73;
+            padding: 0;
+            width: 100% !important;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            background-color: #F4F5F8;
         }
-        .container {
-            max-width: 580px;
-            margin: 0 auto;
-            background: #ffffff;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(37, 37, 120, 0.05);
-            border: 1px solid rgba(37, 37, 120, 0.06);
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
         }
-        .header {
-            background-color: #2F2F73;
-            padding: 32px 40px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .logo-box {
-            width: 32px;
-            height: 32px;
-            background: #2E85D8;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .logo-text {
-            color: #ffffff;
-            font-size: 18px;
-            font-weight: 600;
-        }
-        .logo-subtext {
-            color: rgba(255, 255, 255, 0.6);
-            font-weight: 400;
-        }
-        .badge {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 6px 14px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-        }
-        .content {
-            padding: 40px;
-        }
-        .title {
-            font-size: 22px;
-            font-weight: 700;
-            color: #252578;
-            margin-bottom: 8px;
-            letter-spacing: -0.3px;
-        }
-        .subtitle {
-            font-size: 14px;
-            color: rgba(37, 37, 120, 0.6);
-            line-height: 1.5;
-            margin-bottom: 32px;
-        }
-        .alert-box {
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 32px;
-            border-left: 4px solid;
-            display: flex;
-            gap: 16px;
-        }
-        .alert-icon-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-        .alert-content {
-            flex-grow: 1;
-        }
-        .alert-title {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            margin-bottom: 6px;
-        }
-        .alert-text {
-            font-size: 13px;
-            line-height: 1.6;
-            font-weight: 500;
-        }
-        
-        /* Alert Types */
-        .alert-expiry-1 {
-            background-color: #2F2F73;
-            border-left-color: #2E85D8;
-            color: #ffffff;
-        }
-        .alert-expiry-1 .alert-title {
-            color: #2E85D8;
-        }
-        .alert-expiry-1 .alert-icon-wrapper {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        .alert-expiry-30 {
-            background-color: rgba(37, 37, 120, 0.03);
-            border-left-color: #252578;
-            color: #2F2F73;
-        }
-        .alert-expiry-30 .alert-title {
-            color: #252578;
-        }
-        .alert-expiry-30 .alert-icon-wrapper {
-            background-color: rgba(37, 37, 120, 0.08);
-        }
-        
-        .alert-expiry-90 {
-            background-color: rgba(46, 133, 216, 0.04);
-            border-left-color: #2E85D8;
-            color: #2F2F73;
-        }
-        .alert-expiry-90 .alert-title {
-            color: #2E85D8;
-        }
-        .alert-expiry-90 .alert-icon-wrapper {
-            background-color: rgba(46, 133, 216, 0.08);
-        }
-        
-        .alert-default {
-            background-color: rgba(37, 37, 120, 0.02);
-            border-left-color: rgba(37, 37, 120, 0.3);
-            color: #2F2F73;
-        }
-        .alert-default .alert-title {
-            color: rgba(37, 37, 120, 0.6);
-        }
-        .alert-default .alert-icon-wrapper {
-            background-color: rgba(37, 37, 120, 0.05);
-        }
-
-        .meta-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 36px;
-        }
-        .meta-row {
-            border-bottom: 1px solid rgba(37, 37, 120, 0.06);
-        }
-        .meta-row:last-child {
-            border-bottom: none;
-        }
-        .meta-label {
-            padding: 14px 0;
-            font-size: 13px;
-            color: rgba(37, 37, 120, 0.55);
-            font-weight: 500;
-            text-align: left;
-            width: 40%;
-        }
-        .meta-value {
-            padding: 14px 0;
-            font-size: 13px;
-            color: #252578;
-            font-weight: 600;
-            text-align: right;
-        }
-        .pill {
-            display: inline-block;
-            background-color: rgba(46, 133, 216, 0.08);
-            color: #2E85D8;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.2px;
-        }
-        
-        .cta-section {
-            text-align: center;
-            margin-top: 10px;
-        }
-        .btn {
-            display: inline-block;
-            background-color: #2E85D8;
-            color: #ffffff;
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
             text-decoration: none;
-            padding: 14px 44px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: 0.2px;
-            box-shadow: 0 4px 15px rgba(46, 133, 216, 0.2);
-            transition: background-color 0.2s;
         }
-        .btn:hover {
-            background-color: #252578;
-        }
-        .url-text {
-            margin-top: 14px;
-            font-size: 11px;
-            color: rgba(37, 37, 120, 0.4);
-            word-break: break-all;
-        }
-        .footer {
-            background-color: rgba(37, 37, 120, 0.01);
-            border-top: 1px solid rgba(37, 37, 120, 0.05);
-            padding: 28px 40px;
-            text-align: center;
-        }
-        .footer-text {
-            font-size: 11px;
-            color: rgba(37, 37, 120, 0.4);
-            line-height: 1.8;
-            margin: 0 0 10px 0;
-        }
-        .footer-copyright {
-            font-size: 10px;
-            color: rgba(37, 37, 120, 0.3);
-            font-weight: 500;
-            margin: 0;
+        /* Mobile styling */
+        @media screen and (max-width: 600px) {
+            .container-table {
+                width: 100% !important;
+            }
+            .content-cell {
+                padding: 24px 20px !important;
+            }
+            .header-cell {
+                padding: 20px 20px !important;
+            }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <div class="logo">
-                <div class="logo-box">
-                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                        <rect x="3" y="3" width="6" height="6" rx="1.5" fill="white" opacity="0.9"/>
-                        <rect x="11" y="3" width="6" height="6" rx="1.5" fill="white" opacity="0.5"/>
-                        <rect x="3" y="11" width="6" height="6" rx="1.5" fill="white" opacity="0.5"/>
-                        <rect x="11" y="11" width="6" height="6" rx="1.5" fill="white" opacity="0.9"/>
-                    </svg>
-                </div>
-                <span class="logo-text">CRMS <span class="logo-subtext">Capstone</span></span>
-            </div>
-            
-            @php
-                $badgeText = 'Contract Alert';
-                if ($notificationType === 'expiry_30') $badgeText = 'Renewal Reminder';
-                elseif ($notificationType === 'expiry_90') $badgeText = 'Advance Notice';
-            @endphp
-            <span class="badge">{{ $badgeText }}</span>
-        </div>
-        
-        <!-- Body Content -->
-        <div class="content">
-            <h1 class="title">Hello, {{ $recipientName }}!</h1>
-            <p class="subtitle">You have an important contract notification that requires your attention.</p>
-            
-            @php
-                $alertClass = 'alert-default';
-                $alertLabel = 'General Update';
-                $iconStroke = '#252578';
-                $iconPath   = 'M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z';
-                $actionPill = 'Action Required';
+<body style="margin: 0; padding: 0; background-color: #F4F5F8;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #F4F5F8;">
+        <tr>
+            <td align="center" style="padding: 40px 16px;">
+                <!--[if (gte mso 9)|(IE)]>
+                <table align="center" border="0" cellspacing="0" cellpadding="0" width="600">
+                <tr>
+                <td align="center" valign="top" width="600">
+                <![endif]-->
+                <table class="container-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(37, 37, 120, 0.04); border: 1px solid #EAEBF4;">
+                    <!-- Top accent line -->
+                    <tr>
+                        <td height="4" style="background-color: #2E85D8; line-height: 4px; font-size: 4px;">&nbsp;</td>
+                    </tr>
+                    
+                    @php
+                        $badgeText = 'Contract Alert';
+                        if ($notificationType === 'expiry_30') $badgeText = 'Renewal Reminder';
+                        elseif ($notificationType === 'expiry_90') $badgeText = 'Advance Notice';
+                    @endphp
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td class="header-cell" style="padding: 24px 32px; background-color: #2F2F73;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <!-- Logo on Left -->
+                                    <td align="left" valign="middle">
+                                        <table border="0" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding-right: 12px;">
+                                                    <table border="0" cellpadding="0" cellspacing="0" style="background-color: #2E85D8; border-radius: 6px;">
+                                                        <tr>
+                                                            <td style="padding: 8px;">
+                                                                <!-- Simple White Grid Icon -->
+                                                                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style="display: block;">
+                                                                    <rect x="3" y="3" width="6" height="6" rx="1.5" fill="white" opacity="0.9"/>
+                                                                    <rect x="11" y="3" width="6" height="6" rx="1.5" fill="white" opacity="0.5"/>
+                                                                    <rect x="3" y="11" width="6" height="6" rx="1.5" fill="white" opacity="0.5"/>
+                                                                    <rect x="11" y="11" width="6" height="6" rx="1.5" fill="white" opacity="0.9"/>
+                                                                </svg>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                                <td style="font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #FFFFFF;">
+                                                    CRMS <span style="font-weight: 400; color: rgba(255, 255, 255, 0.65);">Capstone</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <!-- Status Badge on Right -->
+                                    <td align="right" valign="middle">
+                                        <span style="font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #FFFFFF; background-color: rgba(255, 255, 255, 0.12); padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15); display: inline-block;">
+                                            {{ $badgeText }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    @php
+                        // Alert configurations using solid hex color codes for high-compatibility
+                        $alertBg = '#FAFBFD'; 
+                        $borderLeftColor = '#C1C4D6'; 
+                        $alertLabel = 'General Update';
+                        $iconStroke = '#252578';
+                        $iconPath = 'M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z';
+                        $actionPill = 'Action Required';
+                        $textColor = '#2F2F73';
+                        $titleColor = '#8F91A2';
+                        $iconWrapperBg = '#F0F1F6';
 
-                if ($notificationType === 'expiry_1') {
-                    $alertClass = 'alert-expiry-1';
-                    $alertLabel = 'Urgent Notice';
-                    $iconStroke = '#2E85D8';
-                    $iconPath   = 'M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z';
-                    $actionPill = 'Renew Now';
-                } elseif ($notificationType === 'expiry_30') {
-                    $alertClass = 'alert-expiry-30';
-                    $alertLabel = 'Warning';
-                    $iconStroke = '#252578';
-                    $iconPath   = 'M12 8v4l3 3M12 2a10 10 0 110 20A10 10 0 0112 2z';
-                    $actionPill = 'Renewal Required';
-                } elseif ($notificationType === 'expiry_90') {
-                    $alertClass = 'alert-expiry-90';
-                    $alertLabel = 'Notice';
-                    $iconStroke = '#2E85D8';
-                    $iconPath   = 'M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z';
-                    $actionPill = 'Review & Renew';
-                }
-            @endphp
-            
-            <div class="alert-box {{ $alertClass }}">
-                <div class="alert-icon-wrapper">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="{{ $iconPath }}"
-                              stroke="{{ $iconStroke }}"
-                              stroke-width="2"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"/>
-                    </svg>
-                </div>
-                <div class="alert-content">
-                    <div class="alert-title">{{ $alertLabel }}</div>
-                    <div class="alert-text">{{ $messageText }}</div>
-                </div>
-            </div>
-            
-            <!-- Metadata details -->
-            <table class="meta-table">
-                <tbody>
-                    @if($contractId)
-                    <tr class="meta-row">
-                        <th class="meta-label">Contract ID</th>
-                        <td class="meta-value">#{{ $contractId }}</td>
+                        if ($notificationType === 'expiry_1') {
+                            $alertBg = '#2F2F73'; // Dark Navy background for urgent alert
+                            $borderLeftColor = '#2E85D8'; 
+                            $alertLabel = 'Urgent Notice';
+                            $iconStroke = '#2E85D8';
+                            $iconPath = 'M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z';
+                            $actionPill = 'Renew Now';
+                            $textColor = '#FFFFFF';
+                            $titleColor = '#2E85D8';
+                            $iconWrapperBg = '#3F3F80';
+                        } elseif ($notificationType === 'expiry_30') {
+                            $alertBg = '#FAF9FD'; 
+                            $borderLeftColor = '#252578'; 
+                            $alertLabel = 'Warning';
+                            $iconStroke = '#252578';
+                            $iconPath = 'M12 8v4l3 3M12 2a10 10 0 110 20A10 10 0 0112 2z';
+                            $actionPill = 'Renewal Required';
+                            $textColor = '#2F2F73';
+                            $titleColor = '#252578';
+                            $iconWrapperBg = '#F0F0F8';
+                        } elseif ($notificationType === 'expiry_90') {
+                            $alertBg = '#F6F9FD'; 
+                            $borderLeftColor = '#2E85D8'; 
+                            $alertLabel = 'Notice';
+                            $iconStroke = '#2E85D8';
+                            $iconPath = 'M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z';
+                            $actionPill = 'Review & Renew';
+                            $textColor = '#2F2F73';
+                            $titleColor = '#2E85D8';
+                            $iconWrapperBg = '#ECF3FC';
+                        }
+                    @endphp
+                    
+                    <!-- Content Body -->
+                    <tr>
+                        <td class="content-cell" style="padding: 40px 32px;">
+                            <h1 style="font-family: 'Poppins', sans-serif; font-size: 22px; font-weight: 700; color: #252578; margin: 0 0 8px 0; letter-spacing: -0.3px;">
+                                Hello, {{ $recipientName }}!
+                            </h1>
+                            <p style="font-family: 'Poppins', sans-serif; font-size: 14px; color: #535380; line-height: 1.6; margin: 0 0 32px 0;">
+                                You have an important contract notification that requires your attention.
+                            </p>
+                            
+                            <!-- Alert Card -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; background-color: {{ $alertBg }}; border-left: 4px solid {{ $borderLeftColor }}; border-radius: 8px; margin-bottom: 32px;">
+                                <tr>
+                                    <!-- Icon Column -->
+                                    <td valign="top" style="padding: 20px 0 20px 20px; width: 36px;">
+                                        <table border="0" cellpadding="0" cellspacing="0" style="background-color: {{ $iconWrapperBg }}; border-radius: 50%; width: 36px; height: 36px;">
+                                            <tr>
+                                                <td align="center" valign="middle" style="height: 36px; width: 36px;">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display: block;">
+                                                        <path d="{{ $iconPath }}"
+                                                              stroke="{{ $iconStroke }}"
+                                                              stroke-width="2"
+                                                              stroke-linecap="round"
+                                                              stroke-linejoin="round"/>
+                                                    </svg>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <!-- Message Column -->
+                                    <td valign="top" style="padding: 20px; font-family: 'Poppins', sans-serif;">
+                                        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; color: {{ $titleColor }};">
+                                            {{ $alertLabel }}
+                                        </div>
+                                        <div style="font-size: 13px; line-height: 1.6; font-weight: 500; color: {{ $textColor }};">
+                                            {{ $messageText }}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Metadata details table -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; margin-bottom: 36px;">
+                                @if($contractId)
+                                <tr style="border-bottom: 1px solid #EAEBF4;">
+                                    <th align="left" style="padding: 14px 0; font-family: 'Poppins', sans-serif; font-size: 13px; color: #8F91A2; font-weight: 500; width: 40%;">Contract ID</th>
+                                    <td align="right" style="padding: 14px 0; font-family: 'Poppins', sans-serif; font-size: 13px; color: #252578; font-weight: 600;">#{{ $contractId }}</td>
+                                </tr>
+                                @endif
+                                <tr style="border-bottom: 1px solid #EAEBF4;">
+                                    <th align="left" style="padding: 14px 0; font-family: 'Poppins', sans-serif; font-size: 13px; color: #8F91A2; font-weight: 500;">Required Action</th>
+                                    <td align="right" style="padding: 14px 0;">
+                                        <span style="font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600; color: #2E85D8; background-color: #EBF3FC; padding: 4px 12px; border-radius: 20px; display: inline-block; letter-spacing: 0.2px;">
+                                            {{ $actionPill }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th align="left" style="padding: 14px 0; font-family: 'Poppins', sans-serif; font-size: 13px; color: #8F91A2; font-weight: 500;">System Status</th>
+                                    <td align="right" style="padding: 14px 0; font-family: 'Poppins', sans-serif; font-size: 13px; color: #252578; font-weight: 600;">Renewal Pipeline</td>
+                                </tr>
+                            </table>
+                            
+                            @php
+                                $rolePrefix = 'sales'; // Default fallback
+                                if (isset($userRole)) {
+                                    if ($userRole === 'Admin') {
+                                        $rolePrefix = 'admin';
+                                    } elseif (in_array($userRole, ['Manager', 'Finance Manager'])) {
+                                        $rolePrefix = 'manager';
+                                    } elseif (in_array($userRole, ['Sales', 'Employee', 'Finance Employee', 'Finance'])) {
+                                        $rolePrefix = 'sales';
+                                    }
+                                }
+                                $portalUrl = config('app.frontend_url', 'http://localhost:5173') . '/' . $rolePrefix . '/contracts';
+                            @endphp
+                            
+                            <!-- Call to Action Section -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center" style="padding-top: 10px;">
+                                        <a href="{{ $portalUrl }}" 
+                                           style="display: inline-block; background-color: #2E85D8; color: #FFFFFF; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.2px; box-shadow: 0 4px 12px rgba(46, 133, 216, 0.2);">
+                                            Access Contract Portal &rarr;
+                                        </a>
+                                        <p style="margin: 16px 0 0 0; font-family: 'Poppins', sans-serif; font-size: 11px; color: #8F91A2; word-break: break-all;">
+                                            {{ $portalUrl }}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
                     </tr>
-                    @endif
-                    <tr class="meta-row">
-                        <th class="meta-label">Required Action</th>
-                        <td class="meta-value"><span class="pill">{{ $actionPill }}</span></td>
+                    
+                    <!-- Footer Section -->
+                    <tr>
+                        <td style="padding: 28px 32px; background-color: #FAFBFD; border-top: 1px solid #EAEBF4; text-align: center; font-family: 'Poppins', sans-serif;">
+                            <p style="margin: 0 0 10px 0; font-family: 'Poppins', sans-serif; font-size: 11px; color: #8F91A2; line-height: 1.8;">
+                                This is an automated notification from the CRMS Contract Management System.<br>
+                                Please do not reply directly to this email.
+                            </p>
+                            <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 10px; color: #B0B2C3; font-weight: 500;">
+                                &copy; {{ date('Y') }} CRMS Capstone. All rights reserved.
+                            </p>
+                        </td>
                     </tr>
-                    <tr class="meta-row">
-                        <th class="meta-label">System Status</th>
-                        <td class="meta-value">Renewal Pipeline</td>
-                    </tr>
-                </tbody>
-            </table>
-            
-            @php
-                $rolePrefix = 'sales'; // Default fallback
-                if (isset($userRole)) {
-                    if ($userRole === 'Admin') {
-                        $rolePrefix = 'admin';
-                    } elseif (in_array($userRole, ['Manager', 'Finance Manager'])) {
-                        $rolePrefix = 'manager';
-                    } elseif (in_array($userRole, ['Sales', 'Employee', 'Finance Employee', 'Finance'])) {
-                        $rolePrefix = 'sales';
-                    }
-                }
-            @endphp
-            
-            <!-- Call to Action -->
-            <div class="cta-section">
-                <a href="{{ config('app.frontend_url', 'http://localhost:5173') }}/{{ $rolePrefix }}/contracts" class="btn">
-                    Access Contract Portal →
-                </a>
-                <p class="url-text">{{ config('app.frontend_url', 'http://localhost:5173') }}/{{ $rolePrefix }}/contracts</p>
-            </div>
-        </div>
-        
-        <!-- Footer -->
-        <div class="footer">
-            <p class="footer-text">
-                This is an automated notification from the CRMS Contract Management System.<br>
-                Please do not reply directly to this email.
-            </p>
-            <p class="footer-copyright">&copy; {{ date('Y') }} CRMS Capstone. All rights reserved.</p>
-        </div>
-    </div>
+                </table>
+                <!--[if (gte mso 9)|(IE)]>
+                </td>
+                </tr>
+                </table>
+                <![endif]-->
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
