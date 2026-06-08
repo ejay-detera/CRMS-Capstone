@@ -32,12 +32,20 @@ Artisan::command('notifications:queue-past-emails', function () {
         if ($notification->target_user_id !== null) {
             $userId = (int) $notification->target_user_id;
 
-            // Check if already sent or skipped for this specific user, contract, and type
+            // Check if already sent for this specific user, contract, and type
             $logExists = \App\Models\EmailSendLog::where('user_id', $userId)
-                ->whereIn('status', ['sent', 'skipped'])
-                ->whereHas('notification', function ($query) use ($notification) {
-                    $query->where('contract_id', $notification->contract_id)
-                          ->where('notification_type', $notification->notification_type);
+                ->where('status', 'sent')
+                ->whereExists(function ($query) use ($notification) {
+                    $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                        ->from('notifications')
+                        ->whereColumn('notifications.notification_id', 'email_send_logs.notification_id')
+                        ->where('notifications.notification_type', $notification->notification_type);
+                    
+                    if ($notification->contract_id !== null) {
+                        $query->where('notifications.contract_id', $notification->contract_id);
+                    } else {
+                        $query->whereNull('notifications.contract_id');
+                    }
                 })
                 ->exists();
 
@@ -65,10 +73,18 @@ Artisan::command('notifications:queue-past-emails', function () {
                 $userId = (int) $user['id'];
 
                 $logExists = \App\Models\EmailSendLog::where('user_id', $userId)
-                    ->whereIn('status', ['sent', 'skipped'])
-                    ->whereHas('notification', function ($query) use ($notification) {
-                        $query->where('contract_id', $notification->contract_id)
-                              ->where('notification_type', $notification->notification_type);
+                    ->where('status', 'sent')
+                    ->whereExists(function ($query) use ($notification) {
+                        $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                            ->from('notifications')
+                            ->whereColumn('notifications.notification_id', 'email_send_logs.notification_id')
+                            ->where('notifications.notification_type', $notification->notification_type);
+                        
+                        if ($notification->contract_id !== null) {
+                            $query->where('notifications.contract_id', $notification->contract_id);
+                        } else {
+                            $query->whereNull('notifications.contract_id');
+                        }
                     })
                     ->exists();
 

@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::create('contracts', function (Blueprint $table) {
             $table->id('contract_id');
             $table->unsignedBigInteger('category_id')->nullable();
@@ -31,6 +32,7 @@ return new class extends Migration
             $table->foreign('supplier_id')->references('supplier_id')->on('suppliers')->onDelete('set null');
             $table->foreign('status_id')->references('status_id')->on('contract_statuses')->onDelete('set null');
         });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**
@@ -38,6 +40,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('contracts');
+        Schema::enableForeignKeyConstraints();
     }
 };

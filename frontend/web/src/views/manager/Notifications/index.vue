@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { CheckCheck } from 'lucide-vue-next'
 import NotificationList from '@/components/shared/NotificationList.vue'
-import EmailLogTable from '@/views/admin/Notifications/EmailLogTable.vue'
 import { useNotifications } from '@/composables/useNotifications'
-import { useEmailLogs } from '@/composables/useEmailLogs'
 import type { TabKey } from '@/types/notification'
 
 const { notifications, unreadCount, fetchNotifications, markRead, markAllRead, updateState } = useNotifications()
-const { logs, loading: logsLoading, currentPage, lastPage, totalLogs, fetchLogs } = useEmailLogs()
 
 const activeTab   = ref<TabKey>('all')
 const searchQuery = ref('')
@@ -21,7 +18,6 @@ const tabs = computed(() => [
   { key: 'all'      as TabKey, label: 'All',       count: allCount.value      },
   { key: 'archive'  as TabKey, label: 'Archive',   count: archiveCount.value  },
   { key: 'favorite' as TabKey, label: 'Favorite',  count: favoriteCount.value },
-  { key: 'email_logs' as TabKey, label: 'Email Log', count: totalLogs.value     },
 ])
 
 const filtered = computed(() => {
@@ -40,15 +36,8 @@ function toggleRead(id: string)     { markRead(id) }
 function toggleFavorite(id: string) { const n = notifications.value.find(x => x.id === id); if (n) updateState(id, { isFavorite: !n.isFavorite }) }
 function deleteNotif(id: string)    { updateState(id, { isArchived: true }) }
 
-watch(activeTab, (newTab) => {
-  if (newTab === 'email_logs') {
-    fetchLogs(1)
-  }
-})
-
 onMounted(async () => {
   await fetchNotifications()
-  await fetchLogs(1)
 })
 </script>
 
@@ -60,7 +49,7 @@ onMounted(async () => {
         <h1 class="text-xl font-semibold text-black">Notifications</h1>
         <p class="text-sm text-black/40 mt-0.5">View and manage all system notifications.</p>
       </div>
-      <button v-if="unreadCount > 0 && activeTab !== 'email_logs'" @click="markAllRead"
+      <button v-if="unreadCount > 0" @click="markAllRead"
         class="flex items-center gap-2 text-sm font-medium text-[#2E85D8] hover:text-[#252578] transition-colors">
         <CheckCheck class="w-4 h-4" /> Mark all as read
       </button>
@@ -75,18 +64,7 @@ onMounted(async () => {
       @toggle-read="toggleRead"
       @toggle-favorite="toggleFavorite"
       @delete="deleteNotif"
-    >
-      <template #email-logs>
-        <EmailLogTable
-          :logs="logs"
-          :loading="logsLoading"
-          :current-page="currentPage"
-          :last-page="lastPage"
-          @change-page="fetchLogs"
-          @refresh="fetchLogs(currentPage)"
-        />
-      </template>
-    </NotificationList>
+    />
 
   </div>
 </template>

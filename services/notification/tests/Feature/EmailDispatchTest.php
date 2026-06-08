@@ -52,14 +52,17 @@ final class EmailDispatchTest extends TestCase
     {
         Mail::fake();
 
-        // Mock AuthService lookup
+        // Mock AuthService lookup and Contract Audit endpoint
         Http::fake([
             'http://auth-service:8000/api/internal/users/99' => Http::response([
                 'id' => 99,
                 'email' => 'sales@example.com',
                 'first_name' => 'John',
                 'last_name' => 'Doe',
-            ], 200)
+                'role' => 'Sales',
+                'department' => 'Sales',
+            ], 200),
+            'http://contract-management:8000/api/internal/audit-event' => Http::response(['ok' => true], 200),
         ]);
 
         $notification = Notification::create([
@@ -105,7 +108,10 @@ final class EmailDispatchTest extends TestCase
                 'email' => 'sales@example.com',
                 'first_name' => 'John',
                 'last_name' => 'Doe',
-            ], 200)
+                'role' => 'Sales',
+                'department' => 'Sales',
+            ], 200),
+            'http://contract-management:8000/api/internal/audit-event' => Http::response(['ok' => true], 200),
         ]);
 
         EmailPreference::create([
@@ -134,11 +140,9 @@ final class EmailDispatchTest extends TestCase
 
         Mail::assertNotSent(\App\Mail\ContractExpiryMail::class);
 
-        $this->assertDatabaseHas('email_send_logs', [
+        $this->assertDatabaseMissing('email_send_logs', [
             'notification_id' => $notification->notification_id,
             'user_id' => 99,
-            'status' => 'skipped',
-            'error_message' => 'User opted out of email notifications.',
         ]);
     }
 
@@ -184,5 +188,48 @@ final class EmailDispatchTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.recipient_email', 'sales@example.com');
+    }
+
+    public function test_job_skips_when_broadcast_role_but_not_finance_department(): void
+    {
+        Mail::fake();
+
+        Http::fake([
+            'http://auth-service:8000/api/internal/users/99' => Http::response([
+                'id' => 99,
+                'email' => 'manager@example.com',
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+                'role' => 'Manager',
+                'department' => 'Operations',
+            ], 200),
+            'http://contract-management:8000/api/internal/audit-event' => Http::response(['ok' => true], 200),
+        ]);
+
+        $notification = Notification::create([
+            'contract_id' => 10,
+            'user_id' => 99,
+            'message' => 'Test message',
+            'notification_type' => 'expiry_30',
+            'target_roles' => 'Manager',
+            'target_user_id' => 99,
+        ]);
+
+        $job = new SendContractExpiryEmail(
+            99,
+            (int) $notification->notification_id,
+            10,
+            'Test message',
+            'expiry_30'
+        );
+
+        $job->handle(new \App\Services\AuthService());
+
+        Mail::assertNotSent(\App\Mail\ContractExpiryMail::class);
+
+        $this->assertDatabaseMissing('email_send_logs', [
+            'notification_id' => $notification->notification_id,
+            'user_id' => 99,
+        ]);
     }
 }

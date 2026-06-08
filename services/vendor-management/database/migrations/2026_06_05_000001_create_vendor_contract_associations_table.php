@@ -13,6 +13,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::create('vendor_contract_associations', function (Blueprint $table) {
             $table->id();
             $table->enum('vendor_type', ['supplier', 'partner']);
@@ -30,6 +31,7 @@ return new class extends Migration
                   ->on('contracts')
                   ->onDelete('cascade');
         });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**
@@ -37,9 +39,11 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::table('vendor_contract_associations', function (Blueprint $table) {
             $table->dropForeign(['contract_id']);
         });
         Schema::dropIfExists('vendor_contract_associations');
+        Schema::enableForeignKeyConstraints();
     }
 };

@@ -6,6 +6,7 @@ export type ActionType =
   | 'created'           | 'updated'          | 'deleted'
   | 'user_created'      | 'Login Success'    | 'Login Failed'
   | 'Logout'            | 'Document Uploaded'| 'Document Deleted'
+  | 'Email Sent'        | 'Email Skipped'    | 'Email Failed'
 
 export interface LogEntry {
   id: string
@@ -45,6 +46,9 @@ export const actionOptions: Array<ActionType | 'All'> = [
   'Login',
   'Document Uploaded',
   'Document Deleted',
+  'Email Sent',
+  'Email Skipped',
+  'Email Failed',
 ]
 
 export const actionBadge: Record<ActionType, string> = {
@@ -69,4 +73,7 @@ export const actionBadge: Record<ActionType, string> = {
   'Logout':            'bg-slate-50 text-slate-700 border-slate-200',
   'Document Uploaded': 'bg-emerald-50 text-emerald-700 border-emerald-200',
   'Document Deleted':  'bg-red-50 text-red-600 border-red-200',
+  'Email Sent':        'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Email Skipped':     'bg-black/4 text-black/35 border-black/8',
+  'Email Failed':      'bg-red-50 text-red-700 border-red-200',
 }
