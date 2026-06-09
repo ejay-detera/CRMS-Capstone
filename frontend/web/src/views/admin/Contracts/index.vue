@@ -19,20 +19,6 @@ const { state: cacheState, fetchContracts: fetchContractsCached } = useApiCache(
 const contracts = computed(() => cacheState.contracts || [])
 const loading   = computed(() => cacheState.contractsLoading)
 
-async function fetchContracts() {
-  if (!authState.user) return
-  try {
-    await fetchContractsCached(undefined, true) // Force fetch from backend
-  } catch (err) {
-    console.error('Failed to fetch contracts:', err)
-    error('Fetch failed', 'Could not load contracts from server.')
-  }
-}
-
-onMounted(() => {
-  fetchContracts()
-})
-
 const activeFilter   = ref<FilterTab>('all')
 const searchQuery    = ref('')
 const categoryFilter  = ref('')
@@ -46,14 +32,11 @@ const withDays = computed(() =>
 )
 
 const statCards = computed(() => {
-  const activeCount = withDays.value.filter(c => c.days > 30).length
-  const expiringCount = withDays.value.filter(c => c.days >= 0 && c.days <= 30).length
-  const expiredCount = withDays.value.filter(c => c.days < 0).length
   return {
-    total:    activeCount + expiringCount + expiredCount,
-    active:   activeCount,
-    expiring: expiringCount,
-    expired:  expiredCount,
+    total:    cacheState.contractsStats?.total ?? 0,
+    active:   cacheState.contractsStats?.active ?? 0,
+    expiring: cacheState.contractsStats?.expiring ?? 0,
+    expired:  cacheState.contractsStats?.expired ?? 0,
   }
 })
 
@@ -64,36 +47,56 @@ const statCardList = computed(() => [
   { label: 'Expired',         value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false, filter: 'expired' as FilterTab },
 ])
 
-const approvalStatuses = new Set(['Pending', 'Approved', 'Rejected'])
+const filtered = computed(() => withDays.value)
+const paginated = computed(() => withDays.value)
+const totalItems = computed(() => cacheState.contractsPagination?.total ?? 0)
 
-const filtered = computed(() => {
-  const q = searchQuery.value.toLowerCase()
-  const cat = categoryFilter.value
-  const reg = regionFilter.value
-  const sf = statusFilter.value
-  return withDays.value.filter(c => {
-    const bySearch = !q || c.id.toLowerCase().includes(q) || c.businessPartner.toLowerCase().includes(q) || c.category.toLowerCase().includes(q)
-    const byFilter =
-      activeFilter.value === 'all'      ? true :
-      activeFilter.value === 'active'   ? c.days > 30 :
-      activeFilter.value === 'expiring' ? c.days >= 0 && c.days <= 30 :
-      c.days < 0
-    const byCategory = !cat || c.category === cat
-    const byRegion = !reg || c.region === reg
-    const byStatus = !sf
-      ? true
-      : approvalStatuses.has(sf)
-        ? c.approvalStatus === sf
-        : c.workflowStatus === sf
-    return bySearch && byFilter && byCategory && byRegion && byStatus
-  })
+async function fetchContracts() {
+  if (!authState.user) return
+  try {
+    await fetchContractsCached(undefined, true, {
+      paginate: true,
+      page: currentPage.value,
+      per_page: itemsPerPage,
+      search: searchQuery.value,
+      category: categoryFilter.value,
+      region: regionFilter.value,
+      status: statusFilter.value,
+      lifecycle_status: activeFilter.value !== 'all' ? activeFilter.value : undefined,
+    })
+  } catch (err) {
+    console.error('Failed to fetch contracts:', err)
+    error('Fetch failed', 'Could not load contracts from server.')
+  }
+}
+
+onMounted(() => {
+  fetchContracts()
 })
 
-watch([activeFilter, searchQuery, categoryFilter, regionFilter, statusFilter], () => { currentPage.value = 1 })
+let debounceTimeout: any = null
 
-const paginated = computed(() =>
-  filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
-)
+async function handleFilterChange(resetPage = false) {
+  if (resetPage) {
+    currentPage.value = 1
+  }
+  await fetchContracts()
+}
+
+watch([activeFilter, categoryFilter, regionFilter, statusFilter], () => {
+  handleFilterChange(true)
+})
+
+watch(currentPage, () => {
+  handleFilterChange(false)
+})
+
+watch(searchQuery, () => {
+  if (debounceTimeout) clearTimeout(debounceTimeout)
+  debounceTimeout = setTimeout(() => {
+    handleFilterChange(true)
+  }, 350)
+})
 
 function openDetail(c: Contract & { days: number }) {
   router.push(`/admin/contracts/${c.id}`)
@@ -203,6 +206,7 @@ function exportXLSX() {
       :loading="loading"
       :paginated="paginated"
       :filtered="filtered"
+      :total-items="totalItems"
       :active-filter="activeFilter"
       :search-query="searchQuery"
       :category-filter="categoryFilter"

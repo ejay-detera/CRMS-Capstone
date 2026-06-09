@@ -9,28 +9,15 @@ import { useAuth } from '@/composables/useAuth'
 import SalesContractsTable  from './SalesContractsTable.vue'
 import { remainingDays } from '@/types/contract'
 import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
+import { useApiCache } from '@/composables/useApiCache'
 
 const router = useRouter()
 const { success, error } = useToast()
 const { state: authState } = useAuth()
-
-import { useApiCache } from '@/composables/useApiCache'
-
 const { state: cacheState, fetchContracts: fetchContractsCached } = useApiCache()
 
 const contracts = computed(() => cacheState.contracts || [])
 const loading   = computed(() => cacheState.contractsLoading)
-
-async function fetchContracts() {
-  try {
-    const userId = authState.user?.id
-    await fetchContractsCached(userId)
-  } catch {
-    error('Network error', 'Could not reach the server.')
-  }
-}
-
-onMounted(fetchContracts)
 
 const activeFilter   = ref<FilterTab>('all')
 const statusFilter   = ref<StatusFilter>('')
@@ -45,14 +32,11 @@ const withDays = computed(() =>
 )
 
 const statCards = computed(() => {
-  const activeCount = withDays.value.filter(c => c.days > 30).length
-  const expiringCount = withDays.value.filter(c => c.days >= 0 && c.days <= 30).length
-  const expiredCount = withDays.value.filter(c => c.days < 0).length
   return {
-    total:    activeCount + expiringCount + expiredCount,
-    active:   activeCount,
-    expiring: expiringCount,
-    expired:  expiredCount,
+    total:    cacheState.contractsStats?.total ?? 0,
+    active:   cacheState.contractsStats?.active ?? 0,
+    expiring: cacheState.contractsStats?.expiring ?? 0,
+    expired:  cacheState.contractsStats?.expired ?? 0,
   }
 })
 
@@ -63,43 +47,57 @@ const statCardList = computed(() => [
   { label: 'Expired',       value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false, filter: 'expired' as FilterTab },
 ])
 
-const approvalStatuses = new Set(['Pending', 'Approved', 'Rejected'])
+const filtered = computed(() => withDays.value)
+const paginated = computed(() => withDays.value)
+const totalItems = computed(() => cacheState.contractsPagination?.total ?? 0)
 
-const filtered = computed(() => {
-  const q   = searchQuery.value.toLowerCase()
-  const sf  = statusFilter.value
-  const cat = categoryFilter.value
-  const reg = regionFilter.value
-  return withDays.value.filter(c => {
-    const bySearch = !q || c.id.toLowerCase().includes(q)
-      || c.businessPartner.toLowerCase().includes(q)
-      || c.category.toLowerCase().includes(q)
-    const byStatus = !sf
-      ? true
-      : approvalStatuses.has(sf)
-        ? c.approvalStatus === sf
-        : c.workflowStatus === sf
-    const byCategory = !cat || c.category === cat
-    const byRegion = !reg || c.region === reg
-    const byFilter =
-      activeFilter.value === 'all'      ? true :
-      activeFilter.value === 'active'   ? c.days > 30 :
-      activeFilter.value === 'expiring' ? c.days >= 0 && c.days <= 30 :
-      c.days < 0
-    return bySearch && byStatus && byCategory && byRegion && byFilter
-  })
+async function fetchContracts() {
+  try {
+    const userId = authState.user?.id
+    await fetchContractsCached(userId, true, {
+      paginate: true,
+      page: currentPage.value,
+      per_page: itemsPerPage,
+      search: searchQuery.value,
+      category: categoryFilter.value,
+      region: regionFilter.value,
+      status: statusFilter.value,
+      lifecycle_status: activeFilter.value !== 'all' ? activeFilter.value : undefined,
+    })
+  } catch {
+    error('Network error', 'Could not reach the server.')
+  }
+}
+
+onMounted(fetchContracts)
+
+let debounceTimeout: any = null
+
+async function handleFilterChange(resetPage = false) {
+  if (resetPage) {
+    currentPage.value = 1
+  }
+  await fetchContracts()
+}
+
+watch([activeFilter, statusFilter, categoryFilter, regionFilter], () => {
+  handleFilterChange(true)
 })
 
-watch([activeFilter, statusFilter, searchQuery, categoryFilter, regionFilter], () => { currentPage.value = 1 })
+watch(currentPage, () => {
+  handleFilterChange(false)
+})
 
-const paginated = computed(() =>
-  filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
-)
+watch(searchQuery, () => {
+  if (debounceTimeout) clearTimeout(debounceTimeout)
+  debounceTimeout = setTimeout(() => {
+    handleFilterChange(true)
+  }, 350)
+})
 
 function openDetail(c: Contract & { days: number }) {
   router.push(`/sales/contracts/${c.id}`)
 }
-
 
 function exportXLSX() {
   const rows = filtered.value.map(c => ({
@@ -173,6 +171,7 @@ function exportXLSX() {
       :loading="loading"
       :paginated="paginated"
       :filtered="filtered"
+      :total-items="totalItems"
       :active-filter="activeFilter"
       :status-filter="statusFilter"
       :category-filter="categoryFilter"

@@ -7,6 +7,18 @@ interface CacheState {
   contracts: Contract[] | null
   contractsScope: string | null // 'all' or 'user-<id>'
   contractsLoading: boolean
+  contractsPagination: {
+    total: number
+    per_page: number
+    current_page: number
+    last_page: number
+  } | null
+  contractsStats: {
+    total: number
+    active: number
+    expiring: number
+    expired: number
+  } | null
 
   requests: ContractRequest[] | null
   requestsScope: string | null // 'all' or 'user-<id>'
@@ -20,6 +32,8 @@ const state = reactive<CacheState>({
   contracts: null,
   contractsScope: null,
   contractsLoading: false,
+  contractsPagination: null,
+  contractsStats: null,
 
   requests: null,
   requestsScope: null,
@@ -40,6 +54,8 @@ watch(
       state.contracts = null
       state.contractsScope = null
       state.contractsLoading = false
+      state.contractsPagination = null
+      state.contractsStats = null
 
       state.requests = null
       state.requestsScope = null
@@ -62,6 +78,8 @@ function validateCacheCredentials() {
     state.contracts = null
     state.contractsScope = null
     state.contractsLoading = false
+    state.contractsPagination = null
+    state.contractsStats = null
 
     state.requests = null
     state.requestsScope = null
@@ -201,13 +219,27 @@ async function fetchDashboard(force = false): Promise<void> {
   }
 }
 
-async function fetchContracts(userId?: number, force = false): Promise<Contract[]> {
+async function fetchContracts(
+  userId?: number,
+  force = false,
+  queryParams?: {
+    paginate?: boolean
+    page?: number
+    per_page?: number
+    search?: string
+    category?: string
+    region?: string
+    status?: string
+    lifecycle_status?: string
+  }
+): Promise<Contract[]> {
   validateCacheCredentials()
 
   const scope = userId ? `user-${userId}` : 'all'
+  const isQuerying = queryParams && Object.keys(queryParams).length > 0
 
-  // If already cached and scope matches and not forced, return cached data
-  if (state.contracts !== null && state.contractsScope === scope && !force) {
+  // If already cached and scope matches and not forced and not querying, return cached data
+  if (state.contracts !== null && state.contractsScope === scope && !force && !isQuerying) {
     return state.contracts as Contract[]
   }
 
@@ -216,9 +248,23 @@ async function fetchContracts(userId?: number, force = false): Promise<Contract[
   const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
 
   try {
-    const url = userId
+    let queryString = ''
+    if (queryParams) {
+      const parts = Object.entries(queryParams)
+        .filter(([_, val]) => val !== undefined && val !== null && val !== '')
+        .map(([key, val]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(val))}`)
+      if (parts.length > 0) {
+        queryString = parts.join('&')
+      }
+    }
+
+    let url = userId
       ? `${apiBase}/contracts?created_by=${userId}`
       : `${apiBase}/contracts`
+
+    if (queryString) {
+      url += (url.includes('?') ? '&' : '?') + queryString
+    }
 
     const res = await fetch(url, {
       headers: {
@@ -235,10 +281,23 @@ async function fetchContracts(userId?: number, force = false): Promise<Contract[
     const user = authState.user
     const firstName = (user as any)?.profile?.first_name || user?.first_name
     const lastName = (user as any)?.profile?.last_name || user?.last_name
+    
     state.contracts = (json.data ?? []).map((d: any) =>
       mapApiContract(d, state.cachedUserId, firstName, lastName)
     )
     state.contractsScope = scope
+
+    if (json.pagination) {
+      state.contractsPagination = json.pagination
+    } else {
+      state.contractsPagination = null
+    }
+
+    if (json.stats) {
+      state.contractsStats = json.stats
+    } else {
+      state.contractsStats = null
+    }
   } catch (err) {
     console.error('Error fetching contracts:', err)
     throw err
@@ -311,6 +370,8 @@ function clearCache() {
   state.contracts = null
   state.contractsScope = null
   state.contractsLoading = false
+  state.contractsPagination = null
+  state.contractsStats = null
   state.requests = null
   state.requestsScope = null
   state.requestsLoading = false

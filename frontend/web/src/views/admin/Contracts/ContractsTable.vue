@@ -32,6 +32,7 @@ const props = defineProps<{
   currentPage:    number
   itemsPerPage:   number
   loading?:       boolean
+  totalItems?:    number
 }>()
 
 const emit = defineEmits<{
@@ -85,10 +86,9 @@ function avatarColor(name: string) {
 <template>
   <div class="bg-white rounded-lg border border-black/8 shadow-sm overflow-hidden">
 
-    <!-- Section heading -->
     <div class="px-6 pt-5 pb-4 border-b border-black/5">
       <h2 class="text-sm font-semibold text-black">
-        All Contracts <span class="text-black/30 font-normal">({{ loading ? 0 : filtered.length }})</span>
+        All Contracts <span class="text-black/30 font-normal">({{ loading ? 0 : (totalItems !== undefined ? totalItems : filtered.length) }})</span>
       </h2>
     </div>
 
@@ -337,7 +337,7 @@ function avatarColor(name: string) {
     </Table>
 
     <!-- Pagination -->
-    <Pagination :total="loading ? itemsPerPage : filtered.length" :sibling-count="1" :items-per-page="itemsPerPage"
+    <Pagination :total="loading ? itemsPerPage : (totalItems !== undefined ? totalItems : filtered.length)" :sibling-count="1" :items-per-page="itemsPerPage"
       :page="currentPage" @update:page="emit('update:currentPage', $event)">
       <div class="grid grid-cols-3 items-center px-6 py-4 border-t border-black/5">
         <div class="flex justify-start"><PaginationPrevious /></div>
