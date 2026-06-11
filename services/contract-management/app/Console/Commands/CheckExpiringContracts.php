@@ -45,9 +45,9 @@ class CheckExpiringContracts extends Command
             $salesMessage = "Your contract {$serial} {$phrase} (on {$date}).";
 
             // Role groupings mirror the frontend router's layout access rules (router/index.ts):
-            // /manager → Manager, Finance Manager · /sales → Sales, Employee, Finance Employee, Finance
-            $okBroadcast = $notif->push($contract->contract_id, $type, $message, 'Admin,Manager,Finance Manager');
-            $okSales     = $notif->push($contract->contract_id, $type, $salesMessage, 'Sales,Employee,Finance Employee,Finance', (int) $contract->created_by);
+            // /manager → Manager · /sales → Sales, Employee, Finance
+            $okBroadcast = $notif->push($contract->contract_id, $type, $message, 'Admin,Manager');
+            $okSales     = $notif->push($contract->contract_id, $type, $salesMessage, 'Sales,Employee,Finance', (int) $contract->created_by);
 
             if ($okBroadcast || $okSales) {
                 $pushed++;

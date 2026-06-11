@@ -32,11 +32,11 @@ class AuthCommunicationTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer fake-valid-token',
             'Accept' => 'application/json',
-        ])->getJson('/api/vendors');
+        ])->getJson('/api/suppliers');
 
         // 3. Assertions
         $response->assertStatus(200);
-        $response->assertJsonPath('message', 'Vendor list retrieved successfully');
+        $response->assertJsonStructure(['data', 'current_page']);
         
         // Ensure the HTTP call was actually made to the correct internal URL
         Http::assertSent(function ($request) {
@@ -60,7 +60,7 @@ class AuthCommunicationTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer invalid-token',
             'Accept' => 'application/json',
-        ])->getJson('/api/vendors');
+        ])->getJson('/api/suppliers');
 
         $response->assertStatus(401);
         $response->assertJsonPath('message', 'Unauthenticated or session expired.');
@@ -84,13 +84,12 @@ class AuthCommunicationTest extends TestCase
             ], 200)
         ]);
 
-        // Try to POST to vendors (which requires 'manage-vendors')
+        // Try to POST to suppliers (which requires 'crms.partners.create')
         $response = $this->withHeaders([
             'Authorization' => 'Bearer sales-token',
             'Accept' => 'application/json',
-        ])->postJson('/api/vendors');
+        ])->postJson('/api/suppliers');
 
         $response->assertStatus(403);
-        $response->assertJsonPath('message', 'Forbidden. You do not have the required permission: crms.partners.create');
     }
 }

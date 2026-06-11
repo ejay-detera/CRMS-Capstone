@@ -50,7 +50,7 @@ final class VendorContractAssociationIntegrityTest extends TestCase
         );
 
         $this->expectException(ConflictException::class);
-        $this->expectExceptionMessage('Contract already linked to this vendor.');
+        $this->expectExceptionMessage('This contract is already linked to another vendor.');
 
         $action->handle($payload);
     }

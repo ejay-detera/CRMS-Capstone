@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission'    => \App\Http\Middleware\HasPermission::class,
             'role'          => \App\Http\Middleware\HasRole::class,
         ]);
+        $middleware->encryptCookies(except: [
+            'session_id',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

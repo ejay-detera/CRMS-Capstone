@@ -27,6 +27,7 @@ final class AuthService
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'X-Internal-Service' => 'notification',
+                'X-Internal-Secret' => $this->secret,
             ])->post("{$this->baseUrl}/internal/verify-token", [
                 'token' => $token,
             ]);

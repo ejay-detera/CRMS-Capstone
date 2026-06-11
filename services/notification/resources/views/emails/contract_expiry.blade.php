@@ -217,9 +217,9 @@
                                 if (isset($userRole)) {
                                     if ($userRole === 'Admin') {
                                         $rolePrefix = 'admin';
-                                    } elseif (in_array($userRole, ['Manager', 'Finance Manager'])) {
+                                    } elseif (in_array($userRole, ['Manager'])) {
                                         $rolePrefix = 'manager';
-                                    } elseif (in_array($userRole, ['Sales', 'Employee', 'Finance Employee', 'Finance'])) {
+                                    } elseif (in_array($userRole, ['Sales', 'Employee', 'Finance'])) {
                                         $rolePrefix = 'sales';
                                     }
                                 }

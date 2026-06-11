@@ -72,9 +72,9 @@ class ContractController extends Controller
             });
         }
 
-        // Sales and Finance Employee can only ever see their own contracts
+        // Sales and Employee (incl. Finance dept) can only ever see their own contracts
         $role = $request->get('auth_role');
-        if (in_array($role, ['Sales', 'Finance Employee'])) {
+        if (in_array($role, ['Sales', 'Employee'])) {
             $query->where('created_by', $request->get('auth_id'));
         }
 
@@ -192,7 +192,7 @@ class ContractController extends Controller
 
         $userId = $request->get('auth_id');
         $role = $request->get('auth_role');
-        $isManagerRole = in_array($role, ['Manager', 'Admin', 'Finance Manager']);
+        $isManagerRole = in_array($role, ['Manager', 'Admin']);
 
         // Resolve Approval Status and Workflow status
         if ($isManagerRole) {
@@ -280,10 +280,10 @@ class ContractController extends Controller
             return response()->json(['message' => 'Contract not found.'], 404);
         }
 
-        // Authorization check if Sales / Finance Employee editing another user's contract
+        // Authorization check if Sales / Employee editing another user's contract
         $role = $request->get('auth_role');
         $userId = $request->get('auth_id');
-        if (in_array($role, ['Sales', 'Finance Employee']) && $contract->created_by !== $userId) {
+        if (in_array($role, ['Sales', 'Employee']) && $contract->created_by !== $userId) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -493,7 +493,7 @@ class ContractController extends Controller
         ]);
 
         $role = $request->get('auth_role');
-        if (in_array($role, ['Sales', 'Finance Employee'])) {
+        if (in_array($role, ['Sales', 'Employee'])) {
             $query->where('created_by', $request->get('auth_id'));
         }
 
@@ -515,7 +515,7 @@ class ContractController extends Controller
         ]);
 
         $role = $request->get('auth_role');
-        if (in_array($role, ['Sales', 'Finance Employee'])) {
+        if (in_array($role, ['Sales', 'Employee'])) {
             $query->where('created_by', $request->get('auth_id'));
         } elseif ($request->filled('created_by')) {
             $query->where('created_by', $request->created_by);
@@ -549,7 +549,7 @@ class ContractController extends Controller
         ])->findOrFail($id);
 
         $role = $request->get('auth_role');
-        if (in_array($role, ['Sales', 'Finance Employee']) && $contract->created_by !== $request->get('auth_id')) {
+        if (in_array($role, ['Sales', 'Employee']) && $contract->created_by !== $request->get('auth_id')) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 

@@ -75,6 +75,14 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
     headers: { ...authHeaders(), ...options?.headers },
   })
+  if (res.status === 401) {
+    localStorage.removeItem('user')
+    localStorage.removeItem('session_id')
+    localStorage.removeItem('access_token')
+    const returnUrl = encodeURIComponent(window.location.href)
+    window.location.href = `/?redirect_uri=${returnUrl}&error=session_expired`
+    throw new Error('Session expired. Redirecting to login...')
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error(body?.message ?? `HTTP ${res.status}`)
@@ -138,7 +146,7 @@ export function useRolePermissions() {
         })
       } else {
         // Sensible defaults (aligned with FR Matrix)
-        if (['Manager', 'Finance Manager', 'Sales'].includes(roleName)) {
+        if (['Manager', 'Sales'].includes(roleName)) {
           set.add(-1) // Use of OCR
           set.add(-2) // AI Risk Assessment
         }

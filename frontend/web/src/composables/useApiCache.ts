@@ -159,7 +159,7 @@ async function fetchDashboard(force = false): Promise<void> {
   validateCacheCredentials()
 
   const { role } = useAuth()
-  const isManagerOrAdmin = ['Admin', 'Manager', 'Finance Manager'].includes(role.value || '')
+  const isManagerOrAdmin = ['Admin', 'Manager'].includes(role.value || '')
   const userId = state.cachedUserId
   const scope  = isManagerOrAdmin ? 'all' : (userId ? `user-${userId}` : 'all')
 

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -12,7 +11,7 @@ class AuthService
 
     public function __construct()
     {
-        $this->baseUrl = config('services.auth.url', env('AUTH_SERVICE_URL', 'http://shared-nginx-proxy:5173/api'));
+        $this->baseUrl = config('services.auth.url', env('AUTH_SERVICE_URL', 'http://auth-service:8000/api'));
     }
 
     /**
@@ -20,45 +19,43 @@ class AuthService
      */
     public function verifyToken(string $token): ?array
     {
-        $cacheKey = 'token_verify_' . hash('sha256', $token);
-
-        $cached = Cache::store('file')->get($cacheKey);
-        if ($cached !== null) {
-            return $cached;
-        }
-
         try {
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
-                'X-Internal-Service' => 'contract-management',
+                'X-Internal-Service' => 'contract-management', // For auditing
+                'X-Internal-Secret' => env('INTERNAL_SERVICE_SECRET'),
             ])->post("{$this->baseUrl}/internal/verify-token", [
                 'token' => $token,
             ]);
 
             if ($response->successful()) {
-                $data = $response->json();
-                // Only cache verified-valid tokens; failures are not cached so
-                // transient auth-service errors don't block legitimate retries.
-                if ($data['valid'] ?? false) {
-                    Cache::store('file')->put($cacheKey, $data, 300);
-                }
-                return $data;
+                return $response->json();
             }
+
+            Log::warning('Auth verification failed', [
+                'status' => $response->status(),
+                'response' => $response->body()
+            ]);
 
             return null;
         } catch (\Exception $e) {
-            Log::error('Auth service connection error in contract-management', ['message' => $e->getMessage()]);
+            Log::error('Auth service connection error', [
+                'message' => $e->getMessage()
+            ]);
             return null;
         }
     }
 
-    public function createUser(array $data, string $token): ?array
+    /**
+     * Proxy user creation to the auth-service.
+     */
+    public function createUser(array $data, string $token, ?string $sessionId = null): ?array
     {
         try {
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Authorization' => 'Bearer ' . $token,
-                'X-Session-ID' => request()->header('X-Session-ID') ?? '',
+                'X-Session-ID' => $sessionId ?? request()->header('X-Session-ID') ?? request()->cookie('session_id') ?? '',
                 'X-Internal-Service' => 'contract-management-admin',
             ])->post("{$this->baseUrl}/admin/users", $data);
 
@@ -69,7 +66,9 @@ class AuthService
                 'errors' => $response->json('errors') ?? []
             ];
         } catch (\Exception $e) {
+            Log::error('Auth service creation error', ['message' => $e->getMessage()]);
             return ['error' => true, 'message' => 'Connection failed'];
         }
     }
 }
+

@@ -13,7 +13,7 @@ import type { Contract, FilterTab, StatusFilter } from '@/types/contract'
 
 const router = useRouter()
 const { success, error } = useToast()
-const { state: authState } = useAuth()
+const { state: authState, hasPermission } = useAuth()
 const { state: cacheState, fetchContracts: fetchContractsCached } = useApiCache()
 
 const contracts = computed(() => cacheState.contracts || [])
@@ -160,7 +160,7 @@ function exportXLSX() {
         <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
-        <Button class="group h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm transition-all duration-200 hover:scale-105 active:scale-95">
+        <Button v-if="hasPermission('crms.contracts.create')" class="group h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm transition-all duration-200 hover:scale-105 active:scale-95">
           <Plus class="w-5 h-5 transition-transform duration-300 group-hover:rotate-90" />
         </Button>
       </div>

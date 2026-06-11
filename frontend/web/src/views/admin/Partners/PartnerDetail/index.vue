@@ -9,15 +9,14 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useVendorService } from '@/composables/useVendorService'
 import { usePartners } from '@/composables/usePartners'
-import AddPartnerDialog from '@/views/admin/Partners/AddPartnerDialog.vue'
 import PartnerLinkedContracts from '@/views/admin/Partners/PartnerLinkedContracts.vue'
 import AssociateContractModal from '@/views/admin/Partners/AssociateContractModal.vue'
-import type { Partner, TabKey, AddPartnerForm } from '@/types/partner'
+import type { Partner, TabKey } from '@/types/partner'
 
 const route  = useRoute()
 const router = useRouter()
-const { success, error, warning } = useToast()
-const { fetchPartnerById, fetchSupplierById, updatePartner, updateSupplier } = useVendorService()
+const { success, error } = useToast()
+const { fetchPartnerById, fetchSupplierById } = useVendorService()
 const { fetchVendorContracts, fetchLinkedContractIds, linkContract, detachContract } = usePartners()
 
 const code = route.params.code as string
@@ -105,39 +104,8 @@ onMounted(loadPartner)
 
 // ── Edit ─────────────────────────────────────────────────────────────────────
 
-const showEdit   = ref(false)
-const editTarget = ref<Partner | null>(null)
-
 function openEdit() {
-  editTarget.value = partner.value
-  showEdit.value   = true
-}
-
-function onEditClose(val: boolean) {
-  showEdit.value = val
-  if (!val) editTarget.value = null
-}
-
-async function handleSubmit(form: AddPartnerForm) {
-  const target = editTarget.value
-  if (!target || !target.db_id) return
-  try {
-    if (activeTab.value === 'partners') {
-      const { partner: updated, warnings } = await updatePartner(target.db_id, form, target.bpCode ?? null)
-      partner.value = updated
-      success('Partner updated', `${updated.name} has been updated.`)
-      if (warnings.length) warning('Duplicate warning', warnings[0].message)
-    } else {
-      const { partner: updated, warnings } = await updateSupplier(target.db_id, form)
-      partner.value = updated
-      success('Supplier updated', `${updated.name} has been updated.`)
-      if (warnings.length) warning('Duplicate warning', warnings[0].message)
-    }
-  } catch (err: any) {
-    error('Save failed', err?.message ?? 'An error occurred. Please try again.')
-  } finally {
-    editTarget.value = null
-  }
+  router.push(`/admin/partners/${code}/edit`)
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -339,15 +307,6 @@ const statusClass = computed(() => {
 
     </template>
   </div>
-
-  <AddPartnerDialog
-    v-if="isAdmin"
-    :open="showEdit"
-    :active-tab="activeTab"
-    :edit-target="editTarget"
-    @update:open="onEditClose"
-    @submit="handleSubmit"
-  />
 
   <AssociateContractModal
     :open="showAssociateModal"

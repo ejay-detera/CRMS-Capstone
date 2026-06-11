@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Search, MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-vue-next'
+import { useAuth } from '@/composables/useAuth'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -70,6 +71,8 @@ const statusOptions: { label: string; value: StatusFilter }[] = [
   { label: 'Client Review', value: 'Client Review'},
 ]
 
+
+const { hasPermission } = useAuth()
 
 const palette = ['#252578', '#2E85D8', '#2F2F73']
 function initials(name: string) {
@@ -317,7 +320,7 @@ function avatarColor(name: string) {
                     <Pencil class="w-3.5 h-3.5 text-black/40" /> Edit contract
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem @click="emit('delete', c.id)"
+                  <DropdownMenuItem v-if="hasPermission('crms.contracts.delete')" @click="emit('delete', c.id)"
                     class="gap-2.5 text-sm cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
                     <Trash2 class="w-3.5 h-3.5" /> Delete
                   </DropdownMenuItem>

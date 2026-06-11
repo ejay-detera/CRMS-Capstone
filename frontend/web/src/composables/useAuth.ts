@@ -67,7 +67,7 @@ export function useAuth() {
         if (savedIds.includes(-2)) perms.push('crms.system.risk_assessment')
       } else {
         // Defaults (aligned with FR Matrix)
-        if (['Manager', 'Finance Manager', 'Sales'].includes(activeRole)) {
+        if (['Manager', 'Sales'].includes(activeRole)) {
           perms.push('crms.system.ocr', 'crms.system.risk_assessment')
         }
       }

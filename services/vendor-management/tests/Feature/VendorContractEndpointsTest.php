@@ -120,7 +120,7 @@ final class VendorContractEndpointsTest extends TestCase
 
         $response->assertStatus(409);
         $response->assertJsonFragment([
-            'message' => 'Contract already linked to this vendor.',
+            'message' => 'This contract is already linked to another vendor.',
         ]);
     }
 

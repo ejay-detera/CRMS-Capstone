@@ -16,7 +16,7 @@ import ContractDocumentsSection from './ContractDocumentsSection.vue'
 const route  = useRoute()
 const router = useRouter()
 const { state: authState, role } = useAuth()
-const isManager = computed(() => role.value === 'Manager' || role.value === 'Admin' || role.value === 'Finance Manager')
+const isManager = computed(() => role.value === 'Manager' || role.value === 'Admin')
 const isOwner   = computed(() => !!contract.value && !contract.value.createdBy.startsWith('User #'))
 const { success, error } = useToast()
 const { state: cacheState, fetchContracts, updateContractInCache } = useApiCache()

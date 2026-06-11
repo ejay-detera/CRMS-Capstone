@@ -57,18 +57,20 @@ class AdminUserProxyController extends Controller
         // 3. Resolve IDs from Auth Service
         // We fetch current roles/depts from auth-service to get the correct IDs
         $token = $request->bearerToken();
-        $roles = HttpProxy::get('admin/role-options', $token);
-        $depts = HttpProxy::get('admin/department-options', $token);
+        $rolesResponse = HttpProxy::get('admin/role-options', $token);
+        $deptsResponse = HttpProxy::get('admin/department-options', $token);
 
-        // Map standard roles to department-scoped roles
-        $targetRoleName = ucfirst(strtolower($request->role_name));
-        if ($targetRoleName === 'Manager') {
-            $mappedRoleName = 'Finance Manager';
-        } elseif ($targetRoleName === 'Employee') {
-            $mappedRoleName = 'Finance Employee';
-        } else {
-            $mappedRoleName = $targetRoleName;
+        if (!$rolesResponse->successful() || !$deptsResponse->successful()) {
+            $status = !$rolesResponse->successful() ? $rolesResponse->status() : $deptsResponse->status();
+            $msg = !$rolesResponse->successful() ? ($rolesResponse->json('message') ?? 'Failed to retrieve roles') : ($deptsResponse->json('message') ?? 'Failed to retrieve departments');
+            return response()->json(['message' => $msg], $status);
         }
+
+        $roles = $rolesResponse->json();
+        $depts = $deptsResponse->json();
+
+        // Map standard roles
+        $mappedRoleName = ucwords(strtolower($request->role_name));
 
         $roleId = $this->findIdByName($roles, $mappedRoleName);
         $deptId = $this->findIdByName($depts, $request->department_name);
@@ -134,9 +136,9 @@ class AdminUserProxyController extends Controller
 class HttpProxy {
     public static function get($endpoint, $token) {
         $baseUrl = env('AUTH_SERVICE_URL', 'http://auth-service:8000/api');
-        $response = \Illuminate\Support\Facades\Http::withToken($token)
-            ->withHeaders(['X-Session-ID' => request()->header('X-Session-ID') ?? ''])
+        $sessionId = request()->header('X-Session-ID') ?? request()->cookie('session_id') ?? '';
+        return \Illuminate\Support\Facades\Http::withToken($token)
+            ->withHeaders(['X-Session-ID' => $sessionId])
             ->get("{$baseUrl}/{$endpoint}");
-        return $response->json();
     }
 }

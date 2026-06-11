@@ -59,7 +59,7 @@ final class SendContractExpiryEmail implements ShouldQueue
         $role = $userInfo['role'] ?? null;
         $department = $userInfo['department'] ?? null;
 
-        if (in_array($role, ['Admin', 'Manager', 'Finance Manager'])) {
+        if (in_array($role, ['Admin', 'Manager'])) {
             if ($department !== 'Finance') {
                 Log::info("User {$this->userId} has role {$role} but department is {$department} (not Finance). Skipping email send.");
                 return;

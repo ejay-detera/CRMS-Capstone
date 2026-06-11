@@ -47,6 +47,16 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/admin/Partners/index.vue'),
       },
       {
+        path: 'partners/create',
+        name: 'admin-partners-create',
+        component: () => import('@/views/admin/Partners/AddPartnerPage.vue'),
+      },
+      {
+        path: 'partners/:code/edit',
+        name: 'admin-partners-edit',
+        component: () => import('@/views/admin/Partners/EditPartnerPage.vue'),
+      },
+      {
         path: 'partners/:code',
         name: 'admin-partners-detail',
         component: () => import('@/views/admin/Partners/PartnerDetail/index.vue'),
@@ -214,8 +224,8 @@ const routes: Array<RouteRecordRaw> = [
     redirect: () => {
       const { role } = useAuth()
       if (role.value === 'Admin') return '/admin/dashboard'
-      if (['Manager', 'Finance Manager'].includes(role.value || '')) return '/manager/dashboard'
-      if (['Sales', 'Employee', 'Finance Employee', 'Finance'].includes(role.value || '')) return '/sales/dashboard'
+      if (role.value === 'Manager') return '/manager/dashboard'
+      if (['Sales', 'Employee', 'Finance'].includes(role.value || '')) return '/sales/dashboard'
 
       // Fallback: escape CRMS router entirely and go to auth-module login
       window.location.href = '/'
@@ -254,8 +264,8 @@ router.beforeEach((to: RouteLocationNormalized) => {
   }
 
   // Role-based access control (Strict Role Isolation)
-  // CRMS-capstone only supports 3 roles: Admin, Manager, and Sales (or Employee)
-  const allowedRoles = ['Admin', 'Manager', 'Sales', 'Employee', 'Finance Manager', 'Finance Employee', 'Finance']
+  // CRMS-capstone only supports standard roles: Admin, Manager, Sales, Employee, Finance
+  const allowedRoles = ['Admin', 'Manager', 'Sales', 'Employee', 'Finance']
 
   // If the user's role isn't recognized by CRMS (e.g., IT Admin, Super Admin), block them entirely
   if (!allowedRoles.includes(role.value || '')) {
@@ -268,12 +278,12 @@ router.beforeEach((to: RouteLocationNormalized) => {
   }
 
   // Manager can access /manager
-  if (to.path.startsWith('/manager') && !['Manager', 'Finance Manager'].includes(role.value || '')) {
+  if (to.path.startsWith('/manager') && role.value !== 'Manager') {
     return { name: 'not-found' }
   }
 
   // Sales/Employee/Finance can access /sales
-  if (to.path.startsWith('/sales') && !['Sales', 'Employee', 'Finance Employee', 'Finance'].includes(role.value || '')) {
+  if (to.path.startsWith('/sales') && !['Sales', 'Employee', 'Finance'].includes(role.value || '')) {
     return { name: 'not-found' }
   }
 

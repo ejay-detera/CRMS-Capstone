@@ -27,7 +27,7 @@ const departmentsOptions = ref<{ id: number; name: string }[]>([])
 async function fetchOptions() {
   const { state } = useAuth()
   try {
-    const authApiUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8000/api'
+    const authApiUrl = import.meta.env.VITE_AUTH_API_URL || '/api'
     const headers = {
       'Authorization': `Bearer ${state.token}`,
       'X-Session-ID': localStorage.getItem('session_id') || '',
@@ -58,8 +58,6 @@ const rolesList = computed(() => {
     { id: 5, name: 'Sales' },
     { id: 6, name: 'Finance' },
     { id: 7, name: 'Employee' },
-    { id: 8, name: 'Finance Manager' },
-    { id: 9, name: 'Finance Employee' },
   ]
 })
 
@@ -76,7 +74,7 @@ async function fetchUsers() {
   const { state } = useAuth()
   isFetching.value = true
   try {
-    const authApiUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8000/api'
+    const authApiUrl = import.meta.env.VITE_AUTH_API_URL || '/api'
     const res = await fetch(`${authApiUrl}/admin/users?per_page=100`, {
       headers: {
         'Authorization': `Bearer ${state.token}`,
@@ -176,9 +174,10 @@ async function handleAdd(data: any) {
 
   await withLoading('creating', async () => {
     try {
-      const contractApiUrl = import.meta.env.VITE_CONTRACT_API_URL || 'http://localhost:8002/api'
+      const contractApiUrl = import.meta.env.VITE_CONTRACT_API_URL || '/api/contract'
       const response = await fetch(`${contractApiUrl}/admin/users`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${state.token}`,
@@ -222,7 +221,7 @@ async function handleEdit(data: { id: string; name: string; email: string; role:
 
   await withLoading('updating', async () => {
     try {
-      const authApiUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8000/api'
+      const authApiUrl = import.meta.env.VITE_AUTH_API_URL || '/api'
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${state.token}`,

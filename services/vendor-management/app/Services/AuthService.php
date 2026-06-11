@@ -23,6 +23,7 @@ class AuthService
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'X-Internal-Service' => 'vendor-management', // For auditing
+                'X-Internal-Secret' => env('INTERNAL_SERVICE_SECRET'),
             ])->post("{$this->baseUrl}/internal/verify-token", [
                 'token' => $token,
             ]);
@@ -54,7 +55,7 @@ class AuthService
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Authorization' => 'Bearer ' . $token,
-                'X-Session-ID' => request()->header('X-Session-ID') ?? '',
+                'X-Session-ID' => request()->header('X-Session-ID') ?? request()->cookie('session_id') ?? '',
                 'X-Internal-Service' => 'vendor-management-admin',
             ])->post("{$this->baseUrl}/admin/users", $data);
 

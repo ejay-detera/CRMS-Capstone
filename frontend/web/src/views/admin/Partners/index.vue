@@ -5,16 +5,16 @@ import { Building2, Truck, Search, LayoutGrid, List, Plus, Upload } from 'lucide
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
 import { usePartners } from '@/composables/usePartners'
-import { useVendorService } from '@/composables/useVendorService'
 import PartnersGrid       from './PartnersGrid.vue'
 import PartnersTable      from './PartnersTable.vue'
 import DeleteConfirmDialog from './DeleteConfirmDialog.vue'
-import AddPartnerDialog    from './AddPartnerDialog.vue'
-import type { Partner, TabKey, AddPartnerForm } from '@/types/partner'
+import type { Partner, TabKey } from '@/types/partner'
 
 const router = useRouter()
-const { success, error, warning } = useToast()
+const { success, error } = useToast()
+const { hasPermission } = useAuth()
 
 const {
   partners,
@@ -24,7 +24,7 @@ const {
   deletePartner
 } = usePartners()
 
-const { createPartner, updatePartner, createSupplier, updateSupplier } = useVendorService()
+
 
 const activeTab      = ref<TabKey>('partners')
 const viewMode       = ref<'card' | 'table'>('card')
@@ -38,7 +38,7 @@ const statusOptions  = ['All', 'Active', 'Inactive', 'Suspended'] as const
 const partnersCount = ref(0)
 const suppliersCount = ref(0)
 
-const source = computed(() => partners.value)
+
 
 const industries = computed(() => {
   const vals = partners.value.map(p => p.industry).filter(Boolean)
@@ -132,46 +132,10 @@ async function confirmDelete() {
   }
 }
 
-const showAdd   = ref(false)
-const editTarget = ref<Partner | null>(null)
-function openEdit(p: Partner) { editTarget.value = p; showAdd.value = true }
-
-async function handleSubmit(form: AddPartnerForm) {
-  const target = editTarget.value
-  try {
-    if (target && target.db_id) {
-      if (activeTab.value === 'partners') {
-        const { partner: updated, warnings } = await updatePartner(target.db_id, form, target.bpCode ?? null)
-        success('Partner updated', `${updated.name} has been updated.`)
-        if (warnings.length) warning('Duplicate warning', warnings[0].message)
-      } else {
-        const { partner: updated, warnings } = await updateSupplier(target.db_id, form)
-        success('Supplier updated', `${updated.name} has been updated.`)
-        if (warnings.length) warning('Duplicate warning', warnings[0].message)
-      }
-    } else {
-      if (activeTab.value === 'partners') {
-        const { partner: created, warnings } = await createPartner(form)
-        success('Partner added', `${created.name} has been added successfully.`)
-        if (warnings.length) warning('Duplicate warning', warnings[0].message)
-      } else {
-        const { partner: created, warnings } = await createSupplier(form)
-        success('Supplier added', `${created.name} has been added successfully.`)
-        if (warnings.length) warning('Duplicate warning', warnings[0].message)
-      }
-    }
-    await fetchPartners(activeTab.value, currentPage.value, itemsPerPage, search.value, regionFilter.value)
-  } catch (err: any) {
-    const msg = err?.message ?? 'An error occurred. Please try again.'
-    error('Save failed', msg)
-  } finally {
-    editTarget.value = null
-  }
-}
-
-function onDialogClose(val: boolean) {
-  showAdd.value = val
-  if (!val) editTarget.value = null
+function openEdit(p: Partner) {
+  const prefix = activeTab.value === 'partners' ? 'BP' : 'SP'
+  const code   = `${prefix}-${String(p.db_id || p.id).padStart(4, '0')}`
+  router.push(`/admin/partners/${code}/edit`)
 }
 
 function exportXLSX() {
@@ -209,7 +173,7 @@ function exportXLSX() {
         <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
-        <Button @click="showAdd = true" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+        <Button v-if="hasPermission('crms.partners.create')" @click="router.push('/admin/partners/create?type=' + activeTab)" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
           <Plus class="w-5 h-5" />
         </Button>
       </div>
@@ -270,7 +234,7 @@ function exportXLSX() {
       :paginated="filtered" :filtered="filtered" :active-tab="activeTab"
       :selected-ids="selectedIds" :all-page-selected="allPageSelected"
       :current-page="currentPage" :items-per-page="itemsPerPage"
-      :can-edit="true" :can-delete="true" :loading="loading"
+      :can-edit="hasPermission('crms.partners.edit')" :can-delete="hasPermission('crms.partners.delete')" :loading="loading"
       @open-detail="openDetail" @open-edit="openEdit" @open-delete="openDelete"
       @toggle-row="toggleRow" @toggle-select-all="toggleSelectAll"
       @update:current-page="currentPage = $event"
@@ -279,9 +243,4 @@ function exportXLSX() {
   </div>
 
   <DeleteConfirmDialog v-model:open="showDelete" :partner="deleteTarget" :active-tab="activeTab" @confirm="confirmDelete" />
-  <AddPartnerDialog
-    :open="showAdd" :active-tab="activeTab" :edit-target="editTarget"
-    :existing-names="source.map(p => p.name)"
-    @update:open="onDialogClose" @submit="handleSubmit"
-  />
 </template>

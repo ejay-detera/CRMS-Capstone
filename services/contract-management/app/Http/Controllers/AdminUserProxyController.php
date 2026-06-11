@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Services\AuthService;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 
 class AdminUserProxyController extends Controller
 {
@@ -33,43 +32,25 @@ class AdminUserProxyController extends Controller
             return response()->json(['message' => 'Unauthorized. Finance only.'], 403);
         }
 
-        // Constraint: Employee/Manager Only
-        if (!in_array(ucfirst(strtolower($request->role_name)), ['Employee', 'Manager'])) {
+        // Constraint: Employee/Manager Only (allow department-scoped variants)
+        $roleNameNormalized = ucwords(strtolower($request->role_name));
+        $allowedRoles = ['Employee', 'Manager'];
+        if (!in_array($roleNameNormalized, $allowedRoles)) {
             return response()->json(['message' => 'Unauthorized. Employee/Manager only.'], 403);
         }
 
         $token = $request->bearerToken();
-        $sessionId = $request->header('X-Session-ID');
+        $sessionId = $request->header('X-Session-ID') ?? $request->cookie('session_id');
         
-        // Resolve IDs
-        $baseUrl = env('AUTH_SERVICE_URL', 'http://auth-service:8000/api');
-        $roles = Http::withToken($token)->withHeaders(['X-Session-ID' => $sessionId])->get("{$baseUrl}/admin/role-options")->json();
-        $depts = Http::withToken($token)->withHeaders(['X-Session-ID' => $sessionId])->get("{$baseUrl}/admin/department-options")->json();
-
-        // Map standard roles to department-scoped roles
-        $targetRoleName = ucfirst(strtolower($request->role_name));
-        if ($targetRoleName === 'Manager') {
-            $mappedRoleName = 'Finance Manager';
-        } elseif ($targetRoleName === 'Employee') {
-            $mappedRoleName = 'Finance Employee';
-        } else {
-            $mappedRoleName = $targetRoleName;
-        }
-
-        $roleId = collect($roles)->firstWhere('name', $mappedRoleName)['id'] ?? null;
-        $deptId = collect($depts)->firstWhere('name', 'Finance')['id'] ?? null;
-
-        if (!$roleId || !$deptId) {
-            return response()->json(['message' => 'Failed to resolve Role or Department ID.'], 422);
-        }
+        $roleName = $roleNameNormalized;
 
         $result = $this->authService->createUser([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'email' => $request->email,
-            'role_id' => $roleId,
-            'department_id' => $deptId,
-        ], $token);
+            'role_name' => $roleName,
+            'department_name' => 'Finance',
+        ], $token, $sessionId);
 
         if (isset($result['error'])) {
             return response()->json($result, $result['status'] ?? 500);
