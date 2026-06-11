@@ -55,7 +55,7 @@ class AuthService
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Authorization' => 'Bearer ' . $token,
-                'X-Session-ID' => $sessionId ?? request()->header('X-Session-ID') ?? request()->cookie('session_id') ?? '',
+                'X-Session-ID' => ($sessionId ?: request()->header('X-Session-ID') ?: request()->cookie('session_id')) ?: '',
                 'X-Internal-Service' => 'contract-management-admin',
             ])->post("{$this->baseUrl}/admin/users", $data);
 

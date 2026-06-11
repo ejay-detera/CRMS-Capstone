@@ -15,7 +15,9 @@ WORKDIR /var/www/html
 
 COPY . .
 
-RUN rm -f composer.lock && composer update -W --no-scripts --prefer-dist
+RUN composer install --no-scripts --prefer-dist
+
+RUN mkdir -p storage/app/public && ln -s ../storage/app/public public/storage
 
 EXPOSE 8000
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]

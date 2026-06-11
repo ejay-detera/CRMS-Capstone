@@ -13,6 +13,7 @@ const { success, error, warning } = useToast()
 const { createPartner, createSupplier, fetchPartners, fetchSuppliers } = useVendorService()
 
 const activeTab = computed<TabKey>(() => route.query.type === 'suppliers' ? 'suppliers' : 'partners')
+const basePath = computed(() => route.path.startsWith('/manager') ? '/manager/partners' : '/admin/partners')
 
 const form = reactive<AddPartnerForm>({
   name: '', industry: '', region: '', status: 'Active',
@@ -93,7 +94,7 @@ async function handleSubmit() {
       success('Supplier added', `${created.name} has been added successfully.`)
       if (warnings.length) warning('Duplicate warning', warnings[0].message)
     }
-    router.push('/admin/partners')
+    router.push(basePath.value)
   } catch (err: any) {
     const msg = err?.message ?? 'An error occurred. Please try again.'
     error('Save failed', msg)
@@ -237,7 +238,7 @@ async function handleSubmit() {
       <!-- Footer -->
       <div class="px-6 py-4 flex items-center justify-end gap-3 bg-black/[0.015]">
         <Button type="button" variant="outline" class="h-9 px-4 text-sm border-black/15 text-black/60 hover:text-black"
-          @click="router.push('/admin/partners')">Cancel</Button>
+          @click="router.push(basePath)">Cancel</Button>
         <Button @click="handleSubmit" :disabled="isSaving" class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
           {{ isSaving ? 'Saving...' : `Add ${activeTab === 'partners' ? 'Partner' : 'Supplier'}` }}
         </Button>

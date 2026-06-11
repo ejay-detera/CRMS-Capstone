@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Building2, Truck, Search, LayoutGrid, List, Upload } from 'lucide-vue-next'
+import { Building2, Truck, Search, LayoutGrid, List, Upload, Plus } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import { useVendorService } from '@/composables/useVendorService'
+import { useAuth } from '@/composables/useAuth'
 import PartnersGrid  from '@/views/admin/Partners/PartnersGrid.vue'
 import PartnersTable from '@/views/admin/Partners/PartnersTable.vue'
 import type { Partner, TabKey } from '@/types/partner'
 
 const router = useRouter()
 const { success, error } = useToast()
+const { hasPermission } = useAuth()
 const { fetchPartners, fetchSuppliers } = useVendorService()
 
 const businessPartners = ref<Partner[]>([])
@@ -127,14 +129,14 @@ function exportXLSX() {
         <h1 class="text-xl font-semibold text-black">Partners & Suppliers</h1>
         <p class="text-sm text-black/40 mt-0.5">View and manage business relationships.</p>
       </div>
-      <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
-        <Upload class="w-4 h-4" /> Export XLSX
-      </Button>
-    </div>
-
-    <div class="flex items-center gap-3">
-      <div class="flex items-center gap-0.5 bg-black/4 rounded-md p-1">
-        <button @click="activeTab = 'partners'"
+      <div class="flex items-center gap-2">
+        <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
+          <Upload class="w-4 h-4" /> Export XLSX
+        </Button>
+        <Button v-if="hasPermission('crms.partners.create')" @click="router.push('/manager/partners/create?type=' + activeTab)" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+          <Plus class="w-5 h-5" />
+        </Button>
+      </div>
           class="flex items-center gap-2 px-4 py-1.5 text-sm rounded transition-all font-medium"
           :class="activeTab === 'partners' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'">
           <Building2 class="w-3.5 h-3.5" /> Business Partners ({{ partnersCount }})

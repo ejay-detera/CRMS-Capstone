@@ -136,7 +136,7 @@ class AdminUserProxyController extends Controller
 class HttpProxy {
     public static function get($endpoint, $token) {
         $baseUrl = env('AUTH_SERVICE_URL', 'http://auth-service:8000/api');
-        $sessionId = request()->header('X-Session-ID') ?? request()->cookie('session_id') ?? '';
+        $sessionId = (request()->header('X-Session-ID') ?: request()->cookie('session_id')) ?: '';
         return \Illuminate\Support\Facades\Http::withToken($token)
             ->withHeaders(['X-Session-ID' => $sessionId])
             ->get("{$baseUrl}/{$endpoint}");

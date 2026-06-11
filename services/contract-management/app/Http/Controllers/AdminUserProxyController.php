@@ -40,7 +40,7 @@ class AdminUserProxyController extends Controller
         }
 
         $token = $request->bearerToken();
-        $sessionId = $request->header('X-Session-ID') ?? $request->cookie('session_id');
+        $sessionId = $request->header('X-Session-ID') ?: $request->cookie('session_id') ?: '';
         
         $roleName = $roleNameNormalized;
 

@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // This stub is only used when running contract-management in isolation for tests.
+        if (!app()->environment('testing')) {
+            return;
+        }
+
         if (!Schema::hasTable('suppliers')) {
             Schema::create('suppliers', function (Blueprint $table) {
                 $table->id('supplier_id');
@@ -25,7 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Only drop if we are running under SQLite/testing context
         if (app()->environment('testing')) {
             Schema::dropIfExists('suppliers');
         }

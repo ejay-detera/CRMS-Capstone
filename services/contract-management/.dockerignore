@@ -13,3 +13,4 @@ bootstrap/cache
 .DS_Store
 .vscode
 .idea
+public/storage

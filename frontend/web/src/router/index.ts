@@ -138,6 +138,12 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/manager/Partners/index.vue'),
       },
       {
+        path: 'partners/create',
+        name: 'manager-partners-create',
+        component: () => import('@/views/admin/Partners/AddPartnerPage.vue'),
+        meta: { requiresPermission: 'crms.partners.create' },
+      },
+      {
         path: 'partners/:code',
         name: 'manager-partners-detail',
         component: () => import('@/views/admin/Partners/PartnerDetail/index.vue'),

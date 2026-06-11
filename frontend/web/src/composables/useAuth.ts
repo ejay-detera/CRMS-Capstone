@@ -195,6 +195,8 @@ export function useAuth() {
   }
 
   const hasPermission = (permission: string) => {
+    if (role.value === 'Admin') return true
+
     // 1. Exact match
     if (permissions.value.includes(permission)) return true
 

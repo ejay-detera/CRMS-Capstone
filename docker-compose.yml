@@ -59,7 +59,7 @@ services:
       - vendor-management-vendor:/var/www/html/vendor
     ports:
       - "8001:8000"
-    command: sh -c "composer install --no-scripts && until php artisan migrate:status > /dev/null 2>&1; do echo 'Waiting for database...'; sleep 1; done && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "composer install --no-scripts && sleep 5 && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
     environment:
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
     depends_on:
@@ -80,7 +80,7 @@ services:
       - contract-management-vendor:/var/www/html/vendor
     ports:
       - "8002:8000"
-    command: sh -c "composer install --no-scripts && until php artisan migrate:status > /dev/null 2>&1; do echo 'Waiting for database...'; sleep 1; done && php artisan migrate --force && (php artisan schedule:work &) && (php artisan queue:work --sleep=3 --tries=3 --timeout=60 &) && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "composer install --no-scripts && sleep 10 && php artisan migrate --force && (php artisan schedule:work &) && (php artisan queue:work --sleep=3 --tries=3 --timeout=60 &) && php artisan serve --host=0.0.0.0 --port=8000"
     environment:
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
     depends_on:
@@ -101,7 +101,7 @@ services:
       - search-vendor:/var/www/html/vendor
     ports:
       - "8003:8000"
-    command: sh -c "composer install --no-scripts && until php artisan migrate:status > /dev/null 2>&1; do echo 'Waiting for database...'; sleep 1; done && php artisan migrate --force && php artisan meilisearch:seed --guard && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "composer install --no-scripts && sleep 15 && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       meilisearch:
         condition: service_started
@@ -118,7 +118,7 @@ services:
       - notification-vendor:/var/www/html/vendor
     ports:
       - "8004:8000"
-    command: sh -c "composer install --no-scripts && until php artisan migrate:status > /dev/null 2>&1; do echo 'Waiting for database...'; sleep 1; done && php artisan migrate --force && (php artisan queue:work --queue=notifications --sleep=3 --tries=3 --timeout=60 &) && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "composer install --no-scripts && sleep 20 && php artisan migrate --force && (php artisan queue:work --queue=notifications --sleep=3 --tries=3 --timeout=60 &) && php artisan serve --host=0.0.0.0 --port=8000"
     environment:
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
     depends_on:
