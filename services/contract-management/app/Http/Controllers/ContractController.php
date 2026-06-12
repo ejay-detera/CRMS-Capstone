@@ -41,6 +41,7 @@ class ContractController extends Controller
             'end_date'         => $contract->end_date?->toDateString(),
             'lifecycle_status' => $contract->lifecycle_status,
             'created_by'       => $contract->created_by,
+            'created_at'       => $contract->created_at?->toISOString(),
             'documents'        => $contract->documents->map(fn ($d) => [
                 'document_id'  => (string) ($d->document_id ?? $d->_id),
                 'file_name'    => $d->file_name,

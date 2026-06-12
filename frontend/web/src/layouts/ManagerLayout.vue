@@ -32,6 +32,7 @@ import { useRoute, useRouter } from "vue-router";
 import { ref, watch, computed, onMounted, onUnmounted } from "vue";
 import { useAuth } from "@/composables/useAuth";
 import { useNotifications } from "@/composables/useNotifications";
+import type { Notification } from "@/types/notification";
 import logoUrl from "@/assets/sbsi logo.png";
 
 const route  = useRoute();
@@ -42,8 +43,13 @@ const { logout, hasPermission, refreshPermissions, user } = useAuth();
 // always reflect the latest permissions saved by an admin.
 onMounted(() => refreshPermissions())
 
-const { notifications, unreadCount, fetchNotifications, markAllRead } = useNotifications();
-const recentNotifs = computed(() => notifications.value.filter(n => !n.isArchived).slice(0, 5));
+const { notifications, unreadCount, fetchNotifications, markAllRead, markRead } = useNotifications();
+const recentNotifs = computed(() => notifications.value.filter(n => !n.isArchived).slice(0, 10));
+
+function openNotification(n: Notification) {
+  if (!n.isRead) markRead(n.id);
+  router.push('/manager/notifications');
+}
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 onMounted(() => { fetchNotifications(); pollTimer = setInterval(fetchNotifications, 60000); });
@@ -322,11 +328,13 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
               </div>
               <ul v-else class="divide-y divide-black/4 max-h-72 overflow-y-auto">
                 <li v-for="n in recentNotifs" :key="n.id"
-                  class="flex items-start gap-3 px-4 py-3 hover:bg-black/2 transition-colors"
-                  :class="{ 'bg-[#2E85D8]/4': !n.isRead }">
+                  class="flex items-start gap-3 px-4 py-3 hover:bg-black/2 transition-colors cursor-pointer"
+                  :class="{ 'bg-[#2E85D8]/[0.06]': !n.isRead }"
+                  @click="openNotification(n)">
                   <span class="mt-0.5 w-1.5 h-1.5 rounded-full shrink-0"
                     :class="n.isRead ? 'bg-transparent' : 'bg-[#2E85D8]'" />
-                  <p class="text-xs text-black/70 leading-relaxed line-clamp-2">{{ n.message }}</p>
+                  <p class="text-xs leading-relaxed line-clamp-2"
+                    :class="n.isRead ? 'text-black/45' : 'text-black font-medium'">{{ n.message }}</p>
                 </li>
               </ul>
               <div class="px-4 py-2.5 border-t border-black/6">
