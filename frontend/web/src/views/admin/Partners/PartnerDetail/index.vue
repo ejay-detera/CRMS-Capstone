@@ -2,22 +2,25 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  Building2, Truck, ArrowLeft, Pencil,
+  Building2, Truck, ArrowLeft, Pencil, Trash2,
   User, Phone, Mail, MapPin, Hash, Briefcase, Globe, FileText,
 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useVendorService } from '@/composables/useVendorService'
 import { usePartners } from '@/composables/usePartners'
+import { useAuth } from '@/composables/useAuth'
 import PartnerLinkedContracts from '@/views/admin/Partners/PartnerLinkedContracts.vue'
 import AssociateContractModal from '@/views/admin/Partners/AssociateContractModal.vue'
+import DeleteConfirmDialog from '@/views/admin/Partners/DeleteConfirmDialog.vue'
 import type { Partner, TabKey } from '@/types/partner'
 
 const route  = useRoute()
 const router = useRouter()
 const { success, error } = useToast()
 const { fetchPartnerById, fetchSupplierById } = useVendorService()
-const { fetchVendorContracts, fetchLinkedContractIds, linkContract, detachContract } = usePartners()
+const { fetchVendorContracts, fetchLinkedContractIds, linkContract, detachContract, deletePartner } = usePartners()
+const { hasPermission } = useAuth()
 
 const code = route.params.code as string
 const type = code.startsWith('BP') ? 'bp' : 'sp'
@@ -108,6 +111,23 @@ function openEdit() {
   router.push(`/admin/partners/${code}/edit`)
 }
 
+// ── Delete ───────────────────────────────────────────────────────────────────
+
+const showDelete = ref(false)
+
+async function confirmDelete() {
+  if (!partner.value) return
+  const name = partner.value.name
+  showDelete.value = false
+  try {
+    await deletePartner(activeTab.value, id)
+    success('Entry deleted', `${name} has been removed.`)
+    router.push(backPath.value)
+  } catch {
+    error('Delete failed', `Could not delete ${name}. Please try again.`)
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const displayId = computed(() => {
@@ -188,10 +208,16 @@ const statusClass = computed(() => {
           <ArrowLeft class="w-4 h-4" />
           Back to Partners
         </button>
-        <Button v-if="isAdmin" @click="openEdit"
-          class="h-9 px-4 gap-2 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
-          <Pencil class="w-3.5 h-3.5" /> Edit
-        </Button>
+        <div v-if="isAdmin" class="flex items-center gap-2">
+          <Button v-if="hasPermission('crms.partners.delete')" variant="outline" @click="showDelete = true"
+            class="h-9 px-4 gap-2 text-sm border-red-200 text-red-600 hover:bg-red-50">
+            <Trash2 class="w-3.5 h-3.5" /> Delete
+          </Button>
+          <Button @click="openEdit"
+            class="h-9 px-4 gap-2 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
+            <Pencil class="w-3.5 h-3.5" /> Edit
+          </Button>
+        </div>
       </div>
 
       <!-- Hero card -->
@@ -314,5 +340,12 @@ const statusClass = computed(() => {
     :globally-linked="globallyLinkedContractIds"
     @update:open="showAssociateModal = $event"
     @submit="handleLinkContract"
+  />
+
+  <DeleteConfirmDialog
+    v-model:open="showDelete"
+    :partner="partner"
+    :active-tab="activeTab"
+    @confirm="confirmDelete"
   />
 </template>

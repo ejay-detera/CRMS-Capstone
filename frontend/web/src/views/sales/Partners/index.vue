@@ -6,13 +6,18 @@ import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import { useVendorService } from '@/composables/useVendorService'
+import { useAuth } from '@/composables/useAuth'
+import { usePartners } from '@/composables/usePartners'
 import PartnersGrid  from '@/views/admin/Partners/PartnersGrid.vue'
 import PartnersTable from '@/views/admin/Partners/PartnersTable.vue'
+import DeleteConfirmDialog from '@/views/admin/Partners/DeleteConfirmDialog.vue'
 import type { Partner, TabKey } from '@/types/partner'
 
 const router = useRouter()
 const { success, error } = useToast()
+const { hasPermission } = useAuth()
 const { fetchPartners, fetchSuppliers } = useVendorService()
+const { deletePartner } = usePartners()
 
 const businessPartners = ref<Partner[]>([])
 const suppliersData    = ref<Partner[]>([])
@@ -94,6 +99,26 @@ function openDetail(p: Partner) {
   const prefix = activeTab.value === 'partners' ? 'BP' : 'SP'
   const code   = `${prefix}-${String(p.id).padStart(4, '0')}`
   router.push(`/sales/partners/${code}`)
+}
+
+const showDelete   = ref(false)
+const deleteTarget = ref<Partner | null>(null)
+function openDelete(p: Partner) { deleteTarget.value = p; showDelete.value = true }
+async function confirmDelete() {
+  if (!deleteTarget.value) return
+  const target = deleteTarget.value
+  showDelete.value  = false
+  deleteTarget.value = null
+  try {
+    if (target.db_id) {
+      await deletePartner(activeTab.value, target.db_id)
+      await loadData()
+    }
+    selectedIds.value = selectedIds.value.filter(id => id !== target.id)
+    success('Entry deleted', `${target.name} has been removed.`)
+  } catch {
+    error('Delete failed', `Could not delete ${target.name}. Please try again.`)
+  }
 }
 
 function exportXLSX() {
@@ -182,16 +207,20 @@ function exportXLSX() {
       </select>
     </div>
 
-    <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" :loading="loading" @open-detail="openDetail" />
+    <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" :loading="loading"
+      :can-delete="hasPermission('crms.partners.delete')"
+      @open-detail="openDetail" @open-delete="openDelete" />
     <PartnersTable v-else
       :paginated="paginated" :filtered="filtered" :active-tab="activeTab"
       :selected-ids="selectedIds" :all-page-selected="allPageSelected"
       :current-page="currentPage" :items-per-page="itemsPerPage"
-      :loading="loading"
+      :can-delete="hasPermission('crms.partners.delete')" :loading="loading"
       @open-detail="openDetail"
-      @toggle-row="toggleRow" @toggle-select-all="toggleSelectAll"
+      @toggle-row="toggleRow" @toggle-select-all="toggleSelectAll" @open-delete="openDelete"
       @update:current-page="currentPage = $event"
     />
 
   </div>
+
+  <DeleteConfirmDialog v-model:open="showDelete" :partner="deleteTarget" :active-tab="activeTab" @confirm="confirmDelete" />
 </template>
