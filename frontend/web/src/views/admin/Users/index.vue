@@ -129,7 +129,7 @@ const filteredUsers = computed(() =>
 )
 
 const currentPage  = ref(1)
-const itemsPerPage = 8
+const itemsPerPage = 15
 watch([activeTab, searchQuery], () => { currentPage.value = 1 })
 
 const paginatedUsers = computed(() =>

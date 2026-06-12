@@ -27,7 +27,7 @@ onMounted(fetchRequests)
 const activeFilter = ref<RequestFilterTab>('all')
 const searchQuery  = ref('')
 const currentPage  = ref(1)
-const itemsPerPage = 10
+const itemsPerPage = 15
 
 const statCards = computed(() => ({
   total:     requests.value.length,

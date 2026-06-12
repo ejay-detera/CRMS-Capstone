@@ -81,7 +81,7 @@ const searchQuery    = ref('')
 const categoryFilter  = ref('')
 const regionFilter    = ref('')
 const currentPage    = ref(1)
-const itemsPerPage   = 10
+const itemsPerPage   = 15
 
 const withDays = computed(() =>
   contracts.value.map(c => ({ ...c, days: remainingDays(c.endDate) }))

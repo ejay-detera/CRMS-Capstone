@@ -8,10 +8,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Pagination, PaginationContent, PaginationEllipsis,
-  PaginationItem, PaginationNext, PaginationPrevious,
-} from '@/components/ui/pagination'
+import TablePagination from '@/components/shared/TablePagination.vue'
 import { requestStatusBadge, fmtReqDate } from '@/types/contractRequest'
 import type { ContractRequest, RequestFilterTab } from '@/types/contractRequest'
 
@@ -220,27 +217,10 @@ function avatarColor(name: string) {
     </Table>
 
     <!-- Pagination -->
-    <Pagination :total="loading ? itemsPerPage : filtered.length" :sibling-count="1" :items-per-page="itemsPerPage"
-      :page="currentPage" @update:page="emit('update:currentPage', $event)">
-      <div class="grid grid-cols-3 items-center px-6 py-4 border-t border-black/5">
-        <div class="flex justify-start"><PaginationPrevious /></div>
-        <div class="flex justify-center">
-          <PaginationContent v-slot="{ items }" class="flex items-center gap-1">
-            <template v-for="(item, index) in items">
-              <PaginationItem v-if="item.type === 'page'" :key="index" :value="item.value"
-                :is-active="item.value === currentPage"
-                :class="item.value === currentPage
-                  ? 'bg-[#252578] text-white hover:bg-[#2F2F73] hover:text-white border-transparent font-semibold'
-                  : 'text-black/50 hover:bg-black/5'">
-                {{ item.value }}
-              </PaginationItem>
-              <PaginationEllipsis v-else :key="item.type" :index="index" />
-            </template>
-          </PaginationContent>
-        </div>
-        <div class="flex justify-end"><PaginationNext /></div>
-      </div>
-    </Pagination>
+    <div class="flex justify-center px-6 py-4 border-t border-black/5">
+      <TablePagination :current-page="currentPage" :total-items="loading ? itemsPerPage : filtered.length"
+        :items-per-page="itemsPerPage" @update:current-page="emit('update:currentPage', $event)" />
+    </div>
 
   </div>
 </template>

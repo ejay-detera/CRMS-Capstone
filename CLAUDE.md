@@ -41,7 +41,7 @@ Rules:
 - Avatar palette restricted to those three colors.
 - Font: Poppins.
 - Table headers: `bg-black/[0.018]` background, `border-black/[0.04]` bottom border.
-- Pagination layout: `grid grid-cols-3` — Previous anchored left, page numbers centered, Next anchored right.
+- Pagination: use `<TablePagination>` (`src/components/shared/TablePagination.vue`) — a centered `< 1 2 3 4 5 >` control with a sliding 5-page window; out-of-range page numbers are visible but disabled. All tables use 15 records per page.
 
 ## Dependencies
 
