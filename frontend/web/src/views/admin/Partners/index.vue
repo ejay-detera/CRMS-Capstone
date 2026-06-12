@@ -229,7 +229,9 @@ function exportXLSX() {
       </select>
     </div>
 
-    <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" :loading="loading" @open-detail="openDetail" />
+    <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" :loading="loading"
+      :can-delete="hasPermission('crms.partners.delete')"
+      @open-detail="openDetail" @open-delete="openDelete" />
     <PartnersTable v-else
       :paginated="filtered" :filtered="filtered" :active-tab="activeTab"
       :selected-ids="selectedIds" :all-page-selected="allPageSelected"
