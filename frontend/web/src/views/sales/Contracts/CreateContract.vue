@@ -56,7 +56,11 @@ const touched = reactive<Record<keyof FormState, boolean>>({
 })
 
 const errors = computed(() => ({
-  businessPartner: touched.businessPartner && !form.businessPartner.trim()    ? 'Business partner is required.' : '',
+  businessPartner: touched.businessPartner && !form.businessPartner.trim()
+    ? 'Business partner is required.'
+    : touched.businessPartner && suspendedVendorMatch.value
+    ? 'This vendor is suspended and cannot be assigned to a new contract.'
+    : '',
   category:        touched.category        && !form.category                  ? 'Category is required.' : '',
   itemCode:        touched.itemCode        && !form.itemCode.trim()           ? 'Item code is required.' : '',
   description:     touched.description     && !form.description.trim()        ? 'Description is required.' : '',
@@ -88,6 +92,7 @@ function touchAll() {
 function isValid() {
   return (
     form.businessPartner.trim() &&
+    !suspendedVendorMatch.value &&
     form.category &&
     form.itemCode.trim() &&
     form.description.trim() &&
@@ -163,7 +168,8 @@ async function handleSubmit() {
 
 import { onClickOutside } from '@vueuse/core'
 
-const partnerNames = ref<string[]>([])
+interface VendorOption { name: string; status: string }
+const vendorOptions = ref<VendorOption[]>([])
 
 async function fetchPartnerNames() {
   try {
@@ -176,16 +182,22 @@ async function fetchPartnerNames() {
       fetch(`${apiBase}/partners?per_page=100`, { headers }),
       fetch(`${apiBase}/suppliers?per_page=100`, { headers })
     ])
-    let names: string[] = []
+    const vendors: VendorOption[] = []
     if (resP.ok) {
       const json = await resP.json()
-      names = names.concat((json.data || []).map((p: any) => p.partner_name))
+      vendors.push(...(json.data || []).map((p: any) => ({ name: p.partner_name, status: p.status })))
     }
     if (resS.ok) {
       const json = await resS.json()
-      names = names.concat((json.data || []).map((s: any) => s.supplier_name))
+      vendors.push(...(json.data || []).map((s: any) => ({ name: s.supplier_name, status: s.status })))
     }
-    partnerNames.value = Array.from(new Set(names))
+    const seen = new Set<string>()
+    vendorOptions.value = vendors.filter(v => {
+      const key = v.name.toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
   } catch (err) {
     console.error('Failed to fetch partner names:', err)
   }
@@ -200,8 +212,15 @@ const suggestionsContainer = ref<HTMLElement | null>(null)
 
 const partnerSuggestions = computed(() => {
   const query = form.businessPartner.trim().toLowerCase()
-  if (!query) return partnerNames.value
-  return partnerNames.value.filter(name => name.toLowerCase().includes(query))
+  const available = vendorOptions.value.filter(v => v.status !== 'Suspended')
+  if (!query) return available.map(v => v.name)
+  return available.filter(v => v.name.toLowerCase().includes(query)).map(v => v.name)
+})
+
+const suspendedVendorMatch = computed(() => {
+  const name = form.businessPartner.trim().toLowerCase()
+  if (!name) return false
+  return vendorOptions.value.some(v => v.name.toLowerCase() === name && v.status === 'Suspended')
 })
 
 function selectSuggestion(name: string) {

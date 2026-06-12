@@ -85,6 +85,25 @@ class ContractController extends Controller
         ]);
     }
 
+    private function vendorIsSuspended(string $bpName): bool
+    {
+        if (Schema::hasTable('business_partners')) {
+            $partner = DB::table('business_partners')->where('partner_name', $bpName)->first();
+            if ($partner && $partner->status === 'Suspended') {
+                return true;
+            }
+        }
+
+        if (Schema::hasTable('suppliers')) {
+            $supplier = DB::table('suppliers')->where('supplier_name', $bpName)->first();
+            if ($supplier && $supplier->status === 'Suspended') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function autoLinkVendor(int $contractId, string $bpName, ?int $userId): void
     {
         if (!Schema::hasTable('vendor_contract_associations')) {
@@ -179,6 +198,12 @@ class ContractController extends Controller
         }
 
         $incoming = $validator->validated();
+
+        if ($this->vendorIsSuspended($incoming['bp_name'])) {
+            return response()->json([
+                'message' => 'This business partner/supplier is suspended and cannot be assigned to a new contract.'
+            ], 422);
+        }
 
         // Resolve IDs
         $cat = ContractCategory::firstOrCreate(['category_name' => $incoming['category']]);
@@ -324,6 +349,12 @@ class ContractController extends Controller
         }
 
         $incoming = $validator->validated();
+
+        if ($incoming['bp_name'] !== $contract->bp_name && $this->vendorIsSuspended($incoming['bp_name'])) {
+            return response()->json([
+                'message' => 'This business partner/supplier is suspended and cannot be assigned to a new contract.'
+            ], 422);
+        }
 
         $cat = ContractCategory::firstOrCreate(['category_name' => $incoming['category']]);
         $regionId = DB::table('contract_regions')
