@@ -160,6 +160,11 @@ function exportXLSX() {
           <Plus class="w-5 h-5" />
         </Button>
       </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-0.5 bg-black/4 rounded-md p-1">
+        <button @click="activeTab = 'partners'"
           class="flex items-center gap-2 px-4 py-1.5 text-sm rounded transition-all font-medium"
           :class="activeTab === 'partners' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'">
           <Building2 class="w-3.5 h-3.5" /> Business Partners ({{ partnersCount }})
