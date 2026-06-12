@@ -27,14 +27,15 @@ const form = reactive<AddPartnerForm>({
 
 const touched = reactive({
   name: false, industry: false, region: false,
-  contactPerson: false, email: false, phone: false, address: false,
+  contactPerson: false, email: false, phone: false, address: false, tinNumber: false,
 })
 
 const originalBpCode = ref<string | null>(null)
 const targetDbId = ref<number | null>(null)
 
-const emailValid = computed(() => !form.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+const emailValid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
 const phoneValid = computed(() => !form.phone || /^\d{7,11}$/.test(form.phone))
+const tinValid = computed(() => /^\d{3}-\d{3}-\d{3}(-\d{3,5})?$/.test(form.tinNumber.trim()))
 
 onMounted(async () => {
   loading.value = true
@@ -88,7 +89,7 @@ function err(field: keyof typeof touched, extra = true) {
 async function handleSubmit() {
   Object.keys(touched).forEach(k => ((touched as Record<string, boolean>)[k] = true))
   
-  if (!form.name || form.name.trim().length < 2 || !form.industry || !form.region || !form.contactPerson || !emailValid.value || !phoneValid.value || !form.address) {
+  if (!form.name || form.name.trim().length < 2 || !form.industry || !form.region || !form.contactPerson || !emailValid.value || !phoneValid.value || !form.address || (activeTab === 'suppliers' && !tinValid.value)) {
     return
   }
 
@@ -246,11 +247,12 @@ async function handleSubmit() {
           </div>
 
           <div class="flex flex-col gap-1.5 mb-4">
-            <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Email</label>
+            <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Email <span class="text-red-500">*</span></label>
             <input v-model="form.email" @blur="touched.email = true" type="email" placeholder="contact@company.com"
               class="w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="err('email', !!form.email && !emailValid)" />
-            <p v-if="touched.email && form.email && !emailValid" class="text-xs text-red-500">Enter a valid email address.</p>
+              :class="err('email', !emailValid)" />
+            <p v-if="touched.email && !form.email" class="text-xs text-red-500">Email is required.</p>
+            <p v-else-if="touched.email && !emailValid" class="text-xs text-red-500">Enter a valid email address.</p>
           </div>
 
           <div class="flex flex-col gap-1.5">
@@ -267,9 +269,12 @@ async function handleSubmit() {
         <div v-if="activeTab === 'suppliers'" class="px-6 py-5 border-b border-black/6">
           <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Additional Information</h2>
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">TIN Number</label>
-            <input v-model="form.tinNumber" type="text" placeholder="000-000-000-000" maxlength="100"
-              class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15 transition" />
+            <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">TIN Number <span class="text-red-500">*</span></label>
+            <input v-model="form.tinNumber" @blur="touched.tinNumber = true" type="text" placeholder="000-000-000-000" maxlength="100"
+              class="w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
+              :class="err('tinNumber', !tinValid)" />
+            <p v-if="touched.tinNumber && !form.tinNumber" class="text-xs text-red-500">TIN Number is required.</p>
+            <p v-else-if="touched.tinNumber && !tinValid" class="text-xs text-red-500">Enter a valid TIN (format: 000-000-000 or 000-000-000-0000).</p>
           </div>
         </div>
 

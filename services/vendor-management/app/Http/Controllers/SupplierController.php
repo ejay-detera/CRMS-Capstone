@@ -53,7 +53,7 @@ class SupplierController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'supplier_name'  => 'required|string|max:255',
-            'tin_number'     => 'nullable|string|max:100',
+            'tin_number'     => 'required|string|max:100|regex:/^\d{3}-\d{3}-\d{3}(-\d{3,5})?$/',
             'industry'       => 'nullable|string|max:100',
             'contact_person' => 'nullable|string|max:255',
             'contact_number' => 'nullable|string',
@@ -134,7 +134,7 @@ class SupplierController extends Controller
 
         $validator = Validator::make($request->all(), [
             'supplier_name'  => 'required|string|max:255',
-            'tin_number'     => 'nullable|string|max:100',
+            'tin_number'     => 'required|string|max:100|regex:/^\d{3}-\d{3}-\d{3}(-\d{3,5})?$/',
             'industry'       => 'nullable|string|max:100',
             'contact_person' => 'nullable|string|max:255',
             'contact_number' => 'nullable|string',
