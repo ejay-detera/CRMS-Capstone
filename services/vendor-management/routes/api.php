@@ -59,4 +59,8 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::get('/vendor-contracts/linked-ids', \App\Http\Controllers\Api\V1\LinkedContractIdsController::class)
         ->middleware('permission:crms.partners.view');
 
+    // Vendor eligibility lookup (for integration with other systems)
+    Route::get('/vendors/{code}/eligibility', \App\Http\Controllers\Api\V1\VendorEligibilityController::class)
+        ->middleware('permission:crms.partners.view');
+
 });
