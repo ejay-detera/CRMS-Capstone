@@ -112,11 +112,16 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
     >
       <!-- Logo -->
       <SidebarHeader class="border-b border-white/10 px-4 py-5">
-        <div class="flex items-center justify-center overflow-hidden">
+        <div class="relative mx-auto h-12 w-44 overflow-hidden transition-all duration-300 ease-in-out group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">
           <img
             :src="logoUrl"
             alt="SBSI logo"
-            class="h-12 w-44 object-contain group-data-[collapsible=icon]:w-10"
+            class="absolute inset-0 m-auto h-12 max-w-44 object-contain transition-opacity duration-300 ease-in-out group-data-[collapsible=icon]:opacity-0"
+          />
+          <img
+            src="/sbsi-logo.png"
+            alt="SBSI logo"
+            class="absolute inset-0 m-auto h-10 w-10 object-contain opacity-0 transition-opacity duration-300 ease-in-out group-data-[collapsible=icon]:opacity-100"
           />
         </div>
       </SidebarHeader>
@@ -162,25 +167,27 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
             <SidebarMenu class="gap-0.5">
               <SidebarMenuItem>
                 <!-- Collapsible parent button -->
-                <button
-                  @click="contractsOpen = true; router.push('/manager/contracts')"
-                  class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 group-data-[collapsible=icon]:justify-center"
-                  :class="lnk(contractPaths.includes(route.path))"
-                >
-                  <FileText
-                    class="w-4 h-4 shrink-0 group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5"
-                    :class="ico(contractPaths.includes(route.path))"
-                  />
-                  <span
-                    class="text-sm font-medium flex-1 text-left group-data-[collapsible=icon]:hidden"
-                    :class="txt(contractPaths.includes(route.path))"
-                  >Contracts</span>
-                  <ChevronDown
-                    @click.stop="contractsOpen = !contractsOpen"
-                    class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-data-[collapsible=icon]:hidden"
-                    :class="[contractsOpen ? 'rotate-180' : 'rotate-0', ico(contractPaths.includes(route.path))]"
-                  />
-                </button>
+                <SidebarMenuButton as-child :is-active="contractPaths.includes(route.path)" class="h-auto p-0 rounded-lg">
+                  <button
+                    @click="contractsOpen = true; router.push('/manager/contracts')"
+                    class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 group-data-[collapsible=icon]:justify-center"
+                    :class="lnk(contractPaths.includes(route.path))"
+                  >
+                    <FileText
+                      class="w-4 h-4 shrink-0 group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5"
+                      :class="ico(contractPaths.includes(route.path))"
+                    />
+                    <span
+                      class="text-sm font-medium flex-1 text-left group-data-[collapsible=icon]:hidden"
+                      :class="txt(contractPaths.includes(route.path))"
+                    >Contracts</span>
+                    <ChevronDown
+                      @click.stop="contractsOpen = !contractsOpen"
+                      class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-data-[collapsible=icon]:hidden"
+                      :class="[contractsOpen ? 'rotate-180' : 'rotate-0', ico(contractPaths.includes(route.path))]"
+                    />
+                  </button>
+                </SidebarMenuButton>
 
                 <!-- Sub-items -->
                 <SidebarMenuSub v-show="contractsOpen">

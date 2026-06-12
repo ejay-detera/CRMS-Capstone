@@ -126,11 +126,16 @@ const searchQuery = ref("");
     >
       <!-- Logo -->
       <SidebarHeader class="border-b border-white/10 px-4 py-5">
-        <div class="flex items-center justify-center overflow-hidden">
+        <div class="relative mx-auto h-12 w-44 overflow-hidden transition-all duration-300 ease-in-out group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">
           <img
             :src="logoUrl"
             alt="SBSI logo"
-            class="h-12 w-44 object-contain group-data-[collapsible=icon]:w-10"
+            class="absolute inset-0 m-auto h-12 max-w-44 object-contain transition-opacity duration-300 ease-in-out group-data-[collapsible=icon]:opacity-0"
+          />
+          <img
+            src="/sbsi-logo.png"
+            alt="SBSI logo"
+            class="absolute inset-0 m-auto h-10 w-10 object-contain opacity-0 transition-opacity duration-300 ease-in-out group-data-[collapsible=icon]:opacity-100"
           />
         </div>
       </SidebarHeader>
