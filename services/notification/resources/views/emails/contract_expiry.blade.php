@@ -88,7 +88,7 @@
                                                     </table>
                                                 </td>
                                                 <td style="font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #FFFFFF;">
-                                                    CRMS <span style="font-weight: 400; color: rgba(255, 255, 255, 0.65);">Capstone</span>
+                                                    CMS <span style="font-weight: 400; color: rgba(255, 255, 255, 0.65);">Capstone</span>
                                                 </td>
                                             </tr>
                                         </table>
@@ -247,11 +247,11 @@
                     <tr>
                         <td style="padding: 28px 32px; background-color: #FAFBFD; border-top: 1px solid #EAEBF4; text-align: center; font-family: 'Poppins', sans-serif;">
                             <p style="margin: 0 0 10px 0; font-family: 'Poppins', sans-serif; font-size: 11px; color: #8F91A2; line-height: 1.8;">
-                                This is an automated notification from the CRMS Contract Management System.<br>
+                                This is an automated notification from the CMS Contract Management System.<br>
                                 Please do not reply directly to this email.
                             </p>
                             <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 10px; color: #B0B2C3; font-weight: 500;">
-                                &copy; {{ date('Y') }} CRMS Capstone. All rights reserved.
+                                &copy; {{ date('Y') }} CMS Capstone. All rights reserved.
                             </p>
                         </td>
                     </tr>
