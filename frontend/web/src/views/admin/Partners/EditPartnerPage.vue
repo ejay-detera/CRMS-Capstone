@@ -167,14 +167,14 @@ async function handleSubmit() {
       <!-- Form card -->
       <div class="bg-white rounded-lg border border-black/8 shadow-sm overflow-hidden">
         
-        <!-- Section: Organisation Info -->
+        <!-- Section: Organization Info -->
         <div class="px-6 py-5 border-b border-black/6">
-          <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Organisation Info</h2>
+          <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Organization Info</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             <div class="flex flex-col gap-1.5">
               <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Name <span class="text-red-500">*</span></label>
-              <input v-model="form.name" @blur="touched.name = true" type="text" placeholder="Organisation name" maxlength="100"
+              <input v-model="form.name" @blur="touched.name = true" type="text" placeholder="Organization name" maxlength="100"
                 class="w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
                 :class="(touched.name && (!form.name || form.name.trim().length < 2)) ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'" />
               <p v-if="touched.name && !form.name" class="text-xs text-red-500">Name is required.</p>
@@ -211,7 +211,7 @@ async function handleSubmit() {
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Status</label>
+              <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Status <span class="text-red-500">*</span></label>
               <select v-model="form.status"
                 class="h-9 rounded-md border border-black/12 bg-white px-3 text-sm text-black focus:outline-none focus:ring-2 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15 transition">
                 <option value="Active">Active</option>
