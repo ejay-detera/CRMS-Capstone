@@ -11,9 +11,9 @@ Artisan::command('mail:test {email}', function (string $email) {
     $this->info("Sending test email to {$email}...");
     
     try {
-        \Illuminate\Support\Facades\Mail::raw('This is a test email sent from CRMS Capstone using Brevo!', function ($message) use ($email) {
+        \Illuminate\Support\Facades\Mail::raw('This is a test email sent from CMS Capstone using Brevo!', function ($message) use ($email) {
             $message->to($email)
-                    ->subject('CRMS Brevo SMTP Test');
+                    ->subject('CMS Brevo SMTP Test');
         });
         $this->info("Test email successfully dispatched!");
     } catch (\Exception $e) {

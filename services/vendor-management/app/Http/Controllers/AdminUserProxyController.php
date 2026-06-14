@@ -19,7 +19,7 @@ class AdminUserProxyController extends Controller
     }
 
     /**
-     * Proxy user creation to auth-service with CRMS-specific constraints.
+     * Proxy user creation to auth-service with CMS-specific constraints.
      */
     public function store(Request $request)
     {
@@ -32,7 +32,7 @@ class AdminUserProxyController extends Controller
             'department_name' => 'required|string',
         ]);
 
-        // 2. Enforce CRMS Constraints
+        // 2. Enforce CMS Constraints
         if (strcasecmp($request->department_name, 'Finance') !== 0) {
             return response()->json([
                 'message' => 'Unauthorized. This admin can only create users for the Finance department.'

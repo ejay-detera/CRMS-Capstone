@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 class InternalAuditController extends Controller
 {
     /**
-     * Receive an audit event from internal auth service and write it to CRMS audit log.
+     * Receive an audit event from internal auth service and write it to CMS audit log.
      */
     public function receive(Request $request)
     {

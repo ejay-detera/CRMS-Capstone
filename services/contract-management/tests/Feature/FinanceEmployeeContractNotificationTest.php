@@ -24,7 +24,7 @@ class FinanceEmployeeContractNotificationTest extends TestCase
                     'first_name' => 'John',
                     'last_name' => 'Doe',
                     'role' => $role,
-                    'permissions' => ['crms.contracts.create'],
+                    'permissions' => ['cms.contracts.create'],
                     'department' => $department,
                 ]
             ], 200)
@@ -45,7 +45,7 @@ class FinanceEmployeeContractNotificationTest extends TestCase
                     'first_name' => 'John',
                     'last_name' => 'Doe',
                     'role' => 'Employee',
-                    'permissions' => ['crms.contracts.create'],
+                    'permissions' => ['cms.contracts.create'],
                     'department' => 'Finance',
                 ]
             ], 200),
@@ -96,7 +96,7 @@ class FinanceEmployeeContractNotificationTest extends TestCase
                     'first_name' => 'John',
                     'last_name' => 'Doe',
                     'role' => 'Sales',
-                    'permissions' => ['crms.contracts.create'],
+                    'permissions' => ['cms.contracts.create'],
                     'department' => 'Sales',
                 ]
             ], 200)

@@ -17,17 +17,17 @@ interface User {
 export async function mockLogin(page: Page, role: 'Admin' | 'Manager' | 'Sales' = 'Admin') {
   const user: User = {
     id: 99,
-    email: `${role.toLowerCase()}@crms-test.com`,
+    email: `${role.toLowerCase()}@cms-test.com`,
     first_name: 'Test',
     last_name: role,
     role: role,
     permissions: [
-      'crms.dashboard.view',
-      'crms.users.view',
-      'crms.roles.view',
-      'crms.partners.view',
-      'crms.system.ocr',
-      'crms.system.risk_assessment'
+      'cms.dashboard.view',
+      'cms.users.view',
+      'cms.roles.view',
+      'cms.partners.view',
+      'cms.system.ocr',
+      'cms.system.risk_assessment'
     ]
   }
 

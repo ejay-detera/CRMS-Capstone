@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Plus, FileText, AlertTriangle } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
+import { useAuth } from '@/composables/useAuth'
 import type { Contract } from '@/types/contract'
 
 const props = defineProps<{
@@ -11,6 +12,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const { hasPermission } = useAuth()
 
 const expiringSoon = computed(() =>
   props.contracts.filter(c => c.days >= 0 && c.days <= 30).slice(0, 4)
@@ -56,7 +58,7 @@ const expiringSoon = computed(() =>
         <h2 class="text-sm font-semibold text-black">Quick Actions</h2>
       </div>
       <div class="px-5 py-4 space-y-2.5">
-        <Button @click="router.push('/sales/contracts/create')"
+        <Button v-if="hasPermission('cms.contracts.create')" @click="router.push('/sales/contracts/create')"
           class="w-full h-9 justify-start gap-2.5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
           <Plus class="w-4 h-4" /> New Contract Request
         </Button>

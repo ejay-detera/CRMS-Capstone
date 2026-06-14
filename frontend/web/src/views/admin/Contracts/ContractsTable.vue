@@ -317,7 +317,7 @@ function avatarColor(name: string) {
                     <Pencil class="w-3.5 h-3.5 text-black/40" /> Edit contract
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem v-if="hasPermission('crms.contracts.delete')" @click="emit('delete', c.id)"
+                  <DropdownMenuItem v-if="hasPermission('cms.contracts.delete')" @click="emit('delete', c.id)"
                     class="gap-2.5 text-sm cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
                     <Trash2 class="w-3.5 h-3.5" /> Delete
                   </DropdownMenuItem>

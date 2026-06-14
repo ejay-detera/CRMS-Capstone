@@ -60,15 +60,15 @@ export function useAuth() {
     // Merge frontend-only permissions
     const activeRole = role.value
     if (activeRole) {
-      const localSaved = localStorage.getItem(`crms_frontend_perms_${activeRole}`)
+      const localSaved = localStorage.getItem(`cms_frontend_perms_${activeRole}`)
       if (localSaved) {
         const savedIds: number[] = JSON.parse(localSaved)
-        if (savedIds.includes(-1)) perms.push('crms.system.ocr')
-        if (savedIds.includes(-2)) perms.push('crms.system.risk_assessment')
+        if (savedIds.includes(-1)) perms.push('cms.system.ocr')
+        if (savedIds.includes(-2)) perms.push('cms.system.risk_assessment')
       } else {
         // Defaults (aligned with FR Matrix)
         if (['Manager', 'Sales'].includes(activeRole)) {
-          perms.push('crms.system.ocr', 'crms.system.risk_assessment')
+          perms.push('cms.system.ocr', 'cms.system.risk_assessment')
         }
       }
     }
@@ -200,9 +200,9 @@ export function useAuth() {
     // 1. Exact match
     if (permissions.value.includes(permission)) return true
 
-    // 2. Map standard dot slugs like "crms.partners.view" to alternative formats:
+    // 2. Map standard dot slugs like "cms.partners.view" to alternative formats:
     // e.g. "view-partners", "partners.view", "view_partners", "partners-view", "view partners"
-    const match = permission.match(/^crms\.([^.]+)\.([^.]+)$/)
+    const match = permission.match(/^cms\.([^.]+)\.([^.]+)$/)
     if (match) {
       const [, resource, action] = match
       const alts = [

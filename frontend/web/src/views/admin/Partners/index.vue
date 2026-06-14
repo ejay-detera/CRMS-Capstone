@@ -173,7 +173,7 @@ function exportXLSX() {
         <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
-        <Button id="add-partner-btn" v-if="hasPermission('crms.partners.create')" @click="router.push('/admin/partners/create?type=' + activeTab)" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+        <Button id="add-partner-btn" v-if="hasPermission('cms.partners.create')" @click="router.push('/admin/partners/create?type=' + activeTab)" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
           <Plus class="w-5 h-5" />
         </Button>
       </div>
@@ -230,13 +230,13 @@ function exportXLSX() {
     </div>
 
     <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" :loading="loading"
-      :can-delete="hasPermission('crms.partners.delete')"
+      :can-delete="hasPermission('cms.partners.delete')"
       @open-detail="openDetail" @open-delete="openDelete" />
     <PartnersTable v-else
       :paginated="filtered" :filtered="filtered" :active-tab="activeTab"
       :selected-ids="selectedIds" :all-page-selected="allPageSelected"
       :current-page="currentPage" :items-per-page="itemsPerPage"
-      :can-edit="hasPermission('crms.partners.edit')" :can-delete="hasPermission('crms.partners.delete')" :loading="loading"
+      :can-edit="hasPermission('cms.partners.edit')" :can-delete="hasPermission('cms.partners.delete')" :loading="loading"
       @open-detail="openDetail" @open-edit="openEdit" @open-delete="openDelete"
       @toggle-row="toggleRow" @toggle-select-all="toggleSelectAll"
       @update:current-page="currentPage = $event"

@@ -1,4 +1,4 @@
-# CRMS Capstone — Codex Rules
+# CMS Capstone — Codex Rules
 
 ## Required References
 

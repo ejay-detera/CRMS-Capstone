@@ -145,7 +145,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'partners/create',
         name: 'manager-partners-create',
         component: () => import('@/views/admin/Partners/AddPartnerPage.vue'),
-        meta: { requiresPermission: 'crms.partners.create' },
+        meta: { requiresPermission: 'cms.partners.create' },
       },
       {
         path: 'partners/:code',
@@ -201,13 +201,13 @@ const routes: Array<RouteRecordRaw> = [
         path: 'partners',
         name: 'sales-partners',
         component: () => import('@/views/sales/Partners/index.vue'),
-        meta: { requiresPermission: 'crms.partners.view' },
+        meta: { requiresPermission: 'cms.partners.view' },
       },
       {
         path: 'partners/:code',
         name: 'sales-partners-detail',
         component: () => import('@/views/admin/Partners/PartnerDetail/index.vue'),
-        meta: { requiresPermission: 'crms.partners.view' },
+        meta: { requiresPermission: 'cms.partners.view' },
       },
       {
         path: 'profile',
@@ -226,7 +226,7 @@ const routes: Array<RouteRecordRaw> = [
       if (role.value === 'Manager') return '/manager/dashboard'
       if (['Sales', 'Employee', 'Finance'].includes(role.value || '')) return '/sales/dashboard'
 
-      // Fallback: escape CRMS router entirely and go to auth-module login
+      // Fallback: escape CMS router entirely and go to auth-module login
       window.location.href = '/'
       return '/'
     },
@@ -234,7 +234,7 @@ const routes: Array<RouteRecordRaw> = [
 ]
 
 const router = createRouter({
-  history: createWebHistory('/crms/'),
+  history: createWebHistory('/cms/'),
   routes,
 })
 
@@ -263,10 +263,10 @@ router.beforeEach((to: RouteLocationNormalized) => {
   }
 
   // Role-based access control (Strict Role Isolation)
-  // CRMS-capstone only supports standard roles: Admin, Manager, Sales, Employee, Finance
+  // CMS-capstone only supports standard roles: Admin, Manager, Sales, Employee, Finance
   const allowedRoles = ['Admin', 'Manager', 'Sales', 'Employee', 'Finance']
 
-  // If the user's role isn't recognized by CRMS (e.g., IT Admin, Super Admin), block them entirely
+  // If the user's role isn't recognized by CMS (e.g., IT Admin, Super Admin), block them entirely
   if (!allowedRoles.includes(role.value || '')) {
     return { name: 'not-found' }
   }

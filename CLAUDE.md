@@ -1,4 +1,4 @@
-# CRMS Capstone — Claude Code Rules
+# CMS Capstone — Claude Code Rules
 
 ## Required References
 

@@ -22,11 +22,11 @@ class AuditLogTest extends TestCase
      */
     public function test_internal_webhook_receive_success()
     {
-        config(['app.internal_service_secret' => 'crms-internal-secret-key-2026']);
-        putenv('INTERNAL_SERVICE_SECRET=crms-internal-secret-key-2026');
+        config(['app.internal_service_secret' => 'cms-internal-secret-key-2026']);
+        putenv('INTERNAL_SERVICE_SECRET=cms-internal-secret-key-2026');
 
         $response = $this->withHeaders([
-            'X-Internal-Secret' => 'crms-internal-secret-key-2026'
+            'X-Internal-Secret' => 'cms-internal-secret-key-2026'
         ])->postJson('/api/internal/audit-event', [
             'action' => 'login',
             'entity_type' => 'Session',
@@ -50,8 +50,8 @@ class AuditLogTest extends TestCase
      */
     public function test_internal_webhook_unauthorized_secret()
     {
-        config(['app.internal_service_secret' => 'crms-internal-secret-key-2026']);
-        putenv('INTERNAL_SERVICE_SECRET=crms-internal-secret-key-2026');
+        config(['app.internal_service_secret' => 'cms-internal-secret-key-2026']);
+        putenv('INTERNAL_SERVICE_SECRET=cms-internal-secret-key-2026');
 
         $response = $this->withHeaders([
             'X-Internal-Secret' => 'wrong-secret'
@@ -69,8 +69,8 @@ class AuditLogTest extends TestCase
      */
     public function test_audit_log_aggregator_success()
     {
-        config(['app.internal_service_secret' => 'crms-internal-secret-key-2026']);
-        putenv('INTERNAL_SERVICE_SECRET=crms-internal-secret-key-2026');
+        config(['app.internal_service_secret' => 'cms-internal-secret-key-2026']);
+        putenv('INTERNAL_SERVICE_SECRET=cms-internal-secret-key-2026');
 
         // 1. Seed two local audit logs: one contract event and one login event
         AuditLog::create([
@@ -110,7 +110,7 @@ class AuditLogTest extends TestCase
                     'id' => 1,
                     'email' => 'admin@sbsi.com',
                     'role' => 'Admin',
-                    'permissions' => ['crms.users.view'],
+                    'permissions' => ['cms.users.view'],
                     'department' => 'Finance'
                 ]
             ], 200),
@@ -144,9 +144,9 @@ class AuditLogTest extends TestCase
         $data = $response->json()['data'];
         $this->assertGreaterThanOrEqual(2, count($data));
 
-        // All entries must be from the local CRMS store — no 'auth' source rows
+        // All entries must be from the local CMS store — no 'auth' source rows
         $sources = collect($data)->pluck('source')->unique()->toArray();
-        $this->assertContains('crms', $sources);
+        $this->assertContains('cms', $sources);
         $this->assertNotContains('auth', $sources);
 
         // Verify Login Success entry is present

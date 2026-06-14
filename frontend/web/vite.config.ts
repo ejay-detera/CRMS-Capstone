@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
-  base: '/crms/',
+  base: '/cms/',
   plugins: [vue(), tailwindcss()],
   resolve: {
     alias: {

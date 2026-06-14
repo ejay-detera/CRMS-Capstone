@@ -10,7 +10,7 @@ use Carbon\Carbon;
 class AuditLogController extends Controller
 {
     /**
-     * Display a listing of local CRMS audit logs (login/logout events are written
+     * Display a listing of local CMS audit logs (login/logout events are written
      * via the internal webhook from the auth service).
      */
     public function index(Request $request)
@@ -45,8 +45,8 @@ class AuditLogController extends Controller
             \Illuminate\Support\Facades\Log::warning('Failed to fetch user list for audit log mapping: ' . $e->getMessage());
         }
 
-        // 2. Fetch local CRMS logs
-        $crmsLogsQuery = AuditLog::query()->where(function ($query) {
+        // 2. Fetch local CMS logs
+        $cmsLogsQuery = AuditLog::query()->where(function ($query) {
             $query->whereIn('user_department', ['Finance', 'Sales'])
                   ->orWhereNotIn('entity_type', ['Contract', 'Document', 'Supplier', 'BusinessPartner']);
         });
@@ -54,50 +54,50 @@ class AuditLogController extends Controller
         if ($request->has('action') && !empty($request->action)) {
             $actionFilter = $request->action;
             if ($actionFilter === 'Contract Created') {
-                $crmsLogsQuery->where('action', 'created')->where('entity_type', 'Contract');
+                $cmsLogsQuery->where('action', 'created')->where('entity_type', 'Contract');
             } elseif ($actionFilter === 'Contract Updated') {
-                $crmsLogsQuery->where('action', 'updated')->where('entity_type', 'Contract');
+                $cmsLogsQuery->where('action', 'updated')->where('entity_type', 'Contract');
             } elseif ($actionFilter === 'Contract Deleted') {
-                $crmsLogsQuery->where('action', 'deleted')->where('entity_type', 'Contract');
+                $cmsLogsQuery->where('action', 'deleted')->where('entity_type', 'Contract');
             } elseif ($actionFilter === 'Document Uploaded' || $actionFilter === 'document_uploaded') {
-                $crmsLogsQuery->where(function($q) {
+                $cmsLogsQuery->where(function($q) {
                     $q->where('action', 'document_uploaded')
                       ->orWhere(function($sq) {
                           $sq->where('action', 'created')->where('entity_type', 'Document');
                       });
                 });
             } elseif ($actionFilter === 'Document Deleted' || $actionFilter === 'document_deleted') {
-                $crmsLogsQuery->where(function($q) {
+                $cmsLogsQuery->where(function($q) {
                     $q->where('action', 'document_deleted')
                       ->orWhere(function($sq) {
                           $sq->where('action', 'deleted')->where('entity_type', 'Document');
                       });
                 });
             } elseif ($actionFilter === 'Partner Added') {
-                $crmsLogsQuery->where('action', 'created')->where('entity_type', 'BusinessPartner');
+                $cmsLogsQuery->where('action', 'created')->where('entity_type', 'BusinessPartner');
             } elseif ($actionFilter === 'Partner Updated') {
-                $crmsLogsQuery->where('action', 'updated')->where('entity_type', 'BusinessPartner');
+                $cmsLogsQuery->where('action', 'updated')->where('entity_type', 'BusinessPartner');
             } elseif ($actionFilter === 'User Created') {
-                $crmsLogsQuery->where('action', 'user_created');
+                $cmsLogsQuery->where('action', 'user_created');
             } elseif ($actionFilter === 'Login' || $actionFilter === 'Login Success') {
-                $crmsLogsQuery->where('action', 'Login Success');
+                $cmsLogsQuery->where('action', 'Login Success');
             } elseif ($actionFilter === 'Logout') {
-                $crmsLogsQuery->where('action', 'Logout');
+                $cmsLogsQuery->where('action', 'Logout');
             } else {
-                $crmsLogsQuery->where('action', $actionFilter);
+                $cmsLogsQuery->where('action', $actionFilter);
             }
         }
         if ($request->has('date') && !empty($request->date)) {
-            $crmsLogsQuery->whereDate('performed_at', $request->date);
+            $cmsLogsQuery->whereDate('performed_at', $request->date);
         }
 
-        $crmsLogs = $crmsLogsQuery->orderBy('performed_at', 'desc')->limit(150)->get();
+        $cmsLogs = $cmsLogsQuery->orderBy('performed_at', 'desc')->limit(150)->get();
 
-        // 3. Normalize local CRMS logs
+        // 3. Normalize local CMS logs
         $merged = [];
 
-        // Process CRMS logs
-        foreach ($crmsLogs as $log) {
+        // Process CMS logs
+        foreach ($cmsLogs as $log) {
             $userName = $log->user_name ?? ($userMap[$log->user_id] ?? 'Finance User');
             $userEmail = $log->user_email ?? ($emailMap[$log->user_id] ?? '');
             $userRole = $log->user_role ?? ($roleMap[$log->user_id] ?? 'Finance');
@@ -190,8 +190,8 @@ class AuditLogController extends Controller
                 : now()->toIso8601String();
 
             $merged[] = [
-                'id' => 'crms-' . $log->audit_id,
-                'source' => 'crms',
+                'id' => 'cms-' . $log->audit_id,
+                'source' => 'cms',
                 'user_id' => $log->user_id,
                 'user_name' => $userName,
                 'user_email' => $userEmail,

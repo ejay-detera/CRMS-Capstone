@@ -14,7 +14,7 @@ class AdminUserProxyTest extends TestCase
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
                 'valid' => true,
-                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['crms.users.create'], 'department' => 'Finance']
+                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['cms.users.create'], 'department' => 'Finance']
             ]),
             'http://auth-service:8000/api/admin/role-options' => Http::response([
                 ['id' => 10, 'name' => 'Employee'],
@@ -47,7 +47,7 @@ class AdminUserProxyTest extends TestCase
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
                 'valid' => true,
-                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['crms.users.create'], 'department' => 'Finance']
+                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['cms.users.create'], 'department' => 'Finance']
             ])
         ]);
 
@@ -69,7 +69,7 @@ class AdminUserProxyTest extends TestCase
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
                 'valid' => true,
-                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['crms.users.create'], 'department' => 'Finance']
+                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['cms.users.create'], 'department' => 'Finance']
             ]),
             'http://auth-service:8000/api/admin/role-options' => Http::response([
                 'message' => 'Unauthenticated or session missing.'

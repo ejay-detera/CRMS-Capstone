@@ -156,7 +156,7 @@ function exportXLSX() {
         <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
-        <Button v-if="hasPermission('crms.partners.create')" @click="router.push('/manager/partners/create?type=' + activeTab)" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+        <Button v-if="hasPermission('cms.partners.create')" @click="router.push('/manager/partners/create?type=' + activeTab)" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
           <Plus class="w-5 h-5" />
         </Button>
       </div>
@@ -213,13 +213,13 @@ function exportXLSX() {
     </div>
 
     <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" :loading="loading"
-      :can-delete="hasPermission('crms.partners.delete')"
+      :can-delete="hasPermission('cms.partners.delete')"
       @open-detail="openDetail" @open-delete="openDelete" />
     <PartnersTable v-else
       :paginated="paginated" :filtered="filtered" :active-tab="activeTab"
       :selected-ids="selectedIds" :all-page-selected="allPageSelected"
       :current-page="currentPage" :items-per-page="itemsPerPage"
-      :can-delete="hasPermission('crms.partners.delete')" :loading="loading"
+      :can-delete="hasPermission('cms.partners.delete')" :loading="loading"
       @open-detail="openDetail"
       @toggle-row="toggleRow" @toggle-select-all="toggleSelectAll" @open-delete="openDelete"
       @update:current-page="currentPage = $event"

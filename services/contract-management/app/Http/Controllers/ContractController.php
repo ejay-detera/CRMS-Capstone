@@ -126,7 +126,7 @@ class ContractController extends Controller
             $thirtyDays = now()->addDays(30)->toDateString();
 
             $statsQuery = Contract::query();
-            if (in_array($role, ['Sales', 'Finance Employee'])) {
+            if (in_array($role, ['Sales', 'Employee'])) {
                 $statsQuery->where('created_by', $request->get('auth_id'));
             }
 
@@ -715,6 +715,8 @@ class ContractController extends Controller
         ]);
 
         $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
+
+        SyncContractToMeilisearch::dispatch($this->formatContract($contract));
 
         return response()->json([
             'message' => 'Contract status updated.',

@@ -12,7 +12,7 @@ class SupplierCrudTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function mockAuthService(string $role = 'Admin', array $permissions = ['crms.partners.view', 'crms.partners.create', 'crms.partners.edit', 'crms.partners.delete'])
+    protected function mockAuthService(string $role = 'Admin', array $permissions = ['cms.partners.view', 'cms.partners.create', 'cms.partners.edit', 'cms.partners.delete'])
     {
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
@@ -60,7 +60,7 @@ class SupplierCrudTest extends TestCase
     public function test_non_admin_cannot_create_supplier()
     {
         // Mock non-admin who does not have manage-suppliers permission
-        $this->mockAuthService('Employee', ['crms.partners.view']);
+        $this->mockAuthService('Employee', ['cms.partners.view']);
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer some-token',

@@ -2,17 +2,26 @@
 import { computed, ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
 import RequestsTable      from './RequestsTable.vue'
 import type { ContractRequest, RequestFilterTab } from '@/types/contractRequest'
 import { useApiCache } from '@/composables/useApiCache'
 
 const { success, error } = useToast()
 const router = useRouter()
+const { state: authState } = useAuth()
 
-const { state: cacheState, fetchRequests: fetchRequestsCached, updateRequestStatusInCache } = useApiCache()
+const {
+  state: cacheState,
+  fetchRequests: fetchRequestsCached,
+  updateRequestStatusInCache,
+  updateContractInCache
+} = useApiCache()
 
 const requests = computed(() => cacheState.requests || [])
 const loading  = computed(() => cacheState.requestsLoading)
+const actionInProgress = ref(false)
+const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
 
 async function fetchRequests() {
   try {
@@ -71,19 +80,74 @@ function openDetail(r: ContractRequest) {
   router.push(`/manager/contract-requests/${r.id}`)
 }
 
-// Optimistic local-state updates — PATCH endpoints can be wired later
-function handleApprove(id: string) {
+async function handleApprove(id: string) {
   const r = requests.value.find(x => x.id === id)
-  if (!r) return
-  updateRequestStatusInCache(id, 'Approved')
-  success('Request approved', `${r.businessPartner}'s contract request has been approved.`)
+  if (!r || actionInProgress.value) return
+
+  const numericId = parseInt(id.replace('REQ-', ''), 10)
+  const contractId = String(numericId)
+
+  actionInProgress.value = true
+  try {
+    const res = await fetch(`${apiBase}/contracts/${numericId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+      body: JSON.stringify({ approval_status: 'Approved', workflow_status: 'SBSI Review' }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      error('Failed to approve', data.message ?? 'Something went wrong.')
+      return
+    }
+
+    updateRequestStatusInCache(id, 'Approved')
+    updateContractInCache(contractId, { approvalStatus: 'Approved', workflowStatus: 'SBSI Review' })
+    success('Request approved', `${r.businessPartner}'s contract request has been approved.`)
+  } catch {
+    error('Network error', 'Could not reach the server. Please try again.')
+  } finally {
+    actionInProgress.value = false
+  }
 }
 
-function handleReject(id: string, reason: string = '') {
+async function handleReject(id: string, reason: string = '') {
   const r = requests.value.find(x => x.id === id)
-  if (!r) return
-  updateRequestStatusInCache(id, 'Rejected', { rejectionReason: reason })
-  success('Request rejected', `${r.businessPartner}'s contract request has been rejected.`)
+  if (!r || actionInProgress.value) return
+
+  const numericId = parseInt(id.replace('REQ-', ''), 10)
+  const contractId = String(numericId)
+
+  actionInProgress.value = true
+  try {
+    const res = await fetch(`${apiBase}/contracts/${numericId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+      body: JSON.stringify({ approval_status: 'Rejected' }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      error('Failed to reject', data.message ?? 'Something went wrong.')
+      return
+    }
+
+    updateRequestStatusInCache(id, 'Rejected', { rejectionReason: reason })
+    updateContractInCache(contractId, { approvalStatus: 'Rejected', workflowStatus: null })
+    success('Request rejected', `${r.businessPartner}'s contract request has been rejected.`)
+  } catch {
+    error('Network error', 'Could not reach the server. Please try again.')
+  } finally {
+    actionInProgress.value = false
+  }
 }
 
 </script>

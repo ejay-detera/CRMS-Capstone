@@ -34,7 +34,7 @@ final class ContractExpiryMail extends Mailable
             'expiry_1' => '⚠️ URGENT: Contract Expiring Tomorrow',
             'expiry_30' => '📅 REMINDER: Contract Expiring in Less than 30 Days',
             'expiry_90' => 'ℹ️ NOTICE: Contract Expiring in 90 Days',
-            default => '🔔 CRMS Contract Expiry Notice',
+            default => '🔔 CMS Contract Expiry Notice',
         };
 
         return new Envelope(

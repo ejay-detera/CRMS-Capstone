@@ -21,7 +21,7 @@ class AuthCommunicationTest extends TestCase
                     'id' => 1,
                     'email' => 'manager@example.com',
                     'role' => 'Manager',
-                    'permissions' => ['crms.contracts.view'],
+                    'permissions' => ['cms.contracts.view'],
                     'department' => 'Finance'
                 ]
             ], 200)

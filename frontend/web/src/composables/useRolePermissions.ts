@@ -5,24 +5,24 @@ const AUTH_API = import.meta.env.VITE_AUTH_API_URL as string
 
 // ── Slug → UI translation map ──────────────────────────────────────────
 // Maps each DB permission slug to the frontend category key and pill label.
-// Add new slugs here when new CRMS permissions are seeded.
+// Add new slugs here when new CMS permissions are seeded.
 const SLUG_UI_MAP: Record<string, { category: string; label: string }> = {
   // Contracts
-  'crms.contracts.view':    { category: 'contracts', label: 'View' },
-  'crms.contracts.create':  { category: 'contracts', label: 'Create' },
-  'crms.contracts.edit':    { category: 'contracts', label: 'Edit' },
-  'crms.contracts.delete':  { category: 'contracts', label: 'Delete' },
-  'crms.contracts.approve': { category: 'contracts', label: 'Approve' },
+  'cms.contracts.view':    { category: 'contracts', label: 'View' },
+  'cms.contracts.create':  { category: 'contracts', label: 'Create' },
+  'cms.contracts.edit':    { category: 'contracts', label: 'Edit' },
+  'cms.contracts.delete':  { category: 'contracts', label: 'Delete' },
+  'cms.contracts.approve': { category: 'contracts', label: 'Approve' },
 
   // Business Partners & Suppliers
-  'crms.partners.view':   { category: 'partners', label: 'View' },
-  'crms.partners.create': { category: 'partners', label: 'Create' },
-  'crms.partners.edit':   { category: 'partners', label: 'Edit' },
-  'crms.partners.delete': { category: 'partners', label: 'Delete' },
+  'cms.partners.view':   { category: 'partners', label: 'View' },
+  'cms.partners.create': { category: 'partners', label: 'Create' },
+  'cms.partners.edit':   { category: 'partners', label: 'Edit' },
+  'cms.partners.delete': { category: 'partners', label: 'Delete' },
 
   // System (frontend-only)
-  'crms.system.ocr':             { category: 'system', label: 'Use of OCR' },
-  'crms.system.risk_assessment': { category: 'system', label: 'AI Risk Assessment' },
+  'cms.system.ocr':             { category: 'system', label: 'Use of OCR' },
+  'cms.system.risk_assessment': { category: 'system', label: 'AI Risk Assessment' },
 }
 
 // The fixed UI category structure (labels stay exactly as designed)
@@ -31,29 +31,29 @@ export const UI_CATEGORIES: Category[] = [
     key: 'contracts',
     label: 'Contracts',
     permissions: [
-      { key: 'crms.contracts.view',    label: 'View' },
-      { key: 'crms.contracts.create',  label: 'Create' },
-      { key: 'crms.contracts.edit',    label: 'Edit' },
-      { key: 'crms.contracts.delete',  label: 'Delete' },
-      { key: 'crms.contracts.approve', label: 'Approve' },
+      { key: 'cms.contracts.view',    label: 'View' },
+      { key: 'cms.contracts.create',  label: 'Create' },
+      { key: 'cms.contracts.edit',    label: 'Edit' },
+      { key: 'cms.contracts.delete',  label: 'Delete' },
+      { key: 'cms.contracts.approve', label: 'Approve' },
     ],
   },
   {
     key: 'partners',
     label: 'Business Partners & Suppliers',
     permissions: [
-      { key: 'crms.partners.view',   label: 'View' },
-      { key: 'crms.partners.create', label: 'Create' },
-      { key: 'crms.partners.edit',   label: 'Edit' },
-      { key: 'crms.partners.delete', label: 'Delete' },
+      { key: 'cms.partners.view',   label: 'View' },
+      { key: 'cms.partners.create', label: 'Create' },
+      { key: 'cms.partners.edit',   label: 'Edit' },
+      { key: 'cms.partners.delete', label: 'Delete' },
     ],
   },
   {
     key: 'system',
     label: 'System Settings',
     permissions: [
-      { key: 'crms.system.ocr',             label: 'Use of OCR' },
-      { key: 'crms.system.risk_assessment', label: 'AI Risk Assessment' },
+      { key: 'cms.system.ocr',             label: 'Use of OCR' },
+      { key: 'cms.system.risk_assessment', label: 'AI Risk Assessment' },
     ],
   },
 ]
@@ -114,20 +114,20 @@ export function useRolePermissions() {
   async function fetchAllPermissions() {
     const data = await apiFetch<any>('/admin/permissions?per_page=100')
     const permissionsArray = Array.isArray(data) ? data : (data.data || [])
-    // Only keep CRMS CRUD permissions that appear in the UI map
+    // Only keep CMS CRUD permissions that appear in the UI map
     allPermissions.value = permissionsArray.filter((p: ApiPermission) => SLUG_UI_MAP[p.slug] !== undefined)
     
     // Inject frontend-only permissions
     allPermissions.value.push(
-      { id: -1, name: 'Use of OCR', slug: 'crms.system.ocr', system: 'crms' },
-      { id: -2, name: 'AI Risk Assessment', slug: 'crms.system.risk_assessment', system: 'crms' }
+      { id: -1, name: 'Use of OCR', slug: 'cms.system.ocr', system: 'cms' },
+      { id: -2, name: 'AI Risk Assessment', slug: 'cms.system.risk_assessment', system: 'cms' }
     )
   }
 
   /** Load permissions already assigned to a single role */
   async function fetchRolePermissions(roleId: number) {
     const ids = await apiFetch<number[]>(`/admin/roles/${roleId}/permissions`)
-    // Filter to only include IDs that exist in allPermissions (which contains only crms slugs)
+    // Filter to only include IDs that exist in allPermissions (which contains only cms slugs)
     const allowedIds = new Set(allPermissions.value.map(p => p.id))
     const validIds = ids.filter(id => allowedIds.has(id))
     
@@ -136,7 +136,7 @@ export function useRolePermissions() {
     // Read frontend-only permissions state from localStorage keyed by role name
     const roleName = roles.value.find(r => r.id === roleId)?.name
     if (roleName) {
-      const localSaved = localStorage.getItem(`crms_frontend_perms_${roleName}`)
+      const localSaved = localStorage.getItem(`cms_frontend_perms_${roleName}`)
       if (localSaved) {
         const savedIds: number[] = JSON.parse(localSaved)
         savedIds.forEach(id => {
@@ -208,7 +208,7 @@ export function useRolePermissions() {
     // Save frontend-only permissions in localStorage
     const roleName = roles.value.find(r => r.id === roleId)?.name
     if (roleName) {
-      localStorage.setItem(`crms_frontend_perms_${roleName}`, JSON.stringify(frontendIds))
+      localStorage.setItem(`cms_frontend_perms_${roleName}`, JSON.stringify(frontendIds))
     }
     
     await apiFetch(`/admin/roles/${roleId}/permissions`, {

@@ -115,7 +115,7 @@ return [
         'mongodb' => [
             'driver' => 'mongodb',
             'dsn' => env('MONGODB_URI', 'mongodb://mongodb:27017'),
-            'database' => env('MONGODB_DATABASE', 'crms-db'),
+            'database' => env('MONGODB_DATABASE', 'cms-db'),
         ],
 
     ],

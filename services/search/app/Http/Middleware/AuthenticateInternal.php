@@ -37,7 +37,7 @@ class AuthenticateInternal
             'auth_permissions' => $authData['user']['permissions'] ?? [],
         ]);
 
-        // CRMS-capstone Strict Role Isolation
+        // CMS-capstone Strict Role Isolation
         $role = $authData['user']['role'] ?? '';
         $allowedRoles = ['Admin', 'Manager', 'Sales', 'Employee', 'Finance Manager', 'Finance Employee', 'Finance', 'Super Admin', 'IT Admin'];
 

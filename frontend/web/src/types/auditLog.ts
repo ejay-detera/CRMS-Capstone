@@ -11,7 +11,7 @@ export type ActionType =
 
 export interface LogEntry {
   id: string
-  source: 'crms' | 'auth'
+  source: 'cms' | 'auth'
   user_id: number
   user_name: string
   role?: string

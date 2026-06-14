@@ -18,7 +18,7 @@ class AdminUserProxyTest extends TestCase
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
                 'valid' => true,
-                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['crms.users.create'], 'department' => 'Finance']
+                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['cms.users.create'], 'department' => 'Finance']
             ]),
             // Mock fetching roles
             'http://auth-service:8000/api/admin/role-options' => Http::response([
@@ -59,7 +59,7 @@ class AdminUserProxyTest extends TestCase
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
                 'valid' => true,
-                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['crms.users.create'], 'department' => 'Finance']
+                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['cms.users.create'], 'department' => 'Finance']
             ])
         ]);
 
@@ -85,7 +85,7 @@ class AdminUserProxyTest extends TestCase
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
                 'valid' => true,
-                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['crms.users.create'], 'department' => 'Finance']
+                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['cms.users.create'], 'department' => 'Finance']
             ])
         ]);
 
