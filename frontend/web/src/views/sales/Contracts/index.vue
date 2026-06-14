@@ -9,7 +9,6 @@ import { useAuth } from '@/composables/useAuth'
 import SalesContractsTable  from './SalesContractsTable.vue'
 import { remainingDays } from '@/types/contract'
 import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
-import { useApiCache } from '@/composables/useApiCache'
 
 const router = useRouter()
 const { success, error } = useToast()
