@@ -52,9 +52,6 @@ class ContractController extends Controller
         ];
     }
 
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         $query = Contract::with([
@@ -69,8 +66,47 @@ class ContractController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('bp_name', 'like', $search . '%')
-                  ->orWhere('item_code', 'like', $search . '%');
+                  ->orWhere('item_code', 'like', $search . '%')
+                  ->orWhere('contract_id', 'like', $search . '%');
             });
+        }
+
+        if ($request->has('category') && !empty($request->category)) {
+            $category = $request->category;
+            $query->whereHas('category', function($q) use ($category) {
+                $q->where('category_name', $category);
+            });
+        }
+
+        if ($request->has('region') && !empty($request->region)) {
+            $region = $request->region;
+            $query->whereHas('region', function($q) use ($region) {
+                $q->where('region_name', $region);
+            });
+        }
+
+        if ($request->has('status') && !empty($request->status)) {
+            $status = $request->status;
+            $query->where(function($q) use ($status) {
+                $q->whereHas('approvalStatus', function($sq) use ($status) {
+                    $sq->where('status_name', $status);
+                })->orWhereHas('workflowStatus', function($sq) use ($status) {
+                    $sq->where('status_name', $status);
+                });
+            });
+        }
+
+        if ($request->has('lifecycle_status') && !empty($request->lifecycle_status)) {
+            $lifecycle = $request->lifecycle_status;
+            $today = now()->toDateString();
+            $thirtyDaysFromNow = now()->addDays(30)->toDateString();
+            if ($lifecycle === 'active') {
+                $query->where('end_date', '>', $thirtyDaysFromNow);
+            } elseif ($lifecycle === 'expiring') {
+                $query->whereBetween('end_date', [$today, $thirtyDaysFromNow]);
+            } elseif ($lifecycle === 'expired') {
+                $query->where('end_date', '<', $today);
+            }
         }
 
         // Sales and Employee (incl. Finance dept) can only ever see their own contracts
@@ -79,7 +115,41 @@ class ContractController extends Controller
             $query->where('created_by', $request->get('auth_id'));
         }
 
-        $contracts = $query->orderBy('contract_id', 'desc')->get();
+        $query->orderBy('contract_id', 'desc');
+
+        if ($request->has('paginate') && $request->paginate === 'true') {
+            $perPage = (int) $request->get('per_page', 10);
+            $paginated = $query->paginate($perPage);
+
+            // Calculate stats based on role permissions
+            $today = now()->toDateString();
+            $thirtyDays = now()->addDays(30)->toDateString();
+
+            $statsQuery = Contract::query();
+            if (in_array($role, ['Sales', 'Finance Employee'])) {
+                $statsQuery->where('created_by', $request->get('auth_id'));
+            }
+
+            $stats = [
+                'total'    => (int) (clone $statsQuery)->count(),
+                'active'   => (int) (clone $statsQuery)->where('end_date', '>', $thirtyDays)->count(),
+                'expiring' => (int) (clone $statsQuery)->whereBetween('end_date', [$today, $thirtyDays])->count(),
+                'expired'  => (int) (clone $statsQuery)->where('end_date', '<', $today)->count(),
+            ];
+
+            return response()->json([
+                'data' => collect($paginated->items())->map(fn ($c) => $this->formatContract($c))->values(),
+                'pagination' => [
+                    'total'        => $paginated->total(),
+                    'per_page'     => $paginated->perPage(),
+                    'current_page' => $paginated->currentPage(),
+                    'last_page'    => $paginated->lastPage(),
+                ],
+                'stats' => $stats
+            ]);
+        }
+
+        $contracts = $query->get();
 
         return response()->json([
             'data' => $contracts->map(fn ($c) => $this->formatContract($c))->values(),

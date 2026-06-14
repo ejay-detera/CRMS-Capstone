@@ -33,6 +33,7 @@ const props = defineProps<{
   currentPage:   number
   itemsPerPage:  number
   loading?:      boolean
+  totalItems?:   number
 }>()
 
 const emit = defineEmits<{
@@ -75,10 +76,9 @@ const categories = [
 <template>
   <div class="bg-white rounded-lg border border-black/8 shadow-sm overflow-hidden">
 
-    <!-- Section heading -->
     <div class="px-6 pt-5 pb-4 border-b border-black/5">
       <h2 class="text-sm font-semibold text-black">
-        All Contracts <span class="text-black/30 font-normal">({{ loading ? 0 : filtered.length }})</span>
+        All Contracts <span class="text-black/30 font-normal">({{ loading ? 0 : (totalItems !== undefined ? totalItems : filtered.length) }})</span>
       </h2>
     </div>
 
