@@ -46,7 +46,10 @@ class AuditLogController extends Controller
         }
 
         // 2. Fetch local CRMS logs
-        $crmsLogsQuery = AuditLog::query()->whereIn('user_department', ['Finance', 'Sales']);
+        $crmsLogsQuery = AuditLog::query()->where(function ($query) {
+            $query->whereIn('user_department', ['Finance', 'Sales'])
+                  ->orWhereNotIn('entity_type', ['Contract', 'Document', 'Supplier', 'BusinessPartner']);
+        });
         
         if ($request->has('action') && !empty($request->action)) {
             $actionFilter = $request->action;
@@ -130,6 +133,10 @@ class AuditLogController extends Controller
                 $action = 'User Created';
             } elseif ($log->action === 'user_activated' || $log->action === 'user_deactivated') {
                 $action = 'User Updated';
+            } elseif ($log->action === 'profile_updated') {
+                $action = 'User Updated';
+            } elseif ($log->action === 'email_preferences_updated') {
+                $action = 'Settings Changed';
             }
 
             $description = '';
@@ -161,6 +168,11 @@ class AuditLogController extends Controller
             } elseif ($log->action === 'user_deactivated') {
                 $email = $new_data['email'] ?? '';
                 $description = "Deactivated User account for {$email}";
+            } elseif ($log->action === 'profile_updated') {
+                $email = $new_data['email'] ?? $userEmail;
+                $description = "Updated profile details for {$email}";
+            } elseif ($log->action === 'email_preferences_updated') {
+                $description = "Updated email notification preferences";
             } elseif ($log->action === 'permission_denied') {
                 $reqPerm = $new_data['required_permission'] ?? 'N/A';
                 $description = "Access Denied: Lacks '{$reqPerm}' permission";

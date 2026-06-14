@@ -66,7 +66,7 @@ onMounted(async () => {
 })
 
 async function handleProfileSave(data: Partial<typeof profile>) {
-  if (!state.token) return
+  if (!state.user) return
 
   try {
     const res = await fetch(`${import.meta.env.VITE_AUTH_API_URL}/me/profile`, {
@@ -74,7 +74,7 @@ async function handleProfileSave(data: Partial<typeof profile>) {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${state.token}`,
+        'Authorization': `Bearer ${state.token || ''}`,
         'X-Session-ID': localStorage.getItem('session_id') || '',
       },
       body: JSON.stringify({
@@ -122,7 +122,7 @@ async function handleProfileSave(data: Partial<typeof profile>) {
 }
 
 async function handlePasswordChange(data: { current: string, next: string }) {
-  if (!state.token) return
+  if (!state.user) return
 
   try {
     const res = await fetch(`${import.meta.env.VITE_AUTH_API_URL}/me/password`, {
@@ -130,7 +130,7 @@ async function handlePasswordChange(data: { current: string, next: string }) {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${state.token}`,
+        'Authorization': `Bearer ${state.token || ''}`,
         'X-Session-ID': localStorage.getItem('session_id') || '',
       },
       body: JSON.stringify({

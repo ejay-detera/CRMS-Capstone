@@ -19,8 +19,9 @@ final class UpdateController extends Controller
         UpdateEmailPreference $action
     ): EmailPreferenceResource {
         $userId = (int) $request->input('auth_id');
+        $actor  = $request->input('auth_user');
 
-        $preference = $action->handle($userId, $request->toPayload());
+        $preference = $action->handle($userId, $request->toPayload(), $actor);
 
         return new EmailPreferenceResource($preference);
     }

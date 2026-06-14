@@ -32,7 +32,9 @@ class InternalAuditController extends Controller
             'user_department' => 'nullable|string',
         ]);
 
-        if (!in_array($request->input('user_department'), ['Finance', 'Sales'])) {
+        $isBusinessEntity = in_array($request->input('entity_type'), ['Contract', 'Document', 'Supplier', 'BusinessPartner']);
+
+        if ($isBusinessEntity && !in_array($request->input('user_department'), ['Finance', 'Sales'])) {
             return response()->json(['ok' => true, 'message' => 'Skipped: Not in Finance or Sales department']);
         }
 
