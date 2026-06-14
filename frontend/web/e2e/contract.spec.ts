@@ -4,13 +4,10 @@ test('test', async ({ page }) => {
   await page.goto('http://localhost:5173/');
   await page.getByRole('link', { name: 'Log in' }).click();
   await expect(page.getByRole('heading', { name: 'Welcome Back!' })).toBeVisible();
-  await page.getByRole('textbox', { name: 'Email' }).click();
   await page.getByRole('textbox', { name: 'Email' }).fill('finance-manager@example.com');
-  await page.getByRole('textbox', { name: 'Password' }).click();
   await page.getByRole('textbox', { name: 'Password' }).fill('password');
-  await page.getByRole('textbox', { name: 'Password' }).press('Enter');
   await page.getByRole('button', { name: 'Sign In' }).click();
-  await expect(page.getByRole('heading', { name: 'Finance Manager Finance' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Finance Manager' })).toBeVisible();
   await page.getByText('Contract ManagementTrack,').click();
   await expect(page.getByRole('heading', { name: 'Good evening, Finance.' })).toBeVisible();
   await page.getByRole('button', { name: 'Contracts' }).click();
@@ -33,7 +30,6 @@ test('test', async ({ page }) => {
   await page.locator('input[type="date"]').nth(1).fill('2028-06-12');
   await page.getByRole('button', { name: 'Create Contract' }).click();
   await page.getByRole('button').filter({ hasText: /^$/ }).click();
-  await page.locator('#reka-dropdown-menu-trigger-v-59').click();
   await page.getByRole('menuitem', { name: 'Edit contract' }).click();
   await page.getByRole('textbox', { name: 'e.g. Network Infrastructure' }).click();
   await page.getByRole('textbox', { name: 'e.g. ITM-' }).click();
