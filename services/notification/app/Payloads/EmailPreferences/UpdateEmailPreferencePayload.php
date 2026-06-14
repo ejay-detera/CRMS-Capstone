@@ -8,6 +8,9 @@ final readonly class UpdateEmailPreferencePayload
 {
     public function __construct(
         public bool $emailNotificationsEnabled,
-        public bool $contractExpiryAlerts
+        public bool $contractExpiryAlerts,
+        public bool $systemAlertsEnabled,
+        public bool $smsNotificationsEnabled,
+        public bool $loginAlertsEnabled
     ) {}
 }

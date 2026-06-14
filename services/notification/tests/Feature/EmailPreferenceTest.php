@@ -66,17 +66,26 @@ final class EmailPreferenceTest extends TestCase
         ])->putJson('/api/email-preferences', [
             'email_notifications_enabled' => false,
             'contract_expiry_alerts' => false,
+            'system_alerts_enabled' => false,
+            'sms_notifications_enabled' => true,
+            'login_alerts_enabled' => false,
         ]);
 
         $response->assertStatus(200)
             ->assertJsonPath('data.user_id', 100)
             ->assertJsonPath('data.email_notifications_enabled', false)
-            ->assertJsonPath('data.contract_expiry_alerts', false);
+            ->assertJsonPath('data.contract_expiry_alerts', false)
+            ->assertJsonPath('data.system_alerts_enabled', false)
+            ->assertJsonPath('data.sms_notifications_enabled', true)
+            ->assertJsonPath('data.login_alerts_enabled', false);
 
         $this->assertDatabaseHas('email_preferences', [
             'user_id' => 100,
             'email_notifications_enabled' => false,
             'contract_expiry_alerts' => false,
+            'system_alerts_enabled' => false,
+            'sms_notifications_enabled' => true,
+            'login_alerts_enabled' => false,
         ]);
     }
 
@@ -92,6 +101,12 @@ final class EmailPreferenceTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['email_notifications_enabled', 'contract_expiry_alerts']);
+            ->assertJsonValidationErrors([
+                'email_notifications_enabled',
+                'contract_expiry_alerts',
+                'system_alerts_enabled',
+                'sms_notifications_enabled',
+                'login_alerts_enabled',
+            ]);
     }
 }

@@ -89,7 +89,7 @@ function err(field: keyof typeof touched, extra = true) {
 async function handleSubmit() {
   Object.keys(touched).forEach(k => ((touched as Record<string, boolean>)[k] = true))
   
-  if (!form.name || form.name.trim().length < 2 || !form.industry || !form.region || !form.contactPerson || !emailValid.value || !phoneValid.value || !form.address || (activeTab === 'suppliers' && !tinValid.value)) {
+  if (!form.name || form.name.trim().length < 2 || !form.industry || !form.region || !form.contactPerson || !emailValid.value || !phoneValid.value || !form.address || (activeTab.value === 'suppliers' && !tinValid.value)) {
     return
   }
 

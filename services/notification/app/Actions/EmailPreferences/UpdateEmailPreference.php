@@ -19,6 +19,9 @@ final readonly class UpdateEmailPreference
             [
                 'email_notifications_enabled' => $payload->emailNotificationsEnabled,
                 'contract_expiry_alerts' => $payload->contractExpiryAlerts,
+                'system_alerts_enabled' => $payload->systemAlertsEnabled,
+                'sms_notifications_enabled' => $payload->smsNotificationsEnabled,
+                'login_alerts_enabled' => $payload->loginAlertsEnabled,
             ]
         );
     }

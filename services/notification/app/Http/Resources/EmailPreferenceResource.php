@@ -25,6 +25,9 @@ final class EmailPreferenceResource extends JsonResource
             'user_id' => $this->user_id,
             'email_notifications_enabled' => $this->email_notifications_enabled,
             'contract_expiry_alerts' => $this->contract_expiry_alerts,
+            'system_alerts_enabled' => $this->system_alerts_enabled,
+            'sms_notifications_enabled' => $this->sms_notifications_enabled,
+            'login_alerts_enabled' => $this->login_alerts_enabled,
         ];
     }
 }

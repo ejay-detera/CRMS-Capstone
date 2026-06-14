@@ -24,7 +24,7 @@ const router = useRouter()
           <span v-else>Your latest {{ requests.length }} submissions</span>
         </p>
       </div>
-      <button @click="router.push('/sales/contract-requests')"
+      <button @click="router.push('/sales/contracts')"
         class="inline-flex items-center gap-1 text-xs font-semibold text-[#2E85D8] hover:underline">
         View all <ArrowRight class="w-3 h-3" />
       </button>
@@ -52,7 +52,7 @@ const router = useRouter()
       </template>
       <template v-else>
         <div v-for="r in requests" :key="r.id"
-          @click="router.push('/sales/contract-requests/' + r.id)"
+          @click="router.push('/sales/contracts/' + r.id)"
           class="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-black/1.5 transition-colors cursor-pointer">
 
           <!-- Partner + meta -->

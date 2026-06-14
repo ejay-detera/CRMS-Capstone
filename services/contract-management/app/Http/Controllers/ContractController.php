@@ -289,6 +289,27 @@ class ContractController extends Controller
 
         SyncContractToMeilisearch::dispatch($this->formatContract($contract));
 
+        // Notify Manager if an Employee in Finance department creates a contract
+        if ($role === 'Employee' && $request->get('auth_department') === 'Finance') {
+            $authUser = $request->get('auth_user');
+            $userName = trim(($authUser['first_name'] ?? '') . ' ' . ($authUser['last_name'] ?? ''));
+            if (empty($userName)) {
+                $userName = $authUser['username'] ?? 'A Finance Employee';
+            }
+            $notifMessage = "{$userName} sent a contract and is requesting to review it.";
+
+            try {
+                app(\App\Services\NotificationService::class)->push(
+                    (int) $contract->contract_id,
+                    'finance_review',
+                    $notifMessage,
+                    'Manager'
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Failed to push finance review notification: " . $e->getMessage());
+            }
+        }
+
         return response()->json([
             'message' => 'Contract created successfully.',
             'data'    => $this->formatContract($contract)

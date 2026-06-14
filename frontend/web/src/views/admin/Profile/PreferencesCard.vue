@@ -1,5 +1,5 @@
-﻿<script setup lang="ts">
-import { reactive, watch } from 'vue'
+<script setup lang="ts">
+import { reactive, watch, computed } from 'vue'
 import { SlidersHorizontal } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -12,12 +12,19 @@ const props = defineProps<{
     loginAlerts: boolean; timezone: string
     language: string; dateFormat: string
   }
+  role?: string
 }>()
 
-const emit = defineEmits<{ save: [] }>()
+const emit = defineEmits<{ save: [data: typeof props.preferences] }>()
 
 const form = reactive({ ...props.preferences })
 watch(() => props.preferences, p => Object.assign(form, p), { deep: true })
+
+const isAdmin = computed(() => props.role === 'Admin')
+
+function save() {
+  emit('save', { ...form })
+}
 </script>
 
 <template>
@@ -46,7 +53,7 @@ watch(() => props.preferences, p => Object.assign(form, p), { deep: true })
         :model-value="form.smsNotifications" @update:model-value="form.smsNotifications = $event" />
       <ToggleRow label="Contract expiry alerts" description="Notify 15 days before expiry"
         :model-value="form.contractExpiry" @update:model-value="form.contractExpiry = $event" />
-      <ToggleRow label="Login alerts" description="Email me when a new login is detected"
+      <ToggleRow v-if="isAdmin" label="Login alerts" description="Email me when a new login is detected"
         :model-value="form.loginAlerts" @update:model-value="form.loginAlerts = $event" />
     </div>
 
@@ -89,7 +96,7 @@ watch(() => props.preferences, p => Object.assign(form, p), { deep: true })
           </SelectContent>
         </Select>
       </div>
-      <Button @click="$emit('save')" class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
+      <Button @click="save" class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
         Save preferences
       </Button>
     </div>

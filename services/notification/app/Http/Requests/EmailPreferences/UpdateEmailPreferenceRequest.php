@@ -27,6 +27,9 @@ final class UpdateEmailPreferenceRequest extends FormRequest
         return [
             'email_notifications_enabled' => ['required', 'boolean'],
             'contract_expiry_alerts' => ['required', 'boolean'],
+            'system_alerts_enabled' => ['required', 'boolean'],
+            'sms_notifications_enabled' => ['required', 'boolean'],
+            'login_alerts_enabled' => ['required', 'boolean'],
         ];
     }
 
@@ -37,7 +40,10 @@ final class UpdateEmailPreferenceRequest extends FormRequest
     {
         return new UpdateEmailPreferencePayload(
             $this->boolean('email_notifications_enabled'),
-            $this->boolean('contract_expiry_alerts')
+            $this->boolean('contract_expiry_alerts'),
+            $this->boolean('system_alerts_enabled'),
+            $this->boolean('sms_notifications_enabled'),
+            $this->boolean('login_alerts_enabled')
         );
     }
 }

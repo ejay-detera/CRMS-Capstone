@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Plus, Upload } from 'lucide-vue-next'
+import { Upload } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
@@ -13,7 +13,7 @@ import type { Contract, FilterTab, StatusFilter } from '@/types/contract'
 
 const router = useRouter()
 const { success, error } = useToast()
-const { state: authState, hasPermission } = useAuth()
+const { state: authState } = useAuth()
 const { state: cacheState, fetchContracts: fetchContractsCached } = useApiCache()
 
 const contracts = computed(() => cacheState.contracts || [])
@@ -159,9 +159,6 @@ function exportXLSX() {
       <div class="flex items-center gap-2">
         <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
-        </Button>
-        <Button v-if="hasPermission('crms.contracts.create')" @click="router.push('/admin/contracts/create')" class="group h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm transition-all duration-200 hover:scale-105 active:scale-95">
-          <Plus class="w-5 h-5 transition-transform duration-300 group-hover:rotate-90" />
         </Button>
       </div>
     </div>

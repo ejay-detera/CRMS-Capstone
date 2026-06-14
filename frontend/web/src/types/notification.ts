@@ -16,6 +16,12 @@ export interface Notification {
 export interface EmailPreference {
   emailNotificationsEnabled: boolean
   contractExpiryAlerts: boolean
+  systemAlertsEnabled?: boolean
+  smsNotificationsEnabled?: boolean
+  loginAlertsEnabled?: boolean
+  timezone?: string
+  language?: string
+  dateFormat?: string
 }
 
 export interface EmailSendLog {

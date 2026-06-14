@@ -21,7 +21,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   LayoutDashboard,
   FileText,
-  FilePlus2,
   Bell,
   LogOut,
   Search,
@@ -55,7 +54,7 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 onMounted(() => { fetchNotifications(); pollTimer = setInterval(fetchNotifications, 60000); });
 onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
-const contractPaths = ["/sales/contracts", "/sales/contract-requests"];
+const contractPaths = ["/sales/contracts"];
 const contractsOpen = ref(contractPaths.includes(route.path));
 
 watch(() => route.path, path => {
@@ -67,9 +66,6 @@ const contractSubItems = computed(() => {
   const items = []
   if (hasPermission('crms.contracts.view')) {
     items.push({ title: "All Contracts",     url: "/sales/contracts",         icon: FileText  })
-  }
-  if (hasPermission('crms.contracts.create')) {
-    items.push({ title: "Contract Requests", url: "/sales/contract-requests", icon: FilePlus2 })
   }
   return items
 })

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Plus, FileText, ClipboardList, AlertTriangle } from 'lucide-vue-next'
+import { Plus, FileText, AlertTriangle } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import type { Contract } from '@/types/contract'
 
@@ -56,17 +56,13 @@ const expiringSoon = computed(() =>
         <h2 class="text-sm font-semibold text-black">Quick Actions</h2>
       </div>
       <div class="px-5 py-4 space-y-2.5">
-        <Button @click="router.push('/sales/contract-requests')"
+        <Button @click="router.push('/sales/contracts/create')"
           class="w-full h-9 justify-start gap-2.5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
           <Plus class="w-4 h-4" /> New Contract Request
         </Button>
         <Button @click="router.push('/sales/contracts')" variant="outline"
           class="w-full h-9 justify-start gap-2.5 text-sm border-black/12 text-black/65 hover:text-black">
           <FileText class="w-4 h-4" /> View My Contracts
-        </Button>
-        <Button @click="router.push('/sales/contract-requests')" variant="outline"
-          class="w-full h-9 justify-start gap-2.5 text-sm border-black/12 text-black/65 hover:text-black">
-          <ClipboardList class="w-4 h-4" /> My Requests
         </Button>
       </div>
     </div>

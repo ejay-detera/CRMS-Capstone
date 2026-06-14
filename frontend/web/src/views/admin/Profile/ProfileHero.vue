@@ -4,7 +4,7 @@ import { CalendarDays, Mail, Briefcase } from 'lucide-vue-next'
 
 const props = defineProps<{
   profile: {
-    firstName: string; lastName: string; role: string
+    firstName: string; middleName?: string; lastName: string; role: string
     email: string; department: string; dateJoined: string
   }
 }>()
@@ -13,7 +13,7 @@ const initials = computed(() =>
   [props.profile.firstName[0], props.profile.lastName[0]].join('').toUpperCase()
 )
 const fullName = computed(() =>
-  [props.profile.firstName, props.profile.lastName].filter(Boolean).join(' ')
+  [props.profile.firstName, props.profile.middleName, props.profile.lastName].filter(Boolean).join(' ')
 )
 </script>
 

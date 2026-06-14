@@ -3,7 +3,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import TablePagination from '@/components/shared/TablePagination.vue'
-import { actionBadge } from '@/types/auditLog'
+import { actionBadge, formatAction } from '@/types/auditLog'
 import { getInitials, avatarColor } from '@/types/user'
 import type { LogEntry } from '@/types/auditLog'
 
@@ -114,7 +114,7 @@ function formatTimestamp(isoStr: string) {
             <TableCell class="py-4">
               <span class="text-xs font-medium px-2.5 py-0.5 rounded-full border whitespace-nowrap"
                 :class="actionBadge[log.action] || 'bg-black/4 text-black/45 border-black/10'">
-                {{ log.action }}
+                {{ formatAction(log.action) }}
               </span>
             </TableCell>
 

@@ -23,6 +23,9 @@ final class ShowController extends Controller
             [
                 'email_notifications_enabled' => true,
                 'contract_expiry_alerts' => true,
+                'system_alerts_enabled' => true,
+                'sms_notifications_enabled' => false,
+                'login_alerts_enabled' => true,
             ]
         );
 

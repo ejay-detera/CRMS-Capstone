@@ -192,17 +192,6 @@ const routes: Array<RouteRecordRaw> = [
         name: 'sales-contracts-document-view',
         component: () => import('@/views/sales/Contracts/DocumentViewer.vue'),
       },
-
-      {
-        path: 'contract-requests',
-        name: 'sales-contract-requests',
-        component: () => import('@/views/sales/ContractRequests/index.vue'),
-      },
-      {
-        path: 'contract-requests/:id',
-        name: 'sales-contract-requests-detail',
-        component: () => import('@/views/sales/ContractRequests/RequestDetail/index.vue'),
-      },
       {
         path: 'notifications',
         name: 'sales-notifications',

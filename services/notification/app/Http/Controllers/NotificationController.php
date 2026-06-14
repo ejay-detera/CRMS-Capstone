@@ -60,7 +60,7 @@ class NotificationController extends Controller
             $notification->wasRecentlyCreated = true;
         }
 
-        if ($notification->wasRecentlyCreated) {
+        if ($notification->wasRecentlyCreated && str_starts_with($notification->notification_type, 'expiry_')) {
             if ($notification->target_user_id !== null) {
                 \App\Jobs\SendContractExpiryEmail::dispatch(
                     (int) $notification->target_user_id,
@@ -91,6 +91,13 @@ class NotificationController extends Controller
     {
         $userId   = $request->input('auth_id');
         $userRole = $request->input('auth_role');
+
+        $preference = \App\Models\EmailPreference::where('user_id', $userId)->first();
+        $systemAlertsEnabled = $preference ? (bool) $preference->system_alerts_enabled : true;
+
+        if (!$systemAlertsEnabled) {
+            return response()->json(['data' => []]);
+        }
 
         // Get notifications targeting this user's role; for user-scoped ones also match auth_id
         $notifications = Notification::orderByDesc('notification_date')->get()

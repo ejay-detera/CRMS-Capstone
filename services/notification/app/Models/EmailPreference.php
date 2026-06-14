@@ -22,6 +22,9 @@ final class EmailPreference extends Model
         'user_id',
         'email_notifications_enabled',
         'contract_expiry_alerts',
+        'system_alerts_enabled',
+        'sms_notifications_enabled',
+        'login_alerts_enabled',
     ];
 
     /**
@@ -33,5 +36,8 @@ final class EmailPreference extends Model
         'user_id' => 'integer',
         'email_notifications_enabled' => 'boolean',
         'contract_expiry_alerts' => 'boolean',
+        'system_alerts_enabled' => 'boolean',
+        'sms_notifications_enabled' => 'boolean',
+        'login_alerts_enabled' => 'boolean',
     ];
 }

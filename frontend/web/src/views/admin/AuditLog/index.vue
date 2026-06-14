@@ -7,6 +7,7 @@ import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import AuditLogFilters from './AuditLogFilters.vue'
 import AuditLogTable   from './AuditLogTable.vue'
+import { formatAction } from '@/types/auditLog'
 import type { LogEntry, ActionType } from '@/types/auditLog'
 
 const { error: showError, success: showSuccess } = useToast()
@@ -130,7 +131,7 @@ async function exportXLSX() {
         'User': l.user_name,
         'Email': l.user_email || 'N/A',
         'Role': l.role || 'Finance',
-        'Action': l.action,
+        'Action': formatAction(l.action),
         'Description': l.description,
         'Timestamp': new Date(l.performed_at).toLocaleString()
       }))

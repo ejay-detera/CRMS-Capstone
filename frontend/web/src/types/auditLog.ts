@@ -7,6 +7,7 @@ export type ActionType =
   | 'user_created'      | 'Login Success'    | 'Login Failed'
   | 'Logout'            | 'Document Uploaded'| 'Document Deleted'
   | 'Email Sent'        | 'Email Skipped'    | 'Email Failed'
+  | 'profile_updated'   | 'Role_Permission_Updated' | 'permission_denied'
 
 export interface LogEntry {
   id: string
@@ -49,6 +50,9 @@ export const actionOptions: Array<ActionType | 'All'> = [
   'Email Sent',
   'Email Skipped',
   'Email Failed',
+  'profile_updated',
+  'Role_Permission_Updated',
+  'permission_denied',
 ]
 
 export const actionBadge: Record<ActionType, string> = {
@@ -76,4 +80,25 @@ export const actionBadge: Record<ActionType, string> = {
   'Email Sent':        'bg-emerald-50 text-emerald-700 border-emerald-200',
   'Email Skipped':     'bg-black/4 text-black/35 border-black/8',
   'Email Failed':      'bg-red-50 text-red-700 border-red-200',
+  'profile_updated':   'bg-[#2E85D8]/8 text-[#2E85D8] border-[#2E85D8]/20',
+  'Role_Permission_Updated': 'bg-amber-50 text-amber-700 border-amber-200',
+  'permission_denied': 'bg-red-50 text-red-600 border-red-200',
+}
+
+const actionMap: Record<string, string> = {
+  profile_updated: 'Profile Updated',
+  Role_Permission_Updated: 'Role Permission Updated',
+  permission_denied: 'Permission Denied',
+  user_created: 'User Created',
+  created: 'Created',
+  updated: 'Updated',
+  deleted: 'Deleted'
+}
+
+export function formatAction(action: string): string {
+  if (!action) return ''
+  if (actionMap[action]) return actionMap[action]
+  return action
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
 }

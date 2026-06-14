@@ -86,7 +86,7 @@ async function fetchUsers() {
     if (res.ok && data.data) {
       users.value = data.data.map((u: any) => ({
         id: u.id.toString(),
-        name: `${u.profile?.first_name} ${u.profile?.last_name}`,
+        name: [u.profile?.first_name, u.profile?.middle_name, u.profile?.last_name].filter(Boolean).join(' '),
         email: u.email,
         role: u.profile?.role?.name || 'Unknown',
         department: u.profile?.department?.name || 'Unknown',

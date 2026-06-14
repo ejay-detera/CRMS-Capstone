@@ -48,6 +48,7 @@ function submit() {
   
   emit('submit', {
     first_name: form.firstName,
+    middle_name: form.middleName,
     last_name: form.lastName,
     email: form.email,
     role_name: form.role,

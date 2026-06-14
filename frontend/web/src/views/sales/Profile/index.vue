@@ -57,6 +57,12 @@ onMounted(async () => {
   await fetchPreferences()
   preferences.emailNotifications = apiPrefs.value.emailNotificationsEnabled
   preferences.contractExpiry = apiPrefs.value.contractExpiryAlerts
+  preferences.systemAlerts = apiPrefs.value.systemAlertsEnabled ?? true
+  preferences.smsNotifications = apiPrefs.value.smsNotificationsEnabled ?? false
+  preferences.loginAlerts = apiPrefs.value.loginAlertsEnabled ?? true
+  preferences.timezone = apiPrefs.value.timezone || 'Asia/Manila'
+  preferences.language = apiPrefs.value.language || 'English'
+  preferences.dateFormat = apiPrefs.value.dateFormat || 'MM/DD/YYYY'
 })
 
 async function handleProfileSave(data: Partial<typeof profile>) {
@@ -74,6 +80,7 @@ async function handleProfileSave(data: Partial<typeof profile>) {
       body: JSON.stringify({
         first_name: data.firstName,
         last_name: data.lastName,
+        middle_name: data.middleName,
         phone: data.phone,
         email: data.email,
       })
@@ -87,6 +94,7 @@ async function handleProfileSave(data: Partial<typeof profile>) {
         email: result.user.email,
         first_name: result.user.first_name,
         last_name: result.user.last_name,
+        middle_name: result.user.middle_name,
         phone: result.user.phone,
         role: result.user.role,
         department: result.user.department,
@@ -94,6 +102,7 @@ async function handleProfileSave(data: Partial<typeof profile>) {
           ...currentUser.profile,
           first_name: result.user.first_name,
           last_name: result.user.last_name,
+          middle_name: result.user.middle_name,
           phone: result.user.phone,
         } : undefined
       } as any
@@ -144,12 +153,19 @@ async function handlePasswordChange(data: { current: string, next: string }) {
   }
 }
 
-async function handlePreferencesSave() {
+async function handlePreferencesSave(data: typeof preferences) {
   const success = await savePreferences({
-    emailNotificationsEnabled: preferences.emailNotifications,
-    contractExpiryAlerts: preferences.contractExpiry,
+    emailNotificationsEnabled: data.emailNotifications,
+    contractExpiryAlerts: data.contractExpiry,
+    systemAlertsEnabled: data.systemAlerts,
+    smsNotificationsEnabled: data.smsNotifications,
+    loginAlertsEnabled: data.loginAlerts,
+    timezone: data.timezone,
+    language: data.language,
+    dateFormat: data.dateFormat,
   })
   if (success) {
+    Object.assign(preferences, data)
     showSuccess('Preferences saved', 'Your notification settings have been updated.')
   } else {
     showError('Save failed', 'Could not save notification preferences.')
@@ -169,7 +185,7 @@ async function handlePreferencesSave() {
 
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
       <PersonalInfoCard :profile="profile" @save="handleProfileSave" />
-      <PreferencesCard  :preferences="preferences" @save="handlePreferencesSave" />
+      <PreferencesCard  :preferences="preferences" :role="profile.role" @save="handlePreferencesSave" />
     </div>
 
     <SecurityCard @save="handlePasswordChange" />
