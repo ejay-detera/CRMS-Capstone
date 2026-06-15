@@ -33,9 +33,9 @@ class AdminUserProxyController extends Controller
         ]);
 
         // 2. Enforce CMS Constraints
-        if (strcasecmp($request->department_name, 'Finance') !== 0) {
+        if (strcasecmp($request->department_name, 'Sales & Marketing') !== 0) {
             return response()->json([
-                'message' => 'Unauthorized. This admin can only create users for the Finance department.'
+                'message' => 'Unauthorized. This admin can only create users for the Sales & Marketing department.'
             ], 403);
         }
 
@@ -97,7 +97,7 @@ class AdminUserProxyController extends Controller
         // Audit Log User Creation
         $creatorRole = $request->get('auth_role');
         $creatorDepartment = $request->get('auth_department');
-        $shouldLog = ($creatorDepartment === 'Finance') || ($creatorRole === 'IT Admin');
+        $shouldLog = ($creatorDepartment === 'Sales & Marketing') || ($creatorRole === 'IT Admin');
 
         if ($shouldLog) {
             $this->auditLogService->log(

@@ -32,9 +32,9 @@ class AuditLogController extends Controller
                     $lastName  = $u['profile']['last_name']  ?? '';
                     $fullName  = trim("{$firstName} {$lastName}");
                     $userId    = $u['id'];
-                    $userMap[$userId]  = !empty($fullName) ? $fullName : ($u['email'] ?? 'Finance User');
+                    $userMap[$userId]  = !empty($fullName) ? $fullName : ($u['email'] ?? 'Sales & Marketing User');
                     $emailMap[$userId] = $u['email'] ?? '';
-                    $roleMap[$userId]  = $u['profile']['role']['name'] ?? 'Finance';
+                    $roleMap[$userId]  = $u['profile']['role']['name'] ?? 'Sales & Marketing';
                 }
             }
         } catch (\Exception $e) {
@@ -45,7 +45,7 @@ class AuditLogController extends Controller
         $page    = (int) $request->input('page', 1);
         $perPage = (int) $request->input('per_page', 20);
 
-        $cmsLogsQuery = AuditLog::query()->where('user_department', 'Finance');
+        $cmsLogsQuery = AuditLog::query()->where('user_department', 'Sales & Marketing');
 
         if ($request->filled('action')) {
             $cmsLogsQuery->where('action', $request->action);
@@ -71,9 +71,9 @@ class AuditLogController extends Controller
         // 4. Normalize paginated results
         $items = [];
         foreach ($paginator->items() as $log) {
-            $userName  = $log->user_name  ?? ($userMap[$log->user_id]  ?? 'Finance User');
+            $userName  = $log->user_name  ?? ($userMap[$log->user_id]  ?? 'Sales & Marketing User');
             $userEmail = $log->user_email ?? ($emailMap[$log->user_id] ?? '');
-            $userRole  = $log->user_role  ?? ($roleMap[$log->user_id]  ?? 'Finance');
+            $userRole  = $log->user_role  ?? ($roleMap[$log->user_id]  ?? 'Sales & Marketing');
 
             // Extract entity name from stored JSON for human-readable descriptions
             $newArr = is_array($log->new_data) ? $log->new_data : [];

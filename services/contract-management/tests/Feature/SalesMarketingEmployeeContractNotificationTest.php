@@ -9,7 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
-class FinanceEmployeeContractNotificationTest extends TestCase
+class SalesMarketingEmployeeContractNotificationTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -31,7 +31,7 @@ class FinanceEmployeeContractNotificationTest extends TestCase
         ]);
     }
 
-    public function test_it_sends_manager_notification_when_finance_employee_creates_contract()
+    public function test_it_sends_manager_notification_when_sales_marketing_employee_creates_contract()
     {
         \Illuminate\Support\Facades\Cache::store('file')->flush();
         
@@ -46,7 +46,7 @@ class FinanceEmployeeContractNotificationTest extends TestCase
                     'last_name' => 'Doe',
                     'role' => 'Employee',
                     'permissions' => ['cms.contracts.create'],
-                    'department' => 'Finance',
+                    'department' => 'Sales & Marketing',
                 ]
             ], 200),
             'http://notification:8000/api/internal/push' => Http::response(['success' => true], 201)
@@ -62,7 +62,7 @@ class FinanceEmployeeContractNotificationTest extends TestCase
             'category' => 'Service Agreement',
             'status' => 'Notarized PDF',
             'itemCode' => 'ITM-99',
-            'description' => 'Test Finance Contract',
+            'description' => 'Test Sales & Marketing Contract',
             'serialNo' => 'SN-999',
             'sbuNumber' => 'SBU-99',
             'region' => 'Luzon',
@@ -75,7 +75,7 @@ class FinanceEmployeeContractNotificationTest extends TestCase
         Http::assertSent(function ($request) {
             if ($request->url() === 'http://notification:8000/api/internal/push') {
                 $payload = json_decode($request->body(), true);
-                return $payload['notification_type'] === 'finance_review'
+                return $payload['notification_type'] === 'sales_marketing_review'
                     && $payload['target_roles'] === 'Manager'
                     && str_contains($payload['message'], 'John Doe sent a contract and is requesting to review it.');
             }

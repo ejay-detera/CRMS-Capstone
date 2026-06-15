@@ -32,7 +32,7 @@ class AuditLogTest extends TestCase
             'entity_type' => 'Session',
             'user_id' => 3,
             'new_data' => ['email' => 'finance-user@sbsi.com'],
-            'user_department' => 'Finance'
+            'user_department' => 'Sales & Marketing'
         ]);
 
         $response->assertStatus(200);
@@ -81,7 +81,7 @@ class AuditLogTest extends TestCase
             'user_name' => 'Jane Doe',
             'user_email' => 'contractor@sbsi.com',
             'user_role' => 'Manager',
-            'user_department' => 'Finance',
+            'user_department' => 'Sales & Marketing',
             'old_data' => null,
             'new_data' => ['title' => 'Important NDA'],
             'performed_at' => now(),
@@ -95,7 +95,7 @@ class AuditLogTest extends TestCase
             'user_name' => 'Jane Doe',
             'user_email' => 'contractor@sbsi.com',
             'user_role' => 'Manager',
-            'user_department' => 'Finance',
+            'user_department' => 'Sales & Marketing',
             'old_data' => null,
             'new_data' => ['email' => 'contractor@sbsi.com'],
             'performed_at' => now(),
@@ -111,7 +111,7 @@ class AuditLogTest extends TestCase
                     'email' => 'admin@sbsi.com',
                     'role' => 'Admin',
                     'permissions' => ['cms.users.view'],
-                    'department' => 'Finance'
+                    'department' => 'Sales & Marketing'
                 ]
             ], 200),
             // Mock auth users mapping API (fallback for user name resolution)

@@ -37,7 +37,7 @@ class AuditLogService
             }
         }
 
-        if ($userDept !== 'Finance') {
+        if ($userDept !== 'Sales & Marketing') {
             return;
         }
 

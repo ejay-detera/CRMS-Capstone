@@ -21,7 +21,7 @@ class SupplierCrudTest extends TestCase
                     'id' => 10,
                     'role' => $role,
                     'permissions' => $permissions,
-                    'department' => 'Finance'
+                    'department' => 'Sales & Marketing'
                 ]
             ]),
         ]);

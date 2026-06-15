@@ -30,14 +30,14 @@ test('test', async ({ page }) => {
 //Login as Finance Manager
 await page.goto('http://localhost:5173/');
 await page.getByRole('link', { name: 'Log in' }).click();
-await page.getByRole('textbox', { name: 'Email' }).fill('finance-manager@example.com');
+await page.getByRole('textbox', { name: 'Email' }).fill('sales-marketing-manager@example.com');
 await page.getByRole('textbox', { name: 'Password' }).fill('password');
 await page.getByRole('button', { name: 'Sign In' }).click();
 await page.waitForURL(/(?!.*login).*/, { timeout: 10000 });
 
 //Contract Module as Finance Manager
 //Create Contract
-await expect(page.locator('h1')).toContainText('Finance Manager Manager', { timeout: 10000 });
+await expect(page.locator('h1')).toContainText('Sales Marketing Manager Manager', { timeout: 10000 });
 await page.getByText('Open module').first().click();
 await page.getByRole('button', { name: 'Contracts' }).click();
 await page.getByRole('button').nth(4).click();
@@ -63,11 +63,11 @@ await page.locator('div').filter({ hasText: /^Logout$/ }).nth(1).click();
 //Login as Finance Admin
 //Vendor Module as Finance Admin
 await page.getByRole('link', { name: 'Log in' }).click();
-await page.getByRole('textbox', { name: 'Email' }).fill('finance-admin@example.com');
+await page.getByRole('textbox', { name: 'Email' }).fill('sales-marketing-admin@example.com');
 await page.getByRole('textbox', { name: 'Password' }).fill('password');
 await page.getByRole('button', { name: 'Sign In' }).click();
 await page.waitForURL(/(?!.*login).*/, { timeout: 10000 });
-await expect(page.locator('h1')).toContainText('Finance Administrator Admin', { timeout: 10000 });
+await expect(page.locator('h1')).toContainText('Sales Marketing Administrator Admin', { timeout: 10000 });
 await page.getByText('Open module').first().click();
 await page.getByRole('link', { name: 'Business & Suppliers' }).click();
 

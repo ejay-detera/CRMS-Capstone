@@ -4,12 +4,12 @@ test('test', async ({ page }) => {
   await page.goto('http://localhost:5173/');
   await page.getByRole('link', { name: 'Log in' }).click();
   await expect(page.getByRole('heading', { name: 'Welcome Back!' })).toBeVisible();
-  await page.getByRole('textbox', { name: 'Email' }).fill('finance-manager@example.com');
+  await page.getByRole('textbox', { name: 'Email' }).fill('sales-marketing-manager@example.com');
   await page.getByRole('textbox', { name: 'Password' }).fill('password');
   await page.getByRole('button', { name: 'Sign In' }).click();
-  await expect(page.getByRole('heading', { name: 'Finance Manager' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sales Marketing Manager' })).toBeVisible();
   await page.getByText('Contract ManagementTrack,').click();
-  await expect(page.getByRole('heading', { name: 'Good evening, Finance.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Good evening, Sales Marketing.' })).toBeVisible();
   await page.getByRole('button', { name: 'Contracts' }).click();
   await expect(page.getByRole('heading', { name: 'All Contracts', exact: true })).toBeVisible();
   await page.getByRole('button').nth(4).click();
@@ -43,6 +43,6 @@ test('test', async ({ page }) => {
   await expect(page.getByText('67').first()).toBeVisible();
   await expect(page.getByText('67').nth(2)).toBeVisible();
   await page.getByRole('button').filter({ hasText: /^$/ }).click();
-  await page.getByText('FMFinance ManagerFinance').click();
+  await page.getByText('SMSales Marketing ManagerSales & Marketing').click();
   await page.getByRole('button', { name: 'Logout' }).click();
 });

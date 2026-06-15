@@ -34,8 +34,8 @@ class InternalAuditController extends Controller
 
         $isBusinessEntity = in_array($request->input('entity_type'), ['Contract', 'Document', 'Supplier', 'BusinessPartner']);
 
-        if ($isBusinessEntity && !in_array($request->input('user_department'), ['Finance', 'Sales'])) {
-            return response()->json(['ok' => true, 'message' => 'Skipped: Not in Finance or Sales department']);
+        if ($isBusinessEntity && !in_array($request->input('user_department'), ['Sales & Marketing', 'Sales'])) {
+            return response()->json(['ok' => true, 'message' => 'Skipped: Not in Sales & Marketing or Sales department']);
         }
 
         $log = AuditLog::create([

@@ -66,7 +66,7 @@ const departmentsList = computed(() => {
   return [
     { id: 1, name: 'IT' },
     { id: 2, name: 'Operations' },
-    { id: 3, name: 'Finance' },
+    { id: 3, name: 'Sales & Marketing' },
   ]
 })
 

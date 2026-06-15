@@ -51,7 +51,7 @@ class UploadDocumentTest extends TestCase
                     'last_name' => 'Doe',
                     'role' => $role,
                     'permissions' => $permissions,
-                    'department' => 'Finance',
+                    'department' => 'Sales & Marketing',
                 ]
             ], 200)
         ]);

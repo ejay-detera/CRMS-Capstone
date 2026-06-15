@@ -29,7 +29,7 @@ final class VendorContractEndpointsTest extends TestCase
                     'id' => $userId,
                     'role' => $role,
                     'permissions' => $permissions,
-                    'department' => 'Finance'
+                    'department' => 'Sales & Marketing'
                 ]
             ]),
         ]);

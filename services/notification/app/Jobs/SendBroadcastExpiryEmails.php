@@ -61,7 +61,7 @@ final class SendBroadcastExpiryEmails implements ShouldQueue
             $userDept = $user['department'] ?? null;
 
             if (in_array($userRole, ['Admin', 'Manager'])) {
-                if ($userDept !== 'Finance') {
+                if ($userDept !== 'Sales & Marketing') {
                     continue;
                 }
             }

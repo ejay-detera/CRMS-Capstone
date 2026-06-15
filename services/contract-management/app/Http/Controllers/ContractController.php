@@ -109,7 +109,7 @@ class ContractController extends Controller
             }
         }
 
-        // Sales and Employee (incl. Finance dept) can only ever see their own contracts
+        // Sales and Employee (incl. Sales & Marketing dept) can only ever see their own contracts
         $role = $request->get('auth_role');
         if (in_array($role, ['Sales', 'Employee'])) {
             $query->where('created_by', $request->get('auth_id'));
@@ -359,24 +359,24 @@ class ContractController extends Controller
 
         SyncContractToMeilisearch::dispatch($this->formatContract($contract));
 
-        // Notify Manager if an Employee in Finance department creates a contract
-        if ($role === 'Employee' && $request->get('auth_department') === 'Finance') {
+        // Notify Manager if an Employee in Sales & Marketing department creates a contract
+        if ($role === 'Employee' && $request->get('auth_department') === 'Sales & Marketing') {
             $authUser = $request->get('auth_user');
             $userName = trim(($authUser['first_name'] ?? '') . ' ' . ($authUser['last_name'] ?? ''));
             if (empty($userName)) {
-                $userName = $authUser['username'] ?? 'A Finance Employee';
+                $userName = $authUser['username'] ?? 'A Sales & Marketing Employee';
             }
             $notifMessage = "{$userName} sent a contract and is requesting to review it.";
 
             try {
                 app(\App\Services\NotificationService::class)->push(
                     (int) $contract->contract_id,
-                    'finance_review',
+                    'sales_marketing_review',
                     $notifMessage,
                     'Manager'
                 );
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error("Failed to push finance review notification: " . $e->getMessage());
+                \Illuminate\Support\Facades\Log::error("Failed to push sales & marketing review notification: " . $e->getMessage());
             }
         }
 

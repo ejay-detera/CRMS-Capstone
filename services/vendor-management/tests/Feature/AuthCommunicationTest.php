@@ -23,7 +23,7 @@ class AuthCommunicationTest extends TestCase
                     'email' => 'test@example.com',
                     'role' => 'Admin',
                     'permissions' => ['cms.partners.view', 'cms.partners.create'],
-                    'department' => 'Finance'
+                    'department' => 'Sales & Marketing'
                 ]
             ], 200)
         ]);
@@ -79,7 +79,7 @@ class AuthCommunicationTest extends TestCase
                     'email' => 'test@example.com',
                     'role' => 'Sales',
                     'permissions' => ['cms.partners.view'], // Lacks 'cms.partners.create'
-                    'department' => 'Finance'
+                    'department' => 'Sales & Marketing'
                 ]
             ], 200)
         ]);

@@ -60,8 +60,8 @@ final class SendContractExpiryEmail implements ShouldQueue
         $department = $userInfo['department'] ?? null;
 
         if (in_array($role, ['Admin', 'Manager'])) {
-            if ($department !== 'Finance') {
-                Log::info("User {$this->userId} has role {$role} but department is {$department} (not Finance). Skipping email send.");
+            if ($department !== 'Sales & Marketing') {
+                Log::info("User {$this->userId} has role {$role} but department is {$department} (not Sales & Marketing). Skipping email send.");
                 return;
             }
         }
@@ -181,10 +181,10 @@ final class SendContractExpiryEmail implements ShouldQueue
 
             // Map user department to Sales or Finance to ensure central audit log visibility
             $userDept = $userInfo['department'] ?? null;
-            if (empty($userDept) || !in_array($userDept, ['Finance', 'Sales'])) {
+            if (empty($userDept) || !in_array($userDept, ['Sales & Marketing', 'Sales'])) {
                 $role = $userInfo['role'] ?? '';
-                if (str_contains(strtolower($role), 'finance')) {
-                    $userDept = 'Finance';
+                if (str_contains(strtolower($role), 'finance') || str_contains(strtolower($role), 'sales')) {
+                    $userDept = 'Sales & Marketing';
                 } else {
                     $userDept = 'Sales';
                 }
