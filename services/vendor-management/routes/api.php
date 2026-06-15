@@ -5,6 +5,10 @@ use Illuminate\Support\Facades\Route;
 // Internal webhook — uses X-Internal-Secret, not Bearer token
 Route::post('/internal/audit', [\App\Http\Controllers\InternalAuditController::class, 'receive']);
 
+// Integration Endpoint for retrieving SBSI customer details
+Route::get('/integration/customers', [\App\Http\Controllers\Api\V1\IntegrationCustomerController::class, 'index'])
+    ->middleware('auth.integration.secret');
+
 Route::middleware(['auth.internal'])->group(function () {
 
     // Admin User Creation Proxy (Finance Only)
