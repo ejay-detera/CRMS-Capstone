@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, computed, ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeft, ScanLine } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
@@ -11,6 +11,7 @@ import DocumentUpload from './DocumentUpload.vue'
 import type { ContractRegion, UploadedDoc } from '@/types/contract'
 
 const router = useRouter()
+const route = useRoute()
 const { success, error } = useToast()
 const { state: authState } = useAuth()
 const { invalidateContracts, invalidateRequests } = useApiCache()
@@ -29,6 +30,7 @@ interface FormState {
   region:          ContractRegion | ''
   startDate:       string
   endDate:         string
+  prsActivityId:   number | ''
 }
 
 const form = reactive<FormState>({
@@ -41,6 +43,7 @@ const form = reactive<FormState>({
   region:          '',
   startDate:       '',
   endDate:         '',
+  prsActivityId:   '',
 })
 
 const touched = reactive<Record<keyof FormState, boolean>>({
@@ -53,19 +56,20 @@ const touched = reactive<Record<keyof FormState, boolean>>({
   region:          false,
   startDate:       false,
   endDate:         false,
+  prsActivityId:   false,
 })
 
 const errors = computed(() => ({
-  businessPartner: touched.businessPartner && !form.businessPartner.trim()
+  businessPartner: touched.businessPartner && !String(form.businessPartner || '').trim()
     ? 'Business partner is required.'
     : touched.businessPartner && suspendedVendorMatch.value
     ? 'This vendor is suspended and cannot be assigned to a new contract.'
     : '',
   category:        touched.category        && !form.category                  ? 'Category is required.' : '',
-  itemCode:        touched.itemCode        && !form.itemCode.trim()           ? 'Item code is required.' : '',
-  description:     touched.description     && !form.description.trim()        ? 'Description is required.' : '',
-  serialNo:        touched.serialNo        && !form.serialNo.trim()           ? 'Serial number is required.' : '',
-  sbuNumber:       touched.sbuNumber       && !form.sbuNumber.trim()          ? 'SBU number is required.' : '',
+  itemCode:        touched.itemCode        && !String(form.itemCode || '').trim()           ? 'Item code is required.' : '',
+  description:     touched.description     && !String(form.description || '').trim()        ? 'Description is required.' : '',
+  serialNo:        touched.serialNo        && !String(form.serialNo || '').trim()           ? 'Serial number is required.' : '',
+  sbuNumber:       touched.sbuNumber       && !String(form.sbuNumber || '').trim()          ? 'SBU number is required.' : '',
   region:          touched.region          && !form.region                    ? 'Region is required.' : '',
   startDate:       touched.startDate       && !form.startDate                 ? 'Start date is required.' : '',
   endDate:         touched.endDate && !form.endDate
@@ -91,13 +95,13 @@ function touchAll() {
 
 function isValid() {
   return (
-    form.businessPartner.trim() &&
+    String(form.businessPartner || '').trim() &&
     !suspendedVendorMatch.value &&
     form.category &&
-    form.itemCode.trim() &&
-    form.description.trim() &&
-    form.serialNo.trim() &&
-    form.sbuNumber.trim() &&
+    String(form.itemCode || '').trim() &&
+    String(form.description || '').trim() &&
+    String(form.serialNo || '').trim() &&
+    String(form.sbuNumber || '').trim() &&
     form.region &&
     form.startDate &&
     form.endDate &&
@@ -135,6 +139,7 @@ async function handleSubmit() {
       start_date:    form.startDate,
       end_date:      form.endDate,
       document_ids:  contractDocs.value.filter(d => d.id).map(d => d.id),
+      prs_activity_id: form.prsActivityId ? Number(form.prsActivityId) : null,
     }
 
     const res = await fetch(`${import.meta.env.VITE_CONTRACT_API_URL}/contracts`, {
@@ -203,22 +208,48 @@ async function fetchPartnerNames() {
   }
 }
 
+const prefilledFromPrs = ref(false)
+
 onMounted(() => {
   fetchPartnerNames()
+  fetchPrsActivities()
+
+  // Auto-populate fields from PRS integration query params
+  const prsIdParam = route.query.prs_activity_id
+  if (prsIdParam) {
+    form.prsActivityId = Number(prsIdParam)
+    prefilledFromPrs.value = true
+  }
+  const bpNameParam = route.query.bp_name
+  if (bpNameParam) {
+    form.businessPartner = String(bpNameParam)
+  }
+  const sbuParam = route.query.sbu
+  if (sbuParam) {
+    form.sbuNumber = String(sbuParam)
+  }
+  const itemCodeParam = route.query.item_code
+  if (itemCodeParam) {
+    form.itemCode = String(itemCodeParam)
+  }
+  const descParam = route.query.description
+  if (descParam) {
+    form.description = String(descParam)
+  }
 })
 
 const showSuggestions = ref(false)
 const suggestionsContainer = ref<HTMLElement | null>(null)
 
 const partnerSuggestions = computed(() => {
-  const query = form.businessPartner.trim().toLowerCase()
+  const query = String(form.businessPartner || '').trim().toLowerCase()
   const available = vendorOptions.value.filter(v => v.status !== 'Suspended')
   if (!query) return available.map(v => v.name)
   return available.filter(v => v.name.toLowerCase().includes(query)).map(v => v.name)
 })
 
 const suspendedVendorMatch = computed(() => {
-  const name = form.businessPartner.trim().toLowerCase()
+  const name = String(form.businessPartner || '').trim().toLowerCase()
   if (!name) return false
   return vendorOptions.value.some(v => v.name.toLowerCase() === name && v.status === 'Suspended')
 })
@@ -231,6 +262,70 @@ function selectSuggestion(name: string) {
 
 onClickOutside(suggestionsContainer, () => {
   showSuggestions.value = false
+})
+
+interface PrsActivityOption {
+  id: number
+  institution: string
+  sbu: string | null
+  description: string | null
+  activity_date: string | null
+  product_name: string | null
+  status: string
+}
+
+const prsActivities = ref<PrsActivityOption[]>([])
+const loadingPrsActivities = ref(false)
+const showPrsDropdown = ref(false)
+const prsContainer = ref<HTMLElement | null>(null)
+
+async function fetchPrsActivities() {
+  loadingPrsActivities.value = true
+  try {
+    const apiBase = import.meta.env.VITE_PRS_API_URL || '/api/prs'
+    const headers = {
+      'Authorization': `Bearer ${authState.token || ''}`,
+      'Accept': 'application/json'
+    }
+    const res = await fetch(`${apiBase}/analytics/submissions?activity_type=Closing&per_page=100`, { headers })
+    if (res.ok) {
+      const json = await res.json()
+      prsActivities.value = (json.data || []).map((item: any) => ({
+        id: item.id,
+        institution: item.institution,
+        sbu: item.sbu,
+        description: item.description,
+        activity_date: item.activity_date,
+        product_name: item.product_name || (item.demo_submissions?.[0]?.product?.product_name) || null,
+        status: item.status
+      }))
+    }
+  } catch (err) {
+    console.error('Failed to fetch PRS activities:', err)
+  } finally {
+    loadingPrsActivities.value = false
+  }
+}
+
+function selectPrsActivity(activity: PrsActivityOption) {
+  form.prsActivityId = activity.id
+  if (activity.institution) {
+    form.businessPartner = String(activity.institution)
+  }
+  if (activity.sbu) {
+    form.sbuNumber = String(activity.sbu)
+  }
+  if (activity.description) {
+    form.description = String(activity.description)
+  }
+  if (activity.product_name) {
+    form.itemCode = String(activity.product_name)
+  }
+  showPrsDropdown.value = false
+}
+
+onClickOutside(prsContainer, () => {
+  showPrsDropdown.value = false
 })
 </script>
 
@@ -260,7 +355,7 @@ onClickOutside(suggestionsContainer, () => {
       <!-- Section: Contract Info -->
       <div class="px-6 py-5 border-b border-black/6">
         <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Contract Info</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
           <!-- Business Partner -->
           <div class="flex flex-col gap-1.5">
@@ -312,6 +407,50 @@ onClickOutside(suggestionsContainer, () => {
               <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
             </select>
             <p v-if="errors.category" class="text-xs text-red-500">{{ errors.category }}</p>
+          </div>
+
+          <!-- Connected PRS Activity ID (Optional) -->
+          <div class="flex flex-col gap-1.5 relative" ref="prsContainer">
+            <label class="text-xs font-semibold text-black/55">Connected PRS Activity ID (Optional)</label>
+            <div class="relative w-full">
+              <input
+                v-model="form.prsActivityId"
+                @focus="!prefilledFromPrs && (showPrsDropdown = true)"
+                type="number"
+                :readonly="prefilledFromPrs"
+                placeholder="e.g. 12 (Select or type)"
+                class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition w-full border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15"
+                :class="prefilledFromPrs ? 'bg-black/[0.02] border-black/8 cursor-not-allowed' : ''"
+              />
+              <p v-if="prefilledFromPrs" class="text-xs text-emerald-600 mt-1 font-medium">
+                ✓ Linked from PRS Activity #{{ form.prsActivityId }}
+              </p>
+              <div
+                v-if="showPrsDropdown && prsActivities.length > 0"
+                class="absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-48 overflow-y-auto bg-white border border-black/8 rounded-lg shadow-lg py-1 font-poppins divide-y divide-black/[0.04]"
+              >
+                <button
+                  v-for="act in prsActivities"
+                  :key="act.id"
+                  type="button"
+                  @click="selectPrsActivity(act)"
+                  class="w-full text-left px-3.5 py-2 text-xs text-black/75 hover:bg-black/[0.03] hover:text-[#2E85D8] font-medium transition-colors"
+                >
+                  <div class="flex items-center justify-between font-semibold">
+                    <span>ID: {{ act.id }} - {{ act.institution }}</span>
+                    <span :class="[
+                      'text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider',
+                      act.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                      act.status === 'Pending' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                      'bg-red-50 text-red-700 border border-red-200'
+                    ]">
+                      {{ act.status }}
+                    </span>
+                  </div>
+                  <div class="text-[10px] text-black/40">{{ act.description || 'No description' }} | {{ act.sbu || 'No SBU' }}</div>
+                </button>
+              </div>
+            </div>
           </div>
 
         </div>

@@ -32,6 +32,7 @@ class Contract extends Model
         'start_date',
         'end_date',
         'created_by',
+        'prs_activity_id',
     ];
 
     protected $casts = [
@@ -39,6 +40,7 @@ class Contract extends Model
         'description' => EncryptedCast::class,
         'start_date' => 'date',
         'end_date' => 'date',
+        'prs_activity_id' => 'integer',
     ];
 
     protected static function booted()

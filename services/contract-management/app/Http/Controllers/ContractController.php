@@ -41,6 +41,7 @@ class ContractController extends Controller
             'end_date'         => $contract->end_date?->toDateString(),
             'lifecycle_status' => $contract->lifecycle_status,
             'created_by'       => $contract->created_by,
+            'prs_activity_id'  => $contract->prs_activity_id,
             'created_at'       => $contract->created_at?->toISOString(),
             'documents'        => $contract->documents->map(fn ($d) => [
                 'document_id'  => (string) ($d->document_id ?? $d->_id),
@@ -247,6 +248,7 @@ class ContractController extends Controller
             'start_date'      => $data['start_date'] ?? $data['startDate'] ?? null,
             'end_date'        => $data['end_date'] ?? $data['endDate'] ?? null,
             'document_ids'    => $data['document_ids'] ?? null,
+            'prs_activity_id' => $data['prs_activity_id'] ?? null,
         ];
 
         $validator = Validator::make($normalized, [
@@ -262,6 +264,7 @@ class ContractController extends Controller
             'end_date'        => 'required|date|after:start_date',
             'document_ids'    => 'nullable|array',
             'document_ids.*'  => 'string',
+            'prs_activity_id' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -320,6 +323,7 @@ class ContractController extends Controller
             'start_date'         => $incoming['start_date'],
             'end_date'           => $incoming['end_date'],
             'created_by'         => $userId,
+            'prs_activity_id'    => $incoming['prs_activity_id'] ?? null,
         ]);
 
         // Link MongoDB documents
@@ -379,6 +383,8 @@ class ContractController extends Controller
                 \Illuminate\Support\Facades\Log::error("Failed to push sales & marketing review notification: " . $e->getMessage());
             }
         }
+
+        $this->notifyPrsOfContractLink($contract);
 
         return response()->json([
             'message' => 'Contract created successfully.',
@@ -543,6 +549,8 @@ class ContractController extends Controller
         );
 
         $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
+
+        $this->notifyPrsOfContractStatus($contract);
 
         SyncContractToMeilisearch::dispatch($this->formatContract($contract));
 
@@ -716,11 +724,53 @@ class ContractController extends Controller
 
         $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
 
+        $this->notifyPrsOfContractStatus($contract);
+
         SyncContractToMeilisearch::dispatch($this->formatContract($contract));
 
         return response()->json([
             'message' => 'Contract status updated.',
             'data'    => $this->formatContract($contract),
         ]);
+    }
+
+    private function notifyPrsOfContractLink(Contract $contract): void
+    {
+        if (empty($contract->prs_activity_id)) {
+            return;
+        }
+
+        $statusName = $contract->approvalStatus?->status_name ?? 'Pending';
+        $outcome = in_array($statusName, ['Approved', 'Rejected'], true)
+            ? ($statusName === 'Approved' ? 'Won' : 'Loss')
+            : 'Follow-up';
+
+        \App\Jobs\NotifyPrsOfContractUpdateJob::dispatch(
+            (int) $contract->prs_activity_id,
+            (int) $contract->contract_id,
+            $statusName,
+            $outcome
+        );
+    }
+
+    private function notifyPrsOfContractStatus(Contract $contract): void
+    {
+        if (empty($contract->prs_activity_id)) {
+            return;
+        }
+
+        $statusName = $contract->approvalStatus?->status_name;
+        if (!in_array($statusName, ['Approved', 'Rejected'], true)) {
+            return;
+        }
+
+        $outcome = $statusName === 'Approved' ? 'Won' : 'Loss';
+
+        \App\Jobs\NotifyPrsOfContractUpdateJob::dispatch(
+            (int) $contract->prs_activity_id,
+            (int) $contract->contract_id,
+            $statusName,
+            $outcome
+        );
     }
 }

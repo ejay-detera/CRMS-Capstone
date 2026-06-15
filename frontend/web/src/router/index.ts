@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw, type RouteLocationNormalized } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
+import { useLoader } from '@/composables/useLoader'
 
 const routes: Array<RouteRecordRaw> = [
   // Admin Route Group
@@ -193,6 +194,16 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/sales/Contracts/DocumentViewer.vue'),
       },
       {
+        path: 'contract-requests',
+        name: 'sales-contract-requests',
+        component: () => import('@/views/sales/ContractRequests/index.vue'),
+      },
+      {
+        path: 'contract-requests/:id',
+        name: 'sales-contract-requests-detail',
+        component: () => import('@/views/sales/ContractRequests/RequestDetail/index.vue'),
+      },
+      {
         path: 'notifications',
         name: 'sales-notifications',
         component: () => import('@/views/sales/Notifications/index.vue'),
@@ -250,6 +261,8 @@ router.beforeEach((to: RouteLocationNormalized) => {
     try {
       throw new Error('Not authenticated')
     } catch (err) {
+      const { hideLoader } = useLoader()
+      hideLoader()
       error('Access Denied', 'You must log in to access this system.')
       console.warn('User not authenticated, redirecting to auth-service:', to.path)
 
@@ -296,6 +309,24 @@ router.beforeEach((to: RouteLocationNormalized) => {
   }
 
   return true
+})
+
+let isInitialNavigation = true
+
+router.afterEach(() => {
+  if (isInitialNavigation) {
+    const { hideLoader } = useLoader()
+    hideLoader()
+    isInitialNavigation = false
+  }
+})
+
+router.onError(() => {
+  if (isInitialNavigation) {
+    const { hideLoader } = useLoader()
+    hideLoader()
+    isInitialNavigation = false
+  }
 })
 
 export default router
