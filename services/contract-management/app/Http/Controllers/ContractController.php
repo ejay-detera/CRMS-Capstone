@@ -616,7 +616,6 @@ class ContractController extends Controller
     public function dashboardSummary(Request $request)
     {
         $query = Contract::with([
-            'documents',
             'category',
             'approvalStatus',
             'workflowStatus',
@@ -628,10 +627,30 @@ class ContractController extends Controller
             $query->where('created_by', $request->get('auth_id'));
         }
 
-        $contracts = $query->orderByDesc('created_at')->get();
+        $contracts = $query->orderByDesc('contract_id')->get();
 
         return response()->json([
-            'data' => $contracts->map(fn ($c) => $this->formatContract($c))->values(),
+            'data' => $contracts->map(function ($c) {
+                return [
+                    'contract_id'     => $c->contract_id,
+                    'bp_name'         => $c->bp_name,
+                    'category'        => $c->category?->category_name,
+                    'approval_status' => $c->approvalStatus?->status_name,
+                    'workflow_status' => $c->workflowStatus?->status_name,
+                    'item_code'       => $c->item_code,
+                    'description'     => $c->description,
+                    'serial_number'   => $c->serial_number,
+                    'sbu_number'      => $c->sbu_number,
+                    'region'          => $c->region?->region_name,
+                    'start_date'       => $c->start_date?->toDateString(),
+                    'end_date'         => $c->end_date?->toDateString(),
+                    'lifecycle_status' => $c->lifecycle_status,
+                    'created_by'       => $c->created_by,
+                    'prs_activity_id'  => $c->prs_activity_id,
+                    'created_at'       => $c->created_at?->toISOString(),
+                    'documents'        => [],
+                ];
+            })->values(),
         ]);
     }
 
