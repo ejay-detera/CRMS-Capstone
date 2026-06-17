@@ -3,6 +3,9 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { remainingDays } from '@/types/contract'
 import RecentRequestsTable from './RecentRequestsTable.vue'
 import ContractStatusPanel from './ContractStatusPanel.vue'
+import SalesTrendChart from './SalesTrendChart.vue'
+import SalesStatusChart from './SalesStatusChart.vue'
+import SalesCategoryChart from './SalesCategoryChart.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 
@@ -96,15 +99,46 @@ const statCards = computed(() => [
       </template>
     </div>
 
-    <!-- Main content: requests table + status panel -->
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-      <div class="xl:col-span-2">
-        <RecentRequestsTable :requests="recentRequests" :loading="loading" />
+    <!-- Row 1: Trend Chart + Status Donut -->
+    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+      <div class="xl:col-span-3">
+        <template v-if="loading">
+          <div class="bg-white rounded-lg border border-black/8 p-6 h-[280px] animate-pulse flex flex-col justify-between">
+            <div class="h-4 w-32 bg-black/5 rounded"></div>
+            <div class="h-40 w-full bg-black/5 rounded"></div>
+          </div>
+        </template>
+        <SalesTrendChart v-else :contracts="contracts" />
       </div>
-      <div>
+      <div class="xl:col-span-2">
+        <template v-if="loading">
+          <div class="bg-white rounded-lg border border-black/8 p-6 h-[280px] animate-pulse flex flex-col justify-between">
+            <div class="h-4 w-24 bg-black/5 rounded"></div>
+            <div class="h-40 w-full bg-black/5 rounded"></div>
+          </div>
+        </template>
+        <SalesStatusChart v-else :requests="requests" />
+      </div>
+    </div>
+
+    <!-- Row 2: Category Chart + Status Panel -->
+    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+      <div class="xl:col-span-3">
+        <template v-if="loading">
+          <div class="bg-white rounded-lg border border-black/8 p-6 h-[280px] animate-pulse flex flex-col justify-between">
+            <div class="h-4 w-36 bg-black/5 rounded"></div>
+            <div class="h-40 w-full bg-black/5 rounded"></div>
+          </div>
+        </template>
+        <SalesCategoryChart v-else :contracts="contracts" />
+      </div>
+      <div class="xl:col-span-2">
         <ContractStatusPanel :contracts="withDays" :loading="loading" />
       </div>
     </div>
+
+    <!-- Row 3: Recent Requests Table (Full Width) -->
+    <RecentRequestsTable :requests="recentRequests" :loading="loading" />
 
   </div>
 </template>
