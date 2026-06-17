@@ -22,7 +22,7 @@ const showConfirmEdit = ref(false)
 
 const form = reactive({
   id: '', firstName: '', lastName: '', middleName: '',
-  email: '', role: '' as Role | '', status: '' as Status | '', department: '',
+  email: '', role: '' as Role | '', status: '' as Status | '', department: 'Sales & Marketing',
 })
 const touched = reactive({ firstName: false, lastName: false, email: false })
 
@@ -47,7 +47,7 @@ watch(() => props.user, user => {
     email:      user.email,
     role:       user.role,
     status:     user.status,
-    department: user.department || '',
+    department: 'Sales & Marketing',
   })
   Object.assign(touched, { firstName: false, lastName: false, email: false })
 })
@@ -67,7 +67,7 @@ function confirmSubmit() {
     email: form.email,
     role: form.role as Role,
     status: form.status as Status,
-    department: form.department,
+    department: 'Sales & Marketing',
   })
   emit('update:open', false)
 }
@@ -155,12 +155,12 @@ function confirmSubmit() {
 
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Department</label>
-          <Select v-model="form.department">
-            <SelectTrigger class="h-9 rounded-md border-black/12 text-sm"><SelectValue placeholder="Select department" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="d in departments" :key="d.id" :value="d.name">{{ d.name }}</SelectItem>
-            </SelectContent>
-          </Select>
+          <input
+            type="text"
+            disabled
+            value="Sales & Marketing"
+            class="w-full h-9 rounded-md border border-black/12 bg-black/[0.02] px-3 text-sm text-black/50 cursor-not-allowed"
+          />
         </div>
 
         <div class="border-t border-black/6 pt-4">
