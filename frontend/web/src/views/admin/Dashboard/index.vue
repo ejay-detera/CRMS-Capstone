@@ -9,8 +9,9 @@ import { remainingDays } from '@/types/contract'
 import DashboardStats from './DashboardStats.vue'
 import ContractTrendChart from './ContractTrendChart.vue'
 import ContractStatusChart from './ContractStatusChart.vue'
-import ContractsByRegionChart from './ContractsByRegionChart.vue'
+import RenewalPipelineChart from './RenewalPipelineChart.vue'
 import UserPartnerAnalyticsChart from './UserPartnerAnalyticsChart.vue'
+import ContractsByRegionChart from './ContractsByRegionChart.vue'
 import RecentContractsTable from './RecentContractsTable.vue'
 import AuditLogList from './AuditLogList.vue'
 import UsersList from './UsersList.vue'
@@ -254,6 +255,9 @@ onMounted(() => {
           <ContractStatusChart :contracts="contracts" />
         </div>
       </div>
+
+      <!-- Renewal Pipeline (Full Width Row) -->
+      <RenewalPipelineChart :contracts="withDays" />
 
       <!-- User Roles + Business Partners / Suppliers Regional Analytics -->
       <UserPartnerAnalyticsChart :users="users" :partners="partners" />

@@ -61,6 +61,23 @@ const partnerData = computed<RegionalPartnerData[]>(() => {
 const yPartner     = [(d: RegionalPartnerData) => d.partners, (d: RegionalPartnerData) => d.suppliers]
 const colorsPartner = ['#252578', '#2E85D8']
 
+const yTickValues = computed(() => {
+  const maxVal = Math.max(...partnerData.value.map(d => Math.max(d.partners, d.suppliers)), 0)
+  if (maxVal === 0) return [0]
+  if (maxVal <= 5) {
+    return Array.from({ length: maxVal + 1 }, (_, i) => i)
+  }
+  const step = Math.ceil(maxVal / 5)
+  const ticks = []
+  for (let val = 0; val <= maxVal; val += step) {
+    ticks.push(val)
+  }
+  if (ticks[ticks.length - 1] < maxVal) {
+    ticks.push(maxVal)
+  }
+  return ticks
+})
+
 const xPartner = (_: RegionalPartnerData, i: number) => i
 const xTickFormat = (i: number) => partnerData.value[Math.round(i)]?.region ?? ''
 </script>
@@ -138,8 +155,8 @@ const xTickFormat = (i: number) => partnerData.value[Math.round(i)]?.region ?? '
             }"
           >
             <VisGroupedBar :x="xPartner" :y="yPartner" :color="colorsPartner" :bar-padding="0.25" :group-padding="0.25" :rounded-corners="3" />
-            <VisAxis type="x" :tick-format="xTickFormat" />
-            <VisAxis type="y" />
+            <VisAxis type="x" :tick-format="xTickFormat" :tickValues="partnerData.map((_, i) => i)" />
+            <VisAxis type="y" :tickValues="yTickValues" :tickFormat="(v: number) => String(Math.round(v))" />
           </VisXYContainer>
         </div>
       </div>
