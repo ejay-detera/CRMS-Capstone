@@ -69,14 +69,32 @@ const errors = computed(() => ({
     ? 'This vendor is suspended and cannot be assigned to a new contract.'
     : '',
   category:        touched.category        && !form.category                  ? 'Category is required.' : '',
-  itemCode:        touched.itemCode        && !String(form.itemCode || '').trim()           ? 'Item code is required.' : '',
+  itemCode:        touched.itemCode        && !String(form.itemCode || '').trim()
+    ? 'Item code is required.'
+    : touched.itemCode && !/^ITM-\d{4}$/.test(String(form.itemCode || '').trim())
+    ? 'Item code must start with ITM- followed by 4 digits (e.g., ITM-0041).'
+    : '',
   description:     touched.description     && !String(form.description || '').trim()        ? 'Description is required.' : '',
-  serialNo:        touched.serialNo        && !String(form.serialNo || '').trim()           ? 'Serial number is required.' : '',
-  sbuNumber:       touched.sbuNumber       && !String(form.sbuNumber || '').trim()          ? 'SBU number is required.' : '',
+  serialNo:        touched.serialNo        && !String(form.serialNo || '').trim()
+    ? 'Serial number is required.'
+    : touched.serialNo && !/^SN-\d{4}-\d{4}$/.test(String(form.serialNo || '').trim())
+    ? 'Serial number must be in the format SN-YYYY-xxxx (e.g., SN-2024-0041).'
+    : '',
+  sbuNumber:       touched.sbuNumber       && !String(form.sbuNumber || '').trim()
+    ? 'SBU number is required.'
+    : touched.sbuNumber && !/^SBU-\d{3}$/.test(String(form.sbuNumber || '').trim())
+    ? 'SBU number must start with SBU- followed by 3 digits (e.g., SBU-001).'
+    : '',
   region:          touched.region          && !form.region                    ? 'Region is required.' : '',
-  startDate:       touched.startDate       && !form.startDate                 ? 'Start date is required.' : '',
+  startDate:       touched.startDate       && !form.startDate
+    ? 'Start date is required.'
+    : touched.startDate && (parseInt(form.startDate.split('-')[0], 10) < 1900 || parseInt(form.startDate.split('-')[0], 10) > 2100)
+    ? 'Start date must be between the years 1900 and 2100.'
+    : '',
   endDate:         touched.endDate && !form.endDate
     ? 'End date is required.'
+    : touched.endDate && (parseInt(form.endDate.split('-')[0], 10) < 1900 || parseInt(form.endDate.split('-')[0], 10) > 2100)
+    ? 'End date must be between the years 1900 and 2100.'
     : touched.endDate && form.startDate && form.endDate && form.endDate <= form.startDate
     ? 'End date must be after start date.'
     : '',
@@ -97,17 +115,20 @@ function touchAll() {
 }
 
 function isValid() {
+  const startYear = form.startDate ? parseInt(form.startDate.split('-')[0], 10) : 0
+  const endYear = form.endDate ? parseInt(form.endDate.split('-')[0], 10) : 0
+
   return (
     String(form.businessPartner || '').trim() &&
     !suspendedVendorMatch.value &&
     form.category &&
-    String(form.itemCode || '').trim() &&
+    String(form.itemCode || '').trim() && /^ITM-\d{4}$/.test(String(form.itemCode || '').trim()) &&
     String(form.description || '').trim() &&
-    String(form.serialNo || '').trim() &&
-    String(form.sbuNumber || '').trim() &&
+    String(form.serialNo || '').trim() && /^SN-\d{4}-\d{4}$/.test(String(form.serialNo || '').trim()) &&
+    String(form.sbuNumber || '').trim() && /^SBU-\d{3}$/.test(String(form.sbuNumber || '').trim()) &&
     form.region &&
-    form.startDate &&
-    form.endDate &&
+    form.startDate && startYear >= 1900 && startYear <= 2100 &&
+    form.endDate && endYear >= 1900 && endYear <= 2100 &&
     form.endDate > form.startDate
   )
 }
