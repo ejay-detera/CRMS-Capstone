@@ -28,6 +28,23 @@ const y = (d: PipelineItem) => d.count
 const colors = (d: PipelineItem) => d.color
 
 const xTickFormat = (i: number) => data.value[Math.round(i)]?.horizon ?? ''
+
+const yTickValues = computed(() => {
+  const maxVal = Math.max(...data.value.map(d => d.count), 0)
+  if (maxVal === 0) return [0]
+  if (maxVal <= 5) {
+    return Array.from({ length: maxVal + 1 }, (_, i) => i)
+  }
+  const step = Math.ceil(maxVal / 5)
+  const ticks = []
+  for (let val = 0; val <= maxVal; val += step) {
+    ticks.push(val)
+  }
+  if (ticks[ticks.length - 1] < maxVal) {
+    ticks.push(maxVal)
+  }
+  return ticks
+})
 </script>
 
 <template>
@@ -50,7 +67,7 @@ const xTickFormat = (i: number) => data.value[Math.round(i)]?.horizon ?? ''
       >
         <VisStackedBar :x="x" :y="y" :color="colors" :bar-padding="0.3" :rounded-corners="4" />
         <VisAxis type="x" :tick-format="xTickFormat" :tickValues="data.map((_, i) => i)" />
-        <VisAxis type="y" />
+        <VisAxis type="y" :tickValues="yTickValues" :tickFormat="(v: number) => String(Math.round(v))" />
       </VisXYContainer>
     </div>
   </div>
