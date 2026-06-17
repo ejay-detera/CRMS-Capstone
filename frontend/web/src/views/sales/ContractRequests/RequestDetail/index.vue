@@ -11,6 +11,7 @@ import type { ContractRequest } from '@/types/contractRequest'
 import { safeHref } from '@/utils/sanitize'
 import RequestDetailHeader from './RequestDetailHeader.vue'
 import RequestInfoSection  from './RequestInfoSection.vue'
+import ConfirmationDialog  from '@/components/shared/ConfirmationDialog.vue'
 
 const route  = useRoute()
 const router = useRouter()
@@ -49,6 +50,35 @@ const showRejectInput  = ref(false)
 const rejectReason     = ref('')
 const actionInProgress = ref(false)
 
+const showConfirm = ref(false)
+const confirmTitle = ref('')
+const confirmDesc = ref('')
+const confirmAction = ref<(() => void) | null>(null)
+
+function triggerApprove() {
+  confirmTitle.value = 'Approve Request'
+  confirmDesc.value = 'Are you sure you want to approve this contract request? This will change the status to Approved and advance the workflow.'
+  confirmAction.value = handleApprove
+  showConfirm.value = true
+}
+
+function triggerReject() {
+  if (!rejectReason.value.trim()) return
+  confirmTitle.value = 'Reject Request'
+  confirmDesc.value = 'Are you sure you want to reject this contract request? This will mark it as Rejected.'
+  confirmAction.value = confirmReject
+  showConfirm.value = true
+}
+
+function triggerSaveEdit() {
+  Object.keys(touched).forEach(k => (touched[k] = true))
+  if (!isFormValid.value) return
+  confirmTitle.value = 'Save Request Changes'
+  confirmDesc.value = 'Are you sure you want to save changes to this contract request?'
+  confirmAction.value = saveEdit
+  showConfirm.value = true
+}
+
 const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
 
 function normalizeDocumentUrl(url?: string): string {
@@ -66,6 +96,7 @@ function normalizeDocumentUrl(url?: string): string {
 
 async function handleApprove() {
   if (!request.value || actionInProgress.value) return
+  showConfirm.value = false
   const numericId  = parseInt(id.replace('REQ-', ''), 10)
   const contractId = String(numericId)
 
@@ -102,6 +133,7 @@ function handleToggleReject() {
 
 async function confirmReject() {
   if (!request.value || !rejectReason.value.trim() || actionInProgress.value) return
+  showConfirm.value = false
   const numericId  = parseInt(id.replace('REQ-', ''), 10)
   const contractId = String(numericId)
 
@@ -225,6 +257,7 @@ function cancelEdit() {
 async function saveEdit() {
   Object.keys(touched).forEach(k => (touched[k] = true))
   if (!isFormValid.value) return
+  showConfirm.value = false
 
   savingEdit.value = true
   try {
@@ -376,12 +409,12 @@ function fmtSize(bytes: number) {
         :reject-reason-valid="rejectReason.trim().length > 0"
         @back="router.push(backPath)"
         @edit="startEdit"
-        @save="saveEdit"
+        @save="triggerSaveEdit"
         @cancel="cancelEdit"
         @follow-up="handleFollowUp"
-        @approve="handleApprove"
+        @approve="triggerApprove"
         @toggle-reject="handleToggleReject"
-        @confirm-reject="confirmReject"
+        @confirm-reject="triggerReject"
       />
 
       <RequestInfoSection
@@ -456,5 +489,15 @@ function fmtSize(bytes: number) {
       </div>
 
     </template>
+    
+    <ConfirmationDialog
+      v-model:open="showConfirm"
+      :title="confirmTitle"
+      :description="confirmDesc"
+      confirm-label="Confirm"
+      variant="default"
+      :loading="actionInProgress || savingEdit"
+      @confirm="confirmAction ? confirmAction() : undefined"
+    />
   </div>
 </template>

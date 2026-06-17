@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { ref, computed, reactive, watch } from 'vue'
 import { Pencil } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 import type { User, Role, Status } from '@/types/user'
 
 const props = defineProps<{
@@ -16,6 +17,8 @@ const emit  = defineEmits<{
   'update:open': [v: boolean]
   submit: [data: { id: string; name: string; email: string; role: Role; status: Status; department: string }]
 }>()
+
+const showConfirmEdit = ref(false)
 
 const form = reactive({
   id: '', firstName: '', lastName: '', middleName: '',
@@ -52,6 +55,11 @@ watch(() => props.user, user => {
 function submit() {
   Object.assign(touched, { firstName: true, lastName: true, email: true })
   if (!form.firstName || !form.lastName || !form.email || !emailValid.value || !form.role || !form.status) return
+  showConfirmEdit.value = true
+}
+
+function confirmSubmit() {
+  showConfirmEdit.value = false
   const fullName = [form.firstName, form.middleName, form.lastName].filter(Boolean).join(' ')
   emit('submit', {
     id: form.id,
@@ -163,6 +171,14 @@ function submit() {
           </DialogFooter>
         </div>
 
+        <ConfirmationDialog
+          v-model:open="showConfirmEdit"
+          title="Save User Changes"
+          description="Are you sure you want to save the changes for this user account? This will update their credentials and permissions."
+          confirm-label="Save"
+          variant="default"
+          @confirm="confirmSubmit"
+        />
       </form>
     </DialogContent>
   </Dialog>
