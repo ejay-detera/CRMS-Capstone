@@ -231,6 +231,8 @@ async function fetchContracts(
     region?: string
     status?: string
     lifecycle_status?: string
+    start_date?: string
+    end_date?: string
   }
 ): Promise<Contract[]> {
   validateCacheCredentials()

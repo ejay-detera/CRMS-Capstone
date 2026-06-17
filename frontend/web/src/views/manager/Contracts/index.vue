@@ -23,7 +23,13 @@ const loading   = computed(() => cacheState.contractsLoading)
 // ── Lookup options fetched from API ──────────────────────────────────────────
 
 const statusOptions = ref<{ label: string; value: StatusFilter }[]>([
-  { label: 'All Status', value: '' },
+  { label: 'All Status',    value: ''             },
+  { label: 'Pending',       value: 'Pending'      },
+  { label: 'Approved',      value: 'Approved'     },
+  { label: 'Rejected',      value: 'Rejected'     },
+  { label: 'Notarized Pdf', value: 'Notarized PDF'},
+  { label: 'SBSI Review',   value: 'SBSI Review'  },
+  { label: 'Client Review', value: 'Client Review'},
 ])
 
 async function fetchStatusOptions() {
@@ -38,18 +44,35 @@ async function fetchStatusOptions() {
       fetch(`${apiBase}/lookups/workflow-statuses`, { headers }),
     ])
 
-    const opts: { label: string; value: StatusFilter }[] = [{ label: 'All Status', value: '' }]
+    const defaultOpts: { label: string; value: StatusFilter }[] = [
+      { label: 'Pending',       value: 'Pending'      },
+      { label: 'Approved',      value: 'Approved'     },
+      { label: 'Rejected',      value: 'Rejected'     },
+      { label: 'Notarized Pdf', value: 'Notarized PDF'},
+      { label: 'SBSI Review',   value: 'SBSI Review'  },
+      { label: 'Client Review', value: 'Client Review'},
+    ]
+
+    const opts: { label: string; value: StatusFilter }[] = [
+      { label: 'All Status', value: '' },
+      ...defaultOpts
+    ]
 
     if (approvalRes.ok) {
       const j = await approvalRes.json()
       for (const s of (j.data ?? []) as string[]) {
-        opts.push({ label: s, value: s as StatusFilter })
+        if (!opts.some(o => o.value === s)) {
+          opts.push({ label: s, value: s as StatusFilter })
+        }
       }
     }
     if (workflowRes.ok) {
       const j = await workflowRes.json()
       for (const s of (j.data ?? []) as { status_name: string }[]) {
-        opts.push({ label: s.status_name, value: s.status_name as StatusFilter })
+        if (!opts.some(o => o.value === s.status_name)) {
+          const label = s.status_name === 'Notarized PDF' ? 'Notarized Pdf' : s.status_name
+          opts.push({ label, value: s.status_name as StatusFilter })
+        }
       }
     }
 
@@ -66,6 +89,8 @@ const statusFilter   = ref<StatusFilter>('')
 const searchQuery    = ref('')
 const categoryFilter  = ref('')
 const regionFilter    = ref('')
+const startDateFilter = ref('')
+const endDateFilter   = ref('')
 const currentPage    = ref(1)
 const itemsPerPage   = 15
 
@@ -104,6 +129,8 @@ async function fetchContracts() {
       region: regionFilter.value,
       status: statusFilter.value,
       lifecycle_status: activeFilter.value !== 'all' ? activeFilter.value : undefined,
+      start_date: startDateFilter.value,
+      end_date: endDateFilter.value,
     })
   } catch {
     error('Network error', 'Could not reach the server.')
@@ -124,7 +151,7 @@ async function handleFilterChange(resetPage = false) {
   await fetchContracts()
 }
 
-watch([activeFilter, statusFilter, categoryFilter, regionFilter], () => {
+watch([activeFilter, statusFilter, categoryFilter, regionFilter, startDateFilter, endDateFilter], () => {
   handleFilterChange(true)
 })
 
@@ -232,6 +259,8 @@ function executeExport() {
       :search-query="searchQuery"
       :current-page="currentPage"
       :items-per-page="itemsPerPage"
+      :start-date-filter="startDateFilter"
+      :end-date-filter="endDateFilter"
       @open-detail="openDetail"
       @update:active-filter="activeFilter = $event"
       @update:status-filter="statusFilter = $event"
@@ -239,6 +268,8 @@ function executeExport() {
       @update:region-filter="regionFilter = $event"
       @update:search-query="searchQuery = $event"
       @update:current-page="currentPage = $event"
+      @update:startDateFilter="startDateFilter = $event"
+      @update:endDateFilter="endDateFilter = $event"
     />
 
   </div>

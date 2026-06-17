@@ -27,6 +27,8 @@ const statusFilter   = ref<StatusFilter>('')
 const searchQuery    = ref('')
 const categoryFilter  = ref('')
 const regionFilter    = ref('')
+const startDateFilter = ref('')
+const endDateFilter   = ref('')
 const currentPage    = ref(1)
 const itemsPerPage   = 15
 
@@ -66,6 +68,8 @@ async function fetchContracts() {
       region: regionFilter.value,
       status: statusFilter.value,
       lifecycle_status: activeFilter.value !== 'all' ? activeFilter.value : undefined,
+      start_date: startDateFilter.value,
+      end_date: endDateFilter.value,
     })
   } catch {
     error('Network error', 'Could not reach the server.')
@@ -83,7 +87,7 @@ async function handleFilterChange(resetPage = false) {
   await fetchContracts()
 }
 
-watch([activeFilter, statusFilter, categoryFilter, regionFilter], () => {
+watch([activeFilter, statusFilter, categoryFilter, regionFilter, startDateFilter, endDateFilter], () => {
   handleFilterChange(true)
 })
 
@@ -189,6 +193,8 @@ function executeExport() {
       :search-query="searchQuery"
       :current-page="currentPage"
       :items-per-page="itemsPerPage"
+      :start-date-filter="startDateFilter"
+      :end-date-filter="endDateFilter"
       @open-detail="openDetail"
       @update:active-filter="activeFilter = $event"
       @update:status-filter="statusFilter = $event"
@@ -196,6 +202,8 @@ function executeExport() {
       @update:region-filter="regionFilter = $event"
       @update:search-query="searchQuery = $event"
       @update:current-page="currentPage = $event"
+      @update:startDateFilter="startDateFilter = $event"
+      @update:endDateFilter="endDateFilter = $event"
     />
 
   </div>

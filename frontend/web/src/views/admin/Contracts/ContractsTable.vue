@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { Search, MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-vue-next'
+import { ref, watch, computed } from 'vue'
+import { Search, MoreHorizontal, Eye, Pencil, Trash2, Filter, X } from 'lucide-vue-next'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { useAuth } from '@/composables/useAuth'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,9 +30,11 @@ const props = defineProps<{
   regionFilter:   string
   statusFilter:   StatusFilter
   currentPage:    number
-  itemsPerPage:   number
+  startDateFilter?: string
+  endDateFilter?:   string
   loading?:       boolean
   totalItems?:    number
+  itemsPerPage?:  number
 }>()
 
 const emit = defineEmits<{
@@ -43,7 +47,80 @@ const emit = defineEmits<{
   'update:regionFilter':   [v: string]
   'update:statusFilter':   [v: StatusFilter]
   'update:currentPage':    [v: number]
+  'update:startDateFilter': [v: string]
+  'update:endDateFilter':   [v: string]
 }>()
+
+const showFilterPopover = ref(false)
+
+const draftCategory = ref(props.categoryFilter || '')
+const draftRegion = ref(props.regionFilter || '')
+const draftStatus = ref(props.statusFilter || '')
+const draftStartDate = ref(props.startDateFilter || '')
+const draftEndDate = ref(props.endDateFilter || '')
+
+watch(showFilterPopover, (open) => {
+  if (open) {
+    draftCategory.value = props.categoryFilter || ''
+    draftRegion.value = props.regionFilter || ''
+    draftStatus.value = props.statusFilter || ''
+    draftStartDate.value = props.startDateFilter || ''
+    draftEndDate.value = props.endDateFilter || ''
+  }
+})
+
+function applyFilters() {
+  emit('update:categoryFilter', draftCategory.value)
+  emit('update:regionFilter', draftRegion.value)
+  emit('update:statusFilter', draftStatus.value)
+  emit('update:startDateFilter', draftStartDate.value)
+  emit('update:endDateFilter', draftEndDate.value)
+  showFilterPopover.value = false
+}
+
+function clearAll() {
+  draftCategory.value = ''
+  draftRegion.value = ''
+  draftStatus.value = ''
+  draftStartDate.value = ''
+  draftEndDate.value = ''
+
+  emit('update:categoryFilter', '')
+  emit('update:regionFilter', '')
+  emit('update:statusFilter', '')
+  emit('update:startDateFilter', '')
+  emit('update:endDateFilter', '')
+  showFilterPopover.value = false
+}
+
+const activeFilterChips = computed(() => {
+  const chips = []
+  if (props.categoryFilter) {
+    chips.push({ key: 'category', label: `Category: ${props.categoryFilter}` })
+  }
+  if (props.regionFilter) {
+    chips.push({ key: 'region', label: `Region: ${props.regionFilter}` })
+  }
+  if (props.statusFilter) {
+    const label = statusOptions.find(o => o.value === props.statusFilter)?.label || props.statusFilter
+    chips.push({ key: 'status', label: `Status: ${label}` })
+  }
+  if (props.startDateFilter) {
+    chips.push({ key: 'startDate', label: `From: ${props.startDateFilter}` })
+  }
+  if (props.endDateFilter) {
+    chips.push({ key: 'endDate', label: `To: ${props.endDateFilter}` })
+  }
+  return chips
+})
+
+function removeChip(key: string) {
+  if (key === 'category') emit('update:categoryFilter', '')
+  if (key === 'region') emit('update:regionFilter', '')
+  if (key === 'status') emit('update:statusFilter', '')
+  if (key === 'startDate') emit('update:startDateFilter', '')
+  if (key === 'endDate') emit('update:endDateFilter', '')
+}
 
 const filterTabs: { label: string; value: FilterTab }[] = [
   { label: 'All',           value: 'all'      },
@@ -64,7 +141,7 @@ const statusOptions: { label: string; value: StatusFilter }[] = [
   { label: 'Pending',       value: 'Pending'      },
   { label: 'Approved',      value: 'Approved'     },
   { label: 'Rejected',      value: 'Rejected'     },
-  { label: 'Notarized PDF', value: 'Notarized PDF'},
+  { label: 'Notarized Pdf', value: 'Notarized PDF'},
   { label: 'SBSI Review',   value: 'SBSI Review'  },
   { label: 'Client Review', value: 'Client Review'},
 ]
@@ -107,55 +184,91 @@ function avatarColor(name: string) {
           </button>
         </div>
 
-        <!-- Category Filter -->
-        <div class="w-44">
-          <Select
-            :model-value="categoryFilter || '__all__'"
-            @update:model-value="(v) => emit('update:categoryFilter', (v as string) === '__all__' ? '' : (v as string))"
-          >
-            <SelectTrigger class="h-9 rounded-md text-sm border-black/10 bg-white text-black/70 focus:ring-[#2E85D8]/15">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All Categories</SelectItem>
-              <SelectItem v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <!-- Filters Popover Trigger -->
+        <Popover v-model:open="showFilterPopover">
+          <PopoverTrigger as-child>
+            <Button variant="outline" class="h-9 gap-2 text-sm border-black/10 bg-white text-black/70 hover:text-black font-semibold">
+              <Filter class="w-4 h-4 text-black/40" />
+              Filters
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent class="w-80 p-5 bg-white border border-black/10 shadow-lg rounded-lg space-y-4" align="start">
+            <h3 class="text-sm font-semibold text-black">Filters</h3>
+            
+            <!-- Category -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Category</label>
+              <Select :model-value="draftCategory || '__all__'" @update:model-value="(v) => draftCategory = (v === '__all__' ? '' : v)">
+                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent class="bg-white border border-black/10 shadow-lg">
+                  <SelectItem value="__all__">All Categories</SelectItem>
+                  <SelectItem v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        <!-- Region Filter -->
-        <div class="w-40">
-          <Select
-            :model-value="regionFilter || '__all__'"
-            @update:model-value="(v) => emit('update:regionFilter', (v as string) === '__all__' ? '' : (v as string))"
-          >
-            <SelectTrigger class="h-9 rounded-md text-sm border-black/10 bg-white text-black/70 focus:ring-[#2E85D8]/15">
-              <SelectValue placeholder="All Regions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All Regions</SelectItem>
-              <SelectItem value="Luzon">Luzon</SelectItem>
-              <SelectItem value="Visayas">Visayas</SelectItem>
-              <SelectItem value="Mindanao">Mindanao</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <!-- Region -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Region</label>
+              <Select :model-value="draftRegion || '__all__'" @update:model-value="(v) => draftRegion = (v === '__all__' ? '' : v)">
+                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
+                  <SelectValue placeholder="All Regions" />
+                </SelectTrigger>
+                <SelectContent class="bg-white border border-black/10 shadow-lg">
+                  <SelectItem value="__all__">All Regions</SelectItem>
+                  <SelectItem value="Luzon">Luzon</SelectItem>
+                  <SelectItem value="Visayas">Visayas</SelectItem>
+                  <SelectItem value="Mindanao">Mindanao</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        <!-- Status Filter -->
-        <div class="w-44">
-          <Select
-            :model-value="statusFilter || '__all__'"
-            @update:model-value="(v) => emit('update:statusFilter', (v as string) === '__all__' ? '' : (v as StatusFilter))"
-          >
-            <SelectTrigger class="h-9 rounded-md text-sm border-black/10 bg-white text-black/70 focus:ring-[#2E85D8]/15">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All Status</SelectItem>
-              <SelectItem v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <!-- Status -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Status</label>
+              <Select :model-value="draftStatus || '__all__'" @update:model-value="(v) => draftStatus = (v === '__all__' ? '' : (v as StatusFilter))">
+                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent class="bg-white border border-black/10 shadow-lg">
+                  <SelectItem value="__all__">All Status</SelectItem>
+                  <SelectItem v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <!-- Date Range -->
+            <div class="space-y-2 pt-1 border-t border-black/5">
+              <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Date Range</label>
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-medium text-black/65">Start Date</span>
+                  <input type="date" v-model="draftStartDate"
+                    class="h-7 w-36 rounded-md border border-black/10 bg-white px-2 text-xs focus:border-[#2E85D8] focus:outline-none transition-colors" />
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-medium text-black/65">End Date</span>
+                  <input type="date" v-model="draftEndDate"
+                    class="h-7 w-36 rounded-md border border-black/10 bg-white px-2 text-xs focus:border-[#2E85D8] focus:outline-none transition-colors" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="pt-3 border-t border-black/5 flex items-center justify-end gap-2">
+              <Button variant="outline" size="sm" @click="clearAll"
+                class="flex-1 h-8 text-xs border-black/15 text-black/65 hover:text-black hover:bg-black/4">
+                Clear All
+              </Button>
+              <Button size="sm" @click="applyFilters"
+                class="flex-1 h-8 text-xs bg-[#252578] hover:bg-[#2F2F73] text-white font-medium shadow-sm">
+                Apply Filters
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <!-- Search query input -->
@@ -164,8 +277,24 @@ function avatarColor(name: string) {
         <input :value="searchQuery"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"
           type="text" placeholder="Search contracts..."
+          maxlength="100"
           class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
       </div>
+    </div>
+
+    <!-- Active Filter Chips -->
+    <div v-if="activeFilterChips.length > 0" class="flex flex-wrap items-center gap-2 px-6 py-2.5 border-b border-black/5 bg-black/[0.005]">
+      <span class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Active Filters:</span>
+      <div v-for="chip in activeFilterChips" :key="chip.key"
+        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-black/5 border border-black/10 text-xs text-black/70 font-semibold">
+        {{ chip.label }}
+        <button @click="removeChip(chip.key)" class="text-black/40 hover:text-black shrink-0 transition-colors">
+          <X class="w-3 h-3" />
+        </button>
+      </div>
+      <button @click="clearAll" class="text-xs text-red-600 hover:text-red-700 font-semibold ml-2">
+        Clear All
+      </button>
     </div>
 
     <!-- Table -->
@@ -302,7 +431,7 @@ function avatarColor(name: string) {
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
                   <Button variant="ghost" size="icon"
-                    class="h-8 w-8 text-black/25 hover:text-black hover:bg-black/5 data-[state=open]:bg-black/5 data-[state=open]:text-black">
+                    class="h-8 w-8 text-black/60 hover:text-black hover:bg-black/5 data-[state=open]:bg-black/5 data-[state=open]:text-black">
                     <MoreHorizontal class="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -342,4 +471,6 @@ function avatarColor(name: string) {
     </div>
 
   </div>
+
+
 </template>

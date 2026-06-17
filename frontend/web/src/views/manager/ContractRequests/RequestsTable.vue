@@ -178,7 +178,7 @@ function avatarColor(name: string) {
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
                   <Button variant="ghost" size="icon"
-                    class="h-8 w-8 text-black/25 hover:text-black hover:bg-black/5 data-[state=open]:bg-black/5 data-[state=open]:text-black">
+                    class="h-8 w-8 text-black/60 hover:text-black hover:bg-black/5 data-[state=open]:bg-black/5 data-[state=open]:text-black">
                     <MoreHorizontal class="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>

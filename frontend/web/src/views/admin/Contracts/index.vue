@@ -25,6 +25,8 @@ const searchQuery    = ref('')
 const categoryFilter  = ref('')
 const regionFilter    = ref('')
 const statusFilter    = ref<StatusFilter>('')
+const startDateFilter = ref('')
+const endDateFilter   = ref('')
 const currentPage    = ref(1)
 const itemsPerPage   = 15
 
@@ -67,6 +69,8 @@ async function fetchContracts() {
       region: regionFilter.value,
       status: statusFilter.value,
       lifecycle_status: activeFilter.value !== 'all' ? activeFilter.value : undefined,
+      start_date: startDateFilter.value,
+      end_date: endDateFilter.value,
     })
   } catch (err) {
     console.error('Failed to fetch contracts:', err)
@@ -87,7 +91,7 @@ async function handleFilterChange(resetPage = false) {
   await fetchContracts()
 }
 
-watch([activeFilter, categoryFilter, regionFilter, statusFilter], () => {
+watch([activeFilter, categoryFilter, regionFilter, statusFilter, startDateFilter, endDateFilter], () => {
   handleFilterChange(true)
 })
 
@@ -235,6 +239,8 @@ function executeExport() {
       :status-filter="statusFilter"
       :current-page="currentPage"
       :items-per-page="itemsPerPage"
+      :start-date-filter="startDateFilter"
+      :end-date-filter="endDateFilter"
       @open-detail="openDetail"
       @open-edit="openEdit"
       @delete="triggerDelete"
@@ -244,6 +250,8 @@ function executeExport() {
       @update:region-filter="regionFilter = $event"
       @update:status-filter="statusFilter = $event"
       @update:current-page="currentPage = $event"
+      @update:startDateFilter="startDateFilter = $event"
+      @update:endDateFilter="endDateFilter = $event"
     />
 
     <ConfirmationDialog
