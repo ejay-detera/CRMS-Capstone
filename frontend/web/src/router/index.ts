@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw, type RouteLocationNormalized } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
+import { useLoader } from '@/composables/useLoader'
 
 const routes: Array<RouteRecordRaw> = [
   // Admin Route Group
@@ -145,7 +146,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'partners/create',
         name: 'manager-partners-create',
         component: () => import('@/views/admin/Partners/AddPartnerPage.vue'),
-        meta: { requiresPermission: 'crms.partners.create' },
+        meta: { requiresPermission: 'cms.partners.create' },
       },
       {
         path: 'partners/:code',
@@ -193,6 +194,16 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/sales/Contracts/DocumentViewer.vue'),
       },
       {
+        path: 'contract-requests',
+        name: 'sales-contract-requests',
+        component: () => import('@/views/sales/ContractRequests/index.vue'),
+      },
+      {
+        path: 'contract-requests/:id',
+        name: 'sales-contract-requests-detail',
+        component: () => import('@/views/sales/ContractRequests/RequestDetail/index.vue'),
+      },
+      {
         path: 'notifications',
         name: 'sales-notifications',
         component: () => import('@/views/sales/Notifications/index.vue'),
@@ -201,13 +212,13 @@ const routes: Array<RouteRecordRaw> = [
         path: 'partners',
         name: 'sales-partners',
         component: () => import('@/views/sales/Partners/index.vue'),
-        meta: { requiresPermission: 'crms.partners.view' },
+        meta: { requiresPermission: 'cms.partners.view' },
       },
       {
         path: 'partners/:code',
         name: 'sales-partners-detail',
         component: () => import('@/views/admin/Partners/PartnerDetail/index.vue'),
-        meta: { requiresPermission: 'crms.partners.view' },
+        meta: { requiresPermission: 'cms.partners.view' },
       },
       {
         path: 'profile',
@@ -226,7 +237,7 @@ const routes: Array<RouteRecordRaw> = [
       if (role.value === 'Manager') return '/manager/dashboard'
       if (['Sales', 'Employee', 'Finance'].includes(role.value || '')) return '/sales/dashboard'
 
-      // Fallback: escape CRMS router entirely and go to auth-module login
+      // Fallback: escape CMS router entirely and go to auth-module login
       window.location.href = '/'
       return '/'
     },
@@ -234,7 +245,7 @@ const routes: Array<RouteRecordRaw> = [
 ]
 
 const router = createRouter({
-  history: createWebHistory('/crms/'),
+  history: createWebHistory('/cms/'),
   routes,
 })
 
@@ -250,6 +261,8 @@ router.beforeEach((to: RouteLocationNormalized) => {
     try {
       throw new Error('Not authenticated')
     } catch (err) {
+      const { hideLoader } = useLoader()
+      hideLoader()
       error('Access Denied', 'You must log in to access this system.')
       console.warn('User not authenticated, redirecting to auth-service:', to.path)
 
@@ -263,10 +276,10 @@ router.beforeEach((to: RouteLocationNormalized) => {
   }
 
   // Role-based access control (Strict Role Isolation)
-  // CRMS-capstone only supports standard roles: Admin, Manager, Sales, Employee, Finance
+  // CMS-capstone only supports standard roles: Admin, Manager, Sales, Employee, Finance
   const allowedRoles = ['Admin', 'Manager', 'Sales', 'Employee', 'Finance']
 
-  // If the user's role isn't recognized by CRMS (e.g., IT Admin, Super Admin), block them entirely
+  // If the user's role isn't recognized by CMS (e.g., IT Admin, Super Admin), block them entirely
   if (!allowedRoles.includes(role.value || '')) {
     return { name: 'not-found' }
   }
@@ -296,6 +309,24 @@ router.beforeEach((to: RouteLocationNormalized) => {
   }
 
   return true
+})
+
+let isInitialNavigation = true
+
+router.afterEach(() => {
+  if (isInitialNavigation) {
+    const { hideLoader } = useLoader()
+    hideLoader()
+    isInitialNavigation = false
+  }
+})
+
+router.onError(() => {
+  if (isInitialNavigation) {
+    const { hideLoader } = useLoader()
+    hideLoader()
+    isInitialNavigation = false
+  }
 })
 
 export default router

@@ -21,8 +21,8 @@ class AuthCommunicationTest extends TestCase
                     'id' => 1,
                     'email' => 'manager@example.com',
                     'role' => 'Manager',
-                    'permissions' => ['crms.contracts.view'],
-                    'department' => 'Finance'
+                    'permissions' => ['cms.contracts.view'],
+                    'department' => 'Sales & Marketing'
                 ]
             ], 200)
         ]);
@@ -70,7 +70,7 @@ class AuthCommunicationTest extends TestCase
                     'email' => 'sales@example.com',
                     'role' => 'Sales',
                     'permissions' => [], // No permissions
-                    'department' => 'Finance'
+                    'department' => 'Sales & Marketing'
                 ]
             ], 200)
         ]);

@@ -27,6 +27,7 @@ import {
   Search,
   User,
   ChevronDown,
+  Home,
 } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
 import { ref, watch, computed, onMounted, onUnmounted } from "vue";
@@ -64,10 +65,10 @@ watch(() => route.path, path => {
 
 const contractSubItems = computed(() => {
   const items = [];
-  if (hasPermission('crms.contracts.view')) {
+  if (hasPermission('cms.contracts.view')) {
     items.push({ title: "All Contracts", url: "/manager/contracts", icon: FileText });
   }
-  if (hasPermission('crms.contracts.create')) {
+  if (hasPermission('cms.contracts.create')) {
     items.push({ title: "Contract Requests", url: "/manager/contract-requests", icon: FilePlus2 });
   }
   return items;
@@ -159,7 +160,7 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
         </SidebarGroup>
 
         <!-- Contracts group -->
-        <SidebarGroup v-if="hasPermission('crms.contracts.view') || hasPermission('crms.contracts.create')" class="mb-1 p-0">
+        <SidebarGroup v-if="hasPermission('cms.contracts.view') || hasPermission('cms.contracts.create')" class="mb-1 p-0">
           <SidebarGroupLabel
             class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"
           >Contracts</SidebarGroupLabel>
@@ -216,7 +217,7 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
         </SidebarGroup>
 
         <!-- Vendor Management (Partners) group — shown only when permitted -->
-        <SidebarGroup v-if="hasPermission('crms.partners.view')" class="mb-1 p-0">
+        <SidebarGroup v-if="hasPermission('cms.partners.view')" class="mb-1 p-0">
           <SidebarGroupLabel
             class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"
           >Vendor Management</SidebarGroupLabel>
@@ -378,6 +379,11 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
                   <User class="w-4 h-4 text-black/60" />
                   <span>My Profile</span>
                 </button>
+                <a href="http://localhost:5173/"
+                  class="w-full flex items-center gap-3 px-2 py-2 text-sm text-black hover:bg-black/5 rounded-lg transition-colors text-left no-underline">
+                  <Home class="w-4 h-4 text-black/60" />
+                  <span>Back to Home</span>
+                </a>
                 <div class="border-t border-black/5 my-1"></div>
                 <button @click="logout" class="w-full flex items-center gap-3 px-2 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors text-left">
                   <LogOut class="w-4 h-4" />

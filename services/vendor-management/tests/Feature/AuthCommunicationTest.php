@@ -22,8 +22,8 @@ class AuthCommunicationTest extends TestCase
                     'id' => 1,
                     'email' => 'test@example.com',
                     'role' => 'Admin',
-                    'permissions' => ['crms.partners.view', 'crms.partners.create'],
-                    'department' => 'Finance'
+                    'permissions' => ['cms.partners.view', 'cms.partners.create'],
+                    'department' => 'Sales & Marketing'
                 ]
             ], 200)
         ]);
@@ -78,13 +78,13 @@ class AuthCommunicationTest extends TestCase
                     'id' => 1,
                     'email' => 'test@example.com',
                     'role' => 'Sales',
-                    'permissions' => ['crms.partners.view'], // Lacks 'crms.partners.create'
-                    'department' => 'Finance'
+                    'permissions' => ['cms.partners.view'], // Lacks 'cms.partners.create'
+                    'department' => 'Sales & Marketing'
                 ]
             ], 200)
         ]);
 
-        // Try to POST to suppliers (which requires 'crms.partners.create')
+        // Try to POST to suppliers (which requires 'cms.partners.create')
         $response = $this->withHeaders([
             'Authorization' => 'Bearer sales-token',
             'Accept' => 'application/json',

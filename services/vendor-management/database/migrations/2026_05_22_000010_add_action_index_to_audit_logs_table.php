@@ -9,12 +9,12 @@ return new class extends Migration
 {
     /**
      * Add an index on the `action` column for faster filtering by action type.
-     * Safe guard: skips if the index already exists (shared crms-db scenario).
+     * Safe guard: skips if the index already exists (shared cms-db scenario).
      */
     public function up(): void
     {
         // Check if the index already exists before adding it, so migrations are safe
-        // when two services share the same crms-db and one has already run this migration.
+        // when two services share the same cms-db and one has already run this migration.
         if (DB::getDriverName() === 'sqlite') {
             $indexExists = collect(DB::select("SELECT name FROM sqlite_master WHERE type='index' AND name='audit_logs_action_index'"))->isNotEmpty();
         } else {

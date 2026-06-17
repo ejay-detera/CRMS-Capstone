@@ -31,6 +31,7 @@ import {
   Search,
   Bell,
   User,
+  Home,
 } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
@@ -289,6 +290,11 @@ const searchQuery = ref("");
                   <User class="w-4 h-4 text-black/60" />
                   <span>My Profile</span>
                 </button>
+                <a href="http://localhost:5173/"
+                  class="w-full flex items-center gap-3 px-2 py-2 text-sm text-black hover:bg-black/5 rounded-lg transition-colors text-left no-underline">
+                  <Home class="w-4 h-4 text-black/60" />
+                  <span>Back to Home</span>
+                </a>
                 <div class="border-t border-black/5 my-1"></div>
                 <button @click="logout" class="w-full flex items-center gap-3 px-2 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors text-left">
                   <LogOut class="w-4 h-4" />

@@ -1,14 +1,14 @@
 # Nginx Reverse Proxy (Shared Gateway) Architecture
 
-This document explains how the **Nginx Reverse Proxy** (Shared Gateway) is configured to manage traffic across multiple microservices in the CRMS and Auth modules.
+This document explains how the **Nginx Reverse Proxy** (Shared Gateway) is configured to manage traffic across multiple microservices in the CMS and Auth modules.
 
 ## 1. How it Works
 
 The gateway acts as an **Nginx Reverse Proxy**—a single entry point for the entire ecosystem. Instead of accessing each service via its own port (e.g., 5000, 5001, 8001), you access everything through a single port (**5173**) on `localhost`.
 
 ### The Mechanism
-1.  **Shared Docker Network:** All services (Auth, CRMS, Databases) are connected to an external Docker network called `shared-capstone-network`.
-2.  **Service Discovery:** Because they are on the same network, Nginx can reach other containers using their `container_name` or `service_name` (e.g., `http://crms-web:5001`) instead of an IP address.
+1.  **Shared Docker Network:** All services (Auth, CMS, Databases) are connected to an external Docker network called `shared-capstone-network`.
+2.  **Service Discovery:** Because they are on the same network, Nginx can reach other containers using their `container_name` or `service_name` (e.g., `http://cms-web:5001`) instead of an IP address.
 3.  **Path-Based Routing:** Nginx looks at the URL path and "proxies" the request to the correct internal service.
 
 ```mermaid
@@ -20,8 +20,8 @@ graph TD
         Nginx -- "/api/auth" --> AuthService[Auth API:8000]
     end
     
-    subgraph "CRMS Capstone Project"
-        Nginx -- "/crms/" --> CRMSWeb[CRMS Frontend:5001]
+    subgraph "CMS Capstone Project"
+        Nginx -- "/cms/" --> CMSWeb[CMS Frontend:5001]
         Nginx -- "/api/vendor" --> VendorService[Vendor Mgmt:8001]
     end
 ```
@@ -33,7 +33,7 @@ graph TD
 *   **Unified URL:** No need to remember different ports for different services.
 *   **CORS Simplification:** Since everything is on the same domain/port (`localhost:5173`), you avoid many Cross-Origin Resource Sharing (CORS) issues.
 *   **SSL Termination:** In production, you only need to install an SSL certificate on the Nginx gateway, not on every individual microservice.
-*   **Seamless Integration:** You can host the Auth module and CRMS module as if they were a single website.
+*   **Seamless Integration:** You can host the Auth module and CMS module as if they were a single website.
 
 ---
 
@@ -84,9 +84,9 @@ docker compose up -d nginx-proxy --force-recreate
 | Path | Internal Destination | Project |
 | :--- | :--- | :--- |
 | `/` | `http://web-interface:5000` | Auth Module |
-| `/crms/` | `http://crms-web:5001` | CRMS Capstone |
+| `/cms/` | `http://cms-web:5001` | CMS Capstone |
 | `localhost:8000` | `auth-service` (Direct) | Auth API |
-| `localhost:8001` | `vendor-management` (Direct) | CRMS API |
+| `localhost:8001` | `vendor-management` (Direct) | CMS API |
 
 > [!TIP]
 > Even with the proxy running, you can still access services directly via their mapped ports (8001, 5001, etc.) for debugging, but using the proxy (5173) is recommended for the "real" user experience.

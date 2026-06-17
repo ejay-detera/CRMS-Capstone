@@ -22,7 +22,7 @@ final class EmailDispatchTest extends TestCase
     {
         return [
             'Accept' => 'application/json',
-            'X-Internal-Secret' => 'crms-internal-secret-key-2026',
+            'X-Internal-Secret' => 'cms-internal-secret-key-2026',
         ];
     }
 
@@ -190,7 +190,7 @@ final class EmailDispatchTest extends TestCase
             ->assertJsonPath('data.0.recipient_email', 'sales@example.com');
     }
 
-    public function test_job_skips_when_broadcast_role_but_not_finance_department(): void
+    public function test_job_skips_when_broadcast_role_but_not_sales_marketing_department(): void
     {
         Mail::fake();
 

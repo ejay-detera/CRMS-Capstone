@@ -209,7 +209,7 @@ const statusClass = computed(() => {
           Back to Partners
         </button>
         <div v-if="isAdmin" class="flex items-center gap-2">
-          <Button v-if="hasPermission('crms.partners.delete')" variant="outline" @click="showDelete = true"
+          <Button v-if="hasPermission('cms.partners.delete')" variant="outline" @click="showDelete = true"
             class="h-9 px-4 gap-2 text-sm border-red-200 text-red-600 hover:bg-red-50">
             <Trash2 class="w-3.5 h-3.5" /> Delete
           </Button>

@@ -10,9 +10,25 @@ const LABELS: Record<LoaderAction, string> = {
   saving:   'Saving…',
 }
 
-const isLoading = ref(false)
+const isLoading = ref(true)
 const action    = ref<LoaderAction>('loading')
 const label     = ref(LABELS.loading)
+
+/**
+ * Show the global loader overlay with custom action/label.
+ */
+function showLoader(type: LoaderAction = 'loading', customLabel?: string) {
+  action.value = type
+  label.value = customLabel || LABELS[type]
+  isLoading.value = true
+}
+
+/**
+ * Hide the global loader overlay.
+ */
+function hideLoader() {
+  isLoading.value = false
+}
 
 /**
  * Wrap any async operation with a loading state.
@@ -35,5 +51,7 @@ export function useLoader() {
     action:    readonly(action),
     label:     readonly(label),
     withLoading,
+    showLoader,
+    hideLoader,
   }
 }

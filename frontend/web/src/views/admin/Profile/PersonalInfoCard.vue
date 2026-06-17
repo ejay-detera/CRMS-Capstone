@@ -108,7 +108,7 @@ function save() {
               <SelectItem value="IT Department">IT Department</SelectItem>
               <SelectItem value="Sales Department">Sales Department</SelectItem>
               <SelectItem value="Operations">Operations</SelectItem>
-              <SelectItem value="Finance">Finance</SelectItem>
+              <SelectItem value="Sales & Marketing">Sales & Marketing</SelectItem>
             </SelectContent>
           </Select>
         </div>

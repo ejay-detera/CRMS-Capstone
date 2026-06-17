@@ -9,23 +9,23 @@ use Tests\TestCase;
 class AdminUserProxyTest extends TestCase
 {
     use RefreshDatabase;
-    public function test_create_user_finance_employee_success()
+    public function test_create_user_sales_marketing_employee_success()
     {
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
                 'valid' => true,
-                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['crms.users.create'], 'department' => 'Finance']
+                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['cms.users.create'], 'department' => 'Sales & Marketing']
             ]),
             'http://auth-service:8000/api/admin/role-options' => Http::response([
                 ['id' => 10, 'name' => 'Employee'],
                 ['id' => 11, 'name' => 'Manager']
             ]),
             'http://auth-service:8000/api/admin/department-options' => Http::response([
-                ['id' => 50, 'name' => 'Finance']
+                ['id' => 50, 'name' => 'Sales & Marketing']
             ]),
             'http://auth-service:8000/api/admin/users' => Http::response([
                 'message' => 'User created successfully.',
-                'user' => ['email' => 'newuser@finance.com']
+                'user' => ['email' => 'newuser@sales-marketing.com']
             ], 201)
         ]);
 
@@ -34,9 +34,9 @@ class AdminUserProxyTest extends TestCase
         ])->postJson('/api/admin/users', [
             'first_name' => 'John',
             'last_name' => 'Doe',
-            'email' => 'newuser@finance.com',
+            'email' => 'newuser@sales-marketing.com',
             'role_name' => 'Employee',
-            'department_name' => 'Finance'
+            'department_name' => 'Sales & Marketing'
         ]);
 
         $response->assertStatus(201);
@@ -47,7 +47,7 @@ class AdminUserProxyTest extends TestCase
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
                 'valid' => true,
-                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['crms.users.create'], 'department' => 'Finance']
+                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['cms.users.create'], 'department' => 'Sales & Marketing']
             ])
         ]);
 
@@ -69,7 +69,7 @@ class AdminUserProxyTest extends TestCase
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
                 'valid' => true,
-                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['crms.users.create'], 'department' => 'Finance']
+                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['cms.users.create'], 'department' => 'Sales & Marketing']
             ]),
             'http://auth-service:8000/api/admin/role-options' => Http::response([
                 'message' => 'Unauthenticated or session missing.'
@@ -87,9 +87,9 @@ class AdminUserProxyTest extends TestCase
         ])->postJson('/api/admin/users', [
             'first_name' => 'John',
             'last_name' => 'Doe',
-            'email' => 'newuser@finance.com',
+            'email' => 'newuser@sales-marketing.com',
             'role_name' => 'Employee',
-            'department_name' => 'Finance'
+            'department_name' => 'Sales & Marketing'
         ]);
 
         $response->assertStatus(401);

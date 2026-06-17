@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 class InternalAuditController extends Controller
 {
     /**
-     * Receive an audit event from internal auth service and write it to CRMS audit log.
+     * Receive an audit event from internal auth service and write it to CMS audit log.
      */
     public function receive(Request $request)
     {
@@ -32,8 +32,8 @@ class InternalAuditController extends Controller
             'user_department' => 'nullable|string',
         ]);
 
-        if ($request->input('user_department') !== 'Finance') {
-            return response()->json(['ok' => true, 'message' => 'Skipped: Not in Finance department']);
+        if ($request->input('user_department') !== 'Sales & Marketing') {
+            return response()->json(['ok' => true, 'message' => 'Skipped: Not in Sales & Marketing department']);
         }
 
         $log = AuditLog::create([

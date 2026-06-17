@@ -19,7 +19,7 @@ final class VendorContractEndpointsTest extends TestCase
 
     protected function mockAuthService(
         string $role = 'Manager',
-        array $permissions = ['crms.partners.view', 'crms.partners.create', 'crms.partners.edit', 'crms.partners.delete'],
+        array $permissions = ['cms.partners.view', 'cms.partners.create', 'cms.partners.edit', 'cms.partners.delete'],
         int $userId = 10
     ): void {
         Http::fake([
@@ -29,7 +29,7 @@ final class VendorContractEndpointsTest extends TestCase
                     'id' => $userId,
                     'role' => $role,
                     'permissions' => $permissions,
-                    'department' => 'Finance'
+                    'department' => 'Sales & Marketing'
                 ]
             ]),
         ]);
@@ -178,7 +178,7 @@ final class VendorContractEndpointsTest extends TestCase
     public function test_sales_user_index_returns_only_own_associations(): void
     {
         // Sales user 1 (ID: 15)
-        $this->mockAuthService('Sales', ['crms.partners.view'], 15);
+        $this->mockAuthService('Sales', ['cms.partners.view'], 15);
 
         $c1 = Contract::create(['contract_id' => 201]);
         $c2 = Contract::create(['contract_id' => 202]);
@@ -224,7 +224,7 @@ final class VendorContractEndpointsTest extends TestCase
 
     public function test_user_without_edit_permission_is_rejected_with_403_on_write(): void
     {
-        $this->mockAuthService('Sales', ['crms.partners.view'], 15);
+        $this->mockAuthService('Sales', ['cms.partners.view'], 15);
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer token',

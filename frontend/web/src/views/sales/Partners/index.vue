@@ -208,13 +208,13 @@ function exportXLSX() {
     </div>
 
     <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" :loading="loading"
-      :can-delete="hasPermission('crms.partners.delete')"
+      :can-delete="hasPermission('cms.partners.delete')"
       @open-detail="openDetail" @open-delete="openDelete" />
     <PartnersTable v-else
       :paginated="paginated" :filtered="filtered" :active-tab="activeTab"
       :selected-ids="selectedIds" :all-page-selected="allPageSelected"
       :current-page="currentPage" :items-per-page="itemsPerPage"
-      :can-delete="hasPermission('crms.partners.delete')" :loading="loading"
+      :can-delete="hasPermission('cms.partners.delete')" :loading="loading"
       @open-detail="openDetail"
       @toggle-row="toggleRow" @toggle-select-all="toggleSelectAll" @open-delete="openDelete"
       @update:current-page="currentPage = $event"

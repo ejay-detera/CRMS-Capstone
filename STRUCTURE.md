@@ -1,11 +1,11 @@
 # Project Structure
 
-This document outlines the file structure of the CRMS-Capstone project and explains the purpose of the key directories and files.
+This document outlines the file structure of the CMS-Capstone project and explains the purpose of the key directories and files.
 
 ## High-Level Directory Layout
 
 ```text
-crms-capstone/              # root directory
+cms-capstone/              # root directory
 ├── docker/                 # Custom docker configurations (if any)
 ├── frontend/               # User interface applications
 │   └── web/                # Main Vue 3 / Vite frontend

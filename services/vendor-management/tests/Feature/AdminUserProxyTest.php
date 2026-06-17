@@ -10,15 +10,15 @@ class AdminUserProxyTest extends TestCase
 {
     use RefreshDatabase;
     /**
-     * Test successful user creation (Finance + Employee).
+     * Test successful user creation (Sales & Marketing + Employee).
      */
-    public function test_create_user_finance_employee_success()
+    public function test_create_user_sales_marketing_employee_success()
     {
         // 1. Mock internal auth verification
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
                 'valid' => true,
-                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['crms.users.create'], 'department' => 'Finance']
+                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['cms.users.create'], 'department' => 'Sales & Marketing']
             ]),
             // Mock fetching roles
             'http://auth-service:8000/api/admin/role-options' => Http::response([
@@ -27,13 +27,13 @@ class AdminUserProxyTest extends TestCase
             ]),
             // Mock fetching departments
             'http://auth-service:8000/api/admin/department-options' => Http::response([
-                ['id' => 50, 'name' => 'Finance'],
+                ['id' => 50, 'name' => 'Sales & Marketing'],
                 ['id' => 51, 'name' => 'Marketing']
             ]),
             // Mock the actual creation call to auth-service
             'http://auth-service:8000/api/admin/users' => Http::response([
                 'message' => 'User created successfully.',
-                'user' => ['email' => 'newuser@finance.com']
+                'user' => ['email' => 'newuser@sales-marketing.com']
             ], 201)
         ]);
 
@@ -42,24 +42,24 @@ class AdminUserProxyTest extends TestCase
         ])->postJson('/api/admin/users', [
             'first_name' => 'John',
             'last_name' => 'Doe',
-            'email' => 'newuser@finance.com',
+            'email' => 'newuser@sales-marketing.com',
             'role_name' => 'Employee',
-            'department_name' => 'Finance'
+            'department_name' => 'Sales & Marketing'
         ]);
 
         $response->assertStatus(201);
-        $response->assertJsonPath('user.email', 'newuser@finance.com');
+        $response->assertJsonPath('user.email', 'newuser@sales-marketing.com');
     }
 
     /**
-     * Test blocked user creation for non-Finance department.
+     * Test blocked user creation for non-Sales-&-Marketing department.
      */
     public function test_create_user_wrong_department_blocked()
     {
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
                 'valid' => true,
-                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['crms.users.create'], 'department' => 'Finance']
+                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['cms.users.create'], 'department' => 'Sales & Marketing']
             ])
         ]);
 
@@ -74,7 +74,7 @@ class AdminUserProxyTest extends TestCase
         ]);
 
         $response->assertStatus(403);
-        $response->assertJsonFragment(['message' => 'Unauthorized. This admin can only create users for the Finance department.']);
+        $response->assertJsonFragment(['message' => 'Unauthorized. This admin can only create users for the Sales & Marketing department.']);
     }
 
     /**
@@ -85,7 +85,7 @@ class AdminUserProxyTest extends TestCase
         Http::fake([
             'http://auth-service:8000/api/internal/verify-token' => Http::response([
                 'valid' => true,
-                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['crms.users.create'], 'department' => 'Finance']
+                'user' => ['id' => 1, 'role' => 'Admin', 'permissions' => ['cms.users.create'], 'department' => 'Sales & Marketing']
             ])
         ]);
 
@@ -94,9 +94,9 @@ class AdminUserProxyTest extends TestCase
         ])->postJson('/api/admin/users', [
             'first_name' => 'Big',
             'last_name' => 'Boss',
-            'email' => 'boss@finance.com',
+            'email' => 'boss@sales-marketing.com',
             'role_name' => 'Admin', // Forbidden
-            'department_name' => 'Finance'
+            'department_name' => 'Sales & Marketing'
         ]);
 
         $response->assertStatus(403);

@@ -15,7 +15,7 @@ const { state: authState, hasPermission } = useAuth()
 const { state: cacheState, fetchDashboard } = useApiCache()
 const { error } = useToast()
 
-const canViewContracts = computed(() => hasPermission('crms.contracts.view'))
+const canViewContracts = computed(() => hasPermission('cms.contracts.view'))
 
 const now = ref(new Date())
 let timer: ReturnType<typeof setInterval>

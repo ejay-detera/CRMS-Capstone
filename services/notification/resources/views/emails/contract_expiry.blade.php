@@ -88,7 +88,7 @@
                                                     </table>
                                                 </td>
                                                 <td style="font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #FFFFFF;">
-                                                    CMS <span style="font-weight: 400; color: rgba(255, 255, 255, 0.65);">Capstone</span>
+                                                    CMS <span style="font-weight: 400; color: rgba(255, 255, 255, 0.65);">SBSI</span>
                                                 </td>
                                             </tr>
                                         </table>

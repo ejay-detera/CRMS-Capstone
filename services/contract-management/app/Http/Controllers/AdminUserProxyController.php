@@ -27,9 +27,9 @@ class AdminUserProxyController extends Controller
             'department_name' => 'required|string',
         ]);
 
-        // Constraint: Finance Only
-        if (strcasecmp($request->department_name, 'Finance') !== 0) {
-            return response()->json(['message' => 'Unauthorized. Finance only.'], 403);
+        // Constraint: Sales & Marketing Only
+        if (strcasecmp($request->department_name, 'Sales & Marketing') !== 0) {
+            return response()->json(['message' => 'Unauthorized. Sales & Marketing only.'], 403);
         }
 
         // Constraint: Employee/Manager Only (allow department-scoped variants)
@@ -49,7 +49,7 @@ class AdminUserProxyController extends Controller
             'last_name' => $request->last_name,
             'email' => $request->email,
             'role_name' => $roleName,
-            'department_name' => 'Finance',
+            'department_name' => 'Sales & Marketing',
         ], $token, $sessionId);
 
         if (isset($result['error'])) {
@@ -59,7 +59,7 @@ class AdminUserProxyController extends Controller
         // Audit Log User Creation
         $creatorRole = $request->get('auth_role');
         $creatorDepartment = $request->get('auth_department');
-        $shouldLog = ($creatorDepartment === 'Finance') || ($creatorRole === 'IT Admin');
+        $shouldLog = ($creatorDepartment === 'Sales & Marketing') || ($creatorRole === 'IT Admin');
 
         if ($shouldLog) {
             $this->auditLogService->log(

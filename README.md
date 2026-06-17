@@ -1,6 +1,6 @@
-# CRMS Capstone
+# CMS Capstone
 
-Contract & Resource Management System. This project is built using a microservices architecture with Laravel for the backend services and Vue 3 (Vite) for the frontend.
+Contract Management System. This project is built using a microservices architecture with Laravel for the backend services and Vue 3 (Vite) for the frontend.
 
 ## Prerequisites
 

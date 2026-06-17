@@ -48,3 +48,10 @@ context/
 .claude/settings.local.json
 
 settings.json
+
+# --- Playwright ---
+frontend/web/playwright-report/
+frontend/web/test-results/
+frontend/web/blob-report/
+frontend/web/.playwright-blob-report/
+test-results/

@@ -32,9 +32,9 @@ class AuditLogController extends Controller
                     $lastName  = $u['profile']['last_name']  ?? '';
                     $fullName  = trim("{$firstName} {$lastName}");
                     $userId    = $u['id'];
-                    $userMap[$userId]  = !empty($fullName) ? $fullName : ($u['email'] ?? 'Finance User');
+                    $userMap[$userId]  = !empty($fullName) ? $fullName : ($u['email'] ?? 'Sales & Marketing User');
                     $emailMap[$userId] = $u['email'] ?? '';
-                    $roleMap[$userId]  = $u['profile']['role']['name'] ?? 'Finance';
+                    $roleMap[$userId]  = $u['profile']['role']['name'] ?? 'Sales & Marketing';
                 }
             }
         } catch (\Exception $e) {
@@ -45,17 +45,17 @@ class AuditLogController extends Controller
         $page    = (int) $request->input('page', 1);
         $perPage = (int) $request->input('per_page', 20);
 
-        $crmsLogsQuery = AuditLog::query()->where('user_department', 'Finance');
+        $cmsLogsQuery = AuditLog::query()->where('user_department', 'Sales & Marketing');
 
         if ($request->filled('action')) {
-            $crmsLogsQuery->where('action', $request->action);
+            $cmsLogsQuery->where('action', $request->action);
         }
         if ($request->filled('date')) {
-            $crmsLogsQuery->whereDate('performed_at', $request->date);
+            $cmsLogsQuery->whereDate('performed_at', $request->date);
         }
         if ($request->filled('search')) {
             $s = $request->search;
-            $crmsLogsQuery->where(function ($q) use ($s) {
+            $cmsLogsQuery->where(function ($q) use ($s) {
                 $q->where('user_name',    'like', "%{$s}%")
                   ->orWhere('user_email',  'like', "%{$s}%")
                   ->orWhere('entity_type', 'like', "%{$s}%")
@@ -64,16 +64,16 @@ class AuditLogController extends Controller
         }
 
         // DB-level pagination — replaces limit(150)->get() + in-memory slicing
-        $paginator = $crmsLogsQuery->orderBy('performed_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
+        $paginator = $cmsLogsQuery->orderBy('performed_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
 
-        // 3. Remote Auth logs disabled (login/logout events are pushed directly to CRMS)
+        // 3. Remote Auth logs disabled (login/logout events are pushed directly to CMS)
 
         // 4. Normalize paginated results
         $items = [];
         foreach ($paginator->items() as $log) {
-            $userName  = $log->user_name  ?? ($userMap[$log->user_id]  ?? 'Finance User');
+            $userName  = $log->user_name  ?? ($userMap[$log->user_id]  ?? 'Sales & Marketing User');
             $userEmail = $log->user_email ?? ($emailMap[$log->user_id] ?? '');
-            $userRole  = $log->user_role  ?? ($roleMap[$log->user_id]  ?? 'Finance');
+            $userRole  = $log->user_role  ?? ($roleMap[$log->user_id]  ?? 'Sales & Marketing');
 
             // Extract entity name from stored JSON for human-readable descriptions
             $newArr = is_array($log->new_data) ? $log->new_data : [];
@@ -103,8 +103,8 @@ class AuditLogController extends Controller
                 : now()->toIso8601String();
 
             $items[] = [
-                'id'           => 'crms-' . $log->audit_id,
-                'source'       => 'crms',
+                'id'           => 'cms-' . $log->audit_id,
+                'source'       => 'cms',
                 'user_id'      => $log->user_id,
                 'user_name'    => $userName,
                 'user_email'   => $userEmail,

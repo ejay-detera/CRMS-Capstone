@@ -3,7 +3,7 @@ services:
   # ── Databases ──────────────────────────────────
   mysql:
     image: mysql:8.0
-    container_name: crms-mysql
+    container_name: cms-mysql
     ports:
       - "3307:3306"
     environment:
@@ -21,7 +21,7 @@ services:
 
   mongodb:
     image: mongo:7
-    container_name: crms-mongodb
+    container_name: cms-mongodb
     ports:
       - "27017:27017"
     volumes:
@@ -31,7 +31,7 @@ services:
 
   redis:
     image: redis:7
-    container_name: crms-redis
+    container_name: cms-redis
     ports:
       - "6379:6379"
     networks:
@@ -39,7 +39,7 @@ services:
 
   meilisearch:
     image: getmeili/meilisearch:v1.8
-    container_name: crms-meilisearch
+    container_name: cms-meilisearch
     environment:
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-changeme}
       - MEILI_ENV=development
@@ -53,7 +53,7 @@ services:
   # ── Laravel Services ───────────────────────────
   vendor-management:
     build: ./services/vendor-management
-    container_name: crms-vendor-management
+    container_name: cms-vendor-management
     volumes:
       - ./services/vendor-management:/var/www/html
       - vendor-management-vendor:/var/www/html/vendor
@@ -74,7 +74,7 @@ services:
 
   contract-management:
     build: ./services/contract-management
-    container_name: crms-contract-management
+    container_name: cms-contract-management
     volumes:
       - ./services/contract-management:/var/www/html
       - contract-management-vendor:/var/www/html/vendor
@@ -95,7 +95,7 @@ services:
 
   search:
     build: ./services/search
-    container_name: crms-search
+    container_name: cms-search
     volumes:
       - ./services/search:/var/www/html
       - search-vendor:/var/www/html/vendor
@@ -112,13 +112,13 @@ services:
 
   notification:
     build: ./services/notification
-    container_name: crms-notification
+    container_name: cms-notification
     volumes:
       - ./services/notification:/var/www/html
       - notification-vendor:/var/www/html/vendor
     ports:
       - "8004:8000"
-    command: sh -c "composer install --no-scripts && sleep 20 && php artisan migrate --force && (php artisan queue:work --queue=notifications --sleep=3 --tries=3 --timeout=60 &) && php artisan serve --host=0.0.0.0 --port=8000"
+    command: sh -c "composer install --no-scripts && sleep 20 && php artisan migrate --force && (php artisan queue:work --queue=default --sleep=3 --tries=3 --timeout=60 &) && php artisan serve --host=0.0.0.0 --port=8000"
     environment:
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
     depends_on:
@@ -132,7 +132,7 @@ services:
   # ── ClamAV Antivirus Daemon ──────────────────────
   clamav:
     image: clamav/clamav:1.4_base
-    container_name: crms-clamav
+    container_name: cms-clamav
     profiles:
       - scanning
     environment:
@@ -153,7 +153,7 @@ services:
   # ── Vue Frontend ───────────────────────────────
   web:
     image: node:22-alpine
-    container_name: crms-web
+    container_name: cms-web
     working_dir: /app
     volumes:
       - ./frontend/web:/app
