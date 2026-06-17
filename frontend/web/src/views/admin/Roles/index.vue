@@ -7,6 +7,8 @@ import RoleCards       from './RoleCards.vue'
 import PermissionsPanel from './PermissionsPanel.vue'
 import type { ApiRole, RoleMeta } from '@/types/role'
 
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
+
 const { success, error: toastError } = useToast()
 
 const {
@@ -57,10 +59,17 @@ const enabledCounts = computed(() => {
 
 // ── Save ──────────────────────────────────────────────────────────────
 const isSaving = ref(false)
+const showSaveConfirm = ref(false)
 
-async function saveChanges() {
+function saveChanges() {
+  if (!activeRole.value || isLocked.value) return
+  showSaveConfirm.value = true
+}
+
+async function confirmSave() {
   if (!activeRole.value || isLocked.value) return
   isSaving.value = true
+  showSaveConfirm.value = false
   try {
     await saveRolePermissions(activeRole.value.id)
     success('Permissions saved', `${activeRole.value.name} role permissions have been updated.`)
@@ -168,5 +177,14 @@ onMounted(async () => {
       />
     </template>
 
+    <ConfirmationDialog
+      v-model:open="showSaveConfirm"
+      title="Confirm Changes"
+      :description="`Are you sure you want to save the changes to the permissions for the ${activeRole?.name} role?`"
+      confirm-label="Save"
+      variant="default"
+      :loading="isSaving"
+      @confirm="confirmSave"
+    />
   </div>
 </template>

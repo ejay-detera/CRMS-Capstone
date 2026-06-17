@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { ref, computed, reactive, watch } from 'vue'
 import { UserPlus } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 import type { Role } from '@/types/user'
 
 const props = defineProps<{
@@ -12,6 +13,8 @@ const props = defineProps<{
   departments?: { id: number; name: string }[];
 }>()
 const emit  = defineEmits<{ 'update:open': [v: boolean]; submit: [data: any] }>()
+
+const showConfirmCreate = ref(false)
 
 const form = reactive({
   firstName: '', lastName: '', middleName: '',
@@ -46,6 +49,11 @@ function submit() {
   if (!form.firstName || !form.lastName || !form.email || !emailFormatValid.value || !emailDomainValid.value ||
       !form.role || !form.department) return
   
+  showConfirmCreate.value = true
+}
+
+function confirmSubmit() {
+  showConfirmCreate.value = false
   emit('submit', {
     first_name: form.firstName,
     middle_name: form.middleName,
@@ -158,6 +166,14 @@ function submit() {
           </DialogFooter>
         </div>
 
+        <ConfirmationDialog
+          v-model:open="showConfirmCreate"
+          title="Create User Account"
+          description="Are you sure you want to create this user account? A temporary password will be sent to their email."
+          confirm-label="Create"
+          variant="default"
+          @confirm="confirmSubmit"
+        />
       </form>
     </DialogContent>
   </Dialog>

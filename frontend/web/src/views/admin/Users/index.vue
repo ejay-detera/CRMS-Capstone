@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
-import { Plus, Upload } from 'lucide-vue-next'
+import { Plus, Upload, CheckCircle2, XCircle } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { useLoader } from '@/composables/useLoader'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import UsersTable       from './UsersTable.vue'
 import ViewProfileDialog from './ViewProfileDialog.vue'
 import AddUserDialog    from './AddUserDialog.vue'
@@ -15,6 +16,11 @@ import type { User, Role, Status } from '@/types/user'
 
 const { success, error } = useToast()
 const { withLoading }    = useLoader()
+
+const showResultDialog = ref(false)
+const resultStatus = ref<'success' | 'error'>('success')
+const resultTitle = ref('')
+const resultMessage = ref('')
 
 // true while the initial table fetch is in flight
 const isFetching = ref(false)
@@ -200,16 +206,28 @@ async function handleAdd(data: any) {
           dateAdded: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
         }
         users.value.push(newUser)
-        success('User created', `${newUser.name} has been added successfully.`)
+        resultStatus.value = 'success'
+        resultTitle.value = 'User Created Successfully'
+        resultMessage.value = `${newUser.name} has been added to the system. A secure temporary password has been automatically generated and sent to ${newUser.email}.`
+        showResultDialog.value = true
       } else if (response.status === 422 && result.errors) {
         const firstError = Object.values(result.errors as Record<string, string[]>)[0]?.[0]
-        error('Validation Error', firstError || result.message || 'Please check the form fields.')
+        resultStatus.value = 'error'
+        resultTitle.value = 'Validation Error'
+        resultMessage.value = firstError || result.message || 'Please check the form fields.'
+        showResultDialog.value = true
       } else {
-        error('Creation failed', result.message || 'Failed to create user.')
+        resultStatus.value = 'error'
+        resultTitle.value = 'Creation Failed'
+        resultMessage.value = result.message || 'Failed to create user.'
+        showResultDialog.value = true
       }
     } catch (err) {
       console.error('Network error creating user:', err)
-      error('Network Error', 'Could not connect to the server.')
+      resultStatus.value = 'error'
+      resultTitle.value = 'Network Error'
+      resultMessage.value = 'Could not connect to the server. Please check your internet connection.'
+      showResultDialog.value = true
     }
   })
 }
@@ -384,4 +402,28 @@ function exportXLSX() {
   <DeleteUserDialog v-model:open="showDeleteConfirm" :user="deleteTarget"
     :avatar-index="deleteTarget ? avatarIndex(deleteTarget.id) : 0"
     @confirm="confirmDelete" />
+
+  <!-- Creation Result Dialog -->
+  <Dialog v-model:open="showResultDialog">
+    <DialogContent class="max-w-md p-6 gap-4" @pointer-down-outside="showResultDialog = false">
+      <DialogHeader class="space-y-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+            :class="resultStatus === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'">
+            <component :is="resultStatus === 'success' ? CheckCircle2 : XCircle" class="w-5 h-5" />
+          </div>
+          <DialogTitle class="text-sm font-bold text-black">{{ resultTitle }}</DialogTitle>
+        </div>
+        <DialogDescription class="text-xs text-black/55 mt-1.5 leading-relaxed pl-1">
+          {{ resultMessage }}
+        </DialogDescription>
+      </DialogHeader>
+      <DialogFooter class="flex items-center justify-end mt-2">
+        <Button @click="showResultDialog = false"
+          class="h-9 px-4 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white shadow-sm font-medium">
+          Close
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>

@@ -10,6 +10,8 @@ import OCRUploadDialog from './OCRUploadDialog.vue'
 import DocumentUpload from './DocumentUpload.vue'
 import type { ContractRegion, UploadedDoc } from '@/types/contract'
 
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
+
 const router = useRouter()
 const route = useRoute()
 const { success, error } = useToast()
@@ -18,6 +20,7 @@ const { invalidateContracts, invalidateRequests } = useApiCache()
 
 const showOCR      = ref(false)
 const loading      = ref(false)
+const showConfirm  = ref(false)
 const contractDocs = ref<UploadedDoc[]>([])
 
 interface FormState {
@@ -122,11 +125,15 @@ function getApiErrorMessage(data: any) {
   return data?.message ?? 'Something went wrong.'
 }
 
-async function handleSubmit() {
+function handleSubmit() {
   touchAll()
   if (!isValid()) return
+  showConfirm.value = true
+}
 
+async function confirmSubmit() {
   loading.value = true
+  showConfirm.value = false
   try {
     const payload = {
       bp_name:       form.businessPartner,
@@ -608,4 +615,14 @@ onClickOutside(prsContainer, () => {
   </div>
 
   <OCRUploadDialog v-model:open="showOCR" />
+
+  <ConfirmationDialog
+    v-model:open="showConfirm"
+    title="Create Contract"
+    description="Are you sure you want to create this contract? This will save the contract record to the system."
+    confirm-label="Create"
+    variant="default"
+    :loading="loading"
+    @confirm="confirmSubmit"
+  />
 </template>
