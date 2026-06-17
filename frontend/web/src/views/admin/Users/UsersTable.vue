@@ -165,7 +165,7 @@ const tabs: { label: string; value: TabValue }[] = [
 
     <div class="flex justify-center px-6 py-4 border-t border-black/5">
       <TablePagination :current-page="currentPage" :total-items="filteredUsers.length"
-        :items-per-page="itemsPerPage" @update:current-page="emit('update:currentPage', $event)" />
+        :items-per-page="itemsPerPage" :current-page-items-count="paginatedUsers.length" @update:current-page="emit('update:currentPage', $event)" />
     </div>
 
   </div>

@@ -466,8 +466,8 @@ function avatarColor(name: string) {
 
     <!-- Pagination -->
     <div class="flex justify-center px-6 py-4 border-t border-black/5">
-      <TablePagination :current-page="currentPage" :total-items="loading ? itemsPerPage : filtered.length"
-        :items-per-page="itemsPerPage" @update:current-page="emit('update:currentPage', $event)" />
+      <TablePagination :current-page="currentPage" :total-items="loading ? (itemsPerPage || 15) : (totalItems !== undefined ? totalItems : filtered.length)"
+        :items-per-page="itemsPerPage || 15" :current-page-items-count="paginated.length" @update:current-page="emit('update:currentPage', $event)" />
     </div>
 
   </div>

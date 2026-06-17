@@ -81,64 +81,88 @@ const statCards = computed(() => [
       </div>
     </div>
 
-    <!-- Stat cards -->
-    <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      <template v-if="loading">
-        <div v-for="i in 4" :key="i"
-          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
-          <div class="h-3.5 w-24 bg-black/5 animate-pulse rounded mb-4"></div>
-          <div class="h-8 w-12 bg-black/5 animate-pulse rounded"></div>
+    <!-- Skeletal loader during fetch -->
+    <div v-if="loading" class="space-y-6">
+      <!-- 1. KPI Cards (Stats summary) -->
+      <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 animate-pulse">
+        <div v-for="i in 4" :key="i" class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
+          <div class="h-3.5 w-24 bg-black/5 rounded mb-4"></div>
+          <div class="h-8 w-12 bg-black/5 rounded"></div>
         </div>
-      </template>
-      <template v-else>
+      </div>
+      
+      <!-- 2. Row 1: Trend Chart + Status Donut -->
+      <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 animate-pulse">
+        <div class="xl:col-span-3 bg-white rounded-lg border border-black/8 p-6 h-[280px] flex flex-col justify-between">
+          <div class="h-4 w-32 bg-black/5 rounded"></div>
+          <div class="h-40 w-full bg-black/5 rounded"></div>
+        </div>
+        <div class="xl:col-span-2 bg-white rounded-lg border border-black/8 p-6 h-[280px] flex flex-col justify-between">
+          <div class="h-4 w-24 bg-black/5 rounded"></div>
+          <div class="h-40 w-full bg-black/5 rounded"></div>
+        </div>
+      </div>
+
+      <!-- 3. Row 2: Category Chart + Status Panel -->
+      <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 animate-pulse">
+        <div class="xl:col-span-3 bg-white rounded-lg border border-black/8 p-6 h-[280px] flex flex-col justify-between">
+          <div class="h-4 w-36 bg-black/5 rounded"></div>
+          <div class="h-40 w-full bg-black/5 rounded"></div>
+        </div>
+        <!-- Status Panel Skeleton (covers Expiring Soon & Quick Actions) -->
+        <div class="xl:col-span-2 space-y-4">
+          <div class="bg-white rounded-lg border border-black/8 p-5 h-[160px] flex flex-col justify-between">
+            <div class="h-3.5 w-24 bg-black/5 rounded"></div>
+            <div class="h-20 w-full bg-black/5 rounded"></div>
+          </div>
+          <div class="bg-white rounded-lg border border-black/8 p-5 h-[106px] flex flex-col justify-between">
+            <div class="h-3.5 w-24 bg-black/5 rounded"></div>
+            <div class="h-10 w-full bg-black/5 rounded"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Row 3: Recent Requests Table (Full Width) -->
+      <div class="bg-white rounded-lg border border-black/8 p-6 h-[320px] animate-pulse flex flex-col justify-between">
+        <div class="h-4 w-28 bg-black/5 rounded"></div>
+        <div class="h-48 w-full bg-black/5 rounded"></div>
+      </div>
+    </div>
+
+    <!-- Active Analytics Dashboard -->
+    <div v-else class="space-y-6">
+      <!-- Stat cards -->
+      <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <div v-for="card in statCards" :key="card.label"
           class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
           <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
           <p class="text-3xl font-semibold tabular-nums text-black">{{ card.value }}</p>
         </div>
-      </template>
-    </div>
+      </div>
 
-    <!-- Row 1: Trend Chart + Status Donut -->
-    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
-      <div class="xl:col-span-3">
-        <template v-if="loading">
-          <div class="bg-white rounded-lg border border-black/8 p-6 h-[280px] animate-pulse flex flex-col justify-between">
-            <div class="h-4 w-32 bg-black/5 rounded"></div>
-            <div class="h-40 w-full bg-black/5 rounded"></div>
-          </div>
-        </template>
-        <SalesTrendChart v-else :contracts="contracts" />
+      <!-- Row 1: Trend Chart + Status Donut -->
+      <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <div class="xl:col-span-3">
+          <SalesTrendChart :contracts="contracts" />
+        </div>
+        <div class="xl:col-span-2">
+          <SalesStatusChart :requests="requests" />
+        </div>
       </div>
-      <div class="xl:col-span-2">
-        <template v-if="loading">
-          <div class="bg-white rounded-lg border border-black/8 p-6 h-[280px] animate-pulse flex flex-col justify-between">
-            <div class="h-4 w-24 bg-black/5 rounded"></div>
-            <div class="h-40 w-full bg-black/5 rounded"></div>
-          </div>
-        </template>
-        <SalesStatusChart v-else :requests="requests" />
-      </div>
-    </div>
 
-    <!-- Row 2: Category Chart + Status Panel -->
-    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
-      <div class="xl:col-span-3">
-        <template v-if="loading">
-          <div class="bg-white rounded-lg border border-black/8 p-6 h-[280px] animate-pulse flex flex-col justify-between">
-            <div class="h-4 w-36 bg-black/5 rounded"></div>
-            <div class="h-40 w-full bg-black/5 rounded"></div>
-          </div>
-        </template>
-        <SalesCategoryChart v-else :contracts="contracts" />
+      <!-- Row 2: Category Chart + Status Panel -->
+      <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <div class="xl:col-span-3">
+          <SalesCategoryChart :contracts="contracts" />
+        </div>
+        <div class="xl:col-span-2">
+          <ContractStatusPanel :contracts="withDays" />
+        </div>
       </div>
-      <div class="xl:col-span-2">
-        <ContractStatusPanel :contracts="withDays" :loading="loading" />
-      </div>
-    </div>
 
-    <!-- Row 3: Recent Requests Table (Full Width) -->
-    <RecentRequestsTable :requests="recentRequests" :loading="loading" />
+      <!-- Row 3: Recent Requests Table (Full Width) -->
+      <RecentRequestsTable :requests="recentRequests" />
+    </div>
 
   </div>
 </template>

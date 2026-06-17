@@ -437,8 +437,8 @@ const categories = [
 
     <!-- Pagination -->
     <div class="flex justify-center px-6 py-4 border-t border-black/5">
-      <TablePagination :current-page="currentPage" :total-items="loading ? itemsPerPage : filtered.length"
-        :items-per-page="itemsPerPage" @update:current-page="emit('update:currentPage', $event)" />
+      <TablePagination :current-page="currentPage" :total-items="loading ? itemsPerPage : (totalItems !== undefined ? totalItems : filtered.length)"
+        :items-per-page="itemsPerPage" :current-page-items-count="paginated.length" @update:current-page="emit('update:currentPage', $event)" />
     </div>
 
   </div>

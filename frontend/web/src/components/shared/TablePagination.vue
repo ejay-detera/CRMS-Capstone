@@ -6,6 +6,7 @@ const props = defineProps<{
   currentPage:  number
   totalItems:   number
   itemsPerPage: number
+  currentPageItemsCount?: number
 }>()
 
 const emit = defineEmits<{
@@ -14,7 +15,13 @@ const emit = defineEmits<{
 
 const WINDOW_SIZE = 5
 
-const totalPages = computed(() => Math.max(1, Math.ceil(props.totalItems / props.itemsPerPage)))
+const totalPages = computed(() => {
+  const calculated = Math.max(1, Math.ceil(props.totalItems / props.itemsPerPage))
+  if (props.currentPageItemsCount !== undefined && props.currentPageItemsCount < props.itemsPerPage) {
+    return Math.min(calculated, props.currentPage)
+  }
+  return calculated
+})
 
 const pageNumbers = computed(() => {
   const start = Math.max(1, props.currentPage - 2)

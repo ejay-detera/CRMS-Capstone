@@ -132,7 +132,7 @@ function formatTimestamp(isoStr: string) {
 
     <div class="flex justify-center px-6 py-4 border-t border-black/5">
       <TablePagination :current-page="currentPage" :total-items="totalLogs ?? filtered.length"
-        :items-per-page="pageSize" @update:current-page="emit('update:currentPage', $event)" />
+        :items-per-page="pageSize" :current-page-items-count="paginated.length" @update:current-page="emit('update:currentPage', $event)" />
     </div>
 
   </div>
