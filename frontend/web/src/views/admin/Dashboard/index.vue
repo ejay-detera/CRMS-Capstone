@@ -223,12 +223,15 @@ onMounted(() => {
 
     <!-- Skeletal loader during fetch -->
     <div v-if="loading" class="space-y-6">
+      <!-- 1. KPI Cards (Stats summary) -->
       <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 animate-pulse">
         <div v-for="i in 4" :key="i" class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
           <div class="h-3.5 w-24 bg-black/5 rounded mb-4"></div>
           <div class="h-8 w-12 bg-black/5 rounded"></div>
         </div>
       </div>
+      
+      <!-- 2. Charts (Trend & Status) -->
       <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 animate-pulse">
         <div class="xl:col-span-3 bg-white rounded-lg border border-black/8 p-6 h-[280px] flex flex-col justify-between">
           <div class="h-4 w-32 bg-black/5 rounded"></div>
@@ -238,6 +241,48 @@ onMounted(() => {
           <div class="h-4 w-24 bg-black/5 rounded"></div>
           <div class="h-40 w-full bg-black/5 rounded"></div>
         </div>
+      </div>
+
+      <!-- 3. Renewal Pipeline Chart -->
+      <div class="bg-white rounded-lg border border-black/8 p-6 h-[280px] animate-pulse flex flex-col justify-between">
+        <div class="h-4 w-48 bg-black/5 rounded"></div>
+        <div class="h-40 w-full bg-black/5 rounded"></div>
+      </div>
+
+      <!-- 4. User Roles & Regional Partner Analytics -->
+      <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 animate-pulse">
+        <div class="xl:col-span-2 bg-white rounded-lg border border-black/8 p-6 h-[280px] flex flex-col justify-between">
+          <div class="h-4 w-24 bg-black/5 rounded"></div>
+          <div class="h-40 w-full bg-black/5 rounded"></div>
+        </div>
+        <div class="xl:col-span-3 bg-white rounded-lg border border-black/8 p-6 h-[280px] flex flex-col justify-between">
+          <div class="h-4 w-32 bg-black/5 rounded"></div>
+          <div class="h-40 w-full bg-black/5 rounded"></div>
+        </div>
+      </div>
+
+      <!-- 5. Contracts by Region Chart -->
+      <div class="bg-white rounded-lg border border-black/8 p-6 h-[280px] animate-pulse flex flex-col justify-between">
+        <div class="h-4 w-36 bg-black/5 rounded"></div>
+        <div class="h-40 w-full bg-black/5 rounded"></div>
+      </div>
+
+      <!-- 6. Recent Contracts Table & Audit Logs List -->
+      <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 animate-pulse">
+        <div class="xl:col-span-3 bg-white rounded-lg border border-black/8 p-6 h-[320px] flex flex-col justify-between">
+          <div class="h-4 w-36 bg-black/5 rounded"></div>
+          <div class="h-48 w-full bg-black/5 rounded"></div>
+        </div>
+        <div class="xl:col-span-2 bg-white rounded-lg border border-black/8 p-6 h-[320px] flex flex-col justify-between">
+          <div class="h-4 w-28 bg-black/5 rounded"></div>
+          <div class="h-48 w-full bg-black/5 rounded"></div>
+        </div>
+      </div>
+
+      <!-- 7. Users List Table -->
+      <div class="bg-white rounded-lg border border-black/8 p-6 h-[320px] animate-pulse flex flex-col justify-between">
+        <div class="h-4 w-28 bg-black/5 rounded"></div>
+        <div class="h-48 w-full bg-black/5 rounded"></div>
       </div>
     </div>
 
