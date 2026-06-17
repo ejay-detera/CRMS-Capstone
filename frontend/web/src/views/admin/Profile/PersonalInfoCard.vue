@@ -13,15 +13,18 @@ const props = defineProps<{
 
 const emit = defineEmits<{ save: [data: Partial<typeof props.profile>] }>()
 
-const form = reactive({ ...props.profile })
-watch(() => props.profile, p => Object.assign(form, p), { deep: true })
+const form = reactive({ ...props.profile, department: 'Sales & Marketing' })
+watch(() => props.profile, p => {
+  Object.assign(form, p)
+  form.department = 'Sales & Marketing'
+}, { deep: true })
 
 const touched = reactive({
   firstName: false, lastName: false, email: false, phone: false,
 })
 
 const emailValid = computed(() => !form.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-const phoneValid = computed(() => !form.phone || /^[+]?[\d\s\-(). ]{7,}$/.test(form.phone))
+const phoneValid = computed(() => !form.phone || /^09\d{9}$/.test(form.phone))
 
 function onNameInput(field: 'firstName' | 'lastName' | 'middleName', e: Event) {
   const el = e.target as HTMLInputElement
@@ -40,7 +43,7 @@ function fieldCls(field: keyof typeof touched, invalid: boolean) {
 function save() {
   Object.assign(touched, { firstName: true, lastName: true, email: true, phone: true })
   if (!form.firstName || !form.lastName || !form.email || !emailValid.value || !form.phone || !phoneValid.value) return
-  emit('save', { ...form })
+  emit('save', { ...form, department: 'Sales & Marketing' })
 }
 </script>
 
@@ -95,22 +98,19 @@ function save() {
       <div class="grid grid-cols-2 gap-4">
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Phone <span class="text-red-500">*</span></label>
-          <input v-model="form.phone" @blur="touched.phone = true" type="tel" placeholder="+63 2 8xxx xxxx" maxlength="20"
+          <input v-model="form.phone" @blur="touched.phone = true" type="tel" placeholder="e.g. 09123456789" maxlength="20"
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition', fieldCls('phone', !form.phone || !phoneValid)]" />
           <p v-if="touched.phone && !form.phone" class="text-xs text-red-500">Required.</p>
-          <p v-else-if="touched.phone && !phoneValid" class="text-xs text-red-500">Enter a valid phone number.</p>
+          <p v-else-if="touched.phone && !phoneValid" class="text-xs text-red-500">Must be an 11-digit mobile number starting with 09.</p>
         </div>
         <div class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Department</label>
-          <Select v-model="form.department">
-            <SelectTrigger class="h-9 rounded-md border-black/12 text-sm"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="IT Department">IT Department</SelectItem>
-              <SelectItem value="Sales Department">Sales Department</SelectItem>
-              <SelectItem value="Operations">Operations</SelectItem>
-              <SelectItem value="Sales & Marketing">Sales & Marketing</SelectItem>
-            </SelectContent>
-          </Select>
+          <input
+            type="text"
+            disabled
+            value="Sales & Marketing"
+            class="w-full h-9 rounded-md border border-black/12 bg-black/[0.02] px-3 text-sm text-black/50 cursor-not-allowed"
+          />
         </div>
       </div>
 

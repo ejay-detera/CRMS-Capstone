@@ -36,7 +36,7 @@ const originalBpCode = ref<string | null>(null)
 const targetDbId = ref<number | null>(null)
 
 const emailValid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
-const phoneValid = computed(() => !form.phone || /^\d{7,11}$/.test(form.phone))
+const phoneValid = computed(() => !form.phone || /^09\d{9}$/.test(form.phone))
 const tinValid = computed(() => /^\d{3}-\d{3}-\d{3}(-\d{3,5})?$/.test(form.tinNumber.trim()))
 
 onMounted(async () => {
@@ -244,11 +244,11 @@ async function confirmSubmit() {
 
             <div class="flex flex-col gap-1.5">
               <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Phone <span class="text-red-500">*</span></label>
-              <input :value="form.phone" @input="onPhoneInput" @blur="touched.phone = true" type="text" inputmode="numeric" placeholder="09xxxxxxxxx"
+              <input :value="form.phone" @input="onPhoneInput" @blur="touched.phone = true" type="text" inputmode="numeric" placeholder="e.g. 09123456789"
                 class="w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
                 :class="err('phone', !form.phone || !phoneValid)" />
               <p v-if="touched.phone && !form.phone" class="text-xs text-red-500">Required.</p>
-              <p v-else-if="touched.phone && !phoneValid" class="text-xs text-red-500">Phone number must be 7–11 digits.</p>
+              <p v-else-if="touched.phone && !phoneValid" class="text-xs text-red-500">Must be an 11-digit mobile number starting with 09.</p>
             </div>
           </div>
 
