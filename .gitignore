@@ -55,3 +55,4 @@ frontend/web/test-results/
 frontend/web/blob-report/
 frontend/web/.playwright-blob-report/
 test-results/
+playwright-report/
