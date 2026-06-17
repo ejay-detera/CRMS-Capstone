@@ -14,7 +14,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'dashboard',
         name: 'admin-dashboard',
-        component: () => import('@/views/admin/AdminDashboard.vue'),
+        component: () => import('@/views/admin/Dashboard/index.vue'),
       },
       {
         path: 'contracts',
