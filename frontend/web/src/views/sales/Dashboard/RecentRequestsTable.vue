@@ -39,7 +39,6 @@ const router = useRouter()
           <div class="min-w-0 flex-1">
             <div class="h-4 w-40 bg-black/5 animate-pulse rounded mb-2"></div>
             <div class="flex items-center gap-2">
-              <div class="h-3 w-16 bg-black/5 animate-pulse rounded"></div>
               <div class="h-3 w-24 bg-black/5 animate-pulse rounded"></div>
             </div>
           </div>
@@ -59,7 +58,6 @@ const router = useRouter()
           <div class="min-w-0 flex-1">
             <p class="text-sm font-medium text-black truncate leading-snug">{{ r.businessPartner }}</p>
             <div class="flex items-center gap-2 mt-0.5">
-              <span class="text-[10px] font-mono text-black/30 bg-black/4 px-1.5 py-0.5 rounded">{{ r.id }}</span>
               <span class="text-[11px] text-black/40">{{ r.category }}</span>
             </div>
           </div>

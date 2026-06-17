@@ -100,8 +100,7 @@ function avatarColor(name: string) {
           <TableRow v-for="i in itemsPerPage" :key="i" class="border-b border-black/4 last:border-0">
             <!-- Request ID + Partner -->
             <TableCell class="py-4 pl-6">
-              <div class="h-4 w-32 bg-black/5 animate-pulse rounded mb-1.5"></div>
-              <div class="h-3 w-16 bg-black/5 animate-pulse rounded"></div>
+              <div class="h-4 w-32 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
 
             <!-- Category -->
@@ -147,7 +146,6 @@ function avatarColor(name: string) {
 
             <TableCell class="py-4 pl-6">
               <p class="text-sm font-medium text-black leading-snug">{{ r.businessPartner }}</p>
-              <span class="text-[10px] font-mono text-black/35 bg-black/4 px-1.5 py-0.5 rounded mt-0.5 inline-block">{{ r.id }}</span>
             </TableCell>
 
             <TableCell class="py-4 text-sm text-black/60">{{ r.category }}</TableCell>

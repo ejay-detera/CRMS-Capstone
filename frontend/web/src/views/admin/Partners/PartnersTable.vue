@@ -62,11 +62,7 @@ function statusClass(status: string) {
     <Table>
       <TableHeader class="bg-black/1.8">
         <TableRow class="border-b border-black/4 hover:bg-transparent">
-          <TableHead class="w-12 pl-6 py-3">
-            <input type="checkbox" :checked="allPageSelected" @change="emit('toggleSelectAll')"
-              class="w-4 h-4 rounded border-black/20 accent-[#252578] cursor-pointer" />
-          </TableHead>
-          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Name</TableHead>
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3 pl-6">Name</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Industry</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Region</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Contact</TableHead>
@@ -79,15 +75,11 @@ function statusClass(status: string) {
         <template v-if="props.loading">
           <TableRow v-for="i in props.itemsPerPage" :key="'sk-' + i"
             class="border-b border-black/4 last:border-0 hover:bg-transparent">
-            <TableCell class="pl-6 py-4">
-              <div class="w-4 h-4 bg-black/5 animate-pulse rounded" />
-            </TableCell>
-            <TableCell class="py-4">
+            <TableCell class="py-4 pl-6">
               <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-lg bg-black/5 animate-pulse shrink-0" />
-                <div class="space-y-1.5">
+                <div>
                   <div class="h-3.5 w-28 bg-black/5 animate-pulse rounded" />
-                  <div class="h-2.5 w-16 bg-black/5 animate-pulse rounded" />
                 </div>
               </div>
             </TableCell>
@@ -108,22 +100,15 @@ function statusClass(status: string) {
         <TableRow
           v-for="partner in paginated"
           :key="partner.id"
-          class="border-b border-black/4 last:border-0 transition-colors"
-          :class="selectedIds.includes(partner.id) ? 'bg-[#252578]/2.5' : 'hover:bg-black/1.2'"
+          class="border-b border-black/4 last:border-0 hover:bg-black/1.2 transition-colors"
         >
-          <TableCell class="pl-6 py-4">
-            <input type="checkbox" :checked="selectedIds.includes(partner.id)"
-              @change="emit('toggleRow', partner.id)"
-              class="w-4 h-4 rounded border-black/20 accent-[#252578] cursor-pointer" />
-          </TableCell>
-          <TableCell class="py-4">
+          <TableCell class="py-4 pl-6">
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-[#252578]/8 text-[#252578]">
                 <component :is="activeTab === 'partners' ? Building2 : Truck" class="w-4 h-4" />
               </div>
               <div>
                 <p class="text-sm font-medium text-black leading-snug">{{ partner.name }}</p>
-                <p class="text-xs text-black/35 mt-0.5 font-mono">{{ displayId(partner) }}</p>
               </div>
             </div>
           </TableCell>
@@ -168,7 +153,7 @@ function statusClass(status: string) {
         </TableRow>
 
         <TableRow v-if="paginated.length === 0">
-          <TableCell colspan="7" class="text-center py-16">
+          <TableCell colspan="6" class="text-center py-16">
             <p class="text-sm font-semibold text-black/28">No records found</p>
             <p class="text-xs text-black/20 mt-1">Try a different search or region filter</p>
           </TableCell>
