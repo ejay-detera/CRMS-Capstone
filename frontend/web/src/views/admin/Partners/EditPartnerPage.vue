@@ -5,6 +5,7 @@ import { ArrowLeft, Pencil } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useVendorService } from '@/composables/useVendorService'
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 import type { AddPartnerForm, TabKey } from '@/types/partner'
 
 const router = useRouter()
@@ -19,6 +20,7 @@ const activeTab = computed<TabKey>(() => type === 'bp' ? 'partners' : 'suppliers
 
 const loading = ref(true)
 const isSaving = ref(false)
+const showSaveConfirm = ref(false)
 
 const form = reactive<AddPartnerForm>({
   name: '', industry: '', region: '', status: 'Active',
@@ -86,7 +88,7 @@ function err(field: keyof typeof touched, extra = true) {
   return touched[field] && extra ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
 }
 
-async function handleSubmit() {
+function handleSubmit() {
   Object.keys(touched).forEach(k => ((touched as Record<string, boolean>)[k] = true))
   
   if (!form.name || form.name.trim().length < 2 || !form.industry || !form.region || !form.contactPerson || !emailValid.value || !phoneValid.value || !form.address || (activeTab.value === 'suppliers' && !tinValid.value)) {
@@ -94,15 +96,18 @@ async function handleSubmit() {
   }
 
   if (!targetDbId.value) return
+  showSaveConfirm.value = true
+}
 
+async function confirmSubmit() {
   isSaving.value = true
   try {
     if (activeTab.value === 'partners') {
-      const { partner: updated, warnings } = await updatePartner(targetDbId.value, { ...form }, originalBpCode.value)
+      const { partner: updated, warnings } = await updatePartner(targetDbId.value!, { ...form }, originalBpCode.value)
       success('Partner updated', `${updated.name} has been updated successfully.`)
       if (warnings.length) warning('Duplicate warning', warnings[0].message)
     } else {
-      const { partner: updated, warnings } = await updateSupplier(targetDbId.value, { ...form })
+      const { partner: updated, warnings } = await updateSupplier(targetDbId.value!, { ...form })
       success('Supplier updated', `${updated.name} has been updated successfully.`)
       if (warnings.length) warning('Duplicate warning', warnings[0].message)
     }
@@ -112,6 +117,7 @@ async function handleSubmit() {
     error('Save failed', msg)
   } finally {
     isSaving.value = false
+    showSaveConfirm.value = false
   }
 }
 </script>
@@ -290,5 +296,14 @@ async function handleSubmit() {
       </div>
     </template>
 
+    <ConfirmationDialog
+      v-model:open="showSaveConfirm"
+      title="Confirm Changes"
+      :description="`Are you sure you want to save the changes for this ${activeTab === 'partners' ? 'business partner' : 'supplier'}?`"
+      confirm-label="Save"
+      variant="default"
+      :loading="isSaving"
+      @confirm="confirmSubmit"
+    />
   </div>
 </template>

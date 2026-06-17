@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { Bell, Search } from 'lucide-vue-next'
 import NotificationItem from './NotificationItem.vue'
+import ConfirmationDialog from './ConfirmationDialog.vue'
 import type { Notification, TabKey } from '@/types/notification'
 
 defineProps<{
@@ -18,6 +20,22 @@ const emit = defineEmits<{
   'toggle-favorite':    [id: string]
   'delete':             [id: string]
 }>()
+
+const showDeleteConfirm = ref(false)
+const notifIdToDelete = ref<string | null>(null)
+
+function triggerDelete(id: string) {
+  notifIdToDelete.value = id
+  showDeleteConfirm.value = true
+}
+
+function confirmDelete() {
+  if (notifIdToDelete.value) {
+    emit('delete', notifIdToDelete.value)
+  }
+  showDeleteConfirm.value = false
+  notifIdToDelete.value = null
+}
 </script>
 
 <template>
@@ -72,10 +90,18 @@ const emit = defineEmits<{
           :notif="notif"
           @toggle-read="emit('toggle-read', $event)"
           @toggle-favorite="emit('toggle-favorite', $event)"
-          @delete="emit('delete', $event)"
+          @delete="triggerDelete"
         />
       </template>
     </div>
 
+    <ConfirmationDialog
+      v-model:open="showDeleteConfirm"
+      title="Delete Notification"
+      description="Are you sure you want to delete this notification? This action will archive and remove it from your notifications list."
+      confirm-label="Delete"
+      variant="destructive"
+      @confirm="confirmDelete"
+    />
   </div>
 </template>
