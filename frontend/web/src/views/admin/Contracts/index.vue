@@ -151,7 +151,14 @@ async function confirmDelete() {
   }
 }
 
+const showExportConfirm = ref(false)
+
 function exportXLSX() {
+  showExportConfirm.value = true
+}
+
+function executeExport() {
+  showExportConfirm.value = false
   const rows = filtered.value.map(c => ({
     'Contract ID': c.id, 'Business Partner': c.businessPartner, 'Category': c.category,
     'Item Code': c.itemCode, 'Description': c.description, 'Serial No': c.serialNo,
@@ -247,6 +254,15 @@ function exportXLSX() {
       variant="destructive"
       :loading="deletingContract"
       @confirm="confirmDelete"
+    />
+
+    <ConfirmationDialog
+      v-model:open="showExportConfirm"
+      title="Export Contracts"
+      description="Are you sure you want to export the contracts to an Excel (.xlsx) file?"
+      confirm-label="Export"
+      variant="default"
+      @confirm="executeExport"
     />
   </div>
 </template>

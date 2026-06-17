@@ -10,6 +10,7 @@ import { useApiCache } from '@/composables/useApiCache'
 import ManagerContractsTable from './ManagerContractsTable.vue'
 import { remainingDays } from '@/types/contract'
 import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
 const router = useRouter()
 const { success, error } = useToast()
@@ -142,7 +143,14 @@ function openDetail(c: Contract & { days: number }) {
   router.push(`/manager/contracts/${c.id}`)
 }
 
+const showExportConfirm = ref(false)
+
 function exportXLSX() {
+  showExportConfirm.value = true
+}
+
+function executeExport() {
+  showExportConfirm.value = false
   const rows = filtered.value.map(c => ({
     'Contract ID': c.id, 'Business Partner': c.businessPartner, 'Category': c.category,
     'Item Code': c.itemCode, 'Description': c.description, 'Serial No': c.serialNo,
@@ -234,4 +242,13 @@ function exportXLSX() {
     />
 
   </div>
+
+  <ConfirmationDialog
+    v-model:open="showExportConfirm"
+    title="Export Contracts"
+    description="Are you sure you want to export the contracts to an Excel (.xlsx) file?"
+    confirm-label="Export"
+    variant="default"
+    @confirm="executeExport"
+  />
 </template>

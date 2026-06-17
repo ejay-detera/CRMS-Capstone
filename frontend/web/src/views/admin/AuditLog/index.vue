@@ -9,6 +9,7 @@ import AuditLogFilters from './AuditLogFilters.vue'
 import AuditLogTable   from './AuditLogTable.vue'
 import { formatAction } from '@/types/auditLog'
 import type { LogEntry, ActionType } from '@/types/auditLog'
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
 const { error: showError, success: showSuccess } = useToast()
 
@@ -97,7 +98,14 @@ watch(currentPage, () => {
   fetchAuditLogs()
 })
 
-async function exportXLSX() {
+const showExportConfirm = ref(false)
+
+function exportXLSX() {
+  showExportConfirm.value = true
+}
+
+async function executeExport() {
+  showExportConfirm.value = false
   const { state } = useAuth()
   if (!state.user) return
 
@@ -188,6 +196,15 @@ async function exportXLSX() {
       :is-loading="isFetching"
       :total-logs="totalLogs"
       @update:current-page="currentPage = $event"
+    />
+
+    <ConfirmationDialog
+      v-model:open="showExportConfirm"
+      title="Export Audit Logs"
+      description="Are you sure you want to export the audit logs to an Excel (.xlsx) file?"
+      confirm-label="Export"
+      variant="default"
+      @confirm="executeExport"
     />
 
   </div>

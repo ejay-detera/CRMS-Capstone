@@ -13,6 +13,7 @@ import AddUserDialog    from './AddUserDialog.vue'
 import EditUserDialog   from './EditUserDialog.vue'
 import DeleteUserDialog from './DeleteUserDialog.vue'
 import type { User, Role, Status } from '@/types/user'
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
 const { success, error } = useToast()
 const { withLoading }    = useLoader()
@@ -312,7 +313,14 @@ async function confirmDelete() {
   })
 }
 
+const showExportConfirm = ref(false)
+
 function exportXLSX() {
+  showExportConfirm.value = true
+}
+
+function executeExport() {
+  showExportConfirm.value = false
   function splitName(full: string) {
     const parts = full.trim().split(/\s+/)
     return { firstName: parts[0] ?? '', lastName: parts.length > 1 ? parts[parts.length - 1] : '', middleName: parts.length > 2 ? parts.slice(1, -1).join(' ') : '' }
@@ -426,4 +434,13 @@ function exportXLSX() {
       </DialogFooter>
     </DialogContent>
   </Dialog>
+
+  <ConfirmationDialog
+    v-model:open="showExportConfirm"
+    title="Export Users"
+    description="Are you sure you want to export the user list to an Excel (.xlsx) file?"
+    confirm-label="Export"
+    variant="default"
+    @confirm="executeExport"
+  />
 </template>

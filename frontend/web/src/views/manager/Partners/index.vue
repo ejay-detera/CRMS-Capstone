@@ -12,6 +12,7 @@ import PartnersGrid  from '@/views/admin/Partners/PartnersGrid.vue'
 import PartnersTable from '@/views/admin/Partners/PartnersTable.vue'
 import DeleteConfirmDialog from '@/views/admin/Partners/DeleteConfirmDialog.vue'
 import type { Partner, TabKey } from '@/types/partner'
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
 const router = useRouter()
 const { success, error } = useToast()
@@ -121,7 +122,14 @@ async function confirmDelete() {
   }
 }
 
+const showExportConfirm = ref(false)
+
 function exportXLSX() {
+  showExportConfirm.value = true
+}
+
+function executeExport() {
+  showExportConfirm.value = false
   const type = activeTab.value === 'partners' ? 'Business Partner' : 'Supplier'
   const rows = filtered.value.map(p => ({
     'ID':             p.id,
@@ -228,4 +236,13 @@ function exportXLSX() {
   </div>
 
   <DeleteConfirmDialog v-model:open="showDelete" :partner="deleteTarget" :active-tab="activeTab" @confirm="confirmDelete" />
+
+  <ConfirmationDialog
+    v-model:open="showExportConfirm"
+    title="Export Partners & Suppliers"
+    description="Are you sure you want to export the partners & suppliers list to an Excel (.xlsx) file?"
+    confirm-label="Export"
+    variant="default"
+    @confirm="executeExport"
+  />
 </template>
