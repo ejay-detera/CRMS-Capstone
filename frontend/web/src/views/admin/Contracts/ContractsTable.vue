@@ -249,7 +249,6 @@ function avatarColor(name: string) {
             <!-- Contract ID + Partner -->
             <TableCell class="py-4 pl-6">
               <p class="text-sm font-medium text-black leading-snug">{{ c.businessPartner }}</p>
-              <span class="text-[10px] font-mono text-black/35 bg-black/4 px-1.5 py-0.5 rounded mt-0.5 inline-block">{{ c.id }}</span>
             </TableCell>
 
             <!-- Category -->

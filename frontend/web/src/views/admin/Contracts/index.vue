@@ -8,6 +8,7 @@ import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { useApiCache } from '@/composables/useApiCache'
 import ContractsTable       from './ContractsTable.vue'
+import ConfirmationDialog   from '@/components/shared/ConfirmationDialog.vue'
 import { remainingDays } from '@/types/contract'
 import type { Contract, FilterTab, StatusFilter } from '@/types/contract'
 
@@ -26,6 +27,9 @@ const regionFilter    = ref('')
 const statusFilter    = ref<StatusFilter>('')
 const currentPage    = ref(1)
 const itemsPerPage   = 15
+
+const showDeleteConfirm = ref(false)
+const contractIdToDelete = ref<string | null>(null)
 
 const withDays = computed(() =>
   contracts.value.map(c => ({ ...c, days: remainingDays(c.endDate) }))
@@ -106,12 +110,21 @@ function openEdit(c: Contract & { days: number }) {
   router.push(`/admin/contracts/${c.id}?edit=1`)
 }
 
-async function handleDelete(id: string) {
-  if (!authState.user) return
+const deletingContract = ref(false)
+
+function triggerDelete(id: string) {
+  contractIdToDelete.value = id
+  showDeleteConfirm.value = true
+}
+
+async function confirmDelete() {
+  if (!contractIdToDelete.value || !authState.user) return
+  const id = contractIdToDelete.value
   const contract = contracts.value.find(c => c.id === id)
   if (!contract) return
 
   const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+  deletingContract.value = true
 
   try {
     const res = await fetch(`${apiBase}/contracts/${id}`, {
@@ -123,6 +136,8 @@ async function handleDelete(id: string) {
     })
     const json = await res.json()
     if (res.ok) {
+      showDeleteConfirm.value = false
+      contractIdToDelete.value = null
       await fetchContracts()
       success('Contract removed', `${contract.businessPartner}'s contract has been deleted.`)
     } else {
@@ -131,6 +146,8 @@ async function handleDelete(id: string) {
   } catch (err) {
     console.error('Failed to delete contract:', err)
     error('Delete failed', 'Connection to contract service failed.')
+  } finally {
+    deletingContract.value = false
   }
 }
 
@@ -213,7 +230,7 @@ function exportXLSX() {
       :items-per-page="itemsPerPage"
       @open-detail="openDetail"
       @open-edit="openEdit"
-      @delete="handleDelete"
+      @delete="triggerDelete"
       @update:active-filter="activeFilter = $event"
       @update:search-query="searchQuery = $event"
       @update:category-filter="categoryFilter = $event"
@@ -222,5 +239,14 @@ function exportXLSX() {
       @update:current-page="currentPage = $event"
     />
 
+    <ConfirmationDialog
+      v-model:open="showDeleteConfirm"
+      title="Delete Contract"
+      description="Are you sure you want to permanently delete this contract? This action cannot be undone and the contract data will be removed from the system."
+      confirm-label="Delete"
+      variant="destructive"
+      :loading="deletingContract"
+      @confirm="confirmDelete"
+    />
   </div>
 </template>

@@ -7,6 +7,7 @@ import {
 } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 import { requestStatusBadge, fmtReqDate } from '@/types/contractRequest'
 import type { ContractRequest } from '@/types/contractRequest'
 import { safeHref } from '@/utils/sanitize'
@@ -34,13 +35,35 @@ function avatarColor(name: string) {
 const showRejectInput = ref(false)
 const rejectReason    = ref('')
 
+const showApproveConfirm = ref(false)
+const showReviewConfirm = ref(false)
+
 watch(() => props.open, open => {
-  if (!open) { showRejectInput.value = false; rejectReason.value = '' }
+  if (!open) {
+    showRejectInput.value = false
+    rejectReason.value = ''
+    showApproveConfirm.value = false
+    showReviewConfirm.value = false
+  }
 })
 
 function confirmReject() {
   if (!props.request || !rejectReason.value.trim()) return
   emit('reject', props.request.id, rejectReason.value.trim())
+  emit('update:open', false)
+}
+
+function confirmApprove() {
+  if (!props.request) return
+  emit('approve', props.request.id)
+  showApproveConfirm.value = false
+  emit('update:open', false)
+}
+
+function confirmReview() {
+  if (!props.request) return
+  emit('setReviewing', props.request.id)
+  showReviewConfirm.value = false
   emit('update:open', false)
 }
 </script>
@@ -206,13 +229,13 @@ function confirmReject() {
 
               <template v-if="!showRejectInput">
                 <Button v-if="request.status === 'Pending'" variant="outline"
-                  @click="emit('setReviewing', request.id); $emit('update:open', false)"
+                  @click="showReviewConfirm = true"
                   class="h-8 px-3.5 text-xs font-semibold border-[#2E85D8]/30 text-[#2E85D8] hover:bg-[#2E85D8]/8 gap-1.5">
                   <RefreshCw class="w-3.5 h-3.5" /> Set Reviewing
                 </Button>
                 <Button
-                  @click="emit('approve', request.id); $emit('update:open', false)"
-                  class="h-8 px-3.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5">
+                  @click="showApproveConfirm = true"
+                  class="h-8 px-3.5 text-xs font-semibold bg-[#252578] hover:bg-[#2F2F73] text-white gap-1.5">
                   <CheckCircle class="w-3.5 h-3.5" /> Approve
                 </Button>
               </template>
@@ -226,6 +249,23 @@ function confirmReject() {
             </Button>
           </div>
         </div>
+
+        <!-- Confirmations -->
+        <ConfirmationDialog
+          v-model:open="showApproveConfirm"
+          title="Approve Contract Request"
+          description="Are you sure you want to approve this contract request? An active contract will be generated in the system."
+          confirm-label="Approve"
+          @confirm="confirmApprove"
+        />
+
+        <ConfirmationDialog
+          v-model:open="showReviewConfirm"
+          title="Mark Request Under Review"
+          description="Are you sure you want to change this request status to 'Under Review'?"
+          confirm-label="Confirm"
+          @confirm="confirmReview"
+        />
 
       </template>
     </DialogContent>

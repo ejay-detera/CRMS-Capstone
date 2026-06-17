@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   ClipboardList, MapPin, CalendarDays, FileText,
@@ -6,13 +7,14 @@ import {
 } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 import { requestStatusBadge, fmtReqDate } from '@/types/contractRequest'
 import type { ContractRequest } from '@/types/contractRequest'
 import { safeHref } from '@/utils/sanitize'
 
 const router = useRouter()
 
-defineProps<{
+const props = defineProps<{
   open:         boolean
   request:      ContractRequest | null
   isFollowedUp: boolean
@@ -22,6 +24,14 @@ const emit = defineEmits<{
   'update:open': [v: boolean]
   followUp:      [id: string]
 }>()
+
+const showFollowUpConfirm = ref(false)
+
+function confirmFollowUp() {
+  if (!props.request) return
+  emit('followUp', props.request.id)
+  showFollowUpConfirm.value = false
+}
 </script>
 
 <template>
@@ -140,7 +150,7 @@ const emit = defineEmits<{
                 <FilePenLine class="w-3.5 h-3.5" /> Edit Request
               </Button>
               <Button v-if="!isFollowedUp"
-                @click="emit('followUp', request.id)"
+                @click="showFollowUpConfirm = true"
                 variant="outline"
                 class="h-8 px-3.5 text-xs font-semibold border-amber-200 text-amber-600 hover:bg-amber-50 hover:text-amber-700 gap-1.5">
                 <Bell class="w-3.5 h-3.5" /> Follow Up Manager
@@ -158,6 +168,15 @@ const emit = defineEmits<{
             </Button>
           </div>
         </div>
+
+        <!-- Confirmation -->
+        <ConfirmationDialog
+          v-model:open="showFollowUpConfirm"
+          title="Follow Up Manager"
+          description="Are you sure you want to send a follow-up notification to the manager for this request?"
+          confirm-label="Send Follow-up"
+          @confirm="confirmFollowUp"
+        />
 
       </template>
     </DialogContent>

@@ -12,6 +12,7 @@ import type { StoredContract } from '@/composables/useContractStore'
 import ContractDetailHeader     from './ContractDetailHeader.vue'
 import ContractInfoSection      from './ContractInfoSection.vue'
 import ContractDocumentsSection from './ContractDocumentsSection.vue'
+import ConfirmationDialog       from '@/components/shared/ConfirmationDialog.vue'
 
 const route  = useRoute()
 const router = useRouter()
@@ -124,6 +125,7 @@ onMounted(async () => {
 // ── Inline edit state ────────────────────────────────────────────────────────
 
 const isEditing = ref(false)
+const showSaveConfirm = ref(false)
 
 const editForm = reactive({
   businessPartner: '',
@@ -197,10 +199,14 @@ function cancelEdit() {
   isEditing.value = false
 }
 
-async function saveEdit() {
+function triggerSaveEdit() {
   Object.keys(touched).forEach(k => (touched[k] = true))
   if (!isFormValid.value) return
+  showSaveConfirm.value = true
+}
 
+async function confirmSaveEdit() {
+  showSaveConfirm.value = false
   savingEdit.value = true
   try {
     const payload: Record<string, unknown> = {
@@ -303,7 +309,7 @@ async function saveEdit() {
         :disabled="isUploadingOrScanFailed"
         @back="router.push(backPath)"
         @edit="startEdit"
-        @save="saveEdit"
+        @save="triggerSaveEdit"
         @cancel="cancelEdit"
       />
       <ContractInfoSection
@@ -323,5 +329,12 @@ async function saveEdit() {
       />
     </template>
 
+    <ConfirmationDialog
+      v-model:open="showSaveConfirm"
+      title="Save Contract Changes"
+      description="Are you sure you want to apply these changes to the contract? This action will update the contract details in the system."
+      confirm-label="Save changes"
+      @confirm="confirmSaveEdit"
+    />
   </div>
 </template>
