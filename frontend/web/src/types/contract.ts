@@ -32,6 +32,7 @@ export interface Contract {
   contractLink:    string
   createdBy:       string
   docs:            UploadedDoc[]
+  rejectionReason?: string
 }
 
 export const approvalStatusBadge: Record<ContractApprovalStatus, string> = {

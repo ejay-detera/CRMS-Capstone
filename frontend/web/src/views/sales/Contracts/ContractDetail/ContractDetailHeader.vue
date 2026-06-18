@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, FileText, FilePenLine, Clock, AlertTriangle, Loader2 } from 'lucide-vue-next'
+import { ArrowLeft, FileText, FilePenLine, Clock, AlertTriangle, Loader2, CheckCircle, XCircle } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { approvalStatusBadge, workflowStatusBadge } from '@/types/contract'
 import type { StoredContract } from '@/composables/useContractStore'
@@ -10,9 +10,16 @@ const props = defineProps<{
   isEditing: boolean
   saving?:   boolean
   disabled?: boolean
+  actionInProgress?: boolean
+  isManager?: boolean
+  showRejectInput?: boolean
+  rejectReasonValid?: boolean
 }>()
 
-defineEmits<{ back: []; edit: []; save: []; cancel: [] }>()
+defineEmits<{ 
+  back: []; edit: []; save: []; cancel: []; notifyManager: [];
+  approve: []; toggleReject: []; confirmReject: []
+}>()
 
 function daysDisplay(days: number) {
   if (days < 0)   return { text: `Expired ${Math.abs(days)}d ago`, cls: 'bg-red-50 text-red-600 border-red-200',     icon: AlertTriangle }
@@ -65,19 +72,53 @@ function daysDisplay(days: number) {
 
     <!-- Action buttons -->
     <div class="flex items-center gap-3 shrink-0">
+      <!-- Edit Mode (Save/Cancel) -->
       <template v-if="isEditing">
-        <button @click="$emit('cancel')"
-          class="px-6 py-2.5 bg-white border border-black/15 text-black/60 rounded-lg text-sm font-medium hover:text-black hover:bg-black/5 transition-colors">
+        <button @click="$emit('cancel')" :disabled="actionInProgress"
+          class="px-6 py-2.5 bg-white border border-black/15 text-black/60 rounded-lg text-sm font-medium hover:text-black hover:bg-black/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
           Cancel
         </button>
-        <button @click="$emit('save')" :disabled="saving || disabled"
+        <button @click="$emit('save')" :disabled="saving || disabled || actionInProgress"
           class="px-6 py-2.5 bg-[#252578] text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-[#2F2F73] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <Loader2 v-if="saving" class="w-4 h-4 animate-spin" />
           {{ saving ? 'Saving…' : 'Save Changes' }}
         </button>
       </template>
+
+      <!-- View Mode -->
       <template v-else>
-        <button @click="$emit('edit')"
+        <!-- Manager: Approve / Reject -->
+        <template v-if="isManager && contract.approvalStatus === 'Pending'">
+          <template v-if="!showRejectInput">
+            <Button @click="$emit('toggleReject')" :disabled="actionInProgress" variant="outline"
+              class="h-10 px-6 border-black/15 text-black/65 hover:text-red-600 hover:border-red-200 hover:bg-red-50 font-medium">
+              <XCircle class="w-4 h-4" /> Reject Contract
+            </Button>
+            <Button @click="$emit('approve')" :disabled="actionInProgress"
+              class="h-10 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm">
+              <CheckCircle class="w-4 h-4" /> Approve Contract
+            </Button>
+          </template>
+          <template v-else>
+            <Button variant="outline" @click="$emit('toggleReject')" :disabled="actionInProgress"
+              class="h-10 px-6 border-black/15 text-black/60 hover:text-black hover:bg-black/5 font-medium">
+              Cancel Reject
+            </Button>
+            <Button @click="$emit('confirmReject')" :disabled="!rejectReasonValid || actionInProgress"
+              class="h-10 px-6 bg-red-600 hover:bg-red-700 text-white font-medium shadow-sm">
+              Confirm Reject
+            </Button>
+          </template>
+        </template>
+
+        <!-- Notify Manager -->
+        <button v-if="!isManager && contract.approvalStatus === 'Pending' && !disabled" @click="$emit('notifyManager')"
+          class="px-6 py-2.5 bg-white border border-[#252578] text-[#252578] rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-[#252578]/5 transition-colors shadow-sm">
+          Notify Manager
+        </button>
+        
+        <!-- Edit Button (Not while reject input is open) -->
+        <button v-if="!showRejectInput" @click="$emit('edit')"
           class="px-6 py-2.5 bg-[#252578] text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm">
           <FilePenLine class="w-4 h-4" />
           Edit Contract

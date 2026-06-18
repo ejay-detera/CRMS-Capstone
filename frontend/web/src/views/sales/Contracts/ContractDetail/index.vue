@@ -13,6 +13,8 @@ import ContractDetailHeader     from './ContractDetailHeader.vue'
 import ContractInfoSection      from './ContractInfoSection.vue'
 import ContractDocumentsSection from './ContractDocumentsSection.vue'
 import ConfirmationDialog       from '@/components/shared/ConfirmationDialog.vue'
+import RejectionReasonModal     from './RejectionReasonModal.vue'
+import { AlertCircle } from 'lucide-vue-next'
 
 const route  = useRoute()
 const router = useRouter()
@@ -115,17 +117,108 @@ async function loadContract() {
   }
 }
 
+const showRejectionModal = ref(false)
+
 onMounted(async () => {
   await loadContract()
+  if (contract.value && contract.value.approvalStatus === 'Rejected') {
+    showRejectionModal.value = true
+  }
   if (route.query.edit === '1' && contract.value) {
     startEdit()
   }
 })
 
+// ── Manager Actions ──────────────────────────────────────────────────────────
+
+const showRejectInput  = ref(false)
+const rejectReason     = ref('')
+const actionInProgress = ref(false)
+
+const showConfirm = ref(false)
+const confirmTitle = ref('')
+const confirmDesc = ref('')
+const confirmAction = ref<(() => void) | null>(null)
+
+function triggerApprove() {
+  confirmTitle.value = 'Approve Contract'
+  confirmDesc.value = 'Are you sure you want to approve this contract? This will change the status to Approved.'
+  confirmAction.value = handleApprove
+  showConfirm.value = true
+}
+
+function triggerReject() {
+  if (!rejectReason.value.trim()) return
+  confirmTitle.value = 'Reject Contract'
+  confirmDesc.value = 'Are you sure you want to reject this contract? This will mark it as Rejected.'
+  confirmAction.value = confirmReject
+  showConfirm.value = true
+}
+
+async function handleApprove() {
+  if (!contract.value || actionInProgress.value) return
+  showConfirm.value = false
+  actionInProgress.value = true
+  try {
+    const res = await fetch(`${apiBase}/contracts/${id}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+      body: JSON.stringify({ approval_status: 'Approved', workflow_status: 'SBSI Review' }),
+    })
+    const data = await res.json()
+    if (!res.ok) { error('Failed to approve', data.message ?? 'Something went wrong.'); return }
+
+    updateContractInCache(id, { approvalStatus: 'Approved', workflowStatus: 'SBSI Review' })
+    success('Contract approved', `${contract.value.businessPartner}'s contract has been approved.`)
+    loadLocalContract()
+  } catch {
+    error('Network error', 'Could not reach the server. Please try again.')
+  } finally {
+    actionInProgress.value = false
+  }
+}
+
+function handleToggleReject() {
+  showRejectInput.value = !showRejectInput.value
+  if (!showRejectInput.value) rejectReason.value = ''
+}
+
+async function confirmReject() {
+  if (!contract.value || !rejectReason.value.trim() || actionInProgress.value) return
+  showConfirm.value = false
+  actionInProgress.value = true
+  try {
+    const res = await fetch(`${apiBase}/contracts/${id}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+      body: JSON.stringify({ approval_status: 'Rejected', rejection_reason: rejectReason.value.trim() }),
+    })
+    const data = await res.json()
+    if (!res.ok) { error('Failed to reject', data.message ?? 'Something went wrong.'); return }
+
+    updateContractInCache(id, { approvalStatus: 'Rejected', workflowStatus: null, rejectionReason: rejectReason.value.trim() })
+    success('Contract rejected', `${contract.value.businessPartner}'s contract has been rejected.`)
+    showRejectInput.value = false
+    rejectReason.value = ''
+    loadLocalContract()
+  } catch {
+    error('Network error', 'Could not reach the server. Please try again.')
+  } finally {
+    actionInProgress.value = false
+  }
+}
+
 // ── Inline edit state ────────────────────────────────────────────────────────
 
 const isEditing = ref(false)
-const showSaveConfirm = ref(false)
 
 const editForm = reactive({
   businessPartner: '',
@@ -202,11 +295,14 @@ function cancelEdit() {
 function triggerSaveEdit() {
   Object.keys(touched).forEach(k => (touched[k] = true))
   if (!isFormValid.value) return
-  showSaveConfirm.value = true
+  confirmTitle.value = 'Save Contract Changes'
+  confirmDesc.value = 'Are you sure you want to apply these changes to the contract? This action will update the contract details in the system.'
+  confirmAction.value = confirmSaveEdit
+  showConfirm.value = true
 }
 
 async function confirmSaveEdit() {
-  showSaveConfirm.value = false
+  showConfirm.value = false
   savingEdit.value = true
   try {
     const payload: Record<string, unknown> = {
@@ -250,6 +346,30 @@ async function confirmSaveEdit() {
     error('Network error', 'Could not reach the server. Please try again.')
   } finally {
     savingEdit.value = false
+  }
+}
+
+async function handleNotifyManager() {
+  try {
+    const res = await fetch(`${apiBase}/contracts/${id}/notify-manager`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      if (res.status === 429) {
+        error('Action limited', 'The manager is already notified, please wait.')
+      } else {
+        error('Failed to notify', data.message ?? 'Something went wrong.')
+      }
+      return
+    }
+    success('Success', data.message ?? 'Manager has been notified.')
+  } catch {
+    error('Network error', 'Could not reach the server.')
   }
 }
 </script>
@@ -333,12 +453,46 @@ async function confirmSaveEdit() {
         :days="days"
         :is-editing="isEditing"
         :saving="savingEdit"
+        :action-in-progress="actionInProgress"
+        :is-manager="isManager"
+        :show-reject-input="showRejectInput"
+        :reject-reason-valid="rejectReason.trim().length > 0"
         :disabled="isUploadingOrScanFailed"
         @back="router.push(backPath)"
         @edit="startEdit"
         @save="triggerSaveEdit"
         @cancel="cancelEdit"
+        @notify-manager="handleNotifyManager"
+        @approve="triggerApprove"
+        @toggle-reject="handleToggleReject"
+        @confirm-reject="triggerReject"
       />
+
+      <!-- Rejection input (manager rejecting) -->
+      <div v-if="showRejectInput" class="bg-white rounded-lg border border-black/8 shadow-sm p-6">
+        <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Rejection Reason</h2>
+        <label class="text-xs font-semibold text-red-600/80 block mb-1.5">
+          Reason <span class="text-red-500">*</span>
+        </label>
+        <textarea v-model="rejectReason" rows="3" placeholder="Provide a reason for rejection..."
+          class="w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm placeholder:text-black/25 focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-200/15 transition resize-none" />
+      </div>
+
+      <!-- Rejection reason display (already rejected) -->
+      <div v-else-if="contract.approvalStatus === 'Rejected'"
+        class="bg-white rounded-lg border border-red-100 shadow-sm p-6 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <AlertCircle class="w-5 h-5 text-red-500 shrink-0" />
+          <div>
+            <span class="text-sm font-semibold text-red-600 block">Contract Rejected</span>
+            <span class="text-xs text-red-500/80 mt-0.5 block">This contract was rejected by the manager.</span>
+          </div>
+        </div>
+        <Button variant="outline" @click="showRejectionModal = true" class="h-9 text-xs border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
+          View Rejection Reason
+        </Button>
+      </div>
+
       <ContractInfoSection
         :contract="contract"
         :is-editing="isEditing"
@@ -357,11 +511,19 @@ async function confirmSaveEdit() {
     </template>
 
     <ConfirmationDialog
-      v-model:open="showSaveConfirm"
-      title="Save Contract Changes"
-      description="Are you sure you want to apply these changes to the contract? This action will update the contract details in the system."
-      confirm-label="Save changes"
-      @confirm="confirmSaveEdit"
+      v-model:open="showConfirm"
+      :title="confirmTitle"
+      :description="confirmDesc"
+      confirm-label="Confirm"
+      variant="default"
+      :loading="actionInProgress || savingEdit"
+      @confirm="confirmAction ? confirmAction() : undefined"
+    />
+
+    <RejectionReasonModal
+      v-if="contract"
+      v-model:open="showRejectionModal"
+      :reason="contract.rejectionReason || ''"
     />
   </div>
 </template>

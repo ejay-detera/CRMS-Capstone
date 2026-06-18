@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { fmtReqDate } from '@/types/contractRequest'
 import type { ContractRequest } from '@/types/contractRequest'
+import { CalendarCheck, CalendarX } from 'lucide-vue-next'
 
 const props = defineProps<{
   request:   ContractRequest
@@ -73,26 +74,28 @@ onClickOutside(suggestionsContainer, () => {
 </script>
 
 <template>
-  <div class="bg-white rounded-lg border border-black/8 shadow-sm overflow-hidden">
+  <div class="space-y-6">
 
     <!-- Section: Contract Info -->
-    <div class="px-6 py-5 border-b border-black/6">
-      <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Contract Info</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="bg-white border border-black/[0.08] rounded-xl overflow-hidden shadow-sm">
+      <div class="p-8 pb-4 border-b border-black/[0.04]">
+        <h3 class="text-[10px] font-bold text-[#252578]/60 uppercase tracking-widest mb-2">Contract Info</h3>
+      </div>
+      <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
 
         <!-- Business Partner -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
+          <label class="text-xs font-semibold text-black/50">
             Business Partner <span v-if="isEditing" class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm text-black py-1">{{ request.businessPartner }}</p>
+          <p v-if="!isEditing" class="text-[15px] font-medium text-black mt-0.5">{{ request.businessPartner }}</p>
           <template v-else>
             <div class="relative w-full" ref="suggestionsContainer">
               <input v-model="editForm.businessPartner"
                 @focus="showSuggestions = true"
                 @blur="touched.businessPartner = true"
                 type="text" placeholder="e.g. Globe Telecom"
-                class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition w-full"
+                class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition w-full mt-1"
                 :class="fieldCls('businessPartner', !editForm.businessPartner)" />
               <div
                 v-if="showSuggestions && partnerSuggestions.length > 0"
@@ -115,13 +118,13 @@ onClickOutside(suggestionsContainer, () => {
 
         <!-- Category -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
+          <label class="text-xs font-semibold text-black/50">
             Category <span v-if="isEditing" class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm text-black py-1">{{ request.category }}</p>
+          <p v-if="!isEditing" class="text-[15px] font-medium text-black mt-0.5">{{ request.category }}</p>
           <template v-else>
             <select v-model="editForm.category" @blur="touched.category = true"
-              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition"
+              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition mt-1"
               :class="[!editForm.category ? 'text-black/30' : 'text-black', fieldCls('category', !editForm.category)]">
               <option value="" disabled>Select category</option>
               <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
@@ -134,87 +137,102 @@ onClickOutside(suggestionsContainer, () => {
     </div>
 
     <!-- Section: Item Details -->
-    <div class="px-6 py-5 border-b border-black/6">
-      <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Item Details</h2>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="bg-white border border-black/[0.08] rounded-xl overflow-hidden shadow-sm">
+      <div class="p-8 pb-4 border-b border-black/[0.04]">
+        <h3 class="text-[10px] font-bold text-[#252578]/60 uppercase tracking-widest mb-2">Item Details</h3>
+      </div>
+      <!-- View mode table -->
+      <div v-if="!isEditing" class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-black/[0.018] border-y border-black/[0.04]">
+              <th class="px-8 py-4 text-[11px] font-bold text-black/50 uppercase tracking-wide">Item Code</th>
+              <th class="px-8 py-4 text-[11px] font-bold text-black/50 uppercase tracking-wide">Description</th>
+              <th class="px-8 py-4 text-[11px] font-bold text-black/50 uppercase tracking-wide">Serial No</th>
+              <th class="px-8 py-4 text-[11px] font-bold text-black/50 uppercase tracking-wide">SBU Number</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="hover:bg-black/[0.02] transition-colors">
+              <td class="px-8 py-6 text-[15px] text-black font-semibold">{{ request.itemCode }}</td>
+              <td class="px-8 py-6 text-[15px] text-black">{{ request.description }}</td>
+              <td class="px-8 py-6 text-[15px] text-black">{{ request.serialNo }}</td>
+              <td class="px-8 py-6 text-[15px] text-black">{{ request.sbuNumber || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Edit mode grid -->
+      <div v-else class="p-8 pt-0 grid grid-cols-1 md:grid-cols-4 gap-4">
 
         <!-- Item Code -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
-            Item Code <span v-if="isEditing" class="text-red-500">*</span>
+          <label class="text-xs font-semibold text-black/50">
+            Item Code <span class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm font-mono text-black py-1">{{ request.itemCode || '—' }}</p>
-          <template v-else>
-            <input v-model="editForm.itemCode" @blur="touched.itemCode = true"
-              type="text" placeholder="e.g. ITM-0041"
-              class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="fieldCls('itemCode', !editForm.itemCode)" />
-            <p v-if="touched.itemCode && !editForm.itemCode" class="text-xs text-red-500">Item code is required.</p>
-          </template>
+          <input v-model="editForm.itemCode" @blur="touched.itemCode = true"
+            type="text" placeholder="e.g. ITM-0041"
+            class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition mt-1"
+            :class="fieldCls('itemCode', !editForm.itemCode)" />
+          <p v-if="touched.itemCode && !editForm.itemCode" class="text-xs text-red-500">Item code is required.</p>
         </div>
 
         <!-- Description -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
-            Description <span v-if="isEditing" class="text-red-500">*</span>
+          <label class="text-xs font-semibold text-black/50">
+            Description <span class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm text-black py-1">{{ request.description }}</p>
-          <template v-else>
-            <input v-model="editForm.description" @blur="touched.description = true"
-              type="text" placeholder="e.g. Network Infrastructure"
-              class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="fieldCls('description', !editForm.description)" />
-            <p v-if="touched.description && !editForm.description" class="text-xs text-red-500">Description is required.</p>
-          </template>
+          <input v-model="editForm.description" @blur="touched.description = true"
+            type="text" placeholder="e.g. Network Infrastructure"
+            class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition mt-1"
+            :class="fieldCls('description', !editForm.description)" />
+          <p v-if="touched.description && !editForm.description" class="text-xs text-red-500">Description is required.</p>
         </div>
 
         <!-- Serial No -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
-            Serial No <span v-if="isEditing" class="text-red-500">*</span>
+          <label class="text-xs font-semibold text-black/50">
+            Serial No <span class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm font-mono text-black py-1">{{ request.serialNo || '—' }}</p>
-          <template v-else>
-            <input v-model="editForm.serialNo" @blur="touched.serialNo = true"
-              type="text" placeholder="e.g. SN-2024-0041"
-              class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="fieldCls('serialNo', !editForm.serialNo)" />
-            <p v-if="touched.serialNo && !editForm.serialNo" class="text-xs text-red-500">Serial number is required.</p>
-          </template>
+          <input v-model="editForm.serialNo" @blur="touched.serialNo = true"
+            type="text" placeholder="e.g. SN-2024-0041"
+            class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition mt-1"
+            :class="fieldCls('serialNo', !editForm.serialNo)" />
+          <p v-if="touched.serialNo && !editForm.serialNo" class="text-xs text-red-500">Serial number is required.</p>
         </div>
 
         <!-- SBU Number -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
-            SBU Number <span v-if="isEditing" class="text-red-500">*</span>
+          <label class="text-xs font-semibold text-black/50">
+            SBU Number <span class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm font-mono text-black py-1">{{ request.sbuNumber || '—' }}</p>
-          <template v-else>
-            <input v-model="editForm.sbuNumber" @blur="touched.sbuNumber = true"
-              type="text" placeholder="e.g. SBU-001"
-              class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="fieldCls('sbuNumber', !editForm.sbuNumber)" />
-            <p v-if="touched.sbuNumber && !editForm.sbuNumber" class="text-xs text-red-500">SBU number is required.</p>
-          </template>
+          <input v-model="editForm.sbuNumber" @blur="touched.sbuNumber = true"
+            type="text" placeholder="e.g. SBU-001"
+            class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition mt-1"
+            :class="fieldCls('sbuNumber', !editForm.sbuNumber)" />
+          <p v-if="touched.sbuNumber && !editForm.sbuNumber" class="text-xs text-red-500">SBU number is required.</p>
         </div>
 
       </div>
     </div>
 
     <!-- Section: Schedule & Location -->
-    <div class="px-6 py-5 border-b border-black/6">
-      <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Schedule & Location</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white border border-black/[0.08] rounded-xl overflow-hidden shadow-sm">
+      <div class="p-8 pb-4 border-b border-black/[0.04]">
+        <h3 class="text-[10px] font-bold text-[#252578]/60 uppercase tracking-widest mb-2">Schedule & Location</h3>
+      </div>
+      <div class="p-8 grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
 
         <!-- Region -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
+          <label class="text-xs font-semibold text-black/50">
             Region <span v-if="isEditing" class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm text-black py-1">{{ request.region }}</p>
+          <p v-if="!isEditing" class="text-[15px] font-medium text-black mt-0.5">{{ request.region }}</p>
           <template v-else>
             <select v-model="editForm.region" @blur="touched.region = true"
-              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition"
+              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition mt-1"
               :class="[!editForm.region ? 'text-black/30' : 'text-black', fieldCls('region', !editForm.region)]">
               <option value="" disabled>Select region</option>
               <option value="Luzon">Luzon</option>
@@ -227,14 +245,17 @@ onClickOutside(suggestionsContainer, () => {
 
         <!-- Start Date -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
+          <label class="text-xs font-semibold text-black/50">
             Start Date <span v-if="isEditing" class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm text-black py-1 tabular-nums">{{ fmtReqDate(request.startDate) }}</p>
+          <div v-if="!isEditing" class="flex items-center gap-2 mt-0.5 text-[15px] text-black">
+            <CalendarCheck class="w-4 h-4 text-[#2E85D8]/70" />
+            <span>{{ fmtReqDate(request.startDate) }}</span>
+          </div>
           <template v-else>
             <input v-model="editForm.startDate" @blur="touched.startDate = true"
               type="date"
-              class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition"
+              class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition mt-1"
               :class="fieldCls('startDate', !editForm.startDate)" />
             <p v-if="touched.startDate && !editForm.startDate" class="text-xs text-red-500">Start date is required.</p>
           </template>
@@ -242,14 +263,17 @@ onClickOutside(suggestionsContainer, () => {
 
         <!-- End Date -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
+          <label class="text-xs font-semibold text-black/50">
             End Date <span v-if="isEditing" class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm text-black py-1 tabular-nums">{{ fmtReqDate(request.endDate) }}</p>
+          <div v-if="!isEditing" class="flex items-center gap-2 mt-0.5 text-[15px] text-black">
+            <CalendarX class="w-4 h-4 text-red-400/70" />
+            <span>{{ fmtReqDate(request.endDate) }}</span>
+          </div>
           <template v-else>
             <input v-model="editForm.endDate" @blur="touched.endDate = true"
               type="date"
-              class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition"
+              class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition mt-1"
               :class="fieldCls('endDate', !editForm.endDate || !!dateError)" />
             <p v-if="touched.endDate && !editForm.endDate" class="text-xs text-red-500">End date is required.</p>
             <p v-else-if="dateError" class="text-xs text-red-500">{{ dateError }}</p>
@@ -257,17 +281,17 @@ onClickOutside(suggestionsContainer, () => {
         </div>
 
       </div>
-    </div>
-
-    <!-- Footer: Created by -->
-    <div class="px-6 py-4 flex items-center gap-3">
-      <span class="text-xs font-semibold text-black/40">Created by</span>
-      <div class="flex items-center gap-2">
-        <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0 select-none"
-          :style="{ backgroundColor: avatarColor(request.createdBy) }">
-          {{ initials(request.createdBy) }}
+      
+      <!-- Footer: Created by -->
+      <div class="px-8 py-4 bg-black/[0.015] border-t border-black/[0.04] flex items-center gap-3">
+        <span class="text-[11px] font-bold text-[#252578]/50 uppercase tracking-wide">Created by</span>
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0 select-none shadow-sm"
+            :style="{ backgroundColor: avatarColor(request.createdBy) }">
+            {{ initials(request.createdBy) }}
+          </div>
+          <span class="text-[13px] font-semibold text-[#252578]">{{ request.createdBy }}</span>
         </div>
-        <span class="text-sm font-medium text-black">{{ request.createdBy }}</span>
       </div>
     </div>
 

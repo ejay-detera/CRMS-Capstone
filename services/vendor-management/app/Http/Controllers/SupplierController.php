@@ -101,6 +101,17 @@ class SupplierController extends Controller
             ];
         }
 
+        try {
+            app(\App\Services\NotificationService::class)->push(
+                null,
+                'new_vendor',
+                "A new supplier '{$supplier->supplier_name}' has been added to the system.",
+                'Employee,Sales,Manager,Admin'
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to push supplier notification: " . $e->getMessage());
+        }
+
         return response()->json([
             'data' => $supplier,
             'warnings' => $warnings

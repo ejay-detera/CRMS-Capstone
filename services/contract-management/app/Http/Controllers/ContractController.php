@@ -39,6 +39,7 @@ class ContractController extends Controller
             'serial_number'   => $contract->serial_number,
             'sbu_number'      => $contract->sbu_number,
             'region'          => $contract->region?->region_name,
+            'rejection_reason' => $contract->rejection_reason,
             'start_date'       => $contract->start_date?->toDateString(),
             'end_date'         => $contract->end_date?->toDateString(),
             'lifecycle_status' => $contract->lifecycle_status,
@@ -509,6 +510,12 @@ class ContractController extends Controller
             $updatePayload['workflow_status_id'] = $stat->status_id;
         }
 
+        // Reset approval status to pending if the contract was rejected and is being edited by the employee/sales owner
+        if (in_array($role, ['Sales', 'Employee']) && $contract->approvalStatus?->status_name === 'Rejected') {
+            $pendingStatus = ContractApprovalStatus::firstOrCreate(['status_name' => 'Pending']);
+            $updatePayload['approval_status_id'] = $pendingStatus->approval_status_id;
+        }
+
         $contract->update($updatePayload);
 
         // Link MongoDB documents and delete removed ones
@@ -772,6 +779,7 @@ class ContractController extends Controller
         $request->validate([
             'approval_status' => 'required|string|in:Approved,Rejected',
             'workflow_status' => 'nullable|string',
+            'rejection_reason' => 'nullable|string',
         ]);
 
         $approvalStatusId = DB::table('contract_approval_statuses')
@@ -793,10 +801,32 @@ class ContractController extends Controller
             }
         }
 
-        $contract->update([
+        $updateData = [
             'approval_status_id' => $approvalStatusId,
             'workflow_status_id' => $workflowStatusId,
-        ]);
+        ];
+
+        if ($request->approval_status === 'Rejected') {
+            $updateData['notify_manager_count'] = 0;
+            $updateData['rejection_reason'] = $request->rejection_reason;
+        }
+
+        $contract->update($updateData);
+
+        if (in_array($request->approval_status, ['Approved', 'Rejected']) && $contract->created_by) {
+            $message = "Your contract request for {$contract->bp_name} ({$contract->item_code}) has been {$request->approval_status}.";
+            try {
+                app(\App\Services\NotificationService::class)->push(
+                    (int) $contract->contract_id,
+                    'contract_status_updated',
+                    $message,
+                    'Employee,Sales',
+                    (int) $contract->created_by
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Failed to push contract status notification: " . $e->getMessage());
+            }
+        }
 
         $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
 
@@ -848,5 +878,38 @@ class ContractController extends Controller
             $statusName,
             $outcome
         );
+    }
+
+    public function notifyManager(Request $request, $id)
+    {
+        $contract = Contract::findOrFail($id);
+
+        if ($contract->notify_manager_count >= 2) {
+            return response()->json(['message' => 'The manager is already notified, please wait.'], 429);
+        }
+
+        $contract->increment('notify_manager_count');
+
+        $authUser = $request->get('auth_user');
+        $userName = trim(($authUser['first_name'] ?? '') . ' ' . ($authUser['last_name'] ?? ''));
+        if (empty($userName)) {
+            $userName = $authUser['username'] ?? 'An Employee';
+        }
+
+        $message = "Employee {$userName} asked for approval on Contract {$contract->bp_name} ({$contract->item_code}).";
+
+        try {
+            app(\App\Services\NotificationService::class)->push(
+                (int) $contract->contract_id,
+                'manager_approval_request',
+                $message,
+                'Manager,Admin'
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to push notify manager notification: " . $e->getMessage());
+            return response()->json(['message' => 'Failed to notify manager.'], 500);
+        }
+
+        return response()->json(['message' => 'Manager notified successfully.', 'count' => $contract->notify_manager_count]);
     }
 }

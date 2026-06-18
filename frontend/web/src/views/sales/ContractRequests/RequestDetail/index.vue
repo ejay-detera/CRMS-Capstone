@@ -12,6 +12,7 @@ import { safeHref } from '@/utils/sanitize'
 import RequestDetailHeader from './RequestDetailHeader.vue'
 import RequestInfoSection  from './RequestInfoSection.vue'
 import ConfirmationDialog  from '@/components/shared/ConfirmationDialog.vue'
+import RejectionReasonModal from '@/views/sales/Contracts/ContractDetail/RejectionReasonModal.vue'
 
 const route  = useRoute()
 const router = useRouter()
@@ -146,7 +147,7 @@ async function confirmReject() {
         'Accept': 'application/json',
         'Authorization': `Bearer ${authState.token}`,
       },
-      body: JSON.stringify({ approval_status: 'Rejected' }),
+      body: JSON.stringify({ approval_status: 'Rejected', rejection_reason: rejectReason.value.trim() }),
     })
 
     const data = await res.json()
@@ -191,6 +192,15 @@ async function loadRequest() {
 }
 
 onMounted(loadRequest)
+
+const showRejectionModal = ref(false)
+
+// If the request is rejected, show the modal on initial load
+onMounted(() => {
+  if (request.value && request.value.status === 'Rejected') {
+    showRejectionModal.value = true
+  }
+})
 
 // ── Inline edit ──────────────────────────────────────────────────────────────
 
@@ -436,24 +446,29 @@ function fmtSize(bytes: number) {
       </div>
 
       <!-- Rejection reason display (already rejected) -->
-      <div v-else-if="request.status === 'Rejected' && request.rejectionReason"
-        class="bg-white rounded-lg border border-red-100 shadow-sm p-6 flex items-start gap-3">
-        <AlertCircle class="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-        <div>
-          <span class="text-[10px] font-semibold text-red-500/70 uppercase tracking-wider block mb-1">Rejection Reason</span>
-          <span class="text-sm text-red-600 font-medium leading-relaxed">{{ request.rejectionReason }}</span>
+      <div v-else-if="request.status === 'Rejected'"
+        class="bg-white rounded-lg border border-red-100 shadow-sm p-6 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <AlertCircle class="w-5 h-5 text-red-500 shrink-0" />
+          <div>
+            <span class="text-sm font-semibold text-red-600 block">Contract Rejected</span>
+            <span class="text-xs text-red-500/80 mt-0.5 block">This contract was rejected by the manager.</span>
+          </div>
         </div>
+        <Button variant="outline" @click="showRejectionModal = true" class="h-9 text-xs border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
+          View Rejection Reason
+        </Button>
       </div>
 
       <!-- Documents -->
-      <div class="bg-white rounded-xl border border-black/8 shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-black/6 flex items-center gap-2">
-          <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest">Documents</h2>
-          <span class="text-[10px] font-bold text-black/35 bg-black/5 px-1.5 py-0.5 rounded-full tabular-nums">
-            {{ allDocs.length }}
-          </span>
+      <div class="bg-white border border-black/[0.08] rounded-xl overflow-hidden shadow-sm mt-6">
+        <div class="p-8 pb-4 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <h3 class="text-[10px] font-bold text-[#252578]/60 uppercase tracking-widest">Documents</h3>
+            <span class="text-[10px] font-bold text-black/35 bg-black/5 px-2 py-0.5 rounded-full tabular-nums">{{ allDocs.length }}</span>
+          </div>
         </div>
-        <div class="p-5">
+        <div class="p-8 pt-4">
           <div v-if="allDocs.length === 0" class="flex flex-col items-center gap-2 py-10 text-black/25">
             <FileX class="w-8 h-8" />
             <p class="text-sm font-medium">No documents attached</p>
@@ -498,6 +513,12 @@ function fmtSize(bytes: number) {
       variant="default"
       :loading="actionInProgress || savingEdit"
       @confirm="confirmAction ? confirmAction() : undefined"
+    />
+
+    <RejectionReasonModal
+      v-if="request"
+      v-model:open="showRejectionModal"
+      :reason="request.rejectionReason || ''"
     />
   </div>
 </template>

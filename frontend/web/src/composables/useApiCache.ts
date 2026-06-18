@@ -125,6 +125,7 @@ function mapApiContract(d: any, currentUserId: number | null, firstName?: string
     workflowStatus:  (d.workflow_status ?? null)       as ContractWorkflowStatus | null,
     contractLink:    '',
     createdBy,
+    rejectionReason: d.rejection_reason ?? undefined,
     docs: (d.documents ?? []).map((doc: any) => ({
       id: doc.document_id || doc._id,
       name: doc.file_name,

@@ -149,6 +149,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresPermission: 'cms.partners.create' },
       },
       {
+        path: 'partners/:code/edit',
+        name: 'manager-partners-edit',
+        component: () => import('@/views/admin/Partners/EditPartnerPage.vue'),
+        meta: { requiresPermission: 'cms.partners.edit' },
+      },
+      {
         path: 'partners/:code',
         name: 'manager-partners-detail',
         component: () => import('@/views/admin/Partners/PartnerDetail/index.vue'),
@@ -213,6 +219,18 @@ const routes: Array<RouteRecordRaw> = [
         name: 'sales-partners',
         component: () => import('@/views/sales/Partners/index.vue'),
         meta: { requiresPermission: 'cms.partners.view' },
+      },
+      {
+        path: 'partners/create',
+        name: 'sales-partners-create',
+        component: () => import('@/views/admin/Partners/AddPartnerPage.vue'),
+        meta: { requiresPermission: 'cms.partners.create' },
+      },
+      {
+        path: 'partners/:code/edit',
+        name: 'sales-partners-edit',
+        component: () => import('@/views/admin/Partners/EditPartnerPage.vue'),
+        meta: { requiresPermission: 'cms.partners.edit' },
       },
       {
         path: 'partners/:code',

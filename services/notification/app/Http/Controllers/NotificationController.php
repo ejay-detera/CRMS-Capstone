@@ -37,9 +37,14 @@ class NotificationController extends Controller
         if ($notification) {
             $notification->wasRecentlyCreated = false;
 
-            // If the last notification was sent 7 or more days ago, update it to act as a weekly reminder
-            if ($notification->notification_date && now()->diffInDays($notification->notification_date) >= 7) {
+            // If the message has changed (e.g. from Approved to Rejected),
+            // OR it is a manual 'manager_approval_request' ping,
+            // OR it is a manual 'contract_status_updated' action (Approve/Reject),
+            // OR the last notification was sent 7+ days ago,
+            // treat it as a new notification by updating the timestamp and resetting read state.
+            if ($notification->message !== $data['message'] || in_array($data['notification_type'], ['manager_approval_request', 'contract_status_updated']) || ($notification->notification_date && now()->diffInDays($notification->notification_date) >= 7)) {
                 $notification->update([
+                    'message'           => $data['message'],
                     'notification_date' => now(),
                     'is_read'           => false,
                 ]);

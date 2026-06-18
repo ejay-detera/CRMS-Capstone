@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { provide, onMounted } from 'vue'
-import { Bell, FileText, Users, Monitor, Save } from 'lucide-vue-next'
+import { Save } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
 import NotificationsTab  from './NotificationsTab.vue'
 
-import { ref } from 'vue'
 import { useSystemConfig } from '@/composables/useSystemConfig'
 
 const { success, error: errorToast } = useToast()

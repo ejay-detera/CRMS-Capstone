@@ -25,6 +25,8 @@ Route::middleware(['auth.internal'])->group(function () {
         ->middleware('permission:cms.contracts.view');
     Route::patch('/contracts/{id}/status', [ContractController::class, 'updateStatus'])
         ->middleware('permission:cms.contracts.approve');
+    Route::post('/contracts/{id}/notify-manager', [ContractController::class, 'notifyManager'])
+        ->middleware('permission:cms.contracts.edit');
 
     Route::post('/admin/users', [\App\Http\Controllers\AdminUserProxyController::class, 'store'])
         ->middleware('permission:cms.users.create');

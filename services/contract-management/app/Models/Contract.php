@@ -33,6 +33,8 @@ class Contract extends Model
         'end_date',
         'created_by',
         'prs_activity_id',
+        'notify_manager_count',
+        'rejection_reason',
     ];
 
     protected $casts = [
