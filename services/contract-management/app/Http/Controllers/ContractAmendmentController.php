@@ -10,6 +10,7 @@ use App\Models\ContractAmendment;
 use App\Models\ContractVersionSnapshot;
 use App\Services\AuditLogService;
 use App\Services\AuthService;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -18,11 +19,16 @@ class ContractAmendmentController extends Controller
 {
     protected AuditLogService $auditLogService;
     protected AuthService $authService;
+    protected NotificationService $notificationService;
 
-    public function __construct(AuditLogService $auditLogService, AuthService $authService)
-    {
-        $this->auditLogService = $auditLogService;
-        $this->authService = $authService;
+    public function __construct(
+        AuditLogService $auditLogService,
+        AuthService $authService,
+        NotificationService $notificationService
+    ) {
+        $this->auditLogService     = $auditLogService;
+        $this->authService         = $authService;
+        $this->notificationService = $notificationService;
     }
 
     private function formatAmendment(ContractAmendment $amd): array
@@ -280,6 +286,17 @@ class ContractAmendmentController extends Controller
             ? 'Amendment approved and applied automatically.'
             : 'Amendment request submitted successfully.';
 
+        // Notify all managers when an amendment is submitted
+        if (!$isManagerRole) {
+            try {
+                $contractId = (int) $amd->contract_id;
+                $notifMsg   = "{$creatorName} submitted an amendment request for Contract #{$contractId}.";
+                $this->notificationService->push($contractId, 'amendment_submitted', $notifMsg, 'Manager,Admin');
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Amendment submitted notification failed: ' . $e->getMessage());
+            }
+        }
+
         return response()->json([
             'message' => $message,
             'data'    => $this->formatAmendment($amd)
@@ -457,6 +474,15 @@ class ContractAmendmentController extends Controller
                 $amd->toArray(),
                 $request->get('auth_department')
             );
+
+            // Notify the amendment creator that their request was approved
+            try {
+                $contractId = (int) $amd->contract_id;
+                $notifMsg   = "Your amendment request for Contract #{$contractId} has been Approved by {$managerName}.";
+                $this->notificationService->push($contractId, 'amendment_approved', $notifMsg, 'Sales,Employee,Manager,Admin', (int) $amd->created_by);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Amendment approved notification failed: ' . $e->getMessage());
+            }
         } else {
             // Rejection
             $amd->update([
@@ -475,6 +501,15 @@ class ContractAmendmentController extends Controller
                 $amd->toArray(),
                 $request->get('auth_department')
             );
+
+            // Notify the amendment creator that their request was rejected
+            try {
+                $contractId = (int) $amd->contract_id;
+                $notifMsg   = "Your amendment request for Contract #{$contractId} has been Rejected by {$managerName}.";
+                $this->notificationService->push($contractId, 'amendment_rejected', $notifMsg, 'Sales,Employee,Manager,Admin', (int) $amd->created_by);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Amendment rejected notification failed: ' . $e->getMessage());
+            }
         }
 
         // Resolve creator name

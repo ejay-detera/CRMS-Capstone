@@ -50,7 +50,7 @@ watch(
     const { state: authState } = useAuth()
     return [authState.token, authState.user?.id || null] as const
   },
-  ([currentToken, currentUserId]) => {
+  ([currentToken, currentUserId]: readonly [string | null, number | null]) => {
     if (state.cachedToken !== currentToken || state.cachedUserId !== currentUserId) {
       state.contracts = null
       state.contractsScope = null
@@ -112,19 +112,19 @@ function mapApiContract(d: any, currentUserId: number | null, firstName?: string
     : d.creator_name ? d.creator_name : (d.created_by ? `User #${d.created_by}` : '—')
 
   return {
-    id:              String(d.contract_id),
-    businessPartner: d.bp_name         ?? '',
-    category:        d.category        ?? '',
-    itemCode:        d.item_code       ?? '',
-    description:     d.description     ?? '',
-    serialNo:        d.serial_number   ?? '',
-    sbuNumber:       d.sbu_number      ?? '',
-    region:          (d.region         ?? 'Luzon') as ContractRegion,
-    startDate:       d.start_date      ?? '',
-    endDate:         d.end_date        ?? '',
-    approvalStatus:  (d.approval_status ?? 'Pending') as ContractApprovalStatus,
-    workflowStatus:  (d.workflow_status ?? null)       as ContractWorkflowStatus | null,
-    contractLink:    '',
+    id: String(d.contract_id),
+    businessPartner: d.bp_name ?? '',
+    category: d.category ?? '',
+    itemCode: d.item_code ?? '',
+    description: d.description ?? '',
+    serialNo: d.serial_number ?? '',
+    sbuNumber: d.sbu_number ?? '',
+    region: (d.region ?? 'Luzon') as ContractRegion,
+    startDate: d.start_date ?? '',
+    endDate: d.end_date ?? '',
+    approvalStatus: (d.approval_status ?? 'Pending') as ContractApprovalStatus,
+    workflowStatus: (d.workflow_status ?? null) as ContractWorkflowStatus | null,
+    contractLink: '',
     createdBy,
     rejectionReason: d.rejection_reason ?? undefined,
     docs: (d.documents ?? []).map((doc: any) => ({
@@ -146,21 +146,21 @@ function mapApiToRequest(d: any, currentUserId: number | null, firstName?: strin
     : d.creator_name ? d.creator_name : (d.created_by ? `User #${d.created_by}` : '—')
 
   return {
-    id:              `REQ-${String(d.contract_id).padStart(3, '0')}`,
-    businessPartner: d.bp_name        ?? '',
-    category:        d.category       ?? '',
-    description:     d.description    ?? '',
-    region:          (d.region        ?? 'Luzon') as ContractRequest['region'],
-    requestDate:     d.created_at     ?? '',
-    startDate:       d.start_date     ?? '',
-    endDate:         d.end_date       ?? '',
-    status:          d.approval_status === 'Approved' ? 'Approved'
-      : d.approval_status === 'Rejected'             ? 'Rejected'
-      : d.workflow_status                            ? 'Under Review'
-      : 'Pending',
-    notes:           '',
+    id: `REQ-${String(d.contract_id).padStart(3, '0')}`,
+    businessPartner: d.bp_name ?? '',
+    category: d.category ?? '',
+    description: d.description ?? '',
+    region: (d.region ?? 'Luzon') as ContractRequest['region'],
+    requestDate: d.created_at ?? '',
+    startDate: d.start_date ?? '',
+    endDate: d.end_date ?? '',
+    status: d.approval_status === 'Approved' ? 'Approved'
+      : d.approval_status === 'Rejected' ? 'Rejected'
+        : d.workflow_status ? 'Under Review'
+          : 'Pending',
+    notes: '',
     rejectionReason: d.rejection_reason ?? '',
-    contractLink:    '',
+    contractLink: '',
     createdBy,
     docs: (d.documents ?? []).map((doc: any) => ({
       id: doc.document_id || doc._id,
@@ -170,10 +170,10 @@ function mapApiToRequest(d: any, currentUserId: number | null, firstName?: strin
       previewUrl: normalizeDocumentUrl(doc.document_url),
       uploadStatus: 'success',
     })),
-    itemCode:        d.item_code      ?? '',
-    serialNo:        d.serial_number  ?? '',
-    sbuNumber:       d.sbu_number     ?? '',
-    prsActivityId:   d.prs_activity_id ? Number(d.prs_activity_id) : undefined,
+    itemCode: d.item_code ?? '',
+    serialNo: d.serial_number ?? '',
+    sbuNumber: d.sbu_number ?? '',
+    prsActivityId: d.prs_activity_id ? Number(d.prs_activity_id) : undefined,
   }
 }
 
@@ -183,16 +183,16 @@ async function fetchDashboard(force = false): Promise<void> {
   const { role } = useAuth()
   const isManagerOrAdmin = ['Admin', 'Manager'].includes(role.value || '')
   const userId = state.cachedUserId
-  const scope  = isManagerOrAdmin ? 'all' : (userId ? `user-${userId}` : 'all')
+  const scope = isManagerOrAdmin ? 'all' : (userId ? `user-${userId}` : 'all')
 
   if (
     state.contracts !== null && state.contractsScope === scope &&
-    state.requests  !== null && state.requestsScope  === scope &&
+    state.requests !== null && state.requestsScope === scope &&
     !force
   ) return
 
   state.contractsLoading = true
-  state.requestsLoading  = true
+  state.requestsLoading = true
 
   const { state: authState } = useAuth()
   const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
@@ -214,12 +214,12 @@ async function fetchDashboard(force = false): Promise<void> {
     const data: any[] = json.data ?? []
 
     state.contracts = data.map(d => mapApiContract(d, state.cachedUserId, firstName, lastName))
-    state.requests  = data.map(d => mapApiToRequest(d, state.cachedUserId, firstName, lastName))
+    state.requests = data.map(d => mapApiToRequest(d, state.cachedUserId, firstName, lastName))
     state.contractsScope = scope
-    state.requestsScope  = scope
+    state.requestsScope = scope
   } finally {
     state.contractsLoading = false
-    state.requestsLoading  = false
+    state.requestsLoading = false
   }
 }
 
@@ -287,7 +287,7 @@ async function fetchContracts(
     const user = authState.user
     const firstName = (user as any)?.profile?.first_name || user?.first_name
     const lastName = (user as any)?.profile?.last_name || user?.last_name
-    
+
     state.contracts = (json.data ?? []).map((d: any) =>
       mapApiContract(d, state.cachedUserId, firstName, lastName)
     )
@@ -387,7 +387,7 @@ function clearCache() {
 
 function updateContractInCache(id: string, patch: Partial<Contract>) {
   if (state.contracts) {
-    const idx = state.contracts.findIndex(c => c.id === id)
+    const idx = state.contracts.findIndex((c: Contract) => c.id === id)
     if (idx !== -1) {
       state.contracts[idx] = { ...state.contracts[idx], ...patch }
     }
@@ -396,13 +396,13 @@ function updateContractInCache(id: string, patch: Partial<Contract>) {
 
 function deleteContractFromCache(id: string) {
   if (state.contracts) {
-    state.contracts = state.contracts.filter(c => c.id !== id)
+    state.contracts = state.contracts.filter((c: Contract) => c.id !== id)
   }
 }
 
 function updateRequestStatusInCache(id: string, status: RequestStatus, patch: Partial<ContractRequest> = {}) {
   if (state.requests) {
-    const idx = state.requests.findIndex(r => r.id === id)
+    const idx = state.requests.findIndex((r: ContractRequest) => r.id === id)
     if (idx !== -1) {
       state.requests[idx] = { ...state.requests[idx], status, ...patch }
     }
@@ -411,7 +411,7 @@ function updateRequestStatusInCache(id: string, status: RequestStatus, patch: Pa
 
 function updateRequestInCache(id: string, patch: Partial<ContractRequest>) {
   if (state.requests) {
-    const idx = state.requests.findIndex(r => r.id === id)
+    const idx = state.requests.findIndex((r: ContractRequest) => r.id === id)
     if (idx !== -1) {
       state.requests[idx] = { ...state.requests[idx], ...patch }
     }
