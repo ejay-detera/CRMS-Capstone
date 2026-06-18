@@ -100,6 +100,10 @@ const backPath = computed(() => {
     const role = route.query.role as string || 'sales'
     return `/${role}/contracts/create`
   }
+  if (route.query.from === 'amend') {
+    const role = route.query.role as string || 'sales'
+    return `/${role}/contracts/${contractId}/amend`
+  }
   const fromAmd = route.query.fromAmd as string
   if (fromAmd) {
     if (route.path.startsWith('/manager')) return `/manager/amendment-requests/${fromAmd}`
@@ -112,7 +116,7 @@ const backPath = computed(() => {
 })
 
 const document = computed(() => {
-  if (fromCreate.value) {
+  if (fromCreate.value || route.query.from === 'amend') {
     return {
       id: docId,
       name: docNameParam.value,

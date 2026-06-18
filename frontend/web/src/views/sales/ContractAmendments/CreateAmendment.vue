@@ -161,6 +161,12 @@ async function confirmSubmit() {
   }
 }
 
+function handlePreviewDoc(doc: UploadedDoc) {
+  if (!doc.id) return
+  const role = route.path.startsWith('/admin') ? 'admin' : route.path.startsWith('/manager') ? 'manager' : 'sales'
+  router.push(`/${role}/contracts/${id}/documents/${doc.id}?from=amend&docName=${encodeURIComponent(doc.name)}&docSize=${doc.size}&docType=${doc.type}&role=${role}`)
+}
+
 onMounted(async () => {
   let c = (cacheState.contracts || []).find(item => item.id === id)
   if (!c) {
@@ -410,7 +416,7 @@ onMounted(async () => {
       <div class="px-6 py-5 border-b border-black/6">
         <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-1">New Documents (Optional)</h2>
         <p class="text-xs text-black/35 mb-4">Upload replacement or supporting documents. Accepted formats: PDF, DOCX · Max 10 MB per file.</p>
-        <DocumentUpload v-model="contractDocs" />
+        <DocumentUpload v-model="contractDocs" :onPreview="handlePreviewDoc" />
       </div>
 
       <!-- Footer -->

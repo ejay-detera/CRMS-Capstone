@@ -137,7 +137,7 @@ async function handleUnsubmit() {
 
 function viewDoc(docId: string) {
   if (!amendment.value) return
-  router.push(`/sales/contracts/${amendment.value.contractId}/documents/${docId}`)
+  router.push(`/sales/contracts/${amendment.value.contractId}/documents/${docId}?fromAmd=${amendment.value.id}`)
 }
 
 function fmtDate(iso: string): string {
