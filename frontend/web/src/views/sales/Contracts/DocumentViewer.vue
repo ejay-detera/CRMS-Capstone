@@ -95,6 +95,8 @@ const docNameParam = computed(() => route.query.docName as string || '')
 const docSizeParam = computed(() => Number(route.query.docSize) || 0)
 const docTypeParam = computed(() => (route.query.docType as 'pdf' | 'docx') || 'pdf')
 
+const snapshotVersion = computed(() => route.query.snapshotVersion as string || '')
+
 const backPath = computed(() => {
   if (fromCreate.value) {
     const role = route.query.role as string || 'sales'
@@ -110,9 +112,10 @@ const backPath = computed(() => {
     if (route.path.startsWith('/admin')) return `/admin/amendment-requests/${fromAmd}`
     return `/sales/contract-amendments/${fromAmd}`
   }
-  if (route.path.startsWith('/admin')) return `/admin/contracts/${contractId}`
-  if (route.path.startsWith('/manager')) return `/manager/contracts/${contractId}`
-  return `/sales/contracts/${contractId}`
+  const querySuffix = snapshotVersion.value ? `?snapshotVersion=${snapshotVersion.value}` : ''
+  if (route.path.startsWith('/admin')) return `/admin/contracts/${contractId}${querySuffix}`
+  if (route.path.startsWith('/manager')) return `/manager/contracts/${contractId}${querySuffix}`
+  return `/sales/contracts/${contractId}${querySuffix}`
 })
 
 const document = computed(() => {

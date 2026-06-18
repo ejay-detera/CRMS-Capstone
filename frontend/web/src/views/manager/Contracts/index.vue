@@ -102,6 +102,7 @@ const statCards = computed(() => {
   return {
     total:    cacheState.contractsStats?.total ?? 0,
     active:   cacheState.contractsStats?.active ?? 0,
+    inactive: cacheState.contractsStats?.inactive ?? 0,
     expiring: cacheState.contractsStats?.expiring ?? 0,
     expired:  cacheState.contractsStats?.expired ?? 0,
   }
@@ -110,6 +111,7 @@ const statCards = computed(() => {
 const statCardList = computed(() => [
   { label: 'All Contracts', value: statCards.value.total,    valueClass: 'text-black', change: '+2.1%', positive: true, filter: 'all' as FilterTab  },
   { label: 'Active',        value: statCards.value.active,   valueClass: 'text-black', change: '+4.0%', positive: true, filter: 'active' as FilterTab  },
+  { label: 'Inactive',      value: statCards.value.inactive, valueClass: 'text-black', change: '+0.5%', positive: true, filter: 'inactive' as FilterTab  },
   { label: 'Expiring Soon', value: statCards.value.expiring, valueClass: 'text-black', change: '+5.2%', positive: true, filter: 'expiring' as FilterTab  },
   { label: 'Expired',       value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false, filter: 'expired' as FilterTab },
 ])
@@ -274,9 +276,9 @@ async function executeApprove() {
     </div>
 
     <!-- Stat cards -->
-    <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
       <template v-if="loading">
-        <div v-for="i in 4" :key="i"
+        <div v-for="i in 5" :key="i"
           class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
           <div class="h-3.5 w-24 bg-black/5 animate-pulse rounded mb-4"></div>
           <div class="flex items-end justify-between gap-2">

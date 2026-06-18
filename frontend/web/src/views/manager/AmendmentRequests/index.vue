@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search, MoreHorizontal, Loader2 } from 'lucide-vue-next'
+import { Search, MoreHorizontal, Loader2, Eye } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useApiCache } from '@/composables/useApiCache'
@@ -12,6 +12,9 @@ import TablePagination from '@/components/shared/TablePagination.vue'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 const { error } = useToast()
 const { state: cacheState, fetchContracts } = useApiCache()
@@ -156,9 +159,20 @@ onMounted(async () => {
                 </span>
               </TableCell>
               <TableCell class="py-4 pr-4 text-right" @click.stop>
-                <Button variant="ghost" size="icon" @click="openReview(a)" class="h-8 w-8 text-black/45 hover:text-black">
-                  <MoreHorizontal class="w-4 h-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                    <Button variant="ghost" size="icon" class="h-8 w-8 text-black/45 hover:text-black hover:bg-black/5 data-[state=open]:bg-black/5 data-[state=open]:text-black">
+                      <MoreHorizontal class="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" class="w-44 font-poppins">
+                    <DropdownMenuLabel class="text-xs font-semibold text-black/38 pb-1">Actions</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem @click="openReview(a)" class="gap-2.5 text-sm cursor-pointer">
+                      <Eye class="w-3.5 h-3.5 text-black/40" /> View details
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
 

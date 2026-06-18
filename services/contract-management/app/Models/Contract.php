@@ -95,6 +95,10 @@ class Contract extends Model
     {
         return Attribute::make(
             get: function (): string {
+                if ($this->approval_status_id !== null && (int)$this->approval_status_id !== 2) {
+                    return 'inactive';
+                }
+
                 if (!$this->end_date) {
                     return 'active';
                 }

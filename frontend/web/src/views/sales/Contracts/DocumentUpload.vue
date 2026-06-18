@@ -9,6 +9,7 @@ export type { UploadedDoc }
 const props = defineProps<{ 
   modelValue: UploadedDoc[]
   onPreview?: (doc: UploadedDoc) => void
+  hideSuccessBadge?: boolean
 }>()
 const emit  = defineEmits<{ 'update:modelValue': [v: UploadedDoc[]] }>()
 
@@ -253,7 +254,7 @@ const fileSizeMB = (bytes: number) => (bytes / 1024 / 1024).toFixed(2)
         </div>
 
         <!-- Success overlay/badge -->
-        <div v-if="doc.uploadStatus === 'success'"
+        <div v-if="doc.uploadStatus === 'success' && !hideSuccessBadge"
           class="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 rounded bg-[#2E85D8] px-1.5 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider shadow-sm select-none pointer-events-none"
           :title="doc.scanWarning || 'Malware scan completed successfully.'">
           <span>{{ doc.scanWarning ? 'Scan Skipped' : 'Malware Free' }}</span>

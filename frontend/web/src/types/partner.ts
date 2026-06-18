@@ -32,7 +32,7 @@ export interface AddPartnerForm {
   tinNumber: string
 }
 
-export type EngagementStatus = 'active' | 'expiring' | 'expired'
+export type EngagementStatus = 'active' | 'expiring' | 'expired' | 'inactive'
 
 export interface LinkedContract {
   associationId: string
@@ -49,4 +49,5 @@ export const engagementBadge: Record<EngagementStatus, string> = {
   active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   expiring: 'bg-amber-50 text-amber-700 border-amber-200',
   expired: 'bg-black/5 text-black/40 border-black/10',
+  inactive: 'bg-[#252578]/5 text-[#252578]/70 border-[#252578]/15',
 }

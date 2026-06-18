@@ -16,6 +16,12 @@ const props = withDefaults(
 
 const config = computed(() => {
   switch (props.status) {
+    case 'inactive':
+      return {
+        icon: Clock,
+        classes: 'bg-[#252578]/5 text-[#252578]/70 border-[#252578]/15',
+        label: 'Inactive'
+      }
     case 'expired':
       return {
         icon: AlertTriangle,

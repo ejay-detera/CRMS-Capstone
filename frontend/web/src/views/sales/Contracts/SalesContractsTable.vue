@@ -129,6 +129,7 @@ function removeChip(key: string) {
 const filterTabs: { label: string; value: FilterTab }[] = [
   { label: 'All',           value: 'all'      },
   { label: 'Active',        value: 'active'   },
+  { label: 'Inactive',      value: 'inactive' },
   { label: 'Expiring Soon', value: 'expiring' },
   { label: 'Expired',       value: 'expired'  },
 ]
@@ -380,7 +381,7 @@ const categories = [
 
             <!-- Contract State -->
             <TableCell class="py-4">
-              <ContractLifecycleBadge :status="deriveLifecycleStatus(c.days)" />
+              <ContractLifecycleBadge :status="deriveLifecycleStatus(c.days, c.approvalStatus)" />
             </TableCell>
 
             <!-- Status -->
@@ -413,7 +414,7 @@ const categories = [
                   <DropdownMenuItem @click="emit('openDetail', c)" class="gap-2.5 text-sm cursor-pointer">
                     <Eye class="w-3.5 h-3.5 text-black/40" /> View details
                   </DropdownMenuItem>
-                  <DropdownMenuItem v-if="hasPermission('cms.contracts.edit')" @click="router.push(`/sales/contracts/${c.id}/amend`)" class="gap-2.5 text-sm cursor-pointer">
+                  <DropdownMenuItem v-if="hasPermission('cms.contracts.edit') && c.approvalStatus === 'Approved'" @click="router.push(`/sales/contracts/${c.id}/amend`)" class="gap-2.5 text-sm cursor-pointer">
                     <Pencil class="w-3.5 h-3.5 text-black/40" /> Create amendment
                   </DropdownMenuItem>
                   <template v-if="hasPermission('cms.contracts.approve') || hasPermission('cms.contracts.delete')">

@@ -20,6 +20,13 @@ const amendmentStore = useAmendmentStore()
 
 const id = route.params.id as string
 
+// Derive role prefix from current URL path
+const rolePrefix = computed(() => {
+  if (route.path.startsWith('/admin')) return '/admin'
+  if (route.path.startsWith('/manager')) return '/manager'
+  return '/sales'
+})
+
 const loading = ref(false)
 const showConfirm = ref(false)
 const contractDocs = ref<UploadedDoc[]>([])
@@ -153,7 +160,8 @@ async function confirmSubmit() {
     await amendmentStore.createAmendment(contract.value, payload, form.reason)
 
     success('Amendment Submitted', 'Contract amendment request has been sent for review.')
-    router.push('/sales/contract-amendments')
+    // Redirect back to the contract detail page
+    router.push(`${rolePrefix.value}/contracts/${id}`)
   } catch (err) {
     error('Submission failed', 'Could not create amendment request.')
   } finally {
@@ -172,7 +180,9 @@ onMounted(async () => {
   if (!c) {
     loadingContract.value = true
     try {
-      const userId = authState.user?.id
+      // Managers and Admins can see all contracts; Sales can only see their own
+      const isPrivileged = route.path.startsWith('/manager') || route.path.startsWith('/admin')
+      const userId = isPrivileged ? undefined : authState.user?.id
       await fetchContracts(userId)
       c = (cacheState.contracts || []).find(item => item.id === id)
     } catch (e) {
@@ -185,6 +195,11 @@ onMounted(async () => {
   }
 
   if (c) {
+    if (c.approvalStatus !== 'Approved') {
+      error('Error', 'Cannot create amendment for an unapproved contract.')
+      router.push(`${rolePrefix.value}/contracts/${id}`)
+      return
+    }
     contract.value = c
     Object.assign(form, {
       businessPartner: c.businessPartner,
@@ -201,7 +216,7 @@ onMounted(async () => {
     contractDocs.value = [...(c.docs || [])]
   } else {
     error('Error', 'Contract details could not be loaded.')
-    router.push('/sales/contracts')
+    router.push(`${rolePrefix.value}/contracts`)
   }
 })
 </script>
@@ -210,7 +225,7 @@ onMounted(async () => {
   <div class="p-8 space-y-6">
     <!-- Header -->
     <div class="flex items-center gap-4">
-      <button @click="router.push(`/sales/contracts/${id}`)"
+      <button @click="router.push(`${rolePrefix}/contracts/${id}`)"
         class="flex items-center justify-center w-9 h-9 rounded-lg border border-black/10 bg-white hover:bg-black/4 text-black/50 hover:text-black transition shrink-0">
         <ArrowLeft class="w-4 h-4" />
       </button>
@@ -416,7 +431,7 @@ onMounted(async () => {
       <div class="px-6 py-5 border-b border-black/6">
         <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-1">New Documents (Optional)</h2>
         <p class="text-xs text-black/35 mb-4">Upload replacement or supporting documents. Accepted formats: PDF, DOCX · Max 10 MB per file.</p>
-        <DocumentUpload v-model="contractDocs" :onPreview="handlePreviewDoc" />
+        <DocumentUpload v-model="contractDocs" :onPreview="handlePreviewDoc" :hide-success-badge="true" />
       </div>
 
       <!-- Footer -->

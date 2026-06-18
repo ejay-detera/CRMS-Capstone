@@ -117,6 +117,11 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/sales/Contracts/ContractDetail/index.vue'),
       },
       {
+        path: 'contracts/:id/amend',
+        name: 'manager-contracts-amend',
+        component: () => import('@/views/sales/ContractAmendments/CreateAmendment.vue'),
+      },
+      {
         path: 'contracts/:id/documents/:docId',
         name: 'manager-contracts-document-view',
         component: () => import('@/views/sales/Contracts/DocumentViewer.vue'),

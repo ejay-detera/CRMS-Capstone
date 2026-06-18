@@ -130,6 +130,7 @@ function removeChip(key: string) {
 const filterTabs: { label: string; value: FilterTab }[] = [
   { label: 'All',           value: 'all'      },
   { label: 'Active',        value: 'active'   },
+  { label: 'Inactive',      value: 'inactive' },
   { label: 'Expiring Soon', value: 'expiring' },
   { label: 'Expired',       value: 'expired'  },
 ]
@@ -377,7 +378,7 @@ const categories = [
 
             <!-- Contract State -->
             <TableCell class="py-4">
-              <ContractLifecycleBadge :status="deriveLifecycleStatus(c.days)" />
+              <ContractLifecycleBadge :status="deriveLifecycleStatus(c.days, c.approvalStatus)" />
             </TableCell>
 
             <!-- Status -->

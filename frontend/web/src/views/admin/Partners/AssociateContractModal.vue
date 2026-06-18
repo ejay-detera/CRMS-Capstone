@@ -5,13 +5,14 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { engagementBadge } from '@/types/partner'
 import { useApiCache } from '@/composables/useApiCache'
 import { remainingDays, deriveLifecycleStatus } from '@/types/contract'
+import type { ContractLifecycleStatus } from '@/types/contract'
 
 interface ContractListItem {
   contractId: string
   description: string
   startDate: string
   endDate: string
-  engagementStatus: 'active' | 'expiring' | 'expired'
+  engagementStatus: ContractLifecycleStatus
 }
 
 const props = defineProps<{
@@ -45,7 +46,7 @@ const availableContracts = computed<ContractListItem[]>(() => {
   const list = cacheState.contracts || []
   return list.map(c => {
     const days = remainingDays(c.endDate)
-    const status = deriveLifecycleStatus(days)
+    const status = deriveLifecycleStatus(days, c.approvalStatus)
     return {
       contractId: c.id,
       description: c.description,

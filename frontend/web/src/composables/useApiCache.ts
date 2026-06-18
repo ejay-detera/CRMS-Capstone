@@ -16,6 +16,7 @@ interface CacheState {
   contractsStats: {
     total: number
     active: number
+    inactive: number
     expiring: number
     expired: number
   } | null

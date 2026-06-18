@@ -8,6 +8,7 @@ import { useAuth } from '@/composables/useAuth'
 const props = defineProps<{
   docs:      UploadedDoc[]
   isEditing: boolean
+  snapshotVersion?: number | null
 }>()
 
 const emit = defineEmits<{ 'update:docs': [v: UploadedDoc[]] }>()
@@ -30,7 +31,8 @@ function viewDocument(doc: UploadedDoc) {
     else if (route.path.startsWith('/manager')) basePath = '/manager'
     else basePath = '/sales'
 
-    router.push(`${basePath}/contracts/${contractId}/documents/${doc.id}`)
+    const query = props.snapshotVersion ? `?snapshotVersion=${props.snapshotVersion}` : ''
+    router.push(`${basePath}/contracts/${contractId}/documents/${doc.id}${query}`)
   }
 }
 

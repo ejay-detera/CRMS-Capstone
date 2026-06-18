@@ -133,6 +133,7 @@ class ContractAmendmentController extends Controller
 
         $incoming = $validator->validated();
         $userId = $request->get('auth_id');
+        $role   = $request->get('auth_role');
 
         // Extract document IDs (frontend maps docs as objects with IDs)
         $docIds = [];
@@ -152,6 +153,13 @@ class ContractAmendmentController extends Controller
             ->count();
         $nextVersion = $approvedCount + 2;
 
+        $authUser    = $request->get('auth_user');
+        $creatorName = trim(($authUser['first_name'] ?? '') . ' ' . ($authUser['last_name'] ?? '')) ?: 'Manager';
+
+        // Managers and Admins automatically approve their own amendments
+        $isManagerRole = in_array($role, ['Manager', 'Admin']);
+        $initialStatus = $isManagerRole ? 'Approved' : 'Pending';
+
         $amd = ContractAmendment::create([
             'contract_id'      => $incoming['contract_id'],
             'bp_name'          => $incoming['bp_name'],
@@ -164,14 +172,15 @@ class ContractAmendmentController extends Controller
             'start_date'       => $incoming['start_date'],
             'end_date'         => $incoming['end_date'],
             'reason'           => $incoming['reason'],
-            'status'           => 'Pending',
+            'status'           => $initialStatus,
             'request_date'     => now()->toDateString(),
             'version'          => $nextVersion,
             'created_by'       => $userId,
             'document_ids'     => $docIds,
+            'approved_by'      => $isManagerRole ? $creatorName : null,
         ]);
 
-        // Audit Logging
+        // Audit Logging – submission
         $this->auditLogService->log(
             'amendment_submitted',
             'ContractAmendment',
@@ -182,12 +191,97 @@ class ContractAmendmentController extends Controller
             $request->get('auth_department')
         );
 
-        $authUser = $request->get('auth_user');
-        $creatorName = trim(($authUser['first_name'] ?? '') . ' ' . ($authUser['last_name'] ?? '')) ?: 'Salesperson';
+        // ── Auto-approval for Manager/Admin ───────────────────────────────────
+        if ($isManagerRole) {
+            $contract = Contract::with(['category', 'region', 'documents'])->findOrFail($amd->contract_id);
+
+            // 1. Snapshot the current contract state BEFORE applying changes
+            $docsMap = $contract->documents->map(fn ($d) => [
+                'id'         => (string) ($d->document_id ?? $d->_id),
+                'name'       => $d->file_name,
+                'type'       => $d->file_type,
+                'size'       => $d->file_size,
+                'previewUrl' => $d->document_url,
+            ])->values()->toArray();
+
+            ContractVersionSnapshot::create([
+                'contract_id'   => $contract->contract_id,
+                'version'       => $amd->version - 1, // Snapshot captures prior active state
+                'bp_name'       => $contract->bp_name,
+                'category'      => $contract->category?->category_name ?? '',
+                'item_code'     => $contract->item_code,
+                'description'   => $contract->description,
+                'serial_number' => $contract->serial_number,
+                'sbu_number'    => $contract->sbu_number,
+                'region'        => $contract->region?->region_name ?? 'Luzon',
+                'start_date'    => $contract->start_date,
+                'end_date'      => $contract->end_date,
+                'reason'        => $amd->reason,
+                'amended_by'    => $creatorName,
+                'approved_by'   => $creatorName,
+                'approved_date' => now()->toDateString(),
+                'docs'          => $docsMap,
+            ]);
+
+            // 2. Resolve Category & Region IDs for updating contract
+            $cat      = ContractCategory::firstOrCreate(['category_name' => $amd->category]);
+            $regionId = DB::table('contract_regions')
+                ->where('region_name', $amd->region)
+                ->value('region_id') ?: 1;
+
+            // 3. Apply amendment details to the live Contract record
+            $contract->update([
+                'category_id'   => $cat->category_id,
+                'bp_name'       => $amd->bp_name,
+                'item_code'     => $amd->item_code,
+                'description'   => $amd->description,
+                'serial_number' => $amd->serial_number,
+                'sbu_number'    => $amd->sbu_number,
+                'region_id'     => $regionId,
+                'start_date'    => $amd->start_date,
+                'end_date'      => $amd->end_date,
+            ]);
+
+            // 4. Reconcile document mappings:
+            //    - Collect which IDs are currently on the contract
+            //    - Unlink any that were removed in this amendment
+            //    - Link any kept or newly added documents
+            $existingDocIds = $contract->documents
+                ->map(fn ($d) => (string)($d->document_id ?? $d->_id))
+                ->toArray();
+            $amendmentDocIds = array_map('strval', $amd->document_ids ?? []);
+
+            $removedDocIds = array_diff($existingDocIds, $amendmentDocIds);
+            if (!empty($removedDocIds)) {
+                \App\Models\Document::whereIn('_id', array_values($removedDocIds))
+                    ->update(['contract_id' => null]);
+            }
+            if (!empty($amendmentDocIds)) {
+                \App\Models\Document::whereIn('_id', $amendmentDocIds)
+                    ->update(['contract_id' => $contract->contract_id]);
+            }
+
+            // Audit Log – approval
+            $this->auditLogService->log(
+                'amendment_approved',
+                'ContractAmendment',
+                $amd->amendment_id,
+                $userId,
+                [],
+                $amd->toArray(),
+                $request->get('auth_department')
+            );
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         $amd->creator_name = $creatorName;
 
+        $message = $isManagerRole
+            ? 'Amendment approved and applied automatically.'
+            : 'Amendment request submitted successfully.';
+
         return response()->json([
-            'message' => 'Amendment request submitted successfully.',
+            'message' => $message,
             'data'    => $this->formatAmendment($amd)
         ], 201);
     }
@@ -328,9 +422,22 @@ class ContractAmendmentController extends Controller
                 'end_date'      => $amd->end_date,
             ]);
 
-            // 4. Update Document mappings in MongoDB if new documents were attached
-            if (!empty($amd->document_ids)) {
-                \App\Models\Document::whereIn('_id', $amd->document_ids)
+            // 4. Reconcile document mappings:
+            //    - Collect which IDs are currently on the contract
+            //    - Unlink any that were removed in this amendment
+            //    - Link any kept or newly added documents
+            $existingDocIds = $contract->documents
+                ->map(fn ($d) => (string)($d->document_id ?? $d->_id))
+                ->toArray();
+            $amendmentDocIds = array_map('strval', $amd->document_ids ?? []);
+
+            $removedDocIds = array_diff($existingDocIds, $amendmentDocIds);
+            if (!empty($removedDocIds)) {
+                \App\Models\Document::whereIn('_id', array_values($removedDocIds))
+                    ->update(['contract_id' => null]);
+            }
+            if (!empty($amendmentDocIds)) {
+                \App\Models\Document::whereIn('_id', $amendmentDocIds)
                     ->update(['contract_id' => $contract->contract_id]);
             }
 

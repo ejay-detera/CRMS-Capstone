@@ -106,11 +106,22 @@ class ContractController extends Controller
             $today = now()->toDateString();
             $thirtyDaysFromNow = now()->addDays(30)->toDateString();
             if ($lifecycle === 'active') {
-                $query->where('end_date', '>', $thirtyDaysFromNow);
+                $query->where('approval_status_id', 2)
+                      ->where(function($q) use ($thirtyDaysFromNow) {
+                          $q->whereNull('end_date')
+                            ->orWhere('end_date', '>', $thirtyDaysFromNow);
+                      });
+            } elseif ($lifecycle === 'inactive') {
+                $query->where(function($q) {
+                    $q->whereNull('approval_status_id')
+                      ->orWhere('approval_status_id', '!=', 2);
+                });
             } elseif ($lifecycle === 'expiring') {
-                $query->whereBetween('end_date', [$today, $thirtyDaysFromNow]);
+                $query->where('approval_status_id', 2)
+                      ->whereBetween('end_date', [$today, $thirtyDaysFromNow]);
             } elseif ($lifecycle === 'expired') {
-                $query->where('end_date', '<', $today);
+                $query->where('approval_status_id', 2)
+                      ->where('end_date', '<', $today);
             }
         }
 
@@ -137,9 +148,14 @@ class ContractController extends Controller
 
             $stats = [
                 'total'    => (int) (clone $statsQuery)->count(),
-                'active'   => (int) (clone $statsQuery)->where('end_date', '>', $thirtyDays)->count(),
-                'expiring' => (int) (clone $statsQuery)->whereBetween('end_date', [$today, $thirtyDays])->count(),
-                'expired'  => (int) (clone $statsQuery)->where('end_date', '<', $today)->count(),
+                'active'   => (int) (clone $statsQuery)->where('approval_status_id', 2)->where(function($q) use ($thirtyDays) {
+                    $q->whereNull('end_date')->orWhere('end_date', '>', $thirtyDays);
+                })->count(),
+                'inactive' => (int) (clone $statsQuery)->where(function($q) {
+                    $q->whereNull('approval_status_id')->orWhere('approval_status_id', '!=', 2);
+                })->count(),
+                'expiring' => (int) (clone $statsQuery)->where('approval_status_id', 2)->whereBetween('end_date', [$today, $thirtyDays])->count(),
+                'expired'  => (int) (clone $statsQuery)->where('approval_status_id', 2)->where('end_date', '<', $today)->count(),
             ];
 
             $contractsCollection = collect($paginated->items());

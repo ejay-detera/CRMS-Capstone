@@ -125,11 +125,11 @@ function daysDisplay(days: number) {
           Version History
         </button>
 
-        <!-- Edit Button (Not while reject input is open) -->
-        <button v-if="!showRejectInput && !isSnapshot" @click="$emit('edit')"
+        <!-- Create Amendment Button — only for Approved contracts -->
+        <button v-if="!showRejectInput && !isSnapshot && contract.approvalStatus === 'Approved'" @click="$emit('edit')"
           class="px-6 py-2.5 bg-[#252578] text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm">
           <FilePenLine class="w-4 h-4" />
-          {{ isManager ? 'Edit Contract' : 'Create Amendment' }}
+          Create Amendment
         </button>
       </template>
     </div>

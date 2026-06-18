@@ -178,8 +178,8 @@ async function proceedReject() {
   }
 }
 
-function viewDoc(docId: string) {
-  if (!amendment.value) return
+function viewDoc(docId: string | undefined) {
+  if (!docId || !amendment.value) return
   router.push(`/manager/contracts/${amendment.value.contractId}/documents/${docId}?fromAmd=${amendment.value.id}`)
 }
 

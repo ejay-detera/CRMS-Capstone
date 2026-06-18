@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Trash2, Loader2, AlertTriangle, CheckCircle, XCircle, FileType2, Download, FileX } from 'lucide-vue-next'
+import { ArrowLeft, Trash2, Loader2, CheckCircle, XCircle, FileType2, Download, FileX } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
@@ -135,8 +135,8 @@ async function handleUnsubmit() {
   }
 }
 
-function viewDoc(docId: string) {
-  if (!amendment.value) return
+function viewDoc(docId: string | undefined) {
+  if (!docId || !amendment.value) return
   router.push(`/sales/contracts/${amendment.value.contractId}/documents/${docId}?fromAmd=${amendment.value.id}`)
 }
 

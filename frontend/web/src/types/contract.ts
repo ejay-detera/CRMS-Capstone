@@ -13,7 +13,7 @@ export interface UploadedDoc {
   scanWarning?: string
 }
 export type ContractRegion = 'Luzon' | 'Visayas' | 'Mindanao'
-export type FilterTab      = 'all' | 'active' | 'expiring' | 'expired'
+export type FilterTab      = 'all' | 'active' | 'inactive' | 'expiring' | 'expired'
 export type StatusFilter   = '' | ContractApprovalStatus | ContractWorkflowStatus
 
 export interface Contract {
@@ -107,11 +107,12 @@ export function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-export type ContractLifecycleStatus = 'active' | 'expiring' | 'expired'
+export type ContractLifecycleStatus = 'active' | 'expiring' | 'expired' | 'inactive'
 
 export const EXPIRING_THRESHOLD_DAYS = 30
 
-export function deriveLifecycleStatus(days: number): ContractLifecycleStatus {
+export function deriveLifecycleStatus(days: number, approvalStatus?: ContractApprovalStatus): ContractLifecycleStatus {
+  if (approvalStatus && approvalStatus !== 'Approved') return 'inactive'
   if (days < 0) return 'expired'
   if (days <= EXPIRING_THRESHOLD_DAYS) return 'expiring'
   return 'active'

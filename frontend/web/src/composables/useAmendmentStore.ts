@@ -9,7 +9,7 @@ const versionHistory = ref<Record<string, ContractVersionSnapshot[]>>({})
 
 export function useAmendmentStore() {
   const { state: authState } = useAuth()
-  const { updateContractInCache, state: cacheState } = useApiCache()
+  const { updateContractInCache, invalidateContracts, state: cacheState } = useApiCache()
   const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
 
   async function fetchAmendments(force = false) {
@@ -96,6 +96,9 @@ export function useAmendmentStore() {
       const json = await res.json()
       const newAmd = json.data as ContractAmendment
       amendments.value.unshift(newAmd)
+      // Invalidate contracts cache so the detail page re-fetches fresh data
+      // (document list, contract fields) after the amendment is applied.
+      invalidateContracts()
       return newAmd
     } catch (err) {
       console.error(err)

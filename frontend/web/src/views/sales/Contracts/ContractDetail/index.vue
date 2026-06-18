@@ -153,6 +153,15 @@ onMounted(async () => {
   if (contract.value) {
     await amendmentStore.fetchVersionHistory(contract.value.id, true)
   }
+  if (route.query.snapshotVersion && contract.value) {
+    const snaps = amendmentStore.versionHistory.value[contract.value.id] || []
+    const verNum = parseInt(route.query.snapshotVersion as string, 10)
+    const found = snaps.find(s => s.version === verNum)
+    if (found) {
+      viewingSnapshotVersion.value = verNum
+      viewingSnapshotDate.value = found.approvedDate
+    }
+  }
   if (contract.value && contract.value.approvalStatus === 'Rejected') {
     showRejectionModal.value = true
   }
@@ -409,6 +418,19 @@ async function handleNotifyManager() {
 const showHistoryDrawer = ref(false)
 const expandedVersion = ref<number | null>(null)
 
+function selectSnapshot(version: number, date: string) {
+  viewingSnapshotVersion.value = version
+  viewingSnapshotDate.value = date
+  showHistoryDrawer.value = false
+  router.replace({ query: { ...route.query, snapshotVersion: String(version) } })
+}
+
+function clearSnapshotMode() {
+  viewingSnapshotVersion.value = null
+  viewingSnapshotDate.value = ''
+  router.replace({ query: { ...route.query, snapshotVersion: undefined } })
+}
+
 const historicalSnapshots = computed(() => {
   if (!contract.value) return []
   const snaps = amendmentStore.versionHistory.value[contract.value.id] || []
@@ -429,8 +451,11 @@ function toggleVersionExpand(ver: number) {
 }
 
 function handleEditClick() {
-  if (!isManager.value) {
-    router.push(`/sales/contracts/${id}/amend`)
+  if (contract.value?.approvalStatus === 'Approved') {
+    let rolePrefix = '/sales'
+    if (route.path.startsWith('/admin')) rolePrefix = '/admin'
+    else if (route.path.startsWith('/manager')) rolePrefix = '/manager'
+    router.push(`${rolePrefix}/contracts/${id}/amend`)
   } else {
     startEdit()
   }
@@ -596,7 +621,7 @@ const activeSnapForDiff = computed(() => {
           </div>
         </div>
         <button 
-          @click="viewingSnapshotVersion = null"
+          @click="clearSnapshotMode"
           class="px-4 py-2 bg-white hover:bg-amber-100/30 border border-amber-200 text-amber-900 font-semibold text-xs rounded-lg shadow-sm transition-all duration-200 shrink-0 self-start sm:self-center"
         >
           Return to Current (Version {{ activeVersion }})
@@ -663,9 +688,11 @@ const activeSnapForDiff = computed(() => {
         :is-approved="contract.approvalStatus === 'Approved'"
       />
       <ContractDocumentsSection
+        v-slot:default
         v-if="displayedContract"
         :docs="isEditing ? contractDocs : displayedContract.docs"
         :is-editing="isEditing"
+        :snapshot-version="viewingSnapshotVersion"
         @update:docs="contractDocs = $event"
       />
     </template>
@@ -805,7 +832,7 @@ const activeSnapForDiff = computed(() => {
                 <!-- View Snapshot button -->
                 <div class="pt-3 border-t border-black/[0.03] flex justify-end">
                   <Button 
-                    @click="viewingSnapshotVersion = snap.version; viewingSnapshotDate = snap.approvedDate; showHistoryDrawer = false"
+                    @click="selectSnapshot(snap.version, snap.approvedDate)"
                     variant="outline"
                     class="h-8 text-xs font-semibold border-[#2E85D8] text-[#2E85D8] hover:bg-[#2E85D8]/5 flex items-center gap-1.5 transition-colors"
                   >
