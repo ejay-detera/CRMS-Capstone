@@ -24,10 +24,10 @@ const touched = reactive({
   firstName: false, lastName: false, email: false,
 })
 
-const ALLOWED_DOMAIN = 'sbsi.com'
+// const ALLOWED_DOMAIN = 'sbsi.com'
 const emailFormatValid = computed(() => !form.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-const emailDomainValid = computed(() => !form.email || form.email.toLowerCase().endsWith(`@${ALLOWED_DOMAIN}`))
-const emailValid       = computed(() => emailFormatValid.value && emailDomainValid.value)
+// const emailDomainValid = computed(() => !form.email || form.email.toLowerCase().endsWith(`@${ALLOWED_DOMAIN}`))
+const emailValid       = computed(() => emailFormatValid.value /* && emailDomainValid.value */)
 
 function onNameInput(field: 'firstName' | 'lastName' | 'middleName', e: Event) {
   const el = e.target as HTMLInputElement
@@ -46,7 +46,7 @@ watch(() => props.open, open => { if (!open) reset() })
 
 function submit() {
   Object.assign(touched, { firstName: true, lastName: true, email: true })
-  if (!form.firstName || !form.lastName || !form.email || !emailFormatValid.value || !emailDomainValid.value ||
+  if (!form.firstName || !form.lastName || !form.email || !emailFormatValid.value /* || !emailDomainValid.value */ ||
       !form.role || !form.department) return
   
   showConfirmCreate.value = true
@@ -120,7 +120,7 @@ function confirmSubmit() {
               touched.email && (!form.email || !emailValid) ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
           <p v-if="touched.email && !form.email" class="text-xs text-red-500">Required.</p>
           <p v-else-if="touched.email && !emailFormatValid" class="text-xs text-red-500">Enter a valid email address.</p>
-          <p v-else-if="touched.email && !emailDomainValid" class="text-xs text-red-500">Email must use the company domain <span class="font-semibold">@sbsi.com</span></p>
+          <!-- <p v-else-if="touched.email && !emailDomainValid" class="text-xs text-red-500">Email must use the company domain <span class="font-semibold">@sbsi.com</span></p> -->
         </div>
 
         <div class="bg-blue-50 border border-blue-100 rounded-md p-3.5 flex gap-3 text-blue-800">

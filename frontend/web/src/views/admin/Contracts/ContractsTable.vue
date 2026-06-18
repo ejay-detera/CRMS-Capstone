@@ -72,7 +72,7 @@ watch(showFilterPopover, (open) => {
 function applyFilters() {
   emit('update:categoryFilter', draftCategory.value)
   emit('update:regionFilter', draftRegion.value)
-  emit('update:statusFilter', draftStatus.value)
+  emit('update:statusFilter', draftStatus.value as StatusFilter)
   emit('update:startDateFilter', draftStartDate.value)
   emit('update:endDateFilter', draftEndDate.value)
   showFilterPopover.value = false
@@ -198,7 +198,7 @@ function avatarColor(name: string) {
             <!-- Category -->
             <div class="space-y-1">
               <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Category</label>
-              <Select :model-value="draftCategory || '__all__'" @update:model-value="(v) => draftCategory = (v === '__all__' ? '' : v)">
+              <Select :model-value="draftCategory || '__all__'" @update:model-value="(v) => draftCategory = (v === '__all__' ? '' : v as string)">
                 <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
@@ -212,7 +212,7 @@ function avatarColor(name: string) {
             <!-- Region -->
             <div class="space-y-1">
               <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Region</label>
-              <Select :model-value="draftRegion || '__all__'" @update:model-value="(v) => draftRegion = (v === '__all__' ? '' : v)">
+              <Select :model-value="draftRegion || '__all__'" @update:model-value="(v) => draftRegion = (v === '__all__' ? '' : v as string)">
                 <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
                   <SelectValue placeholder="All Regions" />
                 </SelectTrigger>
