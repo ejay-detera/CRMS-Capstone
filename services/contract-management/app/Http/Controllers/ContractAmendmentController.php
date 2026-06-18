@@ -159,8 +159,18 @@ class ContractAmendmentController extends Controller
             ->count();
         $nextVersion = $approvedCount + 2;
 
-        $authUser    = $request->get('auth_user');
-        $creatorName = trim(($authUser['first_name'] ?? '') . ' ' . ($authUser['last_name'] ?? '')) ?: 'Manager';
+        $authUser    = $request->get('auth_user') ?? [];
+        $creatorName = trim(($authUser['first_name'] ?? '') . ' ' . ($authUser['last_name'] ?? ''));
+        if (empty($creatorName)) {
+            $users = $this->authService->getUsersBatch([$userId]);
+            if (!empty($users)) {
+                $u = $users[0];
+                $creatorName = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? ''));
+            }
+            if (empty($creatorName)) {
+                $creatorName = 'User';
+            }
+        }
 
         // Managers and Admins automatically approve their own amendments
         $isManagerRole = in_array($role, ['Manager', 'Admin']);
@@ -290,7 +300,8 @@ class ContractAmendmentController extends Controller
         if (!$isManagerRole) {
             try {
                 $contractId = (int) $amd->contract_id;
-                $notifMsg   = "{$creatorName} submitted an amendment request for Contract #{$contractId}.";
+                $contractName = trim("{$amd->bp_name} ({$amd->item_code})");
+                $notifMsg   = "{$creatorName} submitted an amendment request for {$contractName}.";
                 $this->notificationService->push($contractId, 'amendment_submitted', $notifMsg, 'Manager,Admin');
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Amendment submitted notification failed: ' . $e->getMessage());
@@ -374,8 +385,18 @@ class ContractAmendmentController extends Controller
         $rejectionReason = $request->rejection_reason;
         $userId = $request->get('auth_id');
         
-        $authUser = $request->get('auth_user');
-        $managerName = trim(($authUser['first_name'] ?? '') . ' ' . ($authUser['last_name'] ?? '')) ?: 'Manager';
+        $authUser = $request->get('auth_user') ?? [];
+        $managerName = trim(($authUser['first_name'] ?? '') . ' ' . ($authUser['last_name'] ?? ''));
+        if (empty($managerName)) {
+            $users = $this->authService->getUsersBatch([$userId]);
+            if (!empty($users)) {
+                $u = $users[0];
+                $managerName = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? ''));
+            }
+            if (empty($managerName)) {
+                $managerName = 'Manager';
+            }
+        }
 
         if ($amd->status !== 'Pending') {
             return response()->json(['message' => 'Amendment is already reviewed.'], 422);
@@ -478,7 +499,8 @@ class ContractAmendmentController extends Controller
             // Notify the amendment creator that their request was approved
             try {
                 $contractId = (int) $amd->contract_id;
-                $notifMsg   = "Your amendment request for Contract #{$contractId} has been Approved by {$managerName}.";
+                $contractName = trim("{$amd->bp_name} ({$amd->item_code})");
+                $notifMsg   = "Your amendment request for {$contractName} has been Approved by {$managerName}.";
                 $this->notificationService->push($contractId, 'amendment_approved', $notifMsg, 'Sales,Employee,Manager,Admin', (int) $amd->created_by);
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Amendment approved notification failed: ' . $e->getMessage());
@@ -505,7 +527,8 @@ class ContractAmendmentController extends Controller
             // Notify the amendment creator that their request was rejected
             try {
                 $contractId = (int) $amd->contract_id;
-                $notifMsg   = "Your amendment request for Contract #{$contractId} has been Rejected by {$managerName}.";
+                $contractName = trim("{$amd->bp_name} ({$amd->item_code})");
+                $notifMsg   = "Your amendment request for {$contractName} has been Rejected by {$managerName}.";
                 $this->notificationService->push($contractId, 'amendment_rejected', $notifMsg, 'Sales,Employee,Manager,Admin', (int) $amd->created_by);
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Amendment rejected notification failed: ' . $e->getMessage());

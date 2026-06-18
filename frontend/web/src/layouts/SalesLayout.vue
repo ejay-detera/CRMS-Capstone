@@ -51,7 +51,7 @@ function openNotification(n: Notification) {
 }
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
-onMounted(() => { fetchNotifications(); pollTimer = setInterval(fetchNotifications, 60000); });
+onMounted(() => { fetchNotifications(); pollTimer = setInterval(fetchNotifications, 5000); });
 onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
 const contractPaths = ["/sales/contracts", "/sales/contract-requests", "/sales/contract-amendments"];
