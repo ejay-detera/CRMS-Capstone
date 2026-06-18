@@ -21,6 +21,7 @@ export interface ContractRequest {
   itemCode:         string
   serialNo:         string
   sbuNumber?:       string
+  prsActivityId?:   number
 }
 
 export const requestStatusBadge: Record<RequestStatus, string> = {

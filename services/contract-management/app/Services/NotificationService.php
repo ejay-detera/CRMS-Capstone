@@ -46,6 +46,7 @@ class NotificationService
                     'type'        => $type,
                     'status'      => $response->status(),
                     'body'        => $response->body(),
+                    'payload'     => $payload,
                 ]);
                 return false;
             }

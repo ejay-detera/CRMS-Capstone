@@ -162,7 +162,7 @@ async function confirmRejectAction() {
         'Accept': 'application/json',
         'Authorization': `Bearer ${authState.token}`,
       },
-      body: JSON.stringify({ approval_status: 'Rejected' }),
+      body: JSON.stringify({ approval_status: 'Rejected', rejection_reason: reason }),
     })
 
     const data = await res.json()

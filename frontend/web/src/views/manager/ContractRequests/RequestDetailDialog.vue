@@ -147,6 +147,14 @@ function confirmReview() {
             </div>
           </div>
 
+          <div v-if="request.prsActivityId" class="flex items-start gap-3 py-2.5">
+            <ClipboardList class="w-3.5 h-3.5 text-black/25 shrink-0 mt-0.5" />
+            <div class="flex-1 min-w-0 flex items-baseline justify-between gap-4">
+              <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider shrink-0">Linked PRS Activity</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-xs font-medium">#{{ request.prsActivityId }}</span>
+            </div>
+          </div>
+
           <div v-if="request.notes" class="flex items-start gap-3 py-2.5">
             <ClipboardList class="w-3.5 h-3.5 text-black/25 shrink-0 mt-0.5" />
             <div class="flex-1 min-w-0">

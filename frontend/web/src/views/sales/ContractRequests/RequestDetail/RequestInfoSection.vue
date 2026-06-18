@@ -133,6 +133,28 @@ onClickOutside(suggestionsContainer, () => {
           </template>
         </div>
 
+        <!-- Created By -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-black/50">Created By</label>
+          <div class="flex items-center gap-2 mt-1.5">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0 select-none"
+              :style="{ backgroundColor: avatarColor(request.createdBy) }">
+              {{ initials(request.createdBy) }}
+            </div>
+            <span class="text-[15px] text-black">{{ request.createdBy }}</span>
+          </div>
+        </div>
+
+        <!-- Product Activity (Optional) -->
+        <div v-if="request.prsActivityId && !isEditing" class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-black/50">Linked PRS Activity</label>
+          <div class="flex items-center gap-2 mt-1.5">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-xs font-medium">
+              #{{ request.prsActivityId }}
+            </span>
+          </div>
+        </div>
+
       </div>
     </div>
 

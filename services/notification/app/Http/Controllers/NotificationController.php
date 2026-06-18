@@ -15,9 +15,21 @@ class NotificationController extends Controller
      */
     public function push(Request $request)
     {
+        // php artisan serve (PHP built-in server) does not always parse JSON request
+        // bodies automatically. Read php://input directly and merge into request.
+        if (empty($request->all())) {
+            $raw = file_get_contents('php://input');
+            if ($raw) {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $request->merge($decoded);
+                }
+            }
+        }
+
         $validator = Validator::make($request->all(), [
             'contract_id'       => 'nullable|integer',
-            'notification_type' => 'required|string|max:20',
+            'notification_type' => 'required|string|max:50',
             'target_roles'      => 'required|string|max:255',
             'message'           => 'required|string',
             'target_user_id'    => 'nullable|integer',

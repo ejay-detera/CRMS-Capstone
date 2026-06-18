@@ -74,6 +74,7 @@ function mapApiToContract(data: any): StoredContract {
     endDate:         data.end_date ?? '',
     approvalStatus:  (data.approval_status ?? 'Pending') as ContractApprovalStatus,
     workflowStatus:  (data.workflow_status ?? null) as ContractWorkflowStatus | null,
+    rejectionReason: data.rejection_reason ?? undefined,
     contractLink:    '',
     createdBy,
     docs: (data.documents ?? []).map((d: any): UploadedDoc => ({

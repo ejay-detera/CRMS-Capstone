@@ -134,6 +134,7 @@ function mapApiContract(d: any, currentUserId: number | null, firstName?: string
       previewUrl: normalizeDocumentUrl(doc.document_url),
       uploadStatus: 'success',
     })),
+    prsActivityId: d.prs_activity_id ? Number(d.prs_activity_id) : undefined,
   }
 }
 
@@ -157,7 +158,7 @@ function mapApiToRequest(d: any, currentUserId: number | null, firstName?: strin
       : d.workflow_status                            ? 'Under Review'
       : 'Pending',
     notes:           '',
-    rejectionReason: '',
+    rejectionReason: d.rejection_reason ?? '',
     contractLink:    '',
     createdBy,
     docs: (d.documents ?? []).map((doc: any) => ({
@@ -171,6 +172,7 @@ function mapApiToRequest(d: any, currentUserId: number | null, firstName?: strin
     itemCode:        d.item_code      ?? '',
     serialNo:        d.serial_number  ?? '',
     sbuNumber:       d.sbu_number     ?? '',
+    prsActivityId:   d.prs_activity_id ? Number(d.prs_activity_id) : undefined,
   }
 }
 

@@ -158,6 +158,16 @@ onClickOutside(suggestionsContainer, () => {
           </div>
         </div>
 
+        <!-- Product Activity (Optional) -->
+        <div v-if="contract.prsActivityId && !isEditing" class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-black/50">Linked PRS Activity</label>
+          <div class="flex items-center gap-2 mt-1.5">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-xs font-medium">
+              #{{ contract.prsActivityId }}
+            </span>
+          </div>
+        </div>
+
         <!-- Workflow Status (manager or contract owner) - Only shows in Edit Mode and if Approved -->
         <div v-if="isEditing && (isManager || isOwner) && isApproved" class="flex flex-col gap-1.5 mt-2 md:col-span-3">
           <label class="text-xs font-semibold text-black/50">Workflow Status</label>
