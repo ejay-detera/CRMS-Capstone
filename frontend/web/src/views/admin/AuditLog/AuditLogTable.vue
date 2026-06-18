@@ -118,7 +118,7 @@ function formatTimestamp(isoStr: string) {
               </span>
             </TableCell>
 
-            <TableCell class="py-4 text-sm text-black/55 max-w-xs truncate" :title="log.description">
+            <TableCell class="py-4 text-sm text-black/55 max-w-xs whitespace-normal break-words" :title="log.description">
               {{ log.description }}
             </TableCell>
 
