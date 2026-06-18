@@ -45,11 +45,6 @@ export const UI_CATEGORIES: Category[] = [
       { key: 'cms.partners.delete', label: 'Delete' },
     ],
   },
-  {
-    key: 'system',
-    label: 'System Settings',
-    permissions: [],
-  },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -133,8 +128,7 @@ export function useRolePermissions() {
             set.add(id)
           }
         })
-      } else {
-
+      }
     }
     
     rolePermissionIds.value[roleId] = set

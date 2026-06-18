@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Building2, Truck, Search, LayoutGrid, List, Upload } from 'lucide-vue-next'
+import { Building2, Truck, Search, LayoutGrid, List, Upload, Plus } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
@@ -102,6 +102,12 @@ function openDetail(p: Partner) {
   router.push(`/sales/partners/${code}`)
 }
 
+function openEdit(p: Partner) {
+  const prefix = activeTab.value === 'partners' ? 'BP' : 'SP'
+  const code   = `${prefix}-${String(p.id).padStart(4, '0')}`
+  router.push(`/sales/partners/${code}/edit`)
+}
+
 const showDelete   = ref(false)
 const deleteTarget = ref<Partner | null>(null)
 function openDelete(p: Partner) { deleteTarget.value = p; showDelete.value = true }
@@ -160,9 +166,14 @@ function executeExport() {
         <h1 class="text-xl font-semibold text-black">Partners & Suppliers</h1>
         <p class="text-sm text-black/40 mt-0.5">View business relationships.</p>
       </div>
-      <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
-        <Upload class="w-4 h-4" /> Export XLSX
-      </Button>
+      <div class="flex items-center gap-2">
+        <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
+          <Upload class="w-4 h-4" /> Export XLSX
+        </Button>
+        <Button id="add-partner-btn" v-if="hasPermission('cms.partners.create')" @click="router.push('/sales/partners/create?type=' + activeTab)" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+          <Plus class="w-5 h-5" />
+        </Button>
+      </div>
     </div>
 
     <div class="flex items-center gap-3">
@@ -216,14 +227,14 @@ function executeExport() {
     </div>
 
     <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" :loading="loading"
-      :can-delete="hasPermission('cms.partners.delete')"
-      @open-detail="openDetail" @open-delete="openDelete" />
+      :can-edit="hasPermission('cms.partners.edit')" :can-delete="hasPermission('cms.partners.delete')"
+      @open-detail="openDetail" @open-edit="openEdit" @open-delete="openDelete" />
     <PartnersTable v-else
       :paginated="paginated" :filtered="filtered" :active-tab="activeTab"
       :selected-ids="selectedIds" :all-page-selected="allPageSelected"
       :current-page="currentPage" :items-per-page="itemsPerPage"
-      :can-delete="hasPermission('cms.partners.delete')" :loading="loading"
-      @open-detail="openDetail"
+      :can-edit="hasPermission('cms.partners.edit')" :can-delete="hasPermission('cms.partners.delete')" :loading="loading"
+      @open-detail="openDetail" @open-edit="openEdit"
       @toggle-row="toggleRow" @toggle-select-all="toggleSelectAll" @open-delete="openDelete"
       @update:current-page="currentPage = $event"
     />

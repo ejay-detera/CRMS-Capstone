@@ -17,7 +17,7 @@ const { state: authState, hasPermission } = useAuth()
 
 import { useApiCache } from '@/composables/useApiCache'
 
-const { state: cacheState, fetchContracts: fetchContractsCached } = useApiCache()
+const { state: cacheState, fetchContracts: fetchContractsCached, deleteContractFromCache, updateContractInCache } = useApiCache()
 
 const contracts = computed(() => cacheState.contracts || [])
 const loading   = computed(() => cacheState.contractsLoading)
@@ -126,6 +126,66 @@ function executeExport() {
   XLSX.writeFile(wb, 'my-contracts.xlsx')
   success('Export complete', `${filtered.value.length} contracts exported.`)
 }
+
+const showDeleteConfirm = ref(false)
+const contractToDelete = ref<string | null>(null)
+
+function openDelete(id: string) {
+  contractToDelete.value = id
+  showDeleteConfirm.value = true
+}
+
+async function executeDelete() {
+  if (!contractToDelete.value) return
+  showDeleteConfirm.value = false
+  try {
+    const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+    const res = await fetch(`${apiBase}/contracts/${contractToDelete.value}`, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      }
+    })
+    if (!res.ok) throw new Error()
+    deleteContractFromCache(contractToDelete.value)
+    success('Contract deleted', 'The contract has been successfully deleted.')
+    await fetchContracts()
+  } catch (e) {
+    error('Delete failed', 'Could not delete the contract.')
+  }
+}
+
+const showApproveConfirm = ref(false)
+const contractToApprove = ref<string | null>(null)
+
+function openApprove(id: string) {
+  contractToApprove.value = id
+  showApproveConfirm.value = true
+}
+
+async function executeApprove() {
+  if (!contractToApprove.value) return
+  showApproveConfirm.value = false
+  try {
+    const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+    const res = await fetch(`${apiBase}/contracts/${contractToApprove.value}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+      body: JSON.stringify({ approval_status: 'Approved', workflow_status: 'SBSI Review' })
+    })
+    if (!res.ok) throw new Error()
+    updateContractInCache(contractToApprove.value, { approvalStatus: 'Approved', workflowStatus: 'SBSI Review' })
+    success('Contract approved', 'The contract has been approved.')
+    await fetchContracts()
+  } catch (e) {
+    error('Approve failed', 'Could not approve the contract.')
+  }
+}
 </script>
 
 <template>
@@ -196,6 +256,8 @@ function executeExport() {
       :start-date-filter="startDateFilter"
       :end-date-filter="endDateFilter"
       @open-detail="openDetail"
+      @approve="openApprove"
+      @delete="openDelete"
       @update:active-filter="activeFilter = $event"
       @update:status-filter="statusFilter = $event"
       @update:category-filter="categoryFilter = $event"
@@ -207,6 +269,24 @@ function executeExport() {
     />
 
   </div>
+
+  <ConfirmationDialog
+    v-model:open="showDeleteConfirm"
+    title="Delete Contract"
+    description="Are you sure you want to delete this contract? This action cannot be undone."
+    confirm-label="Delete"
+    variant="destructive"
+    @confirm="executeDelete"
+  />
+
+  <ConfirmationDialog
+    v-model:open="showApproveConfirm"
+    title="Approve Contract"
+    description="Are you sure you want to approve this contract? This will change the status to Approved and advance the workflow."
+    confirm-label="Approve"
+    variant="default"
+    @confirm="executeApprove"
+  />
 
   <ConfirmationDialog
     v-model:open="showExportConfirm"

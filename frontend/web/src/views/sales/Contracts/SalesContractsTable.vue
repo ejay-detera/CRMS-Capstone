@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Search, MoreHorizontal, Eye, Pencil, Filter, X } from 'lucide-vue-next'
+import { Search, MoreHorizontal, Eye, Pencil, Filter, X, Trash2, CheckCircle } from 'lucide-vue-next'
 import { ref, watch, computed } from 'vue'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -22,6 +23,7 @@ import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
 type ContractWithDays = Contract & { days: number }
 
 const router = useRouter()
+const { hasPermission } = useAuth()
 
 const props = defineProps<{
   paginated:    ContractWithDays[]
@@ -40,8 +42,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  openDetail:              [c: ContractWithDays]
-  'update:activeFilter':   [v: FilterTab]
+  openDetail: [c: ContractWithDays]
+  approve:    [id: string]
+  delete:     [id: string]
+  'update:activeFilter': [v: FilterTab]
   'update:statusFilter':   [v: StatusFilter]
   'update:categoryFilter': [v: string]
   'update:regionFilter':   [v: string]
@@ -409,9 +413,20 @@ const categories = [
                   <DropdownMenuItem @click="emit('openDetail', c)" class="gap-2.5 text-sm cursor-pointer">
                     <Eye class="w-3.5 h-3.5 text-black/40" /> View details
                   </DropdownMenuItem>
-                  <DropdownMenuItem @click="router.push(`/sales/contracts/${c.id}?edit=1`)" class="gap-2.5 text-sm cursor-pointer">
+                  <DropdownMenuItem v-if="hasPermission('cms.contracts.edit')" @click="router.push(`/sales/contracts/${c.id}?edit=1`)" class="gap-2.5 text-sm cursor-pointer">
                     <Pencil class="w-3.5 h-3.5 text-black/40" /> Edit contract
                   </DropdownMenuItem>
+                  <template v-if="hasPermission('cms.contracts.approve') || hasPermission('cms.contracts.delete')">
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem v-if="hasPermission('cms.contracts.approve') && c.approvalStatus === 'Pending'" @click="emit('approve', c.id)"
+                      class="gap-2.5 text-sm cursor-pointer text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50">
+                      <CheckCircle class="w-3.5 h-3.5" /> Approve
+                    </DropdownMenuItem>
+                    <DropdownMenuItem v-if="hasPermission('cms.contracts.delete')" @click="emit('delete', c.id)"
+                      class="gap-2.5 text-sm cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
+                      <Trash2 class="w-3.5 h-3.5" /> Delete
+                    </DropdownMenuItem>
+                  </template>
                 </DropdownMenuContent>
               </DropdownMenu>
             </TableCell>
