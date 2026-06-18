@@ -5,10 +5,12 @@ import NotificationList from '@/components/shared/NotificationList.vue'
 import EmailLogTable from './EmailLogTable.vue'
 import { useNotifications } from '@/composables/useNotifications'
 import { useEmailLogs } from '@/composables/useEmailLogs'
+import { useToast } from '@/composables/useToast'
 import type { TabKey } from '@/types/notification'
 
 const { notifications, unreadCount, fetchNotifications, markRead, markAllRead, updateState } = useNotifications()
 const { logs, loading: logsLoading, currentPage, lastPage, totalLogs, fetchLogs } = useEmailLogs()
+const { success } = useToast()
 
 const activeTab   = ref<TabKey>('all')
 const searchQuery = ref('')
@@ -38,7 +40,16 @@ const filtered = computed(() => {
 
 function toggleRead(id: string)     { markRead(id) }
 function toggleFavorite(id: string) { const n = notifications.value.find(x => x.id === id); if (n) updateState(id, { isFavorite: !n.isFavorite }) }
-function deleteNotif(id: string)    { updateState(id, { isArchived: true }) }
+function deleteNotif(id: string) {
+  updateState(id, { isArchived: true })
+  success('Notification removed', 'The notification has been deleted.')
+}
+
+function deleteSelected(ids: string[]) {
+  if (ids.length === 0) return
+  ids.forEach(id => updateState(id, { isArchived: true }))
+  success('Notifications removed', `${ids.length} selected notification(s) have been deleted.`)
+}
 
 watch(activeTab, (newTab) => {
   if (newTab === 'email_logs') {
@@ -75,6 +86,7 @@ onMounted(async () => {
       @toggle-read="toggleRead"
       @toggle-favorite="toggleFavorite"
       @delete="deleteNotif"
+      @delete-selected="deleteSelected"
     >
       <template #email-logs>
         <EmailLogTable

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { inject } from 'vue'
 import { Send, FileText, Clock } from 'lucide-vue-next'
-import type { SystemCfg } from './index.vue'
+import type { SystemCfg } from '@/composables/useSystemConfig'
 import SettingCard from '@/components/shared/SettingCard.vue'
 import ToggleRow   from '@/components/shared/ToggleRow.vue'
 
@@ -22,7 +22,6 @@ const expiryThresholds = [
       <div class="divide-y divide-black/4">
         <ToggleRow v-model="cfg.emailNotifs"  label="Email Notifications"  description="Send alerts via email to relevant users." />
         <ToggleRow v-model="cfg.inAppNotifs"  label="In-App Notifications" description="Show notification bell alerts inside the system." />
-        <ToggleRow v-model="cfg.smsNotifs"    label="SMS Notifications"    description="Send critical alerts via SMS (requires SMS gateway)." />
       </div>
     </SettingCard>
 

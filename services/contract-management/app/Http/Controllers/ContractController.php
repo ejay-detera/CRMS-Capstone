@@ -18,10 +18,12 @@ use Illuminate\Support\Facades\Schema;
 class ContractController extends Controller
 {
     protected AuditLogService $auditLogService;
+    protected \App\Services\AuthService $authService;
 
-    public function __construct(AuditLogService $auditLogService)
+    public function __construct(AuditLogService $auditLogService, \App\Services\AuthService $authService)
     {
         $this->auditLogService = $auditLogService;
+        $this->authService = $authService;
     }
 
     private function formatContract(Contract $contract): array
@@ -41,6 +43,7 @@ class ContractController extends Controller
             'end_date'         => $contract->end_date?->toDateString(),
             'lifecycle_status' => $contract->lifecycle_status,
             'created_by'       => $contract->created_by,
+            'creator_name'     => $contract->creator_name ?? null,
             'prs_activity_id'  => $contract->prs_activity_id,
             'created_at'       => $contract->created_at?->toISOString(),
             'documents'        => $contract->documents->map(fn ($d) => [
@@ -138,8 +141,21 @@ class ContractController extends Controller
                 'expired'  => (int) (clone $statsQuery)->where('end_date', '<', $today)->count(),
             ];
 
+            $contractsCollection = collect($paginated->items());
+            
+            $userIds = $contractsCollection->pluck('created_by')->filter()->unique()->toArray();
+            $users = $this->authService->getUsersBatch($userIds);
+            $userMap = collect($users)->keyBy('id');
+
+            $contractsCollection->each(function ($c) use ($userMap) {
+                if ($c->created_by && $userMap->has($c->created_by)) {
+                    $u = $userMap->get($c->created_by);
+                    $c->creator_name = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? ''));
+                }
+            });
+
             return response()->json([
-                'data' => collect($paginated->items())->map(fn ($c) => $this->formatContract($c))->values(),
+                'data' => $contractsCollection->map(fn ($c) => $this->formatContract($c))->values(),
                 'pagination' => [
                     'total'        => $paginated->total(),
                     'per_page'     => $paginated->perPage(),
@@ -151,6 +167,17 @@ class ContractController extends Controller
         }
 
         $contracts = $query->get();
+
+        $userIds = $contracts->pluck('created_by')->filter()->unique()->toArray();
+        $users = $this->authService->getUsersBatch($userIds);
+        $userMap = collect($users)->keyBy('id');
+
+        $contracts->each(function ($c) use ($userMap) {
+            if ($c->created_by && $userMap->has($c->created_by)) {
+                $u = $userMap->get($c->created_by);
+                $c->creator_name = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? ''));
+            }
+        });
 
         return response()->json([
             'data' => $contracts->map(fn ($c) => $this->formatContract($c))->values(),
@@ -629,8 +656,18 @@ class ContractController extends Controller
 
         $contracts = $query->orderByDesc('contract_id')->get();
 
+        $userIds = $contracts->pluck('created_by')->filter()->unique()->toArray();
+        $users = $this->authService->getUsersBatch($userIds);
+        $userMap = collect($users)->keyBy('id');
+
         return response()->json([
-            'data' => $contracts->map(function ($c) {
+            'data' => $contracts->map(function ($c) use ($userMap) {
+                $creatorName = null;
+                if ($c->created_by && $userMap->has($c->created_by)) {
+                    $u = $userMap->get($c->created_by);
+                    $creatorName = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? ''));
+                }
+
                 return [
                     'contract_id'     => $c->contract_id,
                     'bp_name'         => $c->bp_name,
@@ -646,6 +683,7 @@ class ContractController extends Controller
                     'end_date'         => $c->end_date?->toDateString(),
                     'lifecycle_status' => $c->lifecycle_status,
                     'created_by'       => $c->created_by,
+                    'creator_name'     => $creatorName,
                     'prs_activity_id'  => $c->prs_activity_id,
                     'created_at'       => $c->created_at?->toISOString(),
                     'documents'        => [],
@@ -683,6 +721,17 @@ class ContractController extends Controller
 
         $contracts = $query->orderByDesc('created_at')->get();
 
+        $userIds = $contracts->pluck('created_by')->filter()->unique()->toArray();
+        $users = $this->authService->getUsersBatch($userIds);
+        $userMap = collect($users)->keyBy('id');
+
+        $contracts->each(function ($c) use ($userMap) {
+            if ($c->created_by && $userMap->has($c->created_by)) {
+                $u = $userMap->get($c->created_by);
+                $c->creator_name = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? ''));
+            }
+        });
+
         return response()->json([
             'data' => $contracts->map(fn ($c) => $this->formatContract($c))->values(),
         ]);
@@ -701,6 +750,14 @@ class ContractController extends Controller
         $role = $request->get('auth_role');
         if (in_array($role, ['Sales', 'Employee']) && $contract->created_by !== $request->get('auth_id')) {
             return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($contract->created_by) {
+            $users = $this->authService->getUsersBatch([$contract->created_by]);
+            if (!empty($users)) {
+                $u = $users[0];
+                $contract->creator_name = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? ''));
+            }
         }
 
         return response()->json([

@@ -28,7 +28,6 @@ import {
   ClipboardList,
   Settings2,
   LogOut,
-  Search,
   Bell,
   User,
   Home,
@@ -108,7 +107,7 @@ const user = computed(() => {
 });
 
 // ── Calendar in Header ──
-const searchQuery = ref("");
+
 </script>
 
 <template>
@@ -209,15 +208,7 @@ const searchQuery = ref("");
       <header class="h-16 flex items-center justify-between px-6 bg-white border-b border-black/10 shrink-0">
         <div class="flex items-center gap-3 flex-1">
           <SidebarTrigger class="text-black/60" />
-          <div class="relative w-full max-w-md">
-            <Search class="w-4 h-4 text-black/40 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              v-model.trim="searchQuery"
-              type="text"
-              placeholder="Search data..."
-              class="w-full rounded-lg border border-black/10 bg-white py-2 pl-9 pr-3 text-sm text-black placeholder:text-black/40 focus:border-[#2E85D8] focus:outline-none"
-            />
-          </div>
+          <div class="relative w-full max-w-md hidden"></div>
         </div>
 
         <div class="flex items-center gap-3">

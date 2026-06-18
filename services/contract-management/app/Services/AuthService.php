@@ -70,5 +70,39 @@ class AuthService
             return ['error' => true, 'message' => 'Connection failed'];
         }
     }
+    /**
+     * Fetch multiple users by IDs from auth-service.
+     */
+    public function getUsersBatch(array $ids): array
+    {
+        if (empty($ids)) return [];
+
+        try {
+            $idsString = implode(',', $ids);
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'X-Internal-Service' => 'contract-management',
+                'X-Internal-Secret' => env('INTERNAL_SERVICE_SECRET'),
+            ])->get("{$this->baseUrl}/internal/users-batch", [
+                'ids' => $idsString,
+            ]);
+
+            if ($response->successful()) {
+                return $response->json('data') ?? [];
+            }
+
+            Log::warning('Auth service getUsersBatch failed', [
+                'status' => $response->status(),
+                'response' => $response->body()
+            ]);
+
+            return [];
+        } catch (\Exception $e) {
+            Log::error('Auth service connection error in getUsersBatch', [
+                'message' => $e->getMessage()
+            ]);
+            return [];
+        }
+    }
 }
 

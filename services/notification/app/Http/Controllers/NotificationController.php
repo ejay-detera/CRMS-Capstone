@@ -95,6 +95,11 @@ class NotificationController extends Controller
         $preference = \App\Models\EmailPreference::where('user_id', $userId)->first();
         $systemAlertsEnabled = $preference ? (bool) $preference->system_alerts_enabled : true;
 
+        $sysConfig = \App\Models\SystemConfiguration::first();
+        if ($sysConfig && !$sysConfig->in_app_notifs_enabled) {
+            return response()->json(['data' => []]);
+        }
+
         if (!$systemAlertsEnabled) {
             return response()->json(['data' => []]);
         }

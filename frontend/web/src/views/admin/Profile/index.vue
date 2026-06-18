@@ -24,14 +24,10 @@ const profile = reactive({
 })
 
 const preferences = reactive({
-  emailNotifications:   true,
-  systemAlerts:         true,
-  smsNotifications:     false,
-  contractExpiry:       true,
-  loginAlerts:          true,
-  timezone:             'Asia/Manila',
-  language:             'English',
-  dateFormat:           'MM/DD/YYYY',
+  emailNotifications: true,
+  systemAlerts:       true,
+  contractExpiry:     true,
+  loginAlerts:        true,
 })
 
 function loadProfile() {
@@ -58,11 +54,7 @@ onMounted(async () => {
   preferences.emailNotifications = apiPrefs.value.emailNotificationsEnabled
   preferences.contractExpiry = apiPrefs.value.contractExpiryAlerts
   preferences.systemAlerts = apiPrefs.value.systemAlertsEnabled ?? true
-  preferences.smsNotifications = apiPrefs.value.smsNotificationsEnabled ?? false
   preferences.loginAlerts = apiPrefs.value.loginAlertsEnabled ?? true
-  preferences.timezone = apiPrefs.value.timezone || 'Asia/Manila'
-  preferences.language = apiPrefs.value.language || 'English'
-  preferences.dateFormat = apiPrefs.value.dateFormat || 'MM/DD/YYYY'
 })
 
 async function handleProfileSave(data: Partial<typeof profile>) {
@@ -159,11 +151,7 @@ async function handlePreferencesSave(data: typeof preferences) {
     emailNotificationsEnabled: data.emailNotifications,
     contractExpiryAlerts: data.contractExpiry,
     systemAlertsEnabled: data.systemAlerts,
-    smsNotificationsEnabled: data.smsNotifications,
     loginAlertsEnabled: data.loginAlerts,
-    timezone: data.timezone,
-    language: data.language,
-    dateFormat: data.dateFormat,
   })
   if (success) {
     Object.assign(preferences, data)

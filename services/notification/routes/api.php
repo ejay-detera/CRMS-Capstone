@@ -19,5 +19,9 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::get('/email-preferences', App\Http\Controllers\Api\V1\EmailPreferences\ShowController::class);
     Route::put('/email-preferences', App\Http\Controllers\Api\V1\EmailPreferences\UpdateController::class);
     Route::get('/email-logs', App\Http\Controllers\Api\V1\EmailLogs\IndexController::class);
+
+    // System Configuration
+    Route::get('/system-config', App\Http\Controllers\Api\V1\SystemConfig\ShowController::class);
+    Route::put('/system-config', App\Http\Controllers\Api\V1\SystemConfig\UpdateController::class);
 });
 

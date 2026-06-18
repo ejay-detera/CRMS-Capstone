@@ -6,18 +6,27 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { useApiCache } from '@/composables/useApiCache'
-import OCRUploadDialog from '@/views/sales/Contracts/OCRUploadDialog.vue'
 import DocumentUpload from '@/views/sales/Contracts/DocumentUpload.vue'
 import type { ContractRegion, UploadedDoc } from '@/types/contract'
+import { useCreateContractDraft } from '@/composables/useCreateContractDraft'
 
 const router = useRouter()
 const { success, error } = useToast()
 const { state: authState } = useAuth()
 const { invalidateContracts, invalidateRequests } = useApiCache()
+const { draft, saveDraft, restoreDraft, clearDraft } = useCreateContractDraft()
 
-const showOCR      = ref(false)
+
 const loading      = ref(false)
 const contractDocs = ref<UploadedDoc[]>([])
+
+const today = new Date().toISOString().split('T')[0]
+const maxDate = (() => {
+  const d = new Date()
+  d.setFullYear(d.getFullYear() + 100)
+  return d.toISOString().split('T')[0]
+})()
+const minDate = '1999-01-01'
 
 interface FormState {
   businessPartner: string
@@ -67,10 +76,18 @@ const errors = computed(() => ({
   serialNo:        touched.serialNo        && !form.serialNo.trim()           ? 'Serial number is required.' : '',
   sbuNumber:       touched.sbuNumber       && !form.sbuNumber.trim()          ? 'SBU number is required.' : '',
   region:          touched.region          && !form.region                    ? 'Region is required.' : '',
-  startDate:       touched.startDate       && !form.startDate                 ? 'Start date is required.' : '',
+  startDate:       touched.startDate       && !form.startDate                 
+    ? 'Start date is required.' 
+    : touched.startDate && form.startDate < minDate
+    ? 'Start date cannot be before 1999.'
+    : touched.startDate && form.startDate > maxDate
+    ? 'Start date cannot exceed 100 years from today.'
+    : '',
   endDate:         touched.endDate && !form.endDate
     ? 'End date is required.'
-    : touched.endDate && form.startDate && form.endDate && form.endDate <= form.startDate
+    : touched.endDate && form.endDate > maxDate
+    ? 'End date cannot exceed 100 years from today.'
+    : touched.endDate && form.startDate && form.endDate <= form.startDate
     ? 'End date must be after start date.'
     : '',
 }))
@@ -91,7 +108,7 @@ function touchAll() {
 
 function isValid() {
   return (
-    form.businessPartner.trim() &&
+    String(form.businessPartner || '').trim() &&
     !suspendedVendorMatch.value &&
     form.category &&
     form.itemCode.trim() &&
@@ -99,8 +116,8 @@ function isValid() {
     form.serialNo.trim() &&
     form.sbuNumber.trim() &&
     form.region &&
-    form.startDate &&
-    form.endDate &&
+    form.startDate && form.startDate >= minDate && form.startDate <= maxDate &&
+    form.endDate && form.endDate <= maxDate &&
     form.endDate > form.startDate
   )
 }
@@ -155,6 +172,7 @@ async function handleSubmit() {
     }
 
     contractDocs.value = []
+    clearDraft()
     invalidateContracts()
     invalidateRequests()
     success('Contract created', `${form.businessPartner}'s contract has been saved.`)
@@ -205,7 +223,31 @@ async function fetchPartnerNames() {
 
 onMounted(() => {
   fetchPartnerNames()
+
+  if (draft.active && draft.role === 'admin') {
+    const saved = restoreDraft()
+    if (saved) {
+      Object.assign(form, saved.form)
+      contractDocs.value = [...saved.docs]
+    }
+    clearDraft()
+  }
 })
+
+function previewDocument(doc: UploadedDoc) {
+  if (!doc.id) return
+  saveDraft(form, contractDocs.value, 'admin')
+  router.push({
+    path: `/admin/contracts/preview/documents/${doc.id}`,
+    query: {
+      from: 'create',
+      role: 'admin',
+      docName: doc.name,
+      docSize: String(doc.size),
+      docType: doc.type,
+    }
+  })
+}
 
 const showSuggestions = ref(false)
 const suggestionsContainer = ref<HTMLElement | null>(null)
@@ -247,11 +289,7 @@ onClickOutside(suggestionsContainer, () => {
         <h1 class="text-xl font-semibold text-black">Create New Contract</h1>
         <p class="text-sm text-black/40 mt-0.5">Fill in the details below to create a new contract.</p>
       </div>
-      <Button @click="showOCR = true" variant="outline"
-        class="h-9 gap-2 text-sm font-medium border-[#252578]/25 text-[#252578] hover:bg-[#252578]/5 hover:border-[#252578]/40 shrink-0">
-        <ScanLine class="w-4 h-4" />
-        Autofill with OCR
-      </Button>
+
     </div>
 
     <!-- Form card -->
@@ -420,6 +458,8 @@ onClickOutside(suggestionsContainer, () => {
               v-model="form.startDate"
               @blur="touched.startDate = true"
               type="date"
+              :min="minDate"
+              :max="maxDate"
               class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition"
               :class="errors.startDate
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
@@ -435,6 +475,8 @@ onClickOutside(suggestionsContainer, () => {
               v-model="form.endDate"
               @blur="touched.endDate = true"
               type="date"
+              :min="form.startDate || today"
+              :max="maxDate"
               class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition"
               :class="errors.endDate
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
@@ -450,7 +492,7 @@ onClickOutside(suggestionsContainer, () => {
       <div class="px-6 py-5 border-b border-black/6">
         <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-1">Documents</h2>
         <p class="text-xs text-black/35 mb-4">Attach all documents. Accepted formats: PDF, DOCX · Max 10 MB per file.</p>
-        <DocumentUpload v-model="contractDocs" />
+        <DocumentUpload v-model="contractDocs" :on-preview="previewDocument" />
       </div>
 
       <!-- Footer -->
@@ -468,5 +510,5 @@ onClickOutside(suggestionsContainer, () => {
     </div>
   </div>
 
-  <OCRUploadDialog v-model:open="showOCR" />
+
 </template>

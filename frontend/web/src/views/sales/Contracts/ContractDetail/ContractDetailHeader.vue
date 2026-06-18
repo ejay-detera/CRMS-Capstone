@@ -22,33 +22,41 @@ function daysDisplay(days: number) {
 </script>
 
 <template>
-  <div class="flex items-start gap-4">
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+    
+    <div class="flex items-start gap-4">
+      <!-- Back button -->
+      <button @click="$emit('back')"
+        class="w-10 h-10 bg-white rounded-lg border border-black/10 flex items-center justify-center hover:bg-black/5 transition-colors shadow-sm shrink-0">
+        <ArrowLeft class="w-5 h-5 text-[#252578]" />
+      </button>
 
-    <!-- Back button -->
-    <button @click="$emit('back')"
-      class="flex items-center justify-center w-9 h-9 rounded-lg border border-black/10 bg-white hover:bg-black/4 text-black/50 hover:text-black transition shrink-0 mt-0.5">
-      <ArrowLeft class="w-4 h-4" />
-    </button>
+      <div>
+        <div class="flex items-center gap-3 mb-1">
+          <!-- Icon box -->
+          <div class="p-2 bg-[#252578]/10 rounded-lg text-[#252578] flex items-center justify-center">
+            <FileText class="w-5 h-5" />
+          </div>
+          <!-- Title -->
+          <h2 class="text-2xl font-bold text-black">{{ contract.businessPartner }}</h2>
+        </div>
+        
+        <!-- Subtitle -->
+        <p class="text-black/60 text-sm flex items-center gap-2">
+          {{ contract.category }} • <span class="text-[11px] font-bold tracking-wide text-black/40 uppercase">ID: {{ contract.id }}</span>
+        </p>
 
-    <!-- Icon + title block -->
-    <div class="flex items-start gap-3.5 flex-1 min-w-0">
-      <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 bg-[#252578]">
-        <FileText class="w-5 h-5" />
-      </div>
-      <div class="flex-1 min-w-0">
-        <h1 class="text-xl font-semibold text-black leading-snug truncate">{{ contract.businessPartner }}</h1>
-        <p class="text-sm text-black/45 mt-0.5">{{ contract.category }}</p>
-        <div class="flex items-center gap-2 mt-2 flex-wrap">
-          <span class="text-[10px] font-mono text-black/30 bg-black/4 px-1.5 py-0.5 rounded">{{ contract.id }}</span>
-          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" :class="approvalStatusBadge[contract.approvalStatus]">
+        <!-- Badges -->
+        <div class="flex flex-wrap gap-2 mt-3">
+          <span class="px-3 py-1 text-xs font-semibold rounded-full border" :class="approvalStatusBadge[contract.approvalStatus]">
             {{ contract.approvalStatus }}
           </span>
-          <span v-if="contract.workflowStatus" class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" :class="workflowStatusBadge[contract.workflowStatus]">
+          <span v-if="contract.workflowStatus" class="px-3 py-1 text-xs font-semibold rounded-full border" :class="workflowStatusBadge[contract.workflowStatus]">
             {{ contract.workflowStatus }}
           </span>
-          <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border"
+          <span class="px-3 py-1 text-xs font-medium rounded-full border flex items-center gap-1.5"
             :class="daysDisplay(days).cls">
-            <component :is="daysDisplay(days).icon" class="w-3 h-3" />
+            <component :is="daysDisplay(days).icon" class="w-3.5 h-3.5" />
             {{ daysDisplay(days).text }}
           </span>
         </div>
@@ -56,24 +64,24 @@ function daysDisplay(days: number) {
     </div>
 
     <!-- Action buttons -->
-    <div class="flex items-center gap-2 shrink-0">
+    <div class="flex items-center gap-3 shrink-0">
       <template v-if="isEditing">
-        <Button @click="$emit('cancel')" variant="outline"
-          class="h-9 px-4 text-sm border-black/15 text-black/60 hover:text-black">
+        <button @click="$emit('cancel')"
+          class="px-6 py-2.5 bg-white border border-black/15 text-black/60 rounded-lg text-sm font-medium hover:text-black hover:bg-black/5 transition-colors">
           Cancel
-        </Button>
-        <Button @click="$emit('save')" :disabled="saving || disabled"
-          class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-          <Loader2 v-if="saving" class="w-3.5 h-3.5 animate-spin mr-1.5" />
+        </button>
+        <button @click="$emit('save')" :disabled="saving || disabled"
+          class="px-6 py-2.5 bg-[#252578] text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-[#2F2F73] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+          <Loader2 v-if="saving" class="w-4 h-4 animate-spin" />
           {{ saving ? 'Saving…' : 'Save Changes' }}
-        </Button>
+        </button>
       </template>
       <template v-else>
-        <Button @click="$emit('edit')" variant="outline"
-          class="h-9 gap-2 text-sm font-medium border-[#252578]/25 text-[#252578] hover:bg-[#252578]/5 hover:border-[#252578]/40">
+        <button @click="$emit('edit')"
+          class="px-6 py-2.5 bg-[#252578] text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm">
           <FilePenLine class="w-4 h-4" />
           Edit Contract
-        </Button>
+        </button>
       </template>
     </div>
 

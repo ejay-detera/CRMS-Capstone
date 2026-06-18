@@ -57,21 +57,7 @@ export function useAuth() {
       return p.slug || p.name || p.key || ''
     }).filter(Boolean)
 
-    // Merge frontend-only permissions
-    const activeRole = role.value
-    if (activeRole) {
-      const localSaved = localStorage.getItem(`cms_frontend_perms_${activeRole}`)
-      if (localSaved) {
-        const savedIds: number[] = JSON.parse(localSaved)
-        if (savedIds.includes(-1)) perms.push('cms.system.ocr')
-        if (savedIds.includes(-2)) perms.push('cms.system.risk_assessment')
-      } else {
-        // Defaults (aligned with FR Matrix)
-        if (['Manager', 'Sales'].includes(activeRole)) {
-          perms.push('cms.system.ocr', 'cms.system.risk_assessment')
-        }
-      }
-    }
+
 
     return perms
   })

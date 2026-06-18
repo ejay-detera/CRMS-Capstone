@@ -7,6 +7,7 @@ namespace App\Jobs;
 use App\Mail\ContractExpiryMail;
 use App\Models\EmailPreference;
 use App\Models\EmailSendLog;
+use App\Models\SystemConfiguration;
 use App\Services\AuthService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -90,7 +91,21 @@ final class SendContractExpiryEmail implements ShouldQueue
             return;
         }
 
-        // Check preferences
+        // Check global System Configuration first
+        $sysConfig = SystemConfiguration::first();
+        if ($sysConfig) {
+            if (!$sysConfig->email_notifs_enabled) {
+                $this->logToAuditLog($userInfo, 'skipped', 'System-wide email notifications are disabled.');
+                return;
+            }
+
+            if (!$sysConfig->contract_expiry_alerts && str_starts_with($this->notificationType, 'expiry_')) {
+                $this->logToAuditLog($userInfo, 'skipped', 'System-wide contract expiry alerts are disabled.');
+                return;
+            }
+        }
+
+        // Check user preferences
         $pref = EmailPreference::where('user_id', $this->userId)->first();
         if ($pref) {
             if (!$pref->email_notifications_enabled) {

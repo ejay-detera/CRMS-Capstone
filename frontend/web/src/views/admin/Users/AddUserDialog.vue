@@ -129,7 +129,7 @@ function confirmSubmit() {
           </div>
           <div class="text-sm">
             <p class="font-medium mb-0.5">Automated Credentials</p>
-            <p class="text-blue-700/80 leading-relaxed">A secure temporary password will be automatically generated and sent to this employee's email address upon creation. They will be prompted to change it when they first log in.</p>
+            <p class="text-blue-700/80 leading-relaxed">A secure temporary password will be automatically generated and sent to this employee's email. The account will be inactive until the employee logs in and changes their password.</p>
           </div>
         </div>
 

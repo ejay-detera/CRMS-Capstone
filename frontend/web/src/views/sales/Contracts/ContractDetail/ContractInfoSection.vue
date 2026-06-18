@@ -2,6 +2,10 @@
 import { fmtDate } from '@/types/contract'
 import type { ContractRegion, ContractWorkflowStatus } from '@/types/contract'
 import type { StoredContract } from '@/composables/useContractStore'
+import { CalendarCheck, CalendarX } from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import { initialBusinessPartners, initialSuppliersData } from '@/views/admin/Partners/mockPartners'
+import { onClickOutside } from '@vueuse/core'
 
 const props = defineProps<{
   contract:   StoredContract
@@ -51,10 +55,6 @@ const categories = [
   'Equipment Maintenance',
 ]
 
-import { ref, computed } from 'vue'
-import { initialBusinessPartners, initialSuppliersData } from '@/views/admin/Partners/mockPartners'
-import { onClickOutside } from '@vueuse/core'
-
 const showSuggestions = ref(false)
 const suggestionsContainer = ref<HTMLElement | null>(null)
 
@@ -81,19 +81,19 @@ onClickOutside(suggestionsContainer, () => {
 </script>
 
 <template>
-  <div class="bg-white rounded-lg border border-black/8 shadow-sm overflow-hidden">
+  <div class="space-y-6">
 
-    <!-- Section: Contract Info -->
-    <div class="px-6 py-5 border-b border-black/6">
-      <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Contract Info</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
+    <!-- Section 1: Contract Info -->
+    <div class="bg-white border border-black/[0.08] rounded-xl p-8 shadow-sm">
+      <h3 class="text-[10px] font-bold text-[#252578]/60 uppercase tracking-widest border-b border-black/[0.05] pb-3 mb-6">Contract Info</h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <!-- Business Partner -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
+          <label class="text-xs font-semibold text-black/50">
             Business Partner <span v-if="isEditing" class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm text-black py-1">{{ contract.businessPartner }}</p>
+          <p v-if="!isEditing" class="text-[15px] font-medium text-black mt-0.5">{{ contract.businessPartner }}</p>
           <template v-else>
             <div class="relative w-full" ref="suggestionsContainer">
               <input
@@ -102,7 +102,7 @@ onClickOutside(suggestionsContainer, () => {
                 @blur="touched.businessPartner = true"
                 type="text"
                 placeholder="e.g. Globe Telecom"
-                class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition w-full"
+                class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition w-full mt-1"
                 :class="fieldCls('businessPartner', !editForm.businessPartner)"
               />
               <div
@@ -126,15 +126,15 @@ onClickOutside(suggestionsContainer, () => {
 
         <!-- Category -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
+          <label class="text-xs font-semibold text-black/50">
             Category <span v-if="isEditing" class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm text-black py-1">{{ contract.category }}</p>
+          <p v-if="!isEditing" class="text-[15px] font-medium text-black mt-0.5">{{ contract.category }}</p>
           <template v-else>
             <select
               v-model="editForm.category"
               @blur="touched.category = true"
-              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition"
+              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition mt-1"
               :class="[
                 !editForm.category ? 'text-black/30' : 'text-black',
                 fieldCls('category', !editForm.category)
@@ -146,12 +146,24 @@ onClickOutside(suggestionsContainer, () => {
           </template>
         </div>
 
-        <!-- Workflow Status (manager or contract owner) -->
-        <div v-if="isEditing && (isManager || isOwner)" class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">Workflow Status</label>
+        <!-- Created By -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-black/50">Created By</label>
+          <div class="flex items-center gap-2 mt-1.5">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0 select-none"
+              :style="{ backgroundColor: avatarColor(contract.createdBy) }">
+              {{ initials(contract.createdBy) }}
+            </div>
+            <span class="text-[15px] text-black">{{ contract.createdBy }}</span>
+          </div>
+        </div>
+
+        <!-- Workflow Status (manager or contract owner) - Only shows in Edit Mode -->
+        <div v-if="isEditing && (isManager || isOwner)" class="flex flex-col gap-1.5 mt-2 md:col-span-3">
+          <label class="text-xs font-semibold text-black/50">Workflow Status</label>
           <select
             v-model="editForm.workflowStatus"
-            class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15"
+            class="h-9 w-full md:w-1/3 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15 mt-1"
             :class="!editForm.workflowStatus ? 'text-black/30' : 'text-black'">
             <option value="">No status</option>
             <option value="SBSI Review">SBSI Review</option>
@@ -163,106 +175,118 @@ onClickOutside(suggestionsContainer, () => {
       </div>
     </div>
 
-    <!-- Section: Item Details -->
-    <div class="px-6 py-5 border-b border-black/6">
-      <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Item Details</h2>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <!-- Section 2: Item Details -->
+    <div class="bg-white border border-black/[0.08] rounded-xl overflow-hidden shadow-sm">
+      <div class="p-8 pb-4">
+        <h3 class="text-[10px] font-bold text-[#252578]/60 uppercase tracking-widest mb-2">Item Details</h3>
+      </div>
+      
+      <!-- View mode table -->
+      <div v-if="!isEditing" class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-black/[0.018] border-y border-black/[0.04]">
+              <th class="px-8 py-4 text-[11px] font-bold text-black/50 uppercase tracking-wide">Item Code</th>
+              <th class="px-8 py-4 text-[11px] font-bold text-black/50 uppercase tracking-wide">Description</th>
+              <th class="px-8 py-4 text-[11px] font-bold text-black/50 uppercase tracking-wide">Serial No</th>
+              <th class="px-8 py-4 text-[11px] font-bold text-black/50 uppercase tracking-wide">SBU Number</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="hover:bg-black/[0.02] transition-colors">
+              <td class="px-8 py-6 text-[15px] text-black font-semibold">{{ contract.itemCode }}</td>
+              <td class="px-8 py-6 text-[15px] text-black">{{ contract.description }}</td>
+              <td class="px-8 py-6 text-[15px] text-black">{{ contract.serialNo }}</td>
+              <td class="px-8 py-6 text-[15px] text-black">{{ contract.sbuNumber || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
+      <!-- Edit mode grid -->
+      <div v-else class="p-8 pt-0 grid grid-cols-1 md:grid-cols-4 gap-4">
         <!-- Item Code -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
-            Item Code <span v-if="isEditing" class="text-red-500">*</span>
+          <label class="text-xs font-semibold text-black/50">
+            Item Code <span class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm font-mono text-black py-1">{{ contract.itemCode }}</p>
-          <template v-else>
-            <input
-              v-model="editForm.itemCode"
-              @blur="touched.itemCode = true"
-              type="text"
-              placeholder="e.g. ITM-0041"
-              class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="fieldCls('itemCode', !editForm.itemCode)"
-            />
-            <p v-if="touched.itemCode && !editForm.itemCode" class="text-xs text-red-500">Item code is required.</p>
-          </template>
+          <input
+            v-model="editForm.itemCode"
+            @blur="touched.itemCode = true"
+            type="text"
+            placeholder="e.g. ITM-0041"
+            class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition mt-1"
+            :class="fieldCls('itemCode', !editForm.itemCode)"
+          />
+          <p v-if="touched.itemCode && !editForm.itemCode" class="text-xs text-red-500">Item code is required.</p>
         </div>
 
         <!-- Description -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
-            Description <span v-if="isEditing" class="text-red-500">*</span>
+          <label class="text-xs font-semibold text-black/50">
+            Description <span class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm text-black py-1">{{ contract.description }}</p>
-          <template v-else>
-            <input
-              v-model="editForm.description"
-              @blur="touched.description = true"
-              type="text"
-              placeholder="e.g. Network Infrastructure"
-              class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="fieldCls('description', !editForm.description)"
-            />
-            <p v-if="touched.description && !editForm.description" class="text-xs text-red-500">Description is required.</p>
-          </template>
+          <input
+            v-model="editForm.description"
+            @blur="touched.description = true"
+            type="text"
+            placeholder="e.g. Network Infrastructure"
+            class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition mt-1"
+            :class="fieldCls('description', !editForm.description)"
+          />
+          <p v-if="touched.description && !editForm.description" class="text-xs text-red-500">Description is required.</p>
         </div>
 
         <!-- Serial No -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
-            Serial No <span v-if="isEditing" class="text-red-500">*</span>
+          <label class="text-xs font-semibold text-black/50">
+            Serial No <span class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm font-mono text-black py-1">{{ contract.serialNo }}</p>
-          <template v-else>
-            <input
-              v-model="editForm.serialNo"
-              @blur="touched.serialNo = true"
-              type="text"
-              placeholder="e.g. SN-2024-0041"
-              class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="fieldCls('serialNo', !editForm.serialNo)"
-            />
-            <p v-if="touched.serialNo && !editForm.serialNo" class="text-xs text-red-500">Serial number is required.</p>
-          </template>
+          <input
+            v-model="editForm.serialNo"
+            @blur="touched.serialNo = true"
+            type="text"
+            placeholder="e.g. SN-2024-0041"
+            class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition mt-1"
+            :class="fieldCls('serialNo', !editForm.serialNo)"
+          />
+          <p v-if="touched.serialNo && !editForm.serialNo" class="text-xs text-red-500">Serial number is required.</p>
         </div>
 
         <!-- SBU Number -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
-            SBU Number <span v-if="isEditing" class="text-red-500">*</span>
+          <label class="text-xs font-semibold text-black/50">
+            SBU Number <span class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm font-mono text-black py-1">{{ contract.sbuNumber || '—' }}</p>
-          <template v-else>
-            <input
-              v-model="editForm.sbuNumber"
-              @blur="touched.sbuNumber = true"
-              type="text"
-              placeholder="e.g. SBU-001"
-              class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="fieldCls('sbuNumber', !editForm.sbuNumber)"
-            />
-            <p v-if="touched.sbuNumber && !editForm.sbuNumber" class="text-xs text-red-500">SBU number is required.</p>
-          </template>
+          <input
+            v-model="editForm.sbuNumber"
+            @blur="touched.sbuNumber = true"
+            type="text"
+            placeholder="e.g. SBU-001"
+            class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition mt-1"
+            :class="fieldCls('sbuNumber', !editForm.sbuNumber)"
+          />
+          <p v-if="touched.sbuNumber && !editForm.sbuNumber" class="text-xs text-red-500">SBU number is required.</p>
         </div>
-
       </div>
     </div>
 
-    <!-- Section: Schedule & Location -->
-    <div class="px-6 py-5 border-b border-black/6">
-      <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest mb-4">Schedule & Location</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
+    <!-- Section 3: Schedule & Location -->
+    <div class="bg-white border border-black/[0.08] rounded-xl p-8 shadow-sm">
+      <h3 class="text-[10px] font-bold text-[#252578]/60 uppercase tracking-widest border-b border-black/[0.05] pb-3 mb-6">Schedule & Location</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
         <!-- Region -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
+          <label class="text-xs font-semibold text-black/50">
             Region <span v-if="isEditing" class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm text-black py-1">{{ contract.region }}</p>
+          <p v-if="!isEditing" class="text-[15px] font-medium text-black mt-0.5">{{ contract.region }}</p>
           <template v-else>
             <select
               v-model="editForm.region"
               @blur="touched.region = true"
-              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition"
+              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition mt-1"
               :class="[
                 !editForm.region ? 'text-black/30' : 'text-black',
                 fieldCls('region', !editForm.region)
@@ -278,16 +302,19 @@ onClickOutside(suggestionsContainer, () => {
 
         <!-- Start Date -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
+          <label class="text-xs font-semibold text-black/50">
             Start Date <span v-if="isEditing" class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm text-black py-1 tabular-nums">{{ fmtDate(contract.startDate) }}</p>
+          <div v-if="!isEditing" class="flex items-center gap-2 mt-0.5">
+            <CalendarCheck class="w-[18px] h-[18px] text-black/40" />
+            <p class="text-[15px] font-medium text-black tabular-nums">{{ fmtDate(contract.startDate) }}</p>
+          </div>
           <template v-else>
             <input
               v-model="editForm.startDate"
               @blur="touched.startDate = true"
               type="date"
-              class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition"
+              class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition mt-1"
               :class="fieldCls('startDate', !editForm.startDate)"
             />
             <p v-if="touched.startDate && !editForm.startDate" class="text-xs text-red-500">Start date is required.</p>
@@ -296,16 +323,19 @@ onClickOutside(suggestionsContainer, () => {
 
         <!-- End Date -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-semibold text-black/55">
+          <label class="text-xs font-semibold text-black/50">
             End Date <span v-if="isEditing" class="text-red-500">*</span>
           </label>
-          <p v-if="!isEditing" class="text-sm text-black py-1 tabular-nums">{{ fmtDate(contract.endDate) }}</p>
+          <div v-if="!isEditing" class="flex items-center gap-2 mt-0.5">
+            <CalendarX class="w-[18px] h-[18px] text-red-500/80" />
+            <p class="text-[15px] font-medium text-black tabular-nums">{{ fmtDate(contract.endDate) }}</p>
+          </div>
           <template v-else>
             <input
               v-model="editForm.endDate"
               @blur="touched.endDate = true"
               type="date"
-              class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition"
+              class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition mt-1"
               :class="fieldCls('endDate', !editForm.endDate || !!dateError)"
             />
             <p v-if="touched.endDate && !editForm.endDate" class="text-xs text-red-500">End date is required.</p>
@@ -313,18 +343,6 @@ onClickOutside(suggestionsContainer, () => {
           </template>
         </div>
 
-      </div>
-    </div>
-
-    <!-- Footer: Created By -->
-    <div class="px-6 py-4 flex items-center gap-3">
-      <span class="text-xs font-semibold text-black/40">Created by</span>
-      <div class="flex items-center gap-2">
-        <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0 select-none"
-          :style="{ backgroundColor: avatarColor(contract.createdBy) }">
-          {{ initials(contract.createdBy) }}
-        </div>
-        <span class="text-sm font-medium text-black">{{ contract.createdBy }}</span>
       </div>
     </div>
 

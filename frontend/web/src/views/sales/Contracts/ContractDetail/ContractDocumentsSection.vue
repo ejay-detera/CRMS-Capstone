@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { FileX, FileType2, UploadCloud, X, AlertCircle } from 'lucide-vue-next'
+import { FileX, FileType2, UploadCloud, X, AlertCircle, Download } from 'lucide-vue-next'
 import type { UploadedDoc } from '@/types/contract'
 import { useAuth } from '@/composables/useAuth'
 
@@ -24,15 +24,13 @@ const fileError = ref('')
 function viewDocument(doc: UploadedDoc) {
   if (doc.uploadStatus && doc.uploadStatus !== 'success') return
 
-  if (doc.type === 'pdf' && doc.id) {
+  if (doc.id) {
     let basePath = ''
     if (route.path.startsWith('/admin')) basePath = '/admin'
     else if (route.path.startsWith('/manager')) basePath = '/manager'
     else basePath = '/sales'
 
     router.push(`${basePath}/contracts/${contractId}/documents/${doc.id}`)
-  } else if (doc.previewUrl) {
-    window.open(doc.previewUrl, '_blank')
   }
 }
 
@@ -168,36 +166,45 @@ function fmtSize(bytes: number) {
 </script>
 
 <template>
-  <div class="bg-white rounded-xl border border-black/8 shadow-sm overflow-hidden">
+  <div class="bg-white rounded-xl border border-black/[0.08] p-8 shadow-sm">
 
     <!-- Section header -->
-    <div class="px-6 py-4 border-b border-black/6 flex items-center gap-2">
-      <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest">Documents</h2>
-      <span class="text-[10px] font-bold text-black/35 bg-black/5 px-1.5 py-0.5 rounded-full tabular-nums">
-        {{ docs.length }}
-      </span>
+    <div class="flex items-center gap-3 mb-6">
+      <h3 class="text-[10px] font-bold text-[#252578]/60 uppercase tracking-widest">Documents</h3>
+      <span class="px-2 py-0.5 bg-[#2E85D8]/10 text-[10px] font-bold rounded-full text-[#2E85D8] tabular-nums">{{ docs.length }}</span>
     </div>
 
-    <!-- Document grid -->
-    <div class="p-5">
+    <!-- Empty state (view mode) -->
+    <div v-if="!isEditing && docs.length === 0"
+      class="flex flex-col items-center gap-2 py-10 text-black/25">
+      <FileX class="w-8 h-8" />
+      <p class="text-sm font-medium">No documents attached</p>
+    </div>
 
-      <!-- Empty state (view mode) -->
-      <div v-if="!isEditing && docs.length === 0"
-        class="flex flex-col items-center gap-2 py-10 text-black/25">
-        <FileX class="w-8 h-8" />
-        <p class="text-sm font-medium">No documents attached</p>
+    <!-- View mode document cards -->
+    <div v-else-if="!isEditing" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div v-for="doc in docs" :key="doc.id" @click="viewDocument(doc)" 
+        class="group border border-black/10 rounded-lg p-4 flex items-center gap-4 hover:border-[#2E85D8] transition-all cursor-pointer bg-white shadow-sm">
+        <div class="w-12 h-12 bg-black/[0.04] flex items-center justify-center rounded-lg text-black/40 group-hover:bg-[#2E85D8] group-hover:text-white transition-colors shrink-0">
+          <FileType2 class="w-6 h-6" />
+        </div>
+        <div class="flex-1 overflow-hidden min-w-0">
+          <p class="text-[15px] text-black font-semibold truncate">{{ doc.name }}</p>
+          <p class="text-xs text-black/50">{{ fmtSize(doc.size) }} • {{ doc.type.toUpperCase() }}</p>
+        </div>
+        <Download class="w-5 h-5 text-black/30 group-hover:text-[#252578] shrink-0" />
       </div>
+    </div>
 
-      <!-- Cards + upload zone (edit mode) or cards only (view mode) -->
-      <div v-else class="flex flex-wrap gap-3">
-
+    <!-- Edit mode: Cards + upload zone -->
+    <div v-else class="flex flex-col gap-3">
+      <div class="flex flex-wrap gap-3">
         <!-- Document cards -->
         <div v-for="(doc, i) in docs" :key="doc.name + doc.size"
           class="relative w-36 rounded-lg border border-black/8 overflow-hidden shadow-sm bg-white flex flex-col group">
 
-          <!-- Remove button (edit mode only) -->
-          <button v-if="isEditing"
-            @click="removeDoc(i)"
+          <!-- Remove button -->
+          <button @click="removeDoc(i)"
             class="absolute top-1.5 right-1.5 z-30 w-5 h-5 rounded-full bg-black/50 hover:bg-red-500 text-white flex items-center justify-center transition">
             <X class="w-3 h-3" />
           </button>
@@ -224,8 +231,8 @@ function fmtSize(bytes: number) {
             <p class="text-[9px] text-black/30 tabular-nums">{{ fmtSize(doc.size) }}</p>
           </div>
 
-          <!-- Status Overlay (edit mode only) -->
-          <div v-if="isEditing && doc.uploadStatus && doc.uploadStatus !== 'success'"
+          <!-- Status Overlay -->
+          <div v-if="doc.uploadStatus && doc.uploadStatus !== 'success'"
             class="absolute inset-0 h-44 z-20 flex flex-col items-center justify-center gap-2 px-2.5 text-center transition-all duration-300"
             :class="{
               'bg-black/70 text-white': doc.uploadStatus === 'uploading',
@@ -249,8 +256,8 @@ function fmtSize(bytes: number) {
             </template>
           </div>
 
-          <!-- Success overlay/badge (edit mode only) -->
-          <div v-if="isEditing && doc.uploadStatus === 'success'"
+          <!-- Success overlay/badge -->
+          <div v-if="doc.uploadStatus === 'success'"
             class="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 rounded bg-[#2E85D8] px-1.5 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider shadow-sm select-none"
             :title="doc.scanWarning || 'Malware scan completed successfully.'">
             <span>{{ doc.scanWarning ? 'Scan Skipped' : 'Malware Free' }}</span>
@@ -258,9 +265,8 @@ function fmtSize(bytes: number) {
 
         </div>
 
-        <!-- Upload drop zone (edit mode only) -->
-        <div v-if="isEditing"
-          class="w-36 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors select-none"
+        <!-- Upload drop zone -->
+        <div class="w-36 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors select-none"
           style="min-height: 11rem;"
           :class="dragOver ? 'border-[#2E85D8] bg-[#2E85D8]/5' : 'border-black/15 hover:border-[#2E85D8]/50 hover:bg-black/2'"
           @dragover.prevent="dragOver = true"
@@ -271,15 +277,14 @@ function fmtSize(bytes: number) {
           <span class="text-[10px] font-semibold text-black/35 text-center px-2 leading-tight">Add files</span>
           <input ref="fileInput" type="file" accept=".pdf,.docx" multiple class="hidden" @change="onFileInput" />
         </div>
-
       </div>
 
       <!-- File error -->
-      <div v-if="isEditing && fileError" class="mt-3 flex items-center gap-2 text-red-500">
+      <div v-if="fileError" class="mt-1 flex items-center gap-2 text-red-500">
         <AlertCircle class="w-3.5 h-3.5 shrink-0" />
         <p class="text-xs">{{ fileError }}</p>
       </div>
-
     </div>
+
   </div>
 </template>

@@ -6,7 +6,10 @@ import { useAuth } from '@/composables/useAuth'
 
 export type { UploadedDoc }
 
-const props = defineProps<{ modelValue: UploadedDoc[] }>()
+const props = defineProps<{ 
+  modelValue: UploadedDoc[]
+  onPreview?: (doc: UploadedDoc) => void
+}>()
 const emit  = defineEmits<{ 'update:modelValue': [v: UploadedDoc[]] }>()
 
 const { state: authState } = useAuth()
@@ -251,9 +254,22 @@ const fileSizeMB = (bytes: number) => (bytes / 1024 / 1024).toFixed(2)
 
         <!-- Success overlay/badge -->
         <div v-if="doc.uploadStatus === 'success'"
-          class="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 rounded bg-[#2E85D8] px-1.5 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider shadow-sm select-none"
+          class="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 rounded bg-[#2E85D8] px-1.5 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider shadow-sm select-none pointer-events-none"
           :title="doc.scanWarning || 'Malware scan completed successfully.'">
           <span>{{ doc.scanWarning ? 'Scan Skipped' : 'Malware Free' }}</span>
+        </div>
+
+        <!-- Preview Hover Overlay (only for successful uploads if onPreview exists) -->
+        <div v-if="doc.uploadStatus === 'success' && onPreview"
+          @click="onPreview(doc)"
+          class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/0 hover:bg-black/40 opacity-0 hover:opacity-100 transition-all duration-200 cursor-pointer text-white">
+          <div class="p-2 rounded-full bg-white/20 backdrop-blur-sm mb-1 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+            <svg class="w-5 h-5 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </div>
+          <span class="text-[10px] font-bold uppercase tracking-wider drop-shadow-md transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 delay-75">Preview</span>
         </div>
 
       </div>

@@ -108,7 +108,7 @@ function mapApiContract(d: any, currentUserId: number | null, firstName?: string
   const isCreatedByCurrentUser = currentUserId !== null && d.created_by === currentUserId
   const createdBy = isCreatedByCurrentUser
     ? `${firstName || ''} ${lastName || ''}`.trim() || 'Me'
-    : d.created_by ? `User #${d.created_by}` : '—'
+    : d.creator_name ? d.creator_name : (d.created_by ? `User #${d.created_by}` : '—')
 
   return {
     id:              String(d.contract_id),
@@ -140,7 +140,7 @@ function mapApiToRequest(d: any, currentUserId: number | null, firstName?: strin
   const isCreatedByCurrentUser = currentUserId !== null && d.created_by === currentUserId
   const createdBy = isCreatedByCurrentUser
     ? `${firstName || ''} ${lastName || ''}`.trim() || 'Me'
-    : d.created_by ? `User #${d.created_by}` : '—'
+    : d.creator_name ? d.creator_name : (d.created_by ? `User #${d.created_by}` : '—')
 
   return {
     id:              `REQ-${String(d.contract_id).padStart(3, '0')}`,

@@ -203,13 +203,13 @@ async function handleAdd(data: any) {
           email: data.email,
           role: data.role_name as Role,
           department: data.department_name,
-          status: 'Active' as Status,
+          status: 'Inactive' as Status,
           dateAdded: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
         }
         users.value.push(newUser)
         resultStatus.value = 'success'
         resultTitle.value = 'User Created Successfully'
-        resultMessage.value = `${newUser.name} has been added to the system. A secure temporary password has been automatically generated and sent to ${newUser.email}.`
+        resultMessage.value = `${newUser.name}'s account has been created and is currently inactive. A temporary password has been sent to ${newUser.email}. The account will become active once they log in and change their password.`
         showResultDialog.value = true
       } else if (response.status === 422 && result.errors) {
         const firstError = Object.values(result.errors as Record<string, string[]>)[0]?.[0]

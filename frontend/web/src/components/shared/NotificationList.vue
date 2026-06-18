@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Bell, Search } from 'lucide-vue-next'
+import { ref, watch, computed } from 'vue'
+import { Bell, Search, Trash2, Check, Minus } from 'lucide-vue-next'
 import NotificationItem from './NotificationItem.vue'
 import ConfirmationDialog from './ConfirmationDialog.vue'
 import type { Notification, TabKey } from '@/types/notification'
 
-defineProps<{
+const props = defineProps<{
   tabs:        { key: TabKey; label: string; count: number }[]
   activeTab:   TabKey
   searchQuery: string
@@ -19,6 +19,7 @@ const emit = defineEmits<{
   'toggle-read':        [id: string]
   'toggle-favorite':    [id: string]
   'delete':             [id: string]
+  'delete-selected':    [ids: string[]]
 }>()
 
 const showDeleteConfirm = ref(false)
@@ -35,6 +36,30 @@ function confirmDelete() {
   }
   showDeleteConfirm.value = false
   notifIdToDelete.value = null
+}
+
+const showDeleteAllConfirm = ref(false)
+const selectedIds = ref<Set<string>>(new Set())
+
+const allSelected = computed(() => props.filtered.length > 0 && selectedIds.value.size === props.filtered.length)
+const someSelected = computed(() => selectedIds.value.size > 0 && selectedIds.value.size < props.filtered.length)
+
+watch(() => props.filtered, () => {
+  selectedIds.value.clear()
+})
+
+function toggleSelectAll() {
+  if (allSelected.value) {
+    selectedIds.value.clear()
+  } else {
+    props.filtered.forEach(n => selectedIds.value.add(n.id))
+  }
+}
+
+function confirmDeleteAll() {
+  emit('delete-selected', Array.from(selectedIds.value))
+  selectedIds.value.clear()
+  showDeleteAllConfirm.value = false
 }
 </script>
 
@@ -70,7 +95,25 @@ function confirmDelete() {
           </span>
         </button>
       </div>
-      <p class="text-xs text-black/35">{{ filtered.length }} notification{{ filtered.length !== 1 ? 's' : '' }}</p>
+      <div class="flex items-center gap-4">
+        <button type="button" v-if="filtered.length > 0 && activeTab !== 'email_logs'" @click="toggleSelectAll"
+          class="flex items-center gap-2 px-2.5 py-1.5 rounded-md hover:bg-black/[0.04] active:bg-black/[0.06] transition-colors group select-none -ml-2">
+          <div class="w-4 h-4 rounded-[4px] flex items-center justify-center border transition-all duration-200"
+            :class="allSelected || someSelected ? 'bg-[#2E85D8] border-[#2E85D8] text-white shadow-sm' : 'border-black/20 bg-white group-hover:border-black/40 text-transparent'">
+            <Check v-if="allSelected" class="w-3 h-3" stroke-width="3.5" />
+            <Minus v-else-if="someSelected" class="w-3 h-3" stroke-width="3.5" />
+          </div>
+          <span class="text-xs font-semibold text-black/60 group-hover:text-black/80 transition-colors">
+            Select All
+          </span>
+        </button>
+        <button v-if="selectedIds.size > 0 && activeTab !== 'email_logs'" @click="showDeleteAllConfirm = true"
+          class="flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-700 transition-colors">
+          <Trash2 class="w-3.5 h-3.5" />
+          Delete Selected ({{ selectedIds.size }})
+        </button>
+        <p class="text-xs text-black/35">{{ filtered.length }} notification{{ filtered.length !== 1 ? 's' : '' }}</p>
+      </div>
     </div>
 
     <div class="divide-y divide-black/4">
@@ -88,6 +131,8 @@ function confirmDelete() {
           v-for="notif in filtered"
           :key="notif.id"
           :notif="notif"
+          :selected="selectedIds.has(notif.id)"
+          @update:selected="$event ? selectedIds.add(notif.id) : selectedIds.delete(notif.id)"
           @toggle-read="emit('toggle-read', $event)"
           @toggle-favorite="emit('toggle-favorite', $event)"
           @delete="triggerDelete"
@@ -102,6 +147,15 @@ function confirmDelete() {
       confirm-label="Delete"
       variant="destructive"
       @confirm="confirmDelete"
+    />
+
+    <ConfirmationDialog
+      v-model:open="showDeleteAllConfirm"
+      title="Delete Selected Notifications"
+      :description="`Are you sure you want to delete the ${selectedIds.size} selected notification(s)? This action will archive them.`"
+      confirm-label="Delete Selected"
+      variant="destructive"
+      @confirm="confirmDeleteAll"
     />
   </div>
 </template>

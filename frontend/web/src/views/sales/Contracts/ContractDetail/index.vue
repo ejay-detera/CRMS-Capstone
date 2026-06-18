@@ -260,31 +260,58 @@ async function confirmSaveEdit() {
     <!-- Loading state -->
     <div v-if="loadingContract" class="space-y-6">
       <!-- Header Skeleton -->
-      <div class="flex items-center justify-between border-b border-black/5 pb-5">
-        <div class="space-y-2.5">
-          <div class="h-3.5 w-16 bg-black/5 animate-pulse rounded"></div>
-          <div class="h-6 w-64 bg-black/5 animate-pulse rounded"></div>
-          <div class="h-4.5 w-40 bg-black/5 animate-pulse rounded"></div>
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 bg-black/5 animate-pulse rounded-lg shrink-0"></div>
+          <div>
+            <div class="flex items-center gap-3 mb-1">
+              <div class="w-9 h-9 bg-black/5 animate-pulse rounded-lg"></div>
+              <div class="h-6 w-64 bg-black/5 animate-pulse rounded"></div>
+            </div>
+            <div class="h-4 w-40 bg-black/5 animate-pulse rounded mt-2"></div>
+            <div class="flex gap-2 mt-3">
+              <div class="h-6 w-16 bg-black/5 animate-pulse rounded-full"></div>
+              <div class="h-6 w-24 bg-black/5 animate-pulse rounded-full"></div>
+            </div>
+          </div>
         </div>
-        <div class="flex gap-2">
-          <div class="h-9 w-20 bg-black/5 animate-pulse rounded-lg"></div>
-          <div class="h-9 w-24 bg-black/5 animate-pulse rounded-lg"></div>
-        </div>
+        <div class="h-10 w-32 bg-black/5 animate-pulse rounded-lg"></div>
       </div>
-      <!-- Info Section Skeleton -->
-      <div class="bg-white rounded-lg border border-black/8 shadow-sm p-6 space-y-5">
-        <div class="h-4.5 w-32 bg-black/5 animate-pulse rounded"></div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div v-for="i in 9" :key="i" class="space-y-2">
+      
+      <!-- Contract Info Skeleton -->
+      <div class="bg-white rounded-xl border border-black/[0.08] shadow-sm p-8 space-y-5">
+        <div class="h-3 w-32 bg-black/5 animate-pulse rounded"></div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div v-for="i in 3" :key="i" class="space-y-2">
             <div class="h-3 w-20 bg-black/5 animate-pulse rounded"></div>
             <div class="h-4 w-40 bg-black/5 animate-pulse rounded"></div>
           </div>
         </div>
       </div>
+      
+      <!-- Item Details Skeleton -->
+      <div class="bg-white rounded-xl border border-black/[0.08] shadow-sm p-8 space-y-5">
+        <div class="h-3 w-32 bg-black/5 animate-pulse rounded"></div>
+        <div class="h-10 w-full bg-black/5 animate-pulse rounded"></div>
+      </div>
+
+      <!-- Schedule & Location Skeleton -->
+      <div class="bg-white rounded-xl border border-black/[0.08] shadow-sm p-8 space-y-5">
+        <div class="h-3 w-32 bg-black/5 animate-pulse rounded"></div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div v-for="i in 3" :key="i" class="space-y-2">
+            <div class="h-3 w-20 bg-black/5 animate-pulse rounded"></div>
+            <div class="h-4 w-40 bg-black/5 animate-pulse rounded"></div>
+          </div>
+        </div>
+      </div>
+      
       <!-- Documents Section Skeleton -->
-      <div class="bg-white rounded-lg border border-black/8 shadow-sm p-6 space-y-4">
-        <div class="h-4.5 w-32 bg-black/5 animate-pulse rounded"></div>
-        <div class="h-12 w-full bg-black/5 animate-pulse rounded-lg"></div>
+      <div class="bg-white rounded-xl border border-black/[0.08] shadow-sm p-8 space-y-5">
+        <div class="h-3 w-32 bg-black/5 animate-pulse rounded"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-for="i in 2" :key="i" class="h-20 w-full bg-black/5 animate-pulse rounded-lg"></div>
+        </div>
       </div>
     </div>
 

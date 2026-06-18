@@ -20,9 +20,6 @@ const SLUG_UI_MAP: Record<string, { category: string; label: string }> = {
   'cms.partners.edit':   { category: 'partners', label: 'Edit' },
   'cms.partners.delete': { category: 'partners', label: 'Delete' },
 
-  // System (frontend-only)
-  'cms.system.ocr':             { category: 'system', label: 'Use of OCR' },
-  'cms.system.risk_assessment': { category: 'system', label: 'AI Risk Assessment' },
 }
 
 // The fixed UI category structure (labels stay exactly as designed)
@@ -51,10 +48,7 @@ export const UI_CATEGORIES: Category[] = [
   {
     key: 'system',
     label: 'System Settings',
-    permissions: [
-      { key: 'cms.system.ocr',             label: 'Use of OCR' },
-      { key: 'cms.system.risk_assessment', label: 'AI Risk Assessment' },
-    ],
+    permissions: [],
   },
 ]
 
@@ -117,11 +111,6 @@ export function useRolePermissions() {
     // Only keep CMS CRUD permissions that appear in the UI map
     allPermissions.value = permissionsArray.filter((p: ApiPermission) => SLUG_UI_MAP[p.slug] !== undefined)
     
-    // Inject frontend-only permissions
-    allPermissions.value.push(
-      { id: -1, name: 'Use of OCR', slug: 'cms.system.ocr', system: 'cms' },
-      { id: -2, name: 'AI Risk Assessment', slug: 'cms.system.risk_assessment', system: 'cms' }
-    )
   }
 
   /** Load permissions already assigned to a single role */
@@ -145,12 +134,7 @@ export function useRolePermissions() {
           }
         })
       } else {
-        // Sensible defaults (aligned with FR Matrix)
-        if (['Manager', 'Sales'].includes(roleName)) {
-          set.add(-1) // Use of OCR
-          set.add(-2) // AI Risk Assessment
-        }
-      }
+
     }
     
     rolePermissionIds.value[roleId] = set
