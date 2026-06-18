@@ -54,7 +54,7 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 onMounted(() => { fetchNotifications(); pollTimer = setInterval(fetchNotifications, 60000); });
 onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
-const contractPaths = ["/sales/contracts", "/sales/contract-requests"];
+const contractPaths = ["/sales/contracts", "/sales/contract-requests", "/sales/contract-amendments"];
 const contractsOpen = ref(contractPaths.includes(route.path));
 
 watch(() => route.path, path => {
@@ -68,6 +68,7 @@ const contractSubItems = computed(() => {
     items.push({ title: "All Contracts",     url: "/sales/contracts",         icon: FileText  })
   }
   items.push({ title: "My Requests",       url: "/sales/contract-requests", icon: FileText  })
+  items.push({ title: "Amendments", url: "/sales/contract-amendments", icon: FileText  })
   return items
 })
 

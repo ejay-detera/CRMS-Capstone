@@ -22,6 +22,7 @@ import {
   LayoutDashboard,
   FileText,
   FilePlus2,
+  FilePenLine,
   Bell,
   LogOut,
   User,
@@ -55,7 +56,7 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 onMounted(() => { fetchNotifications(); pollTimer = setInterval(fetchNotifications, 60000); });
 onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
-const contractPaths = ["/manager/contracts", "/manager/contract-requests"];
+const contractPaths = ["/manager/contracts", "/manager/contract-requests", "/manager/amendment-requests"];
 const contractsOpen = ref(contractPaths.includes(route.path));
 
 watch(() => route.path, path => {
@@ -70,6 +71,7 @@ const contractSubItems = computed(() => {
   if (hasPermission('cms.contracts.create')) {
     items.push({ title: "Contract Requests", url: "/manager/contract-requests", icon: FilePlus2 });
   }
+  items.push({ title: "Amendments", url: "/manager/amendment-requests", icon: FilePenLine });
   return items;
 });
 

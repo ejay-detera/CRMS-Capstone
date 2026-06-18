@@ -133,6 +133,16 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/sales/ContractRequests/RequestDetail/index.vue'),
       },
       {
+        path: 'amendment-requests',
+        name: 'manager-amendment-requests',
+        component: () => import('@/views/manager/AmendmentRequests/index.vue'),
+      },
+      {
+        path: 'amendment-requests/:id',
+        name: 'manager-amendment-requests-detail',
+        component: () => import('@/views/manager/AmendmentRequests/RequestDetail.vue'),
+      },
+      {
         path: 'notifications',
         name: 'manager-notifications',
         component: () => import('@/views/manager/Notifications/index.vue'),
@@ -208,6 +218,21 @@ const routes: Array<RouteRecordRaw> = [
         path: 'contract-requests/:id',
         name: 'sales-contract-requests-detail',
         component: () => import('@/views/sales/ContractRequests/RequestDetail/index.vue'),
+      },
+      {
+        path: 'contracts/:id/amend',
+        name: 'sales-contracts-amend',
+        component: () => import('@/views/sales/ContractAmendments/CreateAmendment.vue'),
+      },
+      {
+        path: 'contract-amendments',
+        name: 'sales-contract-amendments',
+        component: () => import('@/views/sales/ContractAmendments/index.vue'),
+      },
+      {
+        path: 'contract-amendments/:id',
+        name: 'sales-contract-amendments-detail',
+        component: () => import('@/views/sales/ContractAmendments/AmendmentDetail.vue'),
       },
       {
         path: 'notifications',

@@ -413,8 +413,8 @@ const categories = [
                   <DropdownMenuItem @click="emit('openDetail', c)" class="gap-2.5 text-sm cursor-pointer">
                     <Eye class="w-3.5 h-3.5 text-black/40" /> View details
                   </DropdownMenuItem>
-                  <DropdownMenuItem v-if="hasPermission('cms.contracts.edit')" @click="router.push(`/sales/contracts/${c.id}?edit=1`)" class="gap-2.5 text-sm cursor-pointer">
-                    <Pencil class="w-3.5 h-3.5 text-black/40" /> Edit contract
+                  <DropdownMenuItem v-if="hasPermission('cms.contracts.edit')" @click="router.push(`/sales/contracts/${c.id}/amend`)" class="gap-2.5 text-sm cursor-pointer">
+                    <Pencil class="w-3.5 h-3.5 text-black/40" /> Create amendment
                   </DropdownMenuItem>
                   <template v-if="hasPermission('cms.contracts.approve') || hasPermission('cms.contracts.delete')">
                     <DropdownMenuSeparator />

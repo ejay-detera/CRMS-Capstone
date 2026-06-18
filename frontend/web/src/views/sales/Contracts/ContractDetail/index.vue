@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { FileX } from 'lucide-vue-next'
+import { FileX, X, ChevronDown, Clock } from 'lucide-vue-next'
+import { useAmendmentStore } from '@/composables/useAmendmentStore'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
@@ -30,7 +31,34 @@ const contract        = ref<StoredContract | null>(null)
 const loadingContract = ref(true)
 const savingEdit      = ref(false)
 
-const days = computed(() => contract.value ? remainingDays(contract.value.endDate) : 0)
+const amendmentStore = useAmendmentStore()
+const viewingSnapshotVersion = ref<number | null>(null)
+const viewingSnapshotDate    = ref<string>('')
+
+const displayedContract = computed<StoredContract | null>(() => {
+  if (!contract.value) return null
+  if (viewingSnapshotVersion.value === null) return contract.value
+
+  const snaps = amendmentStore.versionHistory.value[contract.value.id] || []
+  const found = snaps.find(s => s.version === viewingSnapshotVersion.value)
+  if (!found) return contract.value
+
+  return {
+    ...contract.value,
+    businessPartner: found.businessPartner,
+    category:        found.category,
+    itemCode:        found.itemCode,
+    description:     found.description,
+    serialNo:        found.serialNo,
+    sbuNumber:       found.sbuNumber,
+    region:          found.region,
+    startDate:       found.startDate,
+    endDate:         found.endDate,
+    docs:            found.docs,
+  }
+})
+
+const days = computed(() => displayedContract.value ? remainingDays(displayedContract.value.endDate) : 0)
 
 const backPath = computed(() => {
   if (route.path.startsWith('/admin')) return '/admin/contracts'
@@ -122,6 +150,9 @@ const showRejectionModal = ref(false)
 
 onMounted(async () => {
   await loadContract()
+  if (contract.value) {
+    await amendmentStore.fetchVersionHistory(contract.value.id, true)
+  }
   if (contract.value && contract.value.approvalStatus === 'Rejected') {
     showRejectionModal.value = true
   }
@@ -373,6 +404,107 @@ async function handleNotifyManager() {
     error('Network error', 'Could not reach the server.')
   }
 }
+
+// ── Version History & Amendments ─────────────────────────────────────────────
+const showHistoryDrawer = ref(false)
+const expandedVersion = ref<number | null>(null)
+
+const historicalSnapshots = computed(() => {
+  if (!contract.value) return []
+  const snaps = amendmentStore.versionHistory.value[contract.value.id] || []
+  return [...snaps].sort((a, b) => b.version - a.version)
+})
+
+const activeVersion = computed(() => {
+  if (!contract.value) return 1
+  return amendmentStore.getContractActiveVersion(contract.value.id)
+})
+
+function toggleVersionExpand(ver: number) {
+  if (expandedVersion.value === ver) {
+    expandedVersion.value = null
+  } else {
+    expandedVersion.value = ver
+  }
+}
+
+function handleEditClick() {
+  if (!isManager.value) {
+    router.push(`/sales/contracts/${id}/amend`)
+  } else {
+    startEdit()
+  }
+}
+
+function getDiffList(snap: any) {
+  const diffs: { field: string; old: string; new: string }[] = []
+  if (!contract.value) return diffs
+
+  const allSnaps = amendmentStore.versionHistory.value[contract.value.id] || []
+  const sortedSnaps = [...allSnaps].sort((a, b) => a.version - b.version)
+  
+  let prevState: any = null
+  
+  if (snap.version === activeVersion.value) {
+    // Diffing current active contract against the latest snapshot in history
+    if (sortedSnaps.length > 0) {
+      prevState = sortedSnaps[sortedSnaps.length - 1]
+    }
+  } else {
+    // Historical snapshot diffing
+    const currentIndex = sortedSnaps.findIndex(s => s.version === snap.version)
+    if (currentIndex > 0) {
+      prevState = sortedSnaps[currentIndex - 1]
+    }
+  }
+  
+  if (!prevState) {
+    return diffs
+  }
+
+  const fields = [
+    { key: 'businessPartner', label: 'Business Partner' },
+    { key: 'category', label: 'Category' },
+    { key: 'itemCode', label: 'Item Code' },
+    { key: 'description', label: 'Description' },
+    { key: 'serialNo', label: 'Serial No' },
+    { key: 'sbuNumber', label: 'SBU Number' },
+    { key: 'region', label: 'Region' },
+    { key: 'startDate', label: 'Start Date' },
+    { key: 'endDate', label: 'End Date' }
+  ]
+
+  for (const f of fields) {
+    const oldVal = String(prevState[f.key] || '').trim()
+    const newVal = String(snap[f.key] || '').trim()
+    if (oldVal !== newVal) {
+      diffs.push({
+        field: f.label,
+        old: oldVal || '(empty)',
+        new: newVal || '(empty)'
+      })
+    }
+  }
+
+  return diffs
+}
+
+const activeSnapForDiff = computed(() => {
+  if (!contract.value) return null
+  return {
+    version: activeVersion.value,
+    businessPartner: contract.value.businessPartner,
+    category: contract.value.category,
+    itemCode: contract.value.itemCode,
+    description: contract.value.description,
+    serialNo: contract.value.serialNo,
+    sbuNumber: contract.value.sbuNumber || '',
+    region: contract.value.region,
+    startDate: contract.value.startDate,
+    endDate: contract.value.endDate,
+    reason: 'Active details shown on main contract page.'
+  }
+})
 </script>
 
 <template>
@@ -449,8 +581,31 @@ async function handleNotifyManager() {
     </div>
 
     <template v-else>
+      <!-- Historical Snapshot Warning Banner -->
+      <div v-if="viewingSnapshotVersion !== null" 
+        class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm font-poppins animate-in fade-in slide-in-from-top-4 duration-300">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-amber-100/80 rounded-lg text-amber-800 flex items-center justify-center shrink-0">
+            <Clock class="w-5 h-5 text-amber-600" />
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-amber-900">Viewing Historical Snapshot (Version {{ viewingSnapshotVersion }})</h4>
+            <p class="text-xs text-amber-700/80 mt-0.5">
+              You are viewing a read-only archived version of this contract approved on {{ viewingSnapshotDate }}.
+            </p>
+          </div>
+        </div>
+        <button 
+          @click="viewingSnapshotVersion = null"
+          class="px-4 py-2 bg-white hover:bg-amber-100/30 border border-amber-200 text-amber-900 font-semibold text-xs rounded-lg shadow-sm transition-all duration-200 shrink-0 self-start sm:self-center"
+        >
+          Return to Current (Version {{ activeVersion }})
+        </button>
+      </div>
+
       <ContractDetailHeader
-        :contract="contract"
+        v-if="displayedContract"
+        :contract="displayedContract"
         :days="days"
         :is-editing="isEditing"
         :saving="savingEdit"
@@ -459,8 +614,10 @@ async function handleNotifyManager() {
         :show-reject-input="showRejectInput"
         :reject-reason-valid="rejectReason.trim().length > 0"
         :disabled="isUploadingOrScanFailed"
+        :is-snapshot="viewingSnapshotVersion !== null"
         @back="router.push(backPath)"
-        @edit="startEdit"
+        @edit="handleEditClick"
+        @open-history="showHistoryDrawer = true"
         @save="triggerSaveEdit"
         @cancel="cancelEdit"
         @notify-manager="handleNotifyManager"
@@ -495,7 +652,8 @@ async function handleNotifyManager() {
       </div>
 
       <ContractInfoSection
-        :contract="contract"
+        v-if="displayedContract"
+        :contract="displayedContract"
         :is-editing="isEditing"
         :edit-form="editForm"
         :touched="touched"
@@ -505,7 +663,8 @@ async function handleNotifyManager() {
         :is-approved="contract.approvalStatus === 'Approved'"
       />
       <ContractDocumentsSection
-        :docs="isEditing ? contractDocs : contract.docs"
+        v-if="displayedContract"
+        :docs="isEditing ? contractDocs : displayedContract.docs"
         :is-editing="isEditing"
         @update:docs="contractDocs = $event"
       />
@@ -526,5 +685,139 @@ async function handleNotifyManager() {
       v-model:open="showRejectionModal"
       :reason="contract.rejectionReason || ''"
     />
+
+    <!-- Version History Drawer Overlay -->
+    <div v-if="showHistoryDrawer" 
+      class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300"
+      @click="showHistoryDrawer = false">
+    </div>
+
+    <!-- Version History Drawer -->
+    <div 
+      class="fixed right-0 top-0 h-screen w-full sm:w-[480px] bg-white border-l border-black/10 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-out font-poppins"
+      :class="showHistoryDrawer ? 'translate-x-0' : 'translate-x-full'"
+    >
+      <!-- Drawer Header -->
+      <div class="p-6 border-b border-black/5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <Clock class="w-5 h-5 text-[#2E85D8]" />
+          <h3 class="text-base font-bold text-black">Version History</h3>
+        </div>
+        <button @click="showHistoryDrawer = false" class="p-1.5 hover:bg-black/5 rounded-lg text-black/40 hover:text-black transition-colors">
+          <X class="w-5 h-5" />
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-4">
+        <!-- Versions Timeline -->
+        <div class="relative pl-6 border-l border-black/[0.08] space-y-8 ml-2 mt-2">
+          <!-- Current Active Version -->
+          <div class="relative">
+            <!-- Timeline dot -->
+            <div class="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#2E85D8] border-2 border-white ring-4 ring-[#2E85D8]/15"></div>
+            
+            <div 
+              @click="toggleVersionExpand(activeVersion)"
+              class="group cursor-pointer hover:bg-black/[0.02] p-3 rounded-lg border border-black/[0.04] transition-all duration-200"
+              :class="expandedVersion === activeVersion ? 'bg-[#2E85D8]/[0.02] border-[#2E85D8]/30 shadow-sm' : ''"
+            >
+              <div class="flex items-center justify-between">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-[#2E85D8]/8 text-[#2E85D8] text-[10px] font-bold uppercase tracking-wider">
+                  Version {{ activeVersion }} (Current)
+                </span>
+                <span class="text-[10px] text-black/35 font-medium">Active</span>
+              </div>
+              <h4 class="text-xs font-semibold text-black mt-1.5">Latest approved state</h4>
+              <p class="text-[11px] text-black/40 mt-0.5">Active details shown on main contract page</p>
+
+              <!-- Expanded Diff Comparison for Current vs Last historical version -->
+              <div v-if="expandedVersion === activeVersion" class="mt-4 pt-4 border-t border-black/[0.05] space-y-3 cursor-default" @click.stop>
+                <h5 class="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">Changes in this version</h5>
+                
+                <div v-if="getDiffList(activeSnapForDiff).length === 0" class="text-xs text-black/35 text-center py-2">
+                  No detail changes (only documents updated).
+                </div>
+                <div v-else class="space-y-2.5">
+                  <div v-for="diff in getDiffList(activeSnapForDiff)" :key="diff.field" class="text-xs">
+                    <span class="font-semibold text-black/50 block capitalize text-[10px]">{{ diff.field }}</span>
+                    <div class="flex flex-col gap-1 mt-1 font-mono bg-black/[0.01] p-1.5 rounded border border-black/[0.03]">
+                      <span class="text-red-600 line-through whitespace-pre-wrap shrink-0 block">
+                        - {{ diff.old }}
+                      </span>
+                      <span class="text-emerald-600 font-semibold whitespace-pre-wrap shrink-0 block">
+                        + {{ diff.new }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Historical Versions -->
+          <div v-for="snap in historicalSnapshots" :key="snap.version" class="relative">
+            <!-- Timeline dot -->
+            <div class="absolute -left-[30px] top-1.5 w-2 h-2 rounded-full bg-black/20 border border-white"></div>
+            
+            <div 
+              @click="toggleVersionExpand(snap.version)"
+              class="group cursor-pointer hover:bg-black/[0.02] p-3 rounded-lg border border-black/[0.04] transition-all duration-200"
+              :class="expandedVersion === snap.version ? 'bg-black/[0.01] border-[#2E85D8]/30 shadow-sm' : ''"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-[#252578] uppercase tracking-wide">
+                  Version {{ snap.version }}
+                </span>
+                <span class="text-[10px] text-black/35 font-medium">{{ snap.approvedDate }}</span>
+              </div>
+              <p class="text-xs text-black/70 mt-1.5 line-clamp-2">{{ snap.reason }}</p>
+              
+              <div class="flex items-center justify-between mt-3 text-[10px] text-black/40">
+                <span>By: {{ snap.amendedBy }}</span>
+                <span class="flex items-center gap-1 font-semibold text-black/60">
+                  Approved: {{ snap.approvedBy }}
+                  <ChevronDown class="w-3.5 h-3.5 transition-transform duration-200" :class="expandedVersion === snap.version ? 'rotate-180' : ''" />
+                </span>
+              </div>
+
+              <!-- Expanded Diff Comparison -->
+              <div v-if="expandedVersion === snap.version" class="mt-4 pt-4 border-t border-black/[0.05] space-y-3 cursor-default" @click.stop>
+                <h5 class="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">Changes in this version</h5>
+                
+                <div v-if="getDiffList(snap).length === 0" class="text-xs text-black/35 text-center py-2">
+                  No detail changes (only documents updated).
+                </div>
+                <div v-else class="space-y-2.5">
+                  <div v-for="diff in getDiffList(snap)" :key="diff.field" class="text-xs">
+                    <span class="font-semibold text-black/50 block capitalize text-[10px]">{{ diff.field }}</span>
+                    <div class="flex flex-col gap-1 mt-1 font-mono bg-black/[0.01] p-1.5 rounded border border-black/[0.03]">
+                      <span class="text-red-600 line-through whitespace-pre-wrap shrink-0 block">
+                        - {{ diff.old }}
+                      </span>
+                      <span class="text-emerald-600 font-semibold whitespace-pre-wrap shrink-0 block">
+                        + {{ diff.new }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- View Snapshot button -->
+                <div class="pt-3 border-t border-black/[0.03] flex justify-end">
+                  <Button 
+                    @click="viewingSnapshotVersion = snap.version; viewingSnapshotDate = snap.approvedDate; showHistoryDrawer = false"
+                    variant="outline"
+                    class="h-8 text-xs font-semibold border-[#2E85D8] text-[#2E85D8] hover:bg-[#2E85D8]/5 flex items-center gap-1.5 transition-colors"
+                  >
+                    <Clock class="w-3.5 h-3.5" />
+                    View Snapshot
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

@@ -100,6 +100,12 @@ const backPath = computed(() => {
     const role = route.query.role as string || 'sales'
     return `/${role}/contracts/create`
   }
+  const fromAmd = route.query.fromAmd as string
+  if (fromAmd) {
+    if (route.path.startsWith('/manager')) return `/manager/amendment-requests/${fromAmd}`
+    if (route.path.startsWith('/admin')) return `/admin/amendment-requests/${fromAmd}`
+    return `/sales/contract-amendments/${fromAmd}`
+  }
   if (route.path.startsWith('/admin')) return `/admin/contracts/${contractId}`
   if (route.path.startsWith('/manager')) return `/manager/contracts/${contractId}`
   return `/sales/contracts/${contractId}`

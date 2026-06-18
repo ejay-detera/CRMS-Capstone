@@ -14,11 +14,12 @@ const props = defineProps<{
   isManager?: boolean
   showRejectInput?: boolean
   rejectReasonValid?: boolean
+  isSnapshot?: boolean
 }>()
 
 defineEmits<{ 
   back: []; edit: []; save: []; cancel: []; notifyManager: [];
-  approve: []; toggleReject: []; confirmReject: []
+  approve: []; toggleReject: []; confirmReject: []; openHistory: []
 }>()
 
 function daysDisplay(days: number) {
@@ -88,7 +89,7 @@ function daysDisplay(days: number) {
       <!-- View Mode -->
       <template v-else>
         <!-- Manager: Approve / Reject -->
-        <template v-if="isManager && contract.approvalStatus === 'Pending'">
+        <template v-if="isManager && contract.approvalStatus === 'Pending' && !isSnapshot">
           <template v-if="!showRejectInput">
             <Button @click="$emit('toggleReject')" :disabled="actionInProgress" variant="outline"
               class="h-10 px-6 border-black/15 text-black/65 hover:text-red-600 hover:border-red-200 hover:bg-red-50 font-medium">
@@ -112,16 +113,23 @@ function daysDisplay(days: number) {
         </template>
 
         <!-- Notify Manager -->
-        <button v-if="!isManager && contract.approvalStatus === 'Pending' && !disabled" @click="$emit('notifyManager')"
+        <button v-if="!isManager && contract.approvalStatus === 'Pending' && !disabled && !isSnapshot" @click="$emit('notifyManager')"
           class="px-6 py-2.5 bg-white border border-[#252578] text-[#252578] rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-[#252578]/5 transition-colors shadow-sm">
           Notify Manager
         </button>
         
+        <!-- Version History Button -->
+        <button v-if="!showRejectInput" @click="$emit('openHistory')"
+          class="px-4 py-2.5 bg-white border border-black/15 text-black/65 hover:text-black hover:bg-black/5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm">
+          <Clock class="w-4 h-4 text-[#2E85D8]" />
+          Version History
+        </button>
+
         <!-- Edit Button (Not while reject input is open) -->
-        <button v-if="!showRejectInput" @click="$emit('edit')"
+        <button v-if="!showRejectInput && !isSnapshot" @click="$emit('edit')"
           class="px-6 py-2.5 bg-[#252578] text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm">
           <FilePenLine class="w-4 h-4" />
-          Edit Contract
+          {{ isManager ? 'Edit Contract' : 'Create Amendment' }}
         </button>
       </template>
     </div>

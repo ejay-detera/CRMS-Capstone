@@ -45,6 +45,11 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::get('/documents/{id}/presigned-url', [\App\Http\Controllers\Api\V1\Documents\DownloadController::class, 'presignedUrl'])
         ->middleware('permission:cms.contracts.view');
 
+    // Contract Amendments Routes
+    Route::apiResource('contract-amendments', \App\Http\Controllers\ContractAmendmentController::class);
+    Route::patch('contract-amendments/{id}/status', [\App\Http\Controllers\ContractAmendmentController::class, 'updateStatus']);
+    Route::get('contracts/{id}/versions', [\App\Http\Controllers\ContractAmendmentController::class, 'versionHistory']);
+
 });
 
 // Internal webhook for login/logout events from auth-service
