@@ -13,23 +13,23 @@ graph TD
 
     %% Parallel Jobs
     subgraph Parallel Stage
-        FB[Frontend Build<br/><i>(Node 22, npm run build)</i>]
+        FB["Frontend Build (Node 22, npm run build)"]
         
         subgraph Backend Matrix Tests
-            BT1[Vendor Management<br/><i>(PHP 8.3, phpunit)</i>]
-            BT2[Contract Management<br/><i>(PHP 8.3, phpunit)</i>]
-            BT3[Search Service<br/><i>(PHP 8.3, phpunit)</i>]
-            BT4[Notification Service<br/><i>(PHP 8.3, phpunit)</i>]
+            BT1["Vendor Management (PHP 8.3, phpunit)"]
+            BT2["Contract Management (PHP 8.3, phpunit)"]
+            BT3["Search Service (PHP 8.3, phpunit)"]
+            BT4["Notification Service (PHP 8.3, phpunit)"]
         end
     end
 
     %% Dependent Job
     subgraph Dependent Stage
-        E2E[End-to-End Tests<br/><i>(Docker Compose, Playwright)</i>]
+        E2E["End-to-End Tests (Docker Compose, Playwright)"]
     end
 
     %% Artifacts
-    UploadArtifact([Upload Playwright Report])
+    UploadArtifact(["Upload Playwright Report"])
 
     %% Flow connections
     Start --> FB
