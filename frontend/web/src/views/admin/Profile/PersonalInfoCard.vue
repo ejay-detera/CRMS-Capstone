@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { reactive, watch, computed } from 'vue'
+import { reactive, watch, computed, ref } from 'vue'
 import { UserRound } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
 const props = defineProps<{
   profile: {
@@ -40,9 +41,16 @@ function fieldCls(field: keyof typeof touched, invalid: boolean) {
     : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
 }
 
-function save() {
+const showConfirm = ref(false)
+
+function confirmSave() {
   Object.assign(touched, { firstName: true, lastName: true, email: true, phone: true })
   if (!form.firstName || !form.lastName || !form.email || !emailValid.value || !form.phone || !phoneValid.value) return
+  showConfirm.value = true
+}
+
+function save() {
+  showConfirm.value = false
   emit('save', { ...form, department: 'Sales & Marketing' })
 }
 </script>
@@ -60,7 +68,7 @@ function save() {
       </div>
     </div>
 
-    <form @submit.prevent="save" class="px-6 py-5 space-y-4">
+    <form @submit.prevent="confirmSave" class="px-6 py-5 space-y-4">
 
       <div class="grid grid-cols-2 gap-4">
         <div class="space-y-1.5">
@@ -128,5 +136,13 @@ function save() {
       </div>
 
     </form>
+
+    <ConfirmationDialog
+      v-model:open="showConfirm"
+      title="Save Profile Details"
+      description="Are you sure you want to save these changes to your personal information?"
+      confirm-text="Save changes"
+      @confirm="save"
+    />
   </div>
 </template>
