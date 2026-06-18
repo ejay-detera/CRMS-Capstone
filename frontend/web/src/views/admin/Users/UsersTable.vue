@@ -74,11 +74,7 @@ const tabs: { label: string; value: TabValue }[] = [
     <Table>
       <TableHeader class="bg-black/[0.018]">
         <TableRow class="border-b border-black/4 hover:bg-transparent">
-          <TableHead class="w-12 pl-6 py-3">
-            <input type="checkbox" :checked="allPageSelected" @change="emit('toggleSelectAll')"
-              class="w-4 h-4 rounded border-black/20 accent-[#252578] cursor-pointer" />
-          </TableHead>
-          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Name</TableHead>
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3 pl-6">Name</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Role</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Date added</TableHead>
@@ -91,13 +87,7 @@ const tabs: { label: string; value: TabValue }[] = [
           class="border-b border-black/4 last:border-0 transition-colors"
           :class="selectedIds.includes(user.id) ? 'bg-[#252578]/2.5' : 'hover:bg-black/1.2'">
 
-          <TableCell class="pl-6 py-4">
-            <input type="checkbox" :checked="selectedIds.includes(user.id)"
-              @change="emit('toggleRow', user.id)"
-              class="w-4 h-4 rounded border-black/20 accent-[#252578] cursor-pointer" />
-          </TableCell>
-
-          <TableCell class="py-4">
+          <TableCell class="py-4 pl-6">
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 select-none"
                 :style="{ backgroundColor: avatarColor(index) }">
@@ -155,7 +145,7 @@ const tabs: { label: string; value: TabValue }[] = [
         </TableRow>
 
         <TableRow v-if="paginatedUsers.length === 0">
-          <TableCell colspan="6" class="text-center py-16">
+          <TableCell colspan="5" class="text-center py-16">
             <p class="text-sm font-semibold text-black/28">No users found</p>
             <p class="text-xs text-black/20 mt-1">Try a different search or tab</p>
           </TableCell>
