@@ -294,7 +294,14 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
-    redirect: () => {
+    redirect: (to) => {
+      // Intercept any mangled auth/callback URLs from the proxy
+      if (to.fullPath.includes('auth/callback')) {
+        const match = to.fullPath.match(/state=([^&]+)/)
+        const target = match ? decodeURIComponent(match[1]) : '/admin/dashboard'
+        return target.replace(/^\/cms/, '') || '/admin/dashboard'
+      }
+
       const { role } = useAuth()
       if (role.value === 'Admin') return '/admin/dashboard'
       if (role.value === 'Manager') return '/manager/dashboard'
