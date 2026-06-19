@@ -55,7 +55,8 @@ final class AuthService
             ])->get("{$this->baseUrl}/internal/users/{$userId}");
 
             if ($response->successful()) {
-                return $response->json();
+                $json = $response->json();
+                return $json['data'] ?? $json;
             }
 
             Log::warning("Auth service internal user lookup failed", [
