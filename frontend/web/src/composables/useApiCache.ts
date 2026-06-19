@@ -201,7 +201,7 @@ async function fetchDashboard(force = false): Promise<void> {
     const res = await fetch(`${apiBase}/dashboard`, {
       headers: {
         'Accept': 'application/json',
-        'Authorization': `Bearer ${state.cachedToken}`,
+        ...(state.cachedToken ? { 'Authorization': `Bearer ${state.cachedToken}` } : {}),
       },
     })
 
@@ -275,7 +275,7 @@ async function fetchContracts(
     const res = await fetch(url, {
       headers: {
         'Accept': 'application/json',
-        'Authorization': `Bearer ${state.cachedToken}`,
+        ...(state.cachedToken ? { 'Authorization': `Bearer ${state.cachedToken}` } : {}),
       },
     })
 
@@ -336,7 +336,7 @@ async function fetchRequests(userId?: number, force = false): Promise<ContractRe
     const res = await fetch(url, {
       headers: {
         'Accept': 'application/json',
-        'Authorization': `Bearer ${state.cachedToken}`,
+        ...(state.cachedToken ? { 'Authorization': `Bearer ${state.cachedToken}` } : {}),
       },
     })
 
