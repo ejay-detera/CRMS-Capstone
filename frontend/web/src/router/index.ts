@@ -297,8 +297,13 @@ const routes: Array<RouteRecordRaw> = [
     redirect: (to) => {
       // Intercept any mangled auth/callback URLs from the proxy
       if (to.fullPath.includes('auth/callback')) {
+        console.log('%c[CMS Router] Caught mangled callback URL inside catch-all route!', 'color: #f59e0b; font-weight: bold;')
+        console.log('Router Full Path:', to.fullPath)
+
         const match = to.fullPath.match(/state=([^&]+)/)
         const target = match ? decodeURIComponent(match[1]) : '/admin/dashboard'
+        
+        console.log('Extracted Target from Vue Router:', target)
         return target.replace(/^\/cms/, '') || '/admin/dashboard'
       }
 
