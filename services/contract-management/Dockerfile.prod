@@ -15,7 +15,6 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-enable mongodb
 
 RUN a2enmod rewrite
-RUN echo "CGIPassAuth On" >> /etc/apache2/apache2.conf
 
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
