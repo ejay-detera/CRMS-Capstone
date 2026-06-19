@@ -81,7 +81,7 @@ services:
         - AUTH_SERVICE_URL=http://139.59.125.45/api
       - MAIL_MAILER=smtp
       - MAIL_HOST=smtp-relay.brevo.com
-      - MAIL_PORT=587
+      - MAIL_PORT=2525
       - MAIL_USERNAME=ada636001@smtp-brevo.com
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - MAIL_FROM_ADDRESS=noreply.cms.notification@gmail.com
@@ -123,7 +123,7 @@ services:
         - AUTH_SERVICE_URL=http://139.59.125.45/api
       - MAIL_MAILER=smtp
       - MAIL_HOST=smtp-relay.brevo.com
-      - MAIL_PORT=587
+      - MAIL_PORT=2525
       - MAIL_USERNAME=ada636001@smtp-brevo.com
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - MAIL_FROM_ADDRESS=noreply.cms.notification@gmail.com
@@ -165,7 +165,7 @@ services:
         - AUTH_SERVICE_URL=http://139.59.125.45/api
       - MAIL_MAILER=smtp
       - MAIL_HOST=smtp-relay.brevo.com
-      - MAIL_PORT=587
+      - MAIL_PORT=2525
       - MAIL_USERNAME=ada636001@smtp-brevo.com
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - MAIL_FROM_ADDRESS=noreply.cms.notification@gmail.com
@@ -205,7 +205,7 @@ services:
         - AUTH_SERVICE_URL=http://139.59.125.45/api
       - MAIL_MAILER=smtp
       - MAIL_HOST=smtp-relay.brevo.com
-      - MAIL_PORT=587
+      - MAIL_PORT=2525
       - MAIL_USERNAME=ada636001@smtp-brevo.com
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - MAIL_FROM_ADDRESS=noreply.cms.notification@gmail.com
@@ -269,7 +269,7 @@ services:
         - AUTH_SERVICE_URL=http://139.59.125.45/api
       - MAIL_MAILER=smtp
       - MAIL_HOST=smtp-relay.brevo.com
-      - MAIL_PORT=587
+      - MAIL_PORT=2525
       - MAIL_USERNAME=ada636001@smtp-brevo.com
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - MAIL_FROM_ADDRESS=noreply.cms.notification@gmail.com
@@ -311,7 +311,7 @@ services:
         - AUTH_SERVICE_URL=http://139.59.125.45/api
       - MAIL_MAILER=smtp
       - MAIL_HOST=smtp-relay.brevo.com
-      - MAIL_PORT=587
+      - MAIL_PORT=2525
       - MAIL_USERNAME=ada636001@smtp-brevo.com
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - MAIL_FROM_ADDRESS=noreply.cms.notification@gmail.com
