@@ -1,5 +1,9 @@
 # --- Environment Files ---
 .env
+services/**/.env
+services/**/.env.production
+frontend/web/.env
+frontend/web/.env.production
 .env.local
 .env.*.local
 

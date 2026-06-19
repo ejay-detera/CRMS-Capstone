@@ -1,0 +1,22 @@
+# Stage 1: Composer build
+FROM composer:2 AS build
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --prefer-dist --no-scripts
+
+# Stage 2: PHP-FPM runtime
+FROM php:8.3-fpm-alpine
+RUN apk add --no-cache libpng-dev oniguruma-dev libxml2-dev nginx \
+    && docker-php-ext-install pdo pdo_mysql mbstring
+
+WORKDIR /var/www/html
+COPY --from=build /app/vendor ./vendor
+COPY . .
+
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
+COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+
+EXPOSE 8000
+CMD ["/bin/sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]

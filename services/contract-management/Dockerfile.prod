@@ -1,0 +1,27 @@
+# Stage 1: Composer build
+FROM composer:2 AS build
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --prefer-dist --no-scripts
+
+# Stage 2: PHP-FPM runtime
+FROM php:8.3-fpm-alpine
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+RUN chmod +x /usr/local/bin/install-php-extensions \
+    && install-php-extensions pdo_mysql mbstring mongodb \
+    && apk add --no-cache nginx \
+    && echo "upload_max_filesize = 12M" > /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size = 15M" >> /usr/local/etc/php/conf.d/uploads.ini
+
+WORKDIR /var/www/html
+COPY --from=build /app/vendor ./vendor
+COPY . .
+
+COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache \
+    && php artisan storage:link
+
+EXPOSE 8000
+CMD ["/bin/sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]
