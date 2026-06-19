@@ -78,6 +78,7 @@ services:
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - MONGODB_URI=${MONGODB_URI}
       - MONGODB_DATABASE=${MONGODB_DATABASE}
+      - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
     depends_on:
       mysql:
         condition: service_healthy
