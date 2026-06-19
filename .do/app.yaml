@@ -1,0 +1,81 @@
+name: crms-capstone
+region: sgp1
+
+services:
+  - name: vendor-management
+    source_dir: services/vendor-management
+    dockerfile_path: Dockerfile.prod
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8000
+    routes:
+      - path: /api/vendor
+    envs:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+
+  - name: contract-management
+    source_dir: services/contract-management
+    dockerfile_path: Dockerfile.prod
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8000
+    routes:
+      - path: /api/contract
+    envs:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+
+  - name: search
+    source_dir: services/search
+    dockerfile_path: Dockerfile.prod
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8000
+    routes:
+      - path: /api/search
+    envs:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+
+  - name: notification
+    source_dir: services/notification
+    dockerfile_path: Dockerfile.prod
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8000
+    routes:
+      - path: /api/notification
+    envs:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+
+# The frontend can be deployed as a Static Site to save costs (free/cheap on DO)
+# DO App Platform will run `npm run build` and serve the `dist` folder automatically.
+static_sites:
+  - name: frontend-web
+    source_dir: frontend/web
+    build_command: npm run build
+    output_dir: dist
+    routes:
+      - path: /
+    envs:
+      - key: VITE_VENDOR_API_URL
+        value: ${vendor-management.PUBLIC_URL}
+      - key: VITE_CONTRACT_API_URL
+        value: ${contract-management.PUBLIC_URL}
+      - key: VITE_SEARCH_API_URL
+        value: ${search.PUBLIC_URL}
+      - key: VITE_NOTIFICATION_API_URL
+        value: ${notification.PUBLIC_URL}
+      # Make sure to update the AUTH API URL based on where the auth module is deployed!
+      - key: VITE_AUTH_API_URL
+        value: https://your-auth-module.ondigitalocean.app/api
