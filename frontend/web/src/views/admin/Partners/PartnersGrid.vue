@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Building2, Truck, MoreHorizontal, Eye, Trash2 } from 'lucide-vue-next'
+import { Building2, Truck, MoreHorizontal, Eye, Trash2, Pencil } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -7,8 +7,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { Partner, TabKey } from '@/types/partner'
 
-defineProps<{ partners: Partner[]; activeTab: TabKey; loading?: boolean; canDelete?: boolean }>()
-const emit = defineEmits<{ openDetail: [p: Partner]; openDelete: [p: Partner] }>()
+defineProps<{ partners: Partner[]; activeTab: TabKey; loading?: boolean; canDelete?: boolean; canEdit?: boolean }>()
+const emit = defineEmits<{ openDetail: [p: Partner]; openEdit: [p: Partner]; openDelete: [p: Partner] }>()
 
 function statusClass(status: string) {
   switch (status) {
@@ -80,9 +80,12 @@ function statusClass(status: string) {
               <DropdownMenuItem @click="emit('openDetail', partner)" class="gap-2.5 text-sm cursor-pointer">
                 <Eye class="w-3.5 h-3.5 text-black/40" /> View details
               </DropdownMenuItem>
-              <template v-if="canDelete">
+              <template v-if="canEdit || canDelete">
                 <DropdownMenuSeparator />
-                <DropdownMenuItem @click="emit('openDelete', partner)"
+                <DropdownMenuItem v-if="canEdit" @click="emit('openEdit', partner)" class="gap-2.5 text-sm cursor-pointer">
+                  <Pencil class="w-3.5 h-3.5 text-black/40" /> Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem v-if="canDelete" @click="emit('openDelete', partner)"
                   class="gap-2.5 text-sm cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
                   <Trash2 class="w-3.5 h-3.5" /> Delete
                 </DropdownMenuItem>

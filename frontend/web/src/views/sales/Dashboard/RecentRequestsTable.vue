@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { requestStatusBadge, fmtReqDate } from '@/types/contractRequest'
 import type { ContractRequest } from '@/types/contractRequest'
+import { useAuth } from '@/composables/useAuth'
 
 defineProps<{
   requests: ContractRequest[]
@@ -10,6 +11,7 @@ defineProps<{
 }>()
 
 const router = useRouter()
+const { hasPermission } = useAuth()
 </script>
 
 <template>
@@ -24,7 +26,7 @@ const router = useRouter()
           <span v-else>Your latest {{ requests.length }} submissions</span>
         </p>
       </div>
-      <button @click="router.push('/sales/contracts')"
+      <button v-if="hasPermission('cms.contracts.view')" @click="router.push('/sales/contract-requests')"
         class="inline-flex items-center gap-1 text-xs font-semibold text-[#2E85D8] hover:underline">
         View all <ArrowRight class="w-3 h-3" />
       </button>
@@ -51,8 +53,9 @@ const router = useRouter()
       </template>
       <template v-else>
         <div v-for="r in requests" :key="r.id"
-          @click="router.push('/sales/contract-requests/' + r.id)"
-          class="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-black/1.5 transition-colors cursor-pointer">
+          @click="hasPermission('cms.contracts.view') ? router.push('/sales/contract-requests/' + r.id) : null"
+          class="px-6 py-3.5 flex items-center justify-between gap-4 transition-colors"
+          :class="hasPermission('cms.contracts.view') ? 'hover:bg-black/1.5 cursor-pointer' : ''">
 
           <!-- Partner + meta -->
           <div class="min-w-0 flex-1">

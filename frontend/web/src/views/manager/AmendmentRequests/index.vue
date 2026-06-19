@@ -21,7 +21,7 @@ const { state: cacheState, fetchContracts } = useApiCache()
 const amendmentStore = useAmendmentStore()
 const router = useRouter()
 
-const activeFilter = ref<'all' | 'pending' | 'approved' | 'rejected'>('pending') // Default to pending for managers
+const activeFilter = ref<'all' | 'pending' | 'approved' | 'rejected'>('all') // Default to all
 const searchQuery  = ref('')
 const currentPage  = ref(1)
 const itemsPerPage = 10

@@ -62,7 +62,7 @@ const expiringSoon = computed(() =>
           class="w-full h-9 justify-start gap-2.5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
           <Plus class="w-4 h-4" /> New Contract Request
         </Button>
-        <Button @click="router.push('/sales/contracts')" variant="outline"
+        <Button v-if="hasPermission('cms.contracts.view')" @click="router.push('/sales/contracts')" variant="outline"
           class="w-full h-9 justify-start gap-2.5 text-sm border-black/12 text-black/65 hover:text-black">
           <FileText class="w-4 h-4" /> View My Contracts
         </Button>
