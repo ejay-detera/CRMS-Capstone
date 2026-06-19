@@ -74,6 +74,7 @@ services:
       - DB_USERNAME=root
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
+      - AUTH_SERVICE_URL=http://139.59.125.45/api
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
     depends_on:
       mysql:
@@ -99,6 +100,7 @@ services:
       - DB_USERNAME=root
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
+      - AUTH_SERVICE_URL=http://139.59.125.45/api
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
     depends_on:
       mysql:
@@ -197,6 +199,7 @@ services:
       - DB_USERNAME=root
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
+      - AUTH_SERVICE_URL=http://139.59.125.45/api
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
     depends_on:
       mysql:
