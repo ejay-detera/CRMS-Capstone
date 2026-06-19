@@ -76,6 +76,8 @@ services:
       - REDIS_HOST=redis
       - AUTH_SERVICE_URL=http://139.59.125.45/api
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DATABASE=${MONGODB_DATABASE}
     depends_on:
       mysql:
         condition: service_healthy
@@ -102,6 +104,8 @@ services:
       - REDIS_HOST=redis
       - AUTH_SERVICE_URL=http://139.59.125.45/api
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DATABASE=${MONGODB_DATABASE}
     depends_on:
       mysql:
         condition: service_healthy
@@ -127,6 +131,8 @@ services:
       - DB_USERNAME=root
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DATABASE=${MONGODB_DATABASE}
     depends_on:
       mysql:
         condition: service_healthy
@@ -152,6 +158,8 @@ services:
       - DB_USERNAME=root
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DATABASE=${MONGODB_DATABASE}
     depends_on:
       mysql:
         condition: service_healthy
@@ -175,6 +183,8 @@ services:
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - MEILISEARCH_HOST=http://meilisearch:7700
       - MEILISEARCH_KEY=${MEILI_MASTER_KEY:-changeme}
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DATABASE=${MONGODB_DATABASE}
     depends_on:
       meilisearch:
         condition: service_started
@@ -201,6 +211,8 @@ services:
       - REDIS_HOST=redis
       - AUTH_SERVICE_URL=http://139.59.125.45/api
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DATABASE=${MONGODB_DATABASE}
     depends_on:
       mysql:
         condition: service_healthy
@@ -226,6 +238,8 @@ services:
       - DB_USERNAME=root
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DATABASE=${MONGODB_DATABASE}
     depends_on:
       mysql:
         condition: service_healthy
