@@ -67,8 +67,12 @@ services:
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
+      - DB_CONNECTION=mysql
       - DB_HOST=mysql
       - DB_PORT=3306
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=root
+      - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
     depends_on:
@@ -88,8 +92,12 @@ services:
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
+      - DB_CONNECTION=mysql
       - DB_HOST=mysql
       - DB_PORT=3306
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=root
+      - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
     depends_on:
@@ -110,7 +118,12 @@ services:
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
+      - DB_CONNECTION=mysql
       - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=root
+      - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
     depends_on:
       mysql:
@@ -130,7 +143,12 @@ services:
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
+      - DB_CONNECTION=mysql
       - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=root
+      - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
     depends_on:
       mysql:
@@ -147,7 +165,12 @@ services:
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
+      - DB_CONNECTION=mysql
       - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=root
+      - DB_PASSWORD=${MYSQL_PASSWORD}
       - MEILISEARCH_HOST=http://meilisearch:7700
       - MEILISEARCH_KEY=${MEILI_MASTER_KEY:-changeme}
     depends_on:
@@ -167,7 +190,12 @@ services:
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
+      - DB_CONNECTION=mysql
       - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=root
+      - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
     depends_on:
@@ -188,7 +216,12 @@ services:
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
+      - DB_CONNECTION=mysql
       - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=root
+      - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
     depends_on:
       mysql:
