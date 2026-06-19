@@ -19,15 +19,6 @@ services:
     networks:
       - shared-capstone-network
 
-  mongodb:
-    image: mongo:7
-    container_name: cms-mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - shared-capstone-network
 
   redis:
     image: redis:7
@@ -65,8 +56,6 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      mongodb:
-        condition: service_started
       redis:
         condition: service_started
     networks:
@@ -86,8 +75,6 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      mongodb:
-        condition: service_started
       redis:
         condition: service_started
     networks:
@@ -170,7 +157,6 @@ networks:
 
 volumes:
   mysql_data:
-  mongo_data:
   meili_data:
   vendor-management-vendor:
   contract-management-vendor:
