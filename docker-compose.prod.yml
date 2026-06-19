@@ -17,14 +17,14 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - capstone-prod-network
+      - shared-capstone-network
 
   redis:
     image: redis:7
     container_name: cms-redis-prod
     restart: always
     networks:
-      - capstone-prod-network
+      - shared-capstone-network
 
   meilisearch:
     image: getmeili/meilisearch:v1.8
@@ -36,7 +36,7 @@ services:
     volumes:
       - meili_data_prod:/meili_data
     networks:
-      - capstone-prod-network
+      - shared-capstone-network
 
   clamav:
     image: clamav/clamav:1.4_base
@@ -55,7 +55,7 @@ services:
       retries: 10
       start_period: 120s
     networks:
-      - capstone-prod-network
+      - shared-capstone-network
 
   # ── Backend Services (Laravel) ───────────────────────────
   vendor-management:
@@ -81,7 +81,7 @@ services:
       redis:
         condition: service_started
     networks:
-      - capstone-prod-network
+      - shared-capstone-network
 
   contract-management:
     build:
@@ -106,7 +106,7 @@ services:
       redis:
         condition: service_started
     networks:
-      - capstone-prod-network
+      - shared-capstone-network
 
   contract-queue:
     build:
@@ -131,7 +131,7 @@ services:
       redis:
         condition: service_started
     networks:
-      - capstone-prod-network
+      - shared-capstone-network
 
   contract-scheduler:
     build:
@@ -154,7 +154,7 @@ services:
       mysql:
         condition: service_healthy
     networks:
-      - capstone-prod-network
+      - shared-capstone-network
 
   search:
     build:
@@ -179,7 +179,7 @@ services:
       mysql:
         condition: service_healthy
     networks:
-      - capstone-prod-network
+      - shared-capstone-network
 
   notification:
     build:
@@ -204,7 +204,7 @@ services:
       redis:
         condition: service_started
     networks:
-      - capstone-prod-network
+      - shared-capstone-network
 
   notification-queue:
     build:
@@ -229,7 +229,7 @@ services:
       redis:
         condition: service_started
     networks:
-      - capstone-prod-network
+      - shared-capstone-network
 
   # ── Frontend (Served via Nginx) ───────────────────────────────
   web:
@@ -239,7 +239,7 @@ services:
     container_name: cms-web-prod
     restart: always
     networks:
-      - capstone-prod-network
+      - shared-capstone-network
 
   # ── API Gateway (Nginx) ───────────────────────────────
   nginx:
@@ -257,11 +257,11 @@ services:
       - search
       - notification
     networks:
-      - capstone-prod-network
+      - shared-capstone-network
 
 networks:
-  capstone-prod-network:
-    driver: bridge
+  shared-capstone-network:
+    external: true
 
 volumes:
   mysql_data_prod:
