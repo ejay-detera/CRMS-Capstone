@@ -279,6 +279,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/auth/callback',
     name: 'auth-callback',
+    alias: '/cms/auth/callback',
     redirect: (to) => {
       // The Auth module redirects here with ?state=/cms/admin/dashboard
       const state = to.query.state as string
