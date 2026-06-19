@@ -115,6 +115,7 @@ services:
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
       - APP_KEY=${APP_KEY}
+      - DB_QUEUE=contract_queue
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - NOTIFICATION_SERVICE_URL=http://notification/api
@@ -155,6 +156,7 @@ services:
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
       - APP_KEY=${APP_KEY}
+      - DB_QUEUE=contract_queue
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - NOTIFICATION_SERVICE_URL=http://notification/api
@@ -193,6 +195,7 @@ services:
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
       - APP_KEY=${APP_KEY}
+      - DB_QUEUE=contract_queue
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - NOTIFICATION_SERVICE_URL=http://notification/api
@@ -255,6 +258,7 @@ services:
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
       - APP_KEY=${APP_KEY}
+      - DB_QUEUE=notification_queue
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - NOTIFICATION_SERVICE_URL=http://notification/api
@@ -283,7 +287,7 @@ services:
       dockerfile: Dockerfile.prod
     container_name: cms-notification-queue-prod
     restart: always
-    command: php artisan queue:work --queue=default --sleep=3 --tries=3 --timeout=60
+    command: php artisan queue:work --sleep=3 --tries=3 --timeout=60
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
@@ -295,6 +299,7 @@ services:
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - REDIS_HOST=redis
       - APP_KEY=${APP_KEY}
+      - DB_QUEUE=notification_queue
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - NOTIFICATION_SERVICE_URL=http://notification/api
