@@ -277,19 +277,12 @@ const routes: Array<RouteRecordRaw> = [
   },
 
   {
+    // This route handles the redirect from the Auth Module after login.
+    // It reads the session cookie, calls the auth API, stores the user, then navigates to the dashboard.
     path: '/auth/callback',
     name: 'auth-callback',
-    alias: '/cms/auth/callback',
-    redirect: (to) => {
-      // The Auth module redirects here with ?state=/cms/admin/dashboard
-      const state = to.query.state as string
-      if (state) {
-        // Strip the /cms base since the Vue router already handles it
-        const targetPath = state.replace(/^\/cms/, '')
-        return targetPath || '/admin/dashboard'
-      }
-      return '/admin/dashboard'
-    }
+    component: () => import('@/views/AuthCallback.vue'),
+    meta: { requiresAuth: false },
   },
   {
     path: '/:pathMatch(.*)*',
@@ -327,6 +320,11 @@ const router = createRouter({
 router.beforeEach((to: RouteLocationNormalized) => {
   const { isAuthenticated, role } = useAuth()
   const { error } = useToast()
+
+  // Always allow the auth callback route through — it handles its own auth handshake
+  if (to.name === 'auth-callback' || to.path.includes('auth/callback')) {
+    return true
+  }
 
   const requiresAuth = to.path.startsWith('/admin') ||
     to.path.startsWith('/manager') ||
