@@ -349,6 +349,11 @@ router.beforeEach((to: RouteLocationNormalized) => {
   // CMS-capstone only supports standard roles: Admin, Manager, Sales, Employee, Finance
   const allowedRoles = ['Admin', 'Manager', 'Sales', 'Employee', 'Finance']
 
+  // Allow the auth callback route to bypass the role check
+  if (to.path.includes('auth/callback')) {
+    return true
+  }
+
   // If the user's role isn't recognized by CMS (e.g., IT Admin, Super Admin), block them entirely
   if (!allowedRoles.includes(role.value || '')) {
     return { name: 'not-found' }
