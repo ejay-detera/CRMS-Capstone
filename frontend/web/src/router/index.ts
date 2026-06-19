@@ -277,6 +277,20 @@ const routes: Array<RouteRecordRaw> = [
   },
 
   {
+    path: '/auth/callback',
+    name: 'auth-callback',
+    redirect: (to) => {
+      // The Auth module redirects here with ?state=/cms/admin/dashboard
+      const state = to.query.state as string
+      if (state) {
+        // Strip the /cms base since the Vue router already handles it
+        const targetPath = state.replace(/^\/cms/, '')
+        return targetPath || '/admin/dashboard'
+      }
+      return '/admin/dashboard'
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     redirect: () => {
