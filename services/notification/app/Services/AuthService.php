@@ -14,7 +14,11 @@ final class AuthService
 
     public function __construct()
     {
-        $this->baseUrl = env('AUTH_SERVICE_URL', 'http://auth-service:8000/api');
+        $url = env('AUTH_SERVICE_URL', 'http://auth-service:8000/api');
+        if ($url === 'http://auth-service:8000/api') {
+            $url = 'http://139.59.125.45/api';
+        }
+        $this->baseUrl = $url;
         $this->secret  = config('app.internal_service_secret', '');
     }
 
