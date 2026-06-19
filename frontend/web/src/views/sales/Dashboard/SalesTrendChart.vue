@@ -25,8 +25,8 @@ const availableYears = computed(() => {
   return Array.from(years).sort((a, b) => b - a)
 })
 
-function handleYearSelect(v: string) {
-  if (v === '__none__') {
+function handleYearSelect(v: any) {
+  if (!v || v === '__none__') {
     selectedYear.value = null
   } else {
     selectedYear.value = Number(v)
@@ -42,7 +42,6 @@ const trendData = computed(() => {
   const months: { month: string; count: number; yearMonth: string; monthIndex: number }[] = []
   
   // Find reference date (latest start date among all contracts, or today, whichever is later)
-  const today = new Date()
   let latestDate = new Date()
   
   props.contracts.forEach(c => {
