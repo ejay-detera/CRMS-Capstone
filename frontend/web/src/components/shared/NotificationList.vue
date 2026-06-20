@@ -142,18 +142,18 @@ function confirmDeleteAll() {
 
     <ConfirmationDialog
       v-model:open="showDeleteConfirm"
-      title="Delete Notification"
-      description="Are you sure you want to delete this notification? This action will archive and remove it from your notifications list."
-      confirm-label="Delete"
+      :title="activeTab === 'archive' ? 'Delete Permanently' : 'Delete Notification'"
+      :description="activeTab === 'archive' ? 'Are you sure you want to permanently delete this notification? This action cannot be undone.' : 'Are you sure you want to delete this notification? This action will archive and remove it from your notifications list.'"
+      :confirm-label="activeTab === 'archive' ? 'Delete Permanently' : 'Delete'"
       variant="destructive"
       @confirm="confirmDelete"
     />
 
     <ConfirmationDialog
       v-model:open="showDeleteAllConfirm"
-      title="Delete Selected Notifications"
-      :description="`Are you sure you want to delete the ${selectedIds.size} selected notification(s)? This action will archive them.`"
-      confirm-label="Delete Selected"
+      :title="activeTab === 'archive' ? 'Delete Selected Permanently' : 'Delete Selected Notifications'"
+      :description="activeTab === 'archive' ? `Are you sure you want to permanently delete the ${selectedIds.size} selected notification(s)? This action cannot be undone.` : `Are you sure you want to delete the ${selectedIds.size} selected notification(s)? This action will archive them.`"
+      :confirm-label="activeTab === 'archive' ? 'Delete Permanently' : 'Delete Selected'"
       variant="destructive"
       @confirm="confirmDeleteAll"
     />

@@ -60,7 +60,7 @@ const itemsPerPage = 15
 const statCards = computed(() => ({
   total:     requests.value.length,
   pending:   requests.value.filter(r => r.status === 'Pending').length,
-  reviewing: requests.value.filter(r => r.status === 'Under Review').length,
+  
   approved:  requests.value.filter(r => r.status === 'Approved').length,
   rejected:  requests.value.filter(r => r.status === 'Rejected').length,
 }))
@@ -68,7 +68,7 @@ const statCards = computed(() => ({
 const statCardList = computed(() => [
   { label: 'Total Requests', value: statCards.value.total,     valueClass: 'text-black', change: '+3.2%', positive: true },
   { label: 'Pending',        value: statCards.value.pending,   valueClass: 'text-black', change: '+1.8%', positive: true },
-  { label: 'Under Review',   value: statCards.value.reviewing, valueClass: 'text-black', change: '+2.5%', positive: true },
+  
   { label: 'Approved',       value: statCards.value.approved,  valueClass: 'text-black', change: '+4.1%', positive: true },
 ])
 
@@ -82,7 +82,7 @@ const filtered = computed(() => {
     const byFilter =
       activeFilter.value === 'all'       ? true :
       activeFilter.value === 'pending'   ? r.status === 'Pending' :
-      activeFilter.value === 'reviewing' ? r.status === 'Under Review' :
+      
       activeFilter.value === 'approved'  ? r.status === 'Approved' :
       r.status === 'Rejected'
     return bySearch && byFilter

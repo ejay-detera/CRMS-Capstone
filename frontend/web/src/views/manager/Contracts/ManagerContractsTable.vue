@@ -2,7 +2,7 @@
 import { Search, MoreHorizontal, Eye, Pencil, Filter, X, Trash2, CheckCircle } from 'lucide-vue-next'
 import { ref, watch, computed } from 'vue'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
-import { useRouter } from 'vue-router'
+
 import { useAuth } from '@/composables/useAuth'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,11 +18,11 @@ import {
 import TablePagination from '@/components/shared/TablePagination.vue'
 import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus, formatRemainingTime } from '@/types/contract'
 import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
-import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
+import type { Contract, StatusFilter, FilterTab, ContractWorkflowStatus } from '@/types/contract'
 
 type ContractWithDays = Contract & { days: number }
 
-const router = useRouter()
+
 const { hasPermission } = useAuth()
 
 const props = defineProps<{
@@ -44,6 +44,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   openDetail:              [c: ContractWithDays]
+  changeWorkflowStatus:    [id: string, currentStatus: ContractWorkflowStatus | null]
   approve:                 [id: string]
   delete:                  [id: string]
   'update:activeFilter':   [v: FilterTab]
@@ -422,8 +423,8 @@ const categories = [
                   <DropdownMenuItem @click="emit('openDetail', c)" class="gap-2.5 text-sm cursor-pointer">
                     <Eye class="w-3.5 h-3.5 text-black/40" /> View details
                   </DropdownMenuItem>
-                  <DropdownMenuItem v-if="hasPermission('cms.contracts.edit')" @click="router.push(`/manager/contracts/${c.id}?edit=1`)" class="gap-2.5 text-sm cursor-pointer">
-                    <Pencil class="w-3.5 h-3.5 text-black/40" /> Edit contract
+                  <DropdownMenuItem v-if="hasPermission('cms.contracts.edit') && c.approvalStatus === 'Approved'" @click="emit('changeWorkflowStatus', c.id, c.workflowStatus)" class="gap-2.5 text-sm cursor-pointer">
+                    <Pencil class="w-3.5 h-3.5 text-black/40" /> Change workflow status
                   </DropdownMenuItem>
                   <template v-if="hasPermission('cms.contracts.approve') || hasPermission('cms.contracts.delete')">
                     <DropdownMenuSeparator />

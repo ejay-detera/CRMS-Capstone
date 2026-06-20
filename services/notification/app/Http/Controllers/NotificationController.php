@@ -141,6 +141,8 @@ class NotificationController extends Controller
 
         $result = $notifications->map(function (Notification $n) use ($reads) {
             $read = $reads->get($n->notification_id);
+            if ($read && $read->is_deleted) return null;
+
             return [
                 'id'                => (string) $n->notification_id,
                 'contract_id'       => $n->contract_id,
@@ -151,7 +153,7 @@ class NotificationController extends Controller
                 'is_archived'       => $read?->is_archived ?? false,
                 'is_favorite'       => $read?->is_favorite ?? false,
             ];
-        });
+        })->filter()->values();
 
         return response()->json(['data' => $result]);
     }
@@ -220,6 +222,7 @@ class NotificationController extends Controller
         $validator = Validator::make($request->all(), [
             'is_archived' => 'sometimes|boolean',
             'is_favorite' => 'sometimes|boolean',
+            'is_deleted'  => 'sometimes|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -232,6 +235,7 @@ class NotificationController extends Controller
 
         if ($request->has('is_archived')) $read->is_archived = $request->boolean('is_archived');
         if ($request->has('is_favorite')) $read->is_favorite = $request->boolean('is_favorite');
+        if ($request->has('is_deleted')) $read->is_deleted = $request->boolean('is_deleted');
         $read->save();
 
         return response()->json(['message' => 'State updated.']);

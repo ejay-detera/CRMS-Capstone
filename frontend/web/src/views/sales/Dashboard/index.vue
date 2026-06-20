@@ -59,7 +59,7 @@ const withDays = computed(() => contracts.value.map(c => ({ ...c, days: remainin
 
 const statCards = computed(() => [
   { label: 'My Contracts',    value: withDays.value.filter(c => c.approvalStatus === 'Approved').length },
-  { label: 'Pending',         value: requests.value.filter(r => r.status === 'Pending' || r.status === 'Under Review').length },
+  { label: 'Pending',         value: requests.value.filter(r => r.status === 'Pending').length },
   { label: 'Expiring Soon',   value: withDays.value.filter(c => c.approvalStatus === 'Approved' && c.days >= 0 && c.days <= 30).length },
   { label: 'Approved',        value: requests.value.filter(r => r.status === 'Approved').length },
 ])

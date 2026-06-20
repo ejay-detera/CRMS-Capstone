@@ -8,8 +8,9 @@ import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import SalesContractsTable  from './SalesContractsTable.vue'
 import { remainingDays } from '@/types/contract'
-import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
+import type { Contract, StatusFilter, FilterTab, ContractWorkflowStatus } from '@/types/contract'
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
+import WorkflowStatusModal from '@/components/shared/WorkflowStatusModal.vue'
 
 const router = useRouter()
 const { success, error } = useToast()
@@ -188,6 +189,46 @@ async function executeApprove() {
     error('Approve failed', 'Could not approve the contract.')
   }
 }
+
+const showWorkflowModal = ref(false)
+const targetContractId = ref<string | null>(null)
+const currentWorkflowStatus = ref<ContractWorkflowStatus | null>(null)
+
+function openChangeWorkflowStatus(id: string, status: ContractWorkflowStatus | null) {
+  targetContractId.value = id
+  currentWorkflowStatus.value = status
+  showWorkflowModal.value = true
+}
+
+async function executeWorkflowChange(newStatus: ContractWorkflowStatus | null) {
+  if (!targetContractId.value) return
+  try {
+    const target = contracts.value.find(c => c.id === targetContractId.value)
+    if (!target) return
+
+    const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
+    const res = await fetch(`${apiBase}/contracts/${targetContractId.value}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authState.token}`,
+      },
+      body: JSON.stringify({ 
+        approval_status: target.approvalStatus, 
+        workflow_status: newStatus 
+      })
+    })
+    if (!res.ok) throw new Error()
+    
+    updateContractInCache(targetContractId.value, { workflowStatus: newStatus })
+    success('Workflow status updated', 'The contract workflow status has been updated.')
+    showWorkflowModal.value = false
+    await fetchContracts()
+  } catch (e) {
+    error('Update failed', 'Could not update the workflow status.')
+  }
+}
 </script>
 
 <template>
@@ -258,6 +299,7 @@ async function executeApprove() {
       :start-date-filter="startDateFilter"
       :end-date-filter="endDateFilter"
       @open-detail="openDetail"
+      @change-workflow-status="openChangeWorkflowStatus"
       @approve="openApprove"
       @delete="openDelete"
       @update:active-filter="activeFilter = $event"
@@ -297,5 +339,11 @@ async function executeApprove() {
     confirm-label="Export"
     variant="default"
     @confirm="executeExport"
+  />
+
+  <WorkflowStatusModal
+    v-model:open="showWorkflowModal"
+    :current-status="currentWorkflowStatus"
+    @submit="executeWorkflowChange"
   />
 </template>

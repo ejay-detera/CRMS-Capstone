@@ -82,9 +82,9 @@ function daysDisplay(days: number) {
       </template>
 
       <template v-else>
-        <!-- Edit Request (Pending / Under Review, not while reject input is open) -->
+        <!-- Edit Request (Pending, not while reject input is open) -->
         <Button
-          v-if="(request.status === 'Pending' || request.status === 'Under Review') && !showRejectInput"
+          v-if="(request.status === 'Pending') && !showRejectInput"
           @click="$emit('edit')" variant="outline"
           class="h-9 gap-2 text-sm font-medium border-[#252578]/25 text-[#252578] hover:bg-[#252578]/5 hover:border-[#252578]/40">
           <FilePenLine class="w-4 h-4" />
@@ -103,7 +103,7 @@ function daysDisplay(days: number) {
         </template>
 
         <!-- Manager: Approve / Reject -->
-        <template v-if="isManager && (request.status === 'Pending' || request.status === 'Under Review')">
+        <template v-if="isManager && (request.status === 'Pending')">
           <template v-if="!showRejectInput">
             <Button @click="$emit('approve')" :disabled="actionInProgress"
               class="h-9 bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">

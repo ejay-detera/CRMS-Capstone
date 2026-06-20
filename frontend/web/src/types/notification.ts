@@ -9,6 +9,7 @@ export interface Notification {
   isRead:       boolean
   isFavorite:   boolean
   isArchived:   boolean
+  isDeleted?:   boolean
   contractId?:  number | null
   notifType?:   string
 }

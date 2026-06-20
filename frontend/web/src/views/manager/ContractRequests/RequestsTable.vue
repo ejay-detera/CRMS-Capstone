@@ -188,7 +188,7 @@ function avatarColor(name: string) {
                   <DropdownMenuItem @click="emit('openDetail', r)" class="gap-2.5 text-sm cursor-pointer">
                     <Eye class="w-3.5 h-3.5 text-black/40" /> View details
                   </DropdownMenuItem>
-                  <template v-if="r.status === 'Pending' || r.status === 'Under Review'">
+                  <template v-if="r.status === 'Pending'">
                     <DropdownMenuSeparator />
                     <DropdownMenuItem @click="emit('approve', r.id)"
                       class="gap-2.5 text-sm cursor-pointer text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50">

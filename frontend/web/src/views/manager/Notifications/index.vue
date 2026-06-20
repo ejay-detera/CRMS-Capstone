@@ -23,10 +23,15 @@ const tabs = computed(() => [
 ])
 
 const filtered = computed(() => {
-  let list = notifications.value
-  if (activeTab.value === 'all')      list = list.filter(n => !n.isArchived)
-  if (activeTab.value === 'archive')  list = list.filter(n =>  n.isArchived)
-  if (activeTab.value === 'favorite') list = list.filter(n =>  n.isFavorite && !n.isArchived)
+  let list = notifications.value.filter(n => !n.isDeleted)
+
+  if (activeTab.value === 'all') {
+    list = list.filter(n => !n.isArchived)
+  } else if (activeTab.value === 'archive') {
+    list = list.filter(n => n.isArchived)
+  } else if (activeTab.value === 'favorite') {
+    list = list.filter(n => n.isFavorite && !n.isArchived)
+  }
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase()
     list = list.filter(n => n.message.toLowerCase().includes(q))
@@ -37,14 +42,24 @@ const filtered = computed(() => {
 function toggleRead(id: string)     { markRead(id) }
 function toggleFavorite(id: string) { const n = notifications.value.find(x => x.id === id); if (n) updateState(id, { isFavorite: !n.isFavorite }) }
 function deleteNotif(id: string) {
-  updateState(id, { isArchived: true })
-  success('Notification removed', 'The notification has been deleted.')
+  if (activeTab.value === 'archive') {
+    updateState(id, { isDeleted: true })
+    success('Notification deleted', 'The notification has been permanently deleted.')
+  } else {
+    updateState(id, { isArchived: true })
+    success('Notification archived', 'The notification has been moved to archive.')
+  }
 }
 
 function deleteSelected(ids: string[]) {
   if (ids.length === 0) return
-  ids.forEach(id => updateState(id, { isArchived: true }))
-  success('Notifications removed', `${ids.length} selected notification(s) have been deleted.`)
+  if (activeTab.value === 'archive') {
+    ids.forEach(id => updateState(id, { isDeleted: true }))
+    success('Notifications deleted', `${ids.length} selected notification(s) have been permanently deleted.`)
+  } else {
+    ids.forEach(id => updateState(id, { isArchived: true }))
+    success('Notifications archived', `${ids.length} selected notification(s) have been moved to archive.`)
+  }
 }
 
 onMounted(async () => {

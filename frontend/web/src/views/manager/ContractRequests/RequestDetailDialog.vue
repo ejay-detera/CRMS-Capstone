@@ -209,7 +209,7 @@ function confirmReview() {
           <!-- Action buttons -->
           <div class="flex items-center justify-between gap-2">
 
-            <div v-if="request.status === 'Pending' || request.status === 'Under Review'"
+            <div v-if="request.status === 'Pending'"
               class="flex items-center gap-2">
 
               <Button v-if="!showRejectInput" variant="outline"

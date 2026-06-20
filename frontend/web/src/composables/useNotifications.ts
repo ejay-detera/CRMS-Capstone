@@ -47,6 +47,7 @@ function mapNotification(d: any): Notification {
     isRead:      d.is_read ?? false,
     isArchived:  d.is_archived ?? false,
     isFavorite:  d.is_favorite ?? false,
+    isDeleted:   d.is_deleted ?? false,
     contractId:  d.contract_id ?? null,
     notifType:   d.notification_type ?? undefined,
   }
@@ -100,11 +101,12 @@ export function useNotifications() {
     }
   }
 
-  async function updateState(id: string, patch: { isArchived?: boolean; isFavorite?: boolean }): Promise<void> {
+  async function updateState(id: string, patch: { isArchived?: boolean; isFavorite?: boolean; isDeleted?: boolean }): Promise<void> {
     const notif = notifications.value.find(n => n.id === id)
     if (notif) {
       if (patch.isArchived !== undefined) notif.isArchived = patch.isArchived
       if (patch.isFavorite !== undefined) notif.isFavorite = patch.isFavorite
+      if (patch.isDeleted !== undefined) notif.isDeleted = patch.isDeleted
     }
     try {
       await fetch(`${BASE_URL}/notifications/${id}/state`, {
@@ -113,6 +115,7 @@ export function useNotifications() {
         body:    JSON.stringify({
           is_archived: patch.isArchived,
           is_favorite: patch.isFavorite,
+          is_deleted:  patch.isDeleted,
         }),
       })
     } catch (e) {

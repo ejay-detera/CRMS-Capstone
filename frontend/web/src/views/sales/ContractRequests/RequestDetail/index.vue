@@ -316,7 +316,7 @@ async function saveEdit() {
       status: (
         data.data.approval_status === 'Approved' ? 'Approved' :
         data.data.approval_status === 'Rejected' ? 'Rejected' :
-        data.data.workflow_status                ? 'Under Review' :
+        
         'Pending'
       ) as ContractRequest['status'],
       notes:           '',

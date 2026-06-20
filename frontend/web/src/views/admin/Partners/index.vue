@@ -71,23 +71,32 @@ watch(
   [activeTab, currentPage, search, regionFilter],
   async ([tab, page, q, region]) => {
     await fetchPartners(tab, page, itemsPerPage, q, region)
+    if (tab === 'partners') {
+      partnersCount.value = totalItems.value
+    } else {
+      suppliersCount.value = totalItems.value
+    }
   }
 )
 
-watch([activeTab, totalItems], () => {
-  if (activeTab.value === 'partners') {
-    partnersCount.value = totalItems.value
-  } else {
-    suppliersCount.value = totalItems.value
-  }
-}, { immediate: true })
-
 onMounted(async () => {
   try {
-    await fetchPartners('suppliers', 1, 1)
-    suppliersCount.value = totalItems.value
-    await fetchPartners('partners', 1, itemsPerPage)
-    partnersCount.value = totalItems.value
+    const apiBase = import.meta.env.VITE_VENDOR_API_URL || 'http://localhost:8001/api'
+    const { state: authState } = useAuth()
+    
+    // fetch the inactive tab counts independently
+    const [pRes, sRes] = await Promise.all([
+      fetch(`${apiBase}/partners?per_page=1`, { headers: { 'Authorization': `Bearer ${authState.token}` } }),
+      fetch(`${apiBase}/suppliers?per_page=1`, { headers: { 'Authorization': `Bearer ${authState.token}` } })
+    ])
+    const pJson = await pRes.json()
+    const sJson = await sRes.json()
+    partnersCount.value = pJson.total || 0
+    suppliersCount.value = sJson.total || 0
+
+    await fetchPartners(activeTab.value, 1, itemsPerPage)
+    if (activeTab.value === 'partners') partnersCount.value = totalItems.value
+    else suppliersCount.value = totalItems.value
   } catch (err) {
     console.error(err)
   }

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useVendorService } from '@/composables/useVendorService'
 import type { AddPartnerForm, TabKey } from '@/types/partner'
+import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -76,6 +77,7 @@ function err(field: keyof typeof touched, extra = true) {
 }
 
 const isSaving = ref(false)
+const showConfirm = ref(false)
 
 async function handleSubmit() {
   Object.keys(touched).forEach(k => ((touched as Record<string, boolean>)[k] = true))
@@ -84,18 +86,24 @@ async function handleSubmit() {
     return
   }
 
+  showConfirm.value = true
+}
+
+async function executeSubmit() {
+  showConfirm.value = false
   isSaving.value = true
   try {
     if (activeTab.value === 'partners') {
       const { partner: created, warnings } = await createPartner({ ...form })
       success('Partner added', `${created.name} has been added successfully.`)
       if (warnings.length) warning('Duplicate warning', warnings[0].message)
+      router.push(basePath.value)
     } else {
       const { partner: created, warnings } = await createSupplier({ ...form })
       success('Supplier added', `${created.name} has been added successfully.`)
       if (warnings.length) warning('Duplicate warning', warnings[0].message)
+      router.push(`${basePath.value}?tab=suppliers`)
     }
-    router.push(basePath.value)
   } catch (err: any) {
     const msg = err?.message ?? 'An error occurred. Please try again.'
     error('Save failed', msg)
@@ -250,6 +258,15 @@ async function handleSubmit() {
       </div>
 
     </div>
+
+    <ConfirmationDialog
+      v-model:open="showConfirm"
+      :title="activeTab === 'partners' ? 'Create Business Partner' : 'Create Supplier'"
+      :description="`Are you sure you want to create this ${activeTab === 'partners' ? 'business partner' : 'supplier'}?`"
+      :confirm-label="`Create ${activeTab === 'partners' ? 'Partner' : 'Supplier'}`"
+      variant="default"
+      @confirm="executeSubmit"
+    />
 
   </div>
 </template>

@@ -18,7 +18,7 @@ import {
 import TablePagination from '@/components/shared/TablePagination.vue'
 import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus, formatRemainingTime } from '@/types/contract'
 import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
-import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
+import type { Contract, StatusFilter, FilterTab, ContractWorkflowStatus } from '@/types/contract'
 
 type ContractWithDays = Contract & { days: number }
 
@@ -43,6 +43,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   openDetail: [c: ContractWithDays]
+  changeWorkflowStatus: [id: string, currentStatus: ContractWorkflowStatus | null]
   approve:    [id: string]
   delete:     [id: string]
   'update:activeFilter': [v: FilterTab]
@@ -414,8 +415,8 @@ const categories = [
                   <DropdownMenuItem @click="emit('openDetail', c)" class="gap-2.5 text-sm cursor-pointer">
                     <Eye class="w-3.5 h-3.5 text-black/40" /> View details
                   </DropdownMenuItem>
-                  <DropdownMenuItem v-if="hasPermission('cms.contracts.edit')" @click="router.push(`/sales/contracts/${c.id}?edit=1`)" class="gap-2.5 text-sm cursor-pointer">
-                    <Pencil class="w-3.5 h-3.5 text-black/40" /> Edit contract
+                  <DropdownMenuItem v-if="hasPermission('cms.contracts.edit') && c.approvalStatus === 'Approved'" @click="emit('changeWorkflowStatus', c.id, c.workflowStatus)" class="gap-2.5 text-sm cursor-pointer">
+                    <Pencil class="w-3.5 h-3.5 text-black/40" /> Change workflow status
                   </DropdownMenuItem>
                   <DropdownMenuItem v-if="hasPermission('cms.contracts.edit') && c.approvalStatus === 'Approved'" @click="router.push(`/sales/contracts/${c.id}/amend`)" class="gap-2.5 text-sm cursor-pointer">
                     <Pencil class="w-3.5 h-3.5 text-black/40" /> Create amendment
