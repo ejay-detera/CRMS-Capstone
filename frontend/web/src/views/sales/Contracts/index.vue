@@ -207,7 +207,7 @@ async function executeWorkflowChange(newStatus: ContractWorkflowStatus | null) {
     if (!target) return
 
     const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
-    const res = await fetch(`${apiBase}/contracts/${targetContractId.value}/status`, {
+    const res = await fetch(`${apiBase}/contracts/${targetContractId.value}/workflow-status`, {
       method: 'PATCH',
       headers: {
         'Accept': 'application/json',
@@ -215,7 +215,6 @@ async function executeWorkflowChange(newStatus: ContractWorkflowStatus | null) {
         'Authorization': `Bearer ${authState.token}`,
       },
       body: JSON.stringify({ 
-        approval_status: target.approvalStatus, 
         workflow_status: newStatus 
       })
     })

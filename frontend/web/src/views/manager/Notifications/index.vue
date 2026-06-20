@@ -12,9 +12,9 @@ const { success } = useToast()
 const activeTab   = ref<TabKey>('all')
 const searchQuery = ref('')
 
-const allCount      = computed(() => notifications.value.filter(n => !n.isArchived).length)
-const archiveCount  = computed(() => notifications.value.filter(n => n.isArchived).length)
-const favoriteCount = computed(() => notifications.value.filter(n => n.isFavorite && !n.isArchived).length)
+const allCount      = computed(() => notifications.value.filter(n => !n.isDeleted && !n.isArchived).length)
+const archiveCount  = computed(() => notifications.value.filter(n => !n.isDeleted && n.isArchived).length)
+const favoriteCount = computed(() => notifications.value.filter(n => !n.isDeleted && n.isFavorite && !n.isArchived).length)
 
 const tabs = computed(() => [
   { key: 'all'      as TabKey, label: 'All',       count: allCount.value      },
