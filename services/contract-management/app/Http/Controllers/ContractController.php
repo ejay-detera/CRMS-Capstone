@@ -856,6 +856,43 @@ class ContractController extends Controller
         ]);
     }
 
+    public function updateWorkflowStatus(Request $request, $id)
+    {
+        $contract = Contract::findOrFail($id);
+
+        // Strict isolation check for Sales & Employee roles
+        $role = $request->get('auth_role');
+        $userId = $request->get('auth_id');
+        if (in_array($role, ['Sales', 'Employee']) && $contract->created_by !== $userId) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $request->validate([
+            'workflow_status' => 'required|string',
+        ]);
+
+        $workflowStatusId = DB::table('contract_statuses')
+            ->where('status_name', $request->workflow_status)
+            ->value('status_id');
+
+        if (!$workflowStatusId) {
+            return response()->json(['message' => 'Invalid workflow status.'], 422);
+        }
+
+        $contract->update([
+            'workflow_status_id' => $workflowStatusId,
+        ]);
+
+        $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
+
+        SyncContractToMeilisearch::dispatch($this->formatContract($contract));
+
+        return response()->json([
+            'message' => 'Contract workflow status updated.',
+            'data'    => $this->formatContract($contract),
+        ]);
+    }
+
     private function notifyPrsOfContractLink(Contract $contract): void
     {
         if (empty($contract->prs_activity_id)) {

@@ -189,4 +189,100 @@ class NotifyManagerTest extends TestCase
             'approval_status_id' => ContractApprovalStatus::where('status_name', 'Rejected')->first()->approval_status_id,
         ]);
     }
+
+    public function test_sales_can_update_workflow_status_of_own_contract()
+    {
+        // Seed status for test
+        \Illuminate\Support\Facades\DB::table('contract_statuses')->insertOrIgnore([
+            ['status_name' => 'Client Review', 'color_code' => '#10B981']
+        ]);
+
+        Http::fake([
+            'http://auth-service:8000/api/internal/verify-token' => Http::response([
+                'valid' => true,
+                'user' => [
+                    'id' => 42,
+                    'email' => 'sales@sbsi.com',
+                    'first_name' => 'John',
+                    'last_name' => 'Doe',
+                    'role' => 'Sales',
+                    'permissions' => ['cms.contracts.edit'],
+                    'department' => 'Sales & Marketing',
+                ]
+            ], 200)
+        ]);
+
+        $contract = Contract::create([
+            'category_id' => ContractCategory::first()->category_id,
+            'approval_status_id' => ContractApprovalStatus::where('status_name', 'Approved')->first()->approval_status_id,
+            'bp_name' => 'Test Vendor',
+            'item_code' => 'ITM-TEST-1',
+            'description' => 'Desc',
+            'serial_number' => 'SN-W1',
+            'sbu_number' => 'SBU-123',
+            'region_id' => \Illuminate\Support\Facades\DB::table('contract_regions')->first()->region_id,
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-12-31',
+            'created_by' => 42,
+        ]);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer valid-token',
+            'Accept' => 'application/json'
+        ])->patchJson("/api/contracts/{$contract->contract_id}/workflow-status", [
+            'workflow_status' => 'Client Review'
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertEquals('Client Review', $response->json('data.workflow_status'));
+
+        $this->assertDatabaseHas('contracts', [
+            'contract_id' => $contract->contract_id,
+            'workflow_status_id' => \Illuminate\Support\Facades\DB::table('contract_statuses')
+                ->where('status_name', 'Client Review')->value('status_id')
+        ]);
+    }
+
+    public function test_sales_cannot_update_workflow_status_of_others_contract()
+    {
+        Http::fake([
+            'http://auth-service:8000/api/internal/verify-token' => Http::response([
+                'valid' => true,
+                'user' => [
+                    'id' => 42,
+                    'email' => 'sales@sbsi.com',
+                    'first_name' => 'John',
+                    'last_name' => 'Doe',
+                    'role' => 'Sales',
+                    'permissions' => ['cms.contracts.edit'],
+                    'department' => 'Sales & Marketing',
+                ]
+            ], 200)
+        ]);
+
+        // Created by user 99, not 42
+        $contract = Contract::create([
+            'category_id' => ContractCategory::first()->category_id,
+            'approval_status_id' => ContractApprovalStatus::where('status_name', 'Approved')->first()->approval_status_id,
+            'bp_name' => 'Test Vendor',
+            'item_code' => 'ITM-TEST-2',
+            'description' => 'Desc',
+            'serial_number' => 'SN-W2',
+            'sbu_number' => 'SBU-123',
+            'region_id' => \Illuminate\Support\Facades\DB::table('contract_regions')->first()->region_id,
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-12-31',
+            'created_by' => 99,
+        ]);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer valid-token',
+            'Accept' => 'application/json'
+        ])->patchJson("/api/contracts/{$contract->contract_id}/workflow-status", [
+            'workflow_status' => 'Client Review'
+        ]);
+
+        $response->assertStatus(403);
+    }
 }
+
