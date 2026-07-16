@@ -26,6 +26,7 @@ frontend/web/yarn-error.log*
 # --- IDE & OS Files ---
 .vscode/
 .idea/
+.kiro/
 .DS_Store
 Thumbs.db
 *.swp

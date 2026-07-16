@@ -28,6 +28,25 @@ services:
     networks:
       - shared-capstone-network
 
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: cms-postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - shared-capstone-network
+
   meilisearch:
     image: getmeili/meilisearch:v1.8
     container_name: cms-meilisearch
@@ -38,6 +57,35 @@ services:
       - "7700:7700"
     volumes:
       - meili_data:/meili_data
+    networks:
+      - shared-capstone-network
+
+  # ── MySQL Administration Tool ──────────────────
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5.2.3
+    container_name: cms-phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+    ports:
+      - "8080:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - shared-capstone-network
+
+  pgadmin:
+    image: dpage/pgadmin4:9.16
+    container_name: cms-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - shared-capstone-network
 
@@ -116,6 +164,42 @@ services:
     networks:
       - shared-capstone-network
 
+  analytics-service:
+    build: ./services/analytics-service
+    container_name: cms-analytics-service
+    volumes:
+      - ./services/analytics-service:/var/www/html
+      - analytics-service-vendor:/var/www/html/vendor
+    ports:
+      - "8005:8000"
+    command: sh -c "composer install --no-scripts && sleep 5 && mysql --skip-ssl -h mysql -u root -p${MYSQL_PASSWORD} -e 'CREATE DATABASE IF NOT EXISTS \`cms-analytics-db\`;' && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+    environment:
+      - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - shared-capstone-network
+
+  ai-service:
+    build: ./services/ai-service
+    container_name: cms-ai-service
+    volumes:
+      - ./services/ai-service:/var/www/html
+      - ai-service-vendor:/var/www/html/vendor
+    ports:
+      - "8006:8000"
+    command: sh -c "composer install --no-scripts && sleep 5 && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
+    environment:
+      - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - shared-capstone-network
+
   # ── ClamAV Antivirus Daemon ──────────────────────
   clamav:
     image: clamav/clamav:1.4_base
@@ -157,10 +241,13 @@ networks:
 
 volumes:
   mysql_data:
+  postgres_data:
   meili_data:
   vendor-management-vendor:
   contract-management-vendor:
   search-vendor:
   notification-vendor:
+  analytics-service-vendor:
+  ai-service-vendor:
   web-node-modules:
   clamav_db:

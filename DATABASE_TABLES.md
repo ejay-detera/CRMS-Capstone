@@ -248,6 +248,112 @@ user_department string (nullable, indexed)
 
 ---
 
+## Analytics Service
+
+### Table: aggregated_metrics
+PK id bigint
+metric_type string(100) (indexed)
+source_service string(50) (indexed) - contract-management, vendor-management, notification, search, ai-service
+source_record_id bigint (nullable, indexed) - soft reference, no FK constraint
+metric_value decimal(18,4) (nullable)
+metric_date date (nullable, indexed)
+metadata json (nullable)
+created_at timestamp
+updated_at timestamp
+
+### Table: reports
+PK id bigint
+report_type string(100) (indexed)
+source_service string(50) (nullable, indexed)
+source_record_id bigint (nullable, indexed) - soft reference, no FK constraint
+generated_by bigint (nullable, indexed) - soft reference to users.id (auth-service)
+parameters json (nullable)
+file_path string (nullable)
+status string(20) (indexed) - pending, generated, failed
+generated_at timestamp (nullable)
+created_at timestamp
+updated_at timestamp
+
+### Table: audit_logs (Analytics Service)
+PK audit_id bigint
+action string(50) - 'created', 'updated', 'deleted'
+entity_type string(100) - 'AggregatedMetric', 'Report'
+entity_id bigint (unsigned)
+user_id bigint (nullable, indexed)
+old_data json (nullable)
+new_data json (nullable)
+performed_at timestamp
+user_name string (nullable)
+user_email string (nullable)
+user_role string (nullable)
+user_department string (nullable, indexed)
+
+---
+
+## AI Service
+
+*Database: PostgreSQL (`cms-ai-db`) with the pgvector extension, distinct from the MySQL `cms-db`/`cms-analytics-db` schemas used by other services.*
+
+### Table: risk_assessment_results
+PK id bigint
+document_id bigint (nullable, indexed) - soft reference to contract-management documents.document_id
+contract_id bigint (nullable, indexed) - soft reference to contract-management contracts.contract_id
+risk_score decimal(5,2) (nullable)
+risk_level string(20) (nullable, indexed) - low, medium, high, critical
+findings jsonb (nullable)
+status string(20) (indexed) - pending, completed, failed
+scanned_at timestamp (nullable)
+created_at timestamp
+updated_at timestamp
+
+### Table: vendor_suggestions
+PK id bigint
+vendor_type string(20) (nullable, indexed) - supplier, business_partner
+vendor_id bigint (nullable, indexed) - soft reference to suppliers.supplier_id or business_partners.partner_id
+contract_id bigint (nullable, indexed) - soft reference to contract-management contracts.contract_id
+suggestion_score decimal(5,2) (nullable)
+suggestion_reason text (nullable)
+status string(20) (indexed) - pending, accepted, dismissed
+suggested_at timestamp (nullable)
+created_at timestamp
+updated_at timestamp
+
+### Table: ocr_extractions
+PK id bigint
+document_id bigint (nullable, indexed) - soft reference to contract-management documents.document_id
+contract_id bigint (nullable, indexed) - soft reference to contract-management contracts.contract_id
+extracted_fields jsonb (nullable)
+confidence_score decimal(5,2) (nullable)
+status string(20) (indexed) - pending, completed, failed
+extracted_at timestamp (nullable)
+created_at timestamp
+updated_at timestamp
+
+### Table: embeddings
+PK id bigint
+entity_type string(20) (indexed) - 'document' or 'vendor' (business_partner/supplier)
+entity_id bigint (indexed) - soft reference to documents.document_id, suppliers.supplier_id, or business_partners.partner_id depending on entity_type
+embedding vector(1536) - pgvector column, fixed 1536 dimensions, used for similarity search
+model_name string(100) (nullable)
+created_at timestamp
+updated_at timestamp
+
+### Table: audit_logs (AI Service)
+PK audit_id bigint
+action string(50) - 'created', 'updated', 'deleted'
+entity_type string(100) - 'RiskAssessmentResult', 'VendorSuggestion', 'OcrExtraction', 'Embedding'
+entity_id bigint (unsigned)
+user_id bigint (nullable, indexed)
+old_data jsonb (nullable)
+new_data jsonb (nullable)
+performed_at timestamp
+user_name string (nullable)
+user_email string (nullable)
+user_role string (nullable)
+user_department string (nullable, indexed)
+
+---
+
 ## Relationships Summary
 
 ### Foreign Keys
@@ -267,6 +373,16 @@ user_department string (nullable, indexed)
 - **audit_logs.user_id** → users.id (auth-service)
 - **business_partners.created_by** → users.id (auth-service)
 - **vendor_contract_associations.attached_by** → users.id (auth-service)
+- **aggregated_metrics.source_record_id** → contracts/suppliers/business_partners/notifications/AI result tables (cross-service, varies by source_service)
+- **reports.source_record_id** → contracts/suppliers/business_partners/notifications/AI result tables (cross-service, varies by source_service)
+- **reports.generated_by** → users.id (auth-service)
+- **risk_assessment_results.document_id** → documents.document_id (contract-management)
+- **risk_assessment_results.contract_id** → contracts.contract_id (contract-management)
+- **vendor_suggestions.vendor_id** → suppliers.supplier_id or business_partners.partner_id (vendor-management)
+- **vendor_suggestions.contract_id** → contracts.contract_id (contract-management)
+- **ocr_extractions.document_id** → documents.document_id (contract-management)
+- **ocr_extractions.contract_id** → contracts.contract_id (contract-management)
+- **embeddings.entity_id** → documents.document_id, suppliers.supplier_id, or business_partners.partner_id (varies by entity_type)
 
 ---
 
@@ -279,3 +395,4 @@ user_department string (nullable, indexed)
 - Foreign keys with `onDelete: cascade` automatically delete related records
 - Foreign keys with `onDelete: set null` set the foreign key to NULL when parent is deleted
 - Search Service currently uses only core tables (users, sessions, cache, jobs)
+- Analytics Service and AI Service reference records from other services using soft/logical identifiers only — no cross-database foreign key constraints are defined, since Analytics/AI live in separate database engines/schemas (`cms-analytics-db` on MySQL, `cms-ai-db` on PostgreSQL) from the services that own those records.
