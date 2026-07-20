@@ -28,6 +28,7 @@ import {
   User,
   ChevronDown,
   Home,
+  BarChart3,
 } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
 import { ref, watch, computed, onMounted, onUnmounted } from "vue";
@@ -153,6 +154,24 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
                       class="text-sm font-medium flex-1 text-left group-data-[collapsible=icon]:hidden"
                       :class="txt(route.path === '/manager/dashboard')"
                     >Dashboard</span>
+                  </router-link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton as-child :is-active="route.path === '/manager/analytics'" class="h-auto p-0 rounded-lg">
+                  <router-link
+                    to="/manager/analytics"
+                    class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 group-data-[collapsible=icon]:justify-center"
+                    :class="lnk(route.path === '/manager/analytics')"
+                  >
+                    <BarChart3
+                      class="w-4 h-4 shrink-0 group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5"
+                      :class="ico(route.path === '/manager/analytics')"
+                    />
+                    <span
+                      class="text-sm font-medium flex-1 text-left group-data-[collapsible=icon]:hidden"
+                      :class="txt(route.path === '/manager/analytics')"
+                    >Analytics</span>
                   </router-link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

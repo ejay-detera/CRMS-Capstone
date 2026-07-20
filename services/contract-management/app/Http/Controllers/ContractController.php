@@ -798,6 +798,25 @@ class ContractController extends Controller
             'rejection_reason' => 'nullable|string',
         ]);
 
+        // US-023: Mandatory approval gate for High/Critical-risk contracts —
+        // DISABLED BY DEFAULT (config('services.features.high_risk_approval_gate_enabled')).
+        // AI Risk Assessment is currently advisory only: it surfaces a
+        // flag/warning on the contract but never blocks approval. This gate
+        // is kept in the codebase, inert, so it can be re-enabled later
+        // (set HIGH_RISK_APPROVAL_GATE_ENABLED=true) without further code changes.
+        if ($request->approval_status === 'Approved' && config('services.features.high_risk_approval_gate_enabled')) {
+            $gateResult = app(\App\Services\HighRiskApprovalGateService::class)
+                ->checkGate((int) $contract->contract_id);
+
+            if ($gateResult['blocked']) {
+                return response()->json([
+                    'message' => 'This contract is High/Critical risk and requires a recorded high-risk approval (with rationale) before it can be marked Approved.',
+                    'risk_level' => $gateResult['risk_level'],
+                    'requires_high_risk_approval' => true,
+                ], 422);
+            }
+        }
+
         $approvalStatusId = DB::table('contract_approval_statuses')
             ->where('status_name', $request->approval_status)
             ->value('approval_status_id');

@@ -19,6 +19,8 @@ export interface EmailPreference {
   systemAlertsEnabled?: boolean
   smsNotificationsEnabled?: boolean
   loginAlertsEnabled?: boolean
+  aiRiskAssessmentEnabled?: boolean
+  aiVendorSuggestionsEnabled?: boolean
   timezone?: string
   language?: string
   dateFormat?: string

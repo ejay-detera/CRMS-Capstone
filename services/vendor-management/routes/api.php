@@ -5,6 +5,17 @@ use Illuminate\Support\Facades\Route;
 // Internal webhook — uses X-Internal-Secret, not Bearer token
 Route::post('/internal/audit', [\App\Http\Controllers\InternalAuditController::class, 'receive']);
 
+// Internal service-to-service endpoints for ai-service's Vendor AI Suggestions (Feature 3).
+Route::middleware(['internal.secret'])->group(function () {
+    Route::get('/internal/suppliers', [\App\Http\Controllers\Api\V1\Internal\InternalVendorController::class, 'suppliers']);
+    Route::get('/internal/partners', [\App\Http\Controllers\Api\V1\Internal\InternalVendorController::class, 'partners']);
+    Route::post('/internal/suppliers', [\App\Http\Controllers\Api\V1\Internal\InternalVendorController::class, 'storeSupplier']);
+    Route::post('/internal/partners', [\App\Http\Controllers\Api\V1\Internal\InternalVendorController::class, 'storePartner']);
+
+    // Feature 4: Analytics — descriptive metrics snapshot for analytics-service.
+    Route::get('/internal/metrics/vendors', [\App\Http\Controllers\Api\V1\Internal\InternalMetricsController::class, 'vendors']);
+});
+
 // Integration Endpoint for retrieving SBSI customer details
 Route::get('/integration/customers', [\App\Http\Controllers\Api\V1\IntegrationCustomerController::class, 'index'])
     ->middleware('auth.integration.secret');

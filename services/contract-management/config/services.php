@@ -40,4 +40,25 @@ return [
         'key' => env('MEILISEARCH_KEY'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Feature Flags
+    |--------------------------------------------------------------------------
+    |
+    | high_risk_approval_gate_enabled: US-023's mandatory approval gate (block
+    | "Approved" for High/Critical AI Risk Assessment results until a
+    | rationale'd decision is recorded). Defaults to OFF — the AI Risk
+    | Assessment is currently advisory only: it surfaces a flag/warning on
+    | the contract but never prevents approval. All of the gate's supporting
+    | code (HighRiskApprovalGateService, ContractApproval model/migration,
+    | ContractApprovalController, the SLA escalation command) is left in
+    | place, inert behind this flag, so it can be re-enabled later by simply
+    | flipping HIGH_RISK_APPROVAL_GATE_ENABLED=true without further code changes.
+    |
+    */
+
+    'features' => [
+        'high_risk_approval_gate_enabled' => env('HIGH_RISK_APPROVAL_GATE_ENABLED', false),
+    ],
+
 ];

@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * Authenticates internal service-to-service calls via the shared
+ * X-Internal-Secret header, matching the pattern already used inline by
+ * InternalAuditController and by the other services' internal.secret alias.
+ */
+class ValidateInternalSecret
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $secret = env('INTERNAL_SERVICE_SECRET');
+
+        if (!$secret || $request->header('X-Internal-Secret') !== $secret) {
+            return response()->json(['message' => 'Unauthorized internal request.'], 401);
+        }
+
+        return $next($request);
+    }
+}

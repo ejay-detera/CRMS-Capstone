@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { useApiCache } from '@/composables/useApiCache'
+import { useHighRiskApproval } from '@/composables/useHighRiskApproval'
+import { useEmailPreferences } from '@/composables/useEmailPreferences'
 import { remainingDays } from '@/types/contract'
 import type { ContractApprovalStatus, ContractWorkflowStatus, ContractRegion, UploadedDoc } from '@/types/contract'
 import type { StoredContract } from '@/composables/useContractStore'
@@ -15,6 +17,7 @@ import ContractInfoSection      from './ContractInfoSection.vue'
 import ContractDocumentsSection from './ContractDocumentsSection.vue'
 import ConfirmationDialog       from '@/components/shared/ConfirmationDialog.vue'
 import RejectionReasonModal     from './RejectionReasonModal.vue'
+import HighRiskApprovalModal    from '@/components/shared/HighRiskApprovalModal.vue'
 import { AlertCircle } from 'lucide-vue-next'
 
 const route  = useRoute()
@@ -65,6 +68,8 @@ const backPath = computed(() => {
   if (route.path.startsWith('/manager')) return '/manager/contracts'
   return '/sales/contracts'
 })
+
+const riskAssessmentPath = computed(() => `${backPath.value}/${id}/risk-assessment`)
 
 const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
 
@@ -148,10 +153,26 @@ async function loadContract() {
 
 const showRejectionModal = ref(false)
 
+// AI Risk Assessment is advisory only: gateState.blocked is always false
+// while the gate feature flag is off (HIGH_RISK_APPROVAL_GATE_ENABLED=false
+// on contract-management), so this never prevents approval — it only
+// carries risk_level for the flag/warning badge below. That badge is itself
+// hidden entirely if the current user has turned off "AI Risk Assessment"
+// in their own profile preferences.
+const { gateState, saving: highRiskSaving, fetchGateState, recordDecision } = useHighRiskApproval()
+const { preferences: aiPreferences, fetchPreferences: fetchAiPreferences } = useEmailPreferences()
+const showHighRiskModal = ref(false)
+
+const aiRiskAssessmentVisible = computed(() => aiPreferences.value.aiRiskAssessmentEnabled ?? true)
+
 onMounted(async () => {
   await loadContract()
+  await fetchAiPreferences()
   if (contract.value) {
     await amendmentStore.fetchVersionHistory(contract.value.id, true)
+    if (aiRiskAssessmentVisible.value) {
+      await fetchGateState(contract.value.id)
+    }
   }
   if (route.query.snapshotVersion && contract.value) {
     const snaps = amendmentStore.versionHistory.value[contract.value.id] || []
@@ -182,10 +203,41 @@ const confirmDesc = ref('')
 const confirmAction = ref<(() => void) | null>(null)
 
 function triggerApprove() {
+  // US-023's mandatory high-risk approval gate is DISABLED for now — AI Risk
+  // Assessment is advisory only (a flag/warning on the contract), and never
+  // blocks the normal Approve flow. gateState.blocked is always false while
+  // the backend feature flag (HIGH_RISK_APPROVAL_GATE_ENABLED) is off, so
+  // this check is inert, but left in place (commented-out behavior below)
+  // so the gate can be re-enabled later without rewriting this flow.
+  //
+  // if (gateState.value?.blocked) {
+  //   showHighRiskModal.value = true
+  //   return
+  // }
   confirmTitle.value = 'Approve Contract'
   confirmDesc.value = 'Are you sure you want to approve this contract? This will change the status to Approved.'
   confirmAction.value = handleApprove
   showConfirm.value = true
+}
+
+async function handleHighRiskDecision(decision: 'approved' | 'rejected', rationale: string) {
+  if (!contract.value) return
+  const result = await recordDecision(contract.value.id, decision, rationale)
+  if (!result.ok) {
+    error('Failed to record decision', result.message ?? 'Something went wrong.')
+    return
+  }
+  showHighRiskModal.value = false
+  if (decision === 'approved') {
+    success('High-risk approval recorded', 'You can now approve the contract.')
+    // Proceed straight to the normal approve confirmation now that the gate is clear.
+    confirmTitle.value = 'Approve Contract'
+    confirmDesc.value = 'Are you sure you want to approve this contract? This will change the status to Approved.'
+    confirmAction.value = handleApprove
+    showConfirm.value = true
+  } else {
+    success('Decision recorded', 'The high-risk approval was recorded as rejected.')
+  }
 }
 
 function triggerReject() {
@@ -211,7 +263,19 @@ async function handleApprove() {
       body: JSON.stringify({ approval_status: 'Approved', workflow_status: 'SBSI Review' }),
     })
     const data = await res.json()
-    if (!res.ok) { error('Failed to approve', data.message ?? 'Something went wrong.'); return }
+    if (!res.ok) {
+      // Inert while HIGH_RISK_APPROVAL_GATE_ENABLED is off on the backend
+      // (the backend never returns requires_high_risk_approval in that
+      // state). Left in place so the gate can be re-enabled later without
+      // rewriting this handler.
+      if (res.status === 422 && data.requires_high_risk_approval) {
+        await fetchGateState(contract.value.id)
+        showHighRiskModal.value = true
+        return
+      }
+      error('Failed to approve', data.message ?? 'Something went wrong.')
+      return
+    }
 
     updateContractInCache(id, { approvalStatus: 'Approved', workflowStatus: 'SBSI Review' })
     success('Contract approved', `${contract.value.businessPartner}'s contract has been approved.`)
@@ -640,6 +704,8 @@ const activeSnapForDiff = computed(() => {
         :reject-reason-valid="rejectReason.trim().length > 0"
         :disabled="isUploadingOrScanFailed"
         :is-snapshot="viewingSnapshotVersion !== null"
+        :risk-level="aiRiskAssessmentVisible ? (gateState?.riskLevel ?? null) : null"
+        :approval-locked="false"
         @back="router.push(backPath)"
         @edit="handleEditClick"
         @open-history="showHistoryDrawer = true"
@@ -649,6 +715,7 @@ const activeSnapForDiff = computed(() => {
         @approve="triggerApprove"
         @toggle-reject="handleToggleReject"
         @confirm-reject="triggerReject"
+        @open-risk-assessment="router.push(riskAssessmentPath)"
       />
 
       <!-- Rejection input (manager rejecting) -->
@@ -711,6 +778,13 @@ const activeSnapForDiff = computed(() => {
       v-if="contract"
       v-model:open="showRejectionModal"
       :reason="contract.rejectionReason || ''"
+    />
+
+    <HighRiskApprovalModal
+      v-model:open="showHighRiskModal"
+      :risk-level="gateState?.riskLevel ?? null"
+      :saving="highRiskSaving"
+      @submit="handleHighRiskDecision"
     />
 
     <!-- Version History Drawer Overlay -->

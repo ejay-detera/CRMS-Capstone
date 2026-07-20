@@ -28,6 +28,8 @@ final class EmailPreferenceResource extends JsonResource
             'system_alerts_enabled' => $this->system_alerts_enabled,
             'sms_notifications_enabled' => $this->sms_notifications_enabled,
             'login_alerts_enabled' => $this->login_alerts_enabled,
+            'ai_risk_assessment_enabled' => $this->ai_risk_assessment_enabled,
+            'ai_vendor_suggestions_enabled' => $this->ai_vendor_suggestions_enabled,
         ];
     }
 }

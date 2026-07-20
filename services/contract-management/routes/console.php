@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\CheckExpiringContracts;
+use App\Console\Commands\CheckHighRiskApprovalSla;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -11,3 +12,6 @@ Artisan::command('inspire', function () {
 
 // Check every minute; the notification service handles in-app weekly reminders and restricts email alerts to once
 Schedule::command(CheckExpiringContracts::class)->everyMinute();
+
+// US-023: escalate High/Critical-risk contract approvals past their 24h SLA window (email-only).
+Schedule::command(CheckHighRiskApprovalSla::class)->everyFifteenMinutes();

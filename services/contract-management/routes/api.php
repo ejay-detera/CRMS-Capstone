@@ -28,6 +28,12 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::post('/contracts/{id}/notify-manager', [ContractController::class, 'notifyManager'])
         ->middleware('permission:cms.contracts.edit');
 
+    // US-023: High-Risk Contract Approval Gate
+    Route::get('/contracts/{id}/high-risk-approval', [\App\Http\Controllers\ContractApprovalController::class, 'show'])
+        ->middleware('permission:cms.contracts.view');
+    Route::post('/contracts/{id}/high-risk-approval', [\App\Http\Controllers\ContractApprovalController::class, 'store'])
+        ->middleware('permission:cms.contracts.approve');
+
     Route::post('/admin/users', [\App\Http\Controllers\AdminUserProxyController::class, 'store'])
         ->middleware('permission:cms.users.create');
 
@@ -54,3 +60,20 @@ Route::middleware(['auth.internal'])->group(function () {
 
 // Internal webhook for login/logout events from auth-service
 Route::post('/internal/audit-event', [\App\Http\Controllers\InternalAuditController::class, 'receive']);
+
+// Internal service-to-service reads for ai-service's RAG risk-assessment pipeline (Feature 1).
+Route::middleware(['internal.secret'])->group(function () {
+    Route::get('/internal/contracts/{contractId}/documents', [\App\Http\Controllers\Api\V1\Documents\InternalDocumentController::class, 'listForContract']);
+    Route::get('/internal/documents/{id}/file', [\App\Http\Controllers\Api\V1\Documents\InternalDocumentController::class, 'file']);
+    Route::get('/internal/contracts/{id}/owner', function (string $id) {
+        $contract = \App\Models\Contract::find($id);
+        if (!$contract) {
+            return response()->json(['message' => 'Contract not found.'], 404);
+        }
+        return response()->json(['created_by' => $contract->created_by]);
+    });
+
+    // Feature 4: Analytics — descriptive/diagnostic metrics snapshot for analytics-service.
+    Route::get('/internal/metrics/contracts', [\App\Http\Controllers\Api\V1\Internal\InternalMetricsController::class, 'contracts']);
+    Route::get('/internal/metrics/contracts/by-segment', [\App\Http\Controllers\Api\V1\Internal\InternalMetricsController::class, 'contractsBySegment']);
+});

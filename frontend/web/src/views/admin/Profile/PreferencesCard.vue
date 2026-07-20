@@ -10,6 +10,8 @@ const props = defineProps<{
     emailNotifications: boolean; systemAlerts: boolean
     contractExpiry: boolean
     loginAlerts: boolean
+    aiRiskAssessment: boolean
+    aiVendorSuggestions: boolean
   }
   role?: string
 }>()
@@ -20,6 +22,9 @@ const form = reactive({ ...props.preferences })
 watch(() => props.preferences, p => Object.assign(form, p), { deep: true })
 
 const isAdmin = computed(() => props.role === 'Admin')
+// AI Risk Assessment triggers from Create Contract, which only Manager and
+// Sales ("Employee") roles use — Admin doesn't create contracts today.
+const canUseAiRiskAssessment = computed(() => props.role === 'Manager' || props.role === 'Sales' || props.role === 'Employee')
 
 function save() {
   emit('save', { ...form })
@@ -53,6 +58,17 @@ function save() {
         :model-value="form.contractExpiry" @update:model-value="form.contractExpiry = $event" />
       <ToggleRow v-if="isAdmin" label="Login alerts" description="Email me when a new login is detected"
         :model-value="form.loginAlerts" @update:model-value="form.loginAlerts = $event" />
+    </div>
+
+    <!-- AI Features -->
+    <div v-if="canUseAiRiskAssessment || isAdmin" class="px-6 pt-4 pb-1">
+      <p class="text-[10px] font-bold text-black/35 uppercase tracking-widest mb-1">AI Features</p>
+    </div>
+    <div v-if="canUseAiRiskAssessment || isAdmin" class="divide-y divide-black/4">
+      <ToggleRow v-if="canUseAiRiskAssessment" label="AI Risk Assessment" description="Run an AI review of uploaded contract documents when creating a contract"
+        :model-value="form.aiRiskAssessment" @update:model-value="form.aiRiskAssessment = $event" />
+      <ToggleRow v-if="isAdmin" label="Vendor AI Suggestions" description="Show the AI Suggestion option in Vendor Management"
+        :model-value="form.aiVendorSuggestions" @update:model-value="form.aiVendorSuggestions = $event" />
     </div>
 
       <div class="px-6 pb-5 pt-2">

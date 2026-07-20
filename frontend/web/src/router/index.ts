@@ -37,6 +37,16 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/sales/Contracts/DocumentViewer.vue'),
       },
       {
+        path: 'contracts/:id/risk-assessment',
+        name: 'admin-contracts-risk-assessment',
+        component: () => import('@/views/manager/RiskAssessment/index.vue'),
+      },
+      {
+        path: 'analytics',
+        name: 'admin-analytics',
+        component: () => import('@/views/admin/Analytics/index.vue'),
+      },
+      {
         path: 'users',
         name: 'admin-users',
         component: () => import('@/views/admin/Users/index.vue'),
@@ -55,6 +65,16 @@ const routes: Array<RouteRecordRaw> = [
         path: 'partners/create',
         name: 'admin-partners-create',
         component: () => import('@/views/admin/Partners/AddPartnerPage.vue'),
+      },
+      {
+        path: 'vendor-suggestions',
+        name: 'admin-vendor-suggestions',
+        component: () => import('@/views/admin/VendorSuggestions/index.vue'),
+      },
+      {
+        path: 'vendor-suggestions/review',
+        name: 'admin-vendor-suggestions-review',
+        component: () => import('@/views/admin/VendorSuggestions/ReviewSuggestions.vue'),
       },
       {
         path: 'partners/:code/edit',
@@ -102,6 +122,11 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/manager/Dashboard/index.vue'),
       },
       {
+        path: 'analytics',
+        name: 'manager-analytics',
+        component: () => import('@/views/admin/Analytics/index.vue'),
+      },
+      {
         path: 'contracts',
         name: 'manager-contracts',
         component: () => import('@/views/manager/Contracts/index.vue'),
@@ -125,6 +150,11 @@ const routes: Array<RouteRecordRaw> = [
         path: 'contracts/:id/documents/:docId',
         name: 'manager-contracts-document-view',
         component: () => import('@/views/sales/Contracts/DocumentViewer.vue'),
+      },
+      {
+        path: 'contracts/:id/risk-assessment',
+        name: 'manager-contracts-risk-assessment',
+        component: () => import('@/views/manager/RiskAssessment/index.vue'),
       },
 
       {
@@ -213,6 +243,11 @@ const routes: Array<RouteRecordRaw> = [
         path: 'contracts/:id/documents/:docId',
         name: 'sales-contracts-document-view',
         component: () => import('@/views/sales/Contracts/DocumentViewer.vue'),
+      },
+      {
+        path: 'contracts/:id/risk-assessment',
+        name: 'sales-contracts-risk-assessment',
+        component: () => import('@/views/manager/RiskAssessment/index.vue'),
       },
       {
         path: 'contract-requests',

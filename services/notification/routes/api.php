@@ -6,6 +6,10 @@ use Illuminate\Support\Facades\Route;
 // Internal push — authenticated by X-Internal-Secret header (no user token needed)
 Route::middleware(['internal.secret'])->group(function () {
     Route::post('/internal/push', [NotificationController::class, 'push']);
+    Route::post('/internal/high-risk-approval-escalation', [\App\Http\Controllers\Api\V1\Internal\HighRiskEscalationController::class, 'push']);
+
+    // Feature 4: Analytics — descriptive metrics snapshot for analytics-service.
+    Route::get('/internal/metrics/notifications', [\App\Http\Controllers\Api\V1\Internal\InternalMetricsController::class, 'notifications']);
 });
 
 // User-facing — authenticated by Bearer JWT token

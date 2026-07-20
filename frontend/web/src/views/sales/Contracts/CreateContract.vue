@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { useApiCache } from '@/composables/useApiCache'
+import { useEmailPreferences } from '@/composables/useEmailPreferences'
+import { useRiskAssessment } from '@/composables/useRiskAssessment'
 import DocumentUpload from './DocumentUpload.vue'
 import type { ContractRegion, UploadedDoc } from '@/types/contract'
 import { useCreateContractDraft } from '@/composables/useCreateContractDraft'
@@ -18,6 +20,10 @@ const { success, error } = useToast()
 const { state: authState } = useAuth()
 const { invalidateContracts, invalidateRequests } = useApiCache()
 const { draft, saveDraft, restoreDraft, clearDraft } = useCreateContractDraft()
+const { preferences: aiPreferences, fetchPreferences: fetchAiPreferences } = useEmailPreferences()
+const { triggerScan } = useRiskAssessment()
+
+onMounted(fetchAiPreferences)
 
 
 const loading      = ref(false)
@@ -195,12 +201,25 @@ async function confirmSubmit() {
       return
     }
 
+    const newContractId = String(data.data.contract_id)
+
+    // US-026: trigger the AI Risk Assessment RAG pipeline only if the user
+    // uploaded a document and has the feature enabled in their profile.
+    // Advisory only — never blocks contract creation itself.
+    const hasUploadedDocument = contractDocs.value.some(d => !!d.id)
+    if (hasUploadedDocument && (aiPreferences.value.aiRiskAssessmentEnabled ?? true)) {
+      triggerScan(newContractId).catch(() => {
+        // Best-effort: a failed scan trigger shouldn't block the user from
+        // proceeding to their newly created contract.
+      })
+    }
+
     contractDocs.value = []
     clearDraft()
     invalidateContracts()
     invalidateRequests()
     success('Contract created', `${form.businessPartner}'s contract has been saved.`)
-    router.push(`/sales/contracts/${data.data.contract_id}`)
+    router.push(`/sales/contracts/${newContractId}`)
   } catch {
     error('Network error', 'Could not reach the server. Please try again.')
   } finally {

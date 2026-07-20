@@ -3,6 +3,9 @@ import { ArrowLeft, FileText, FilePenLine, Clock, AlertTriangle, Loader2, CheckC
 import { Button } from '@/components/ui/button'
 import { approvalStatusBadge, workflowStatusBadge } from '@/types/contract'
 import type { StoredContract } from '@/composables/useContractStore'
+import type { RiskLevel } from '@/types/riskAssessment'
+import RiskFlagBadge from '@/components/shared/RiskFlagBadge.vue'
+import LockedStatusBadge from '@/components/shared/LockedStatusBadge.vue'
 
 const props = defineProps<{
   contract:  StoredContract
@@ -15,11 +18,14 @@ const props = defineProps<{
   showRejectInput?: boolean
   rejectReasonValid?: boolean
   isSnapshot?: boolean
+  riskLevel?: RiskLevel | null
+  riskFindingsCount?: number
+  approvalLocked?: boolean
 }>()
 
 defineEmits<{ 
   back: []; edit: []; save: []; cancel: []; notifyManager: [];
-  approve: []; toggleReject: []; confirmReject: []; openHistory: []
+  approve: []; toggleReject: []; confirmReject: []; openHistory: []; openRiskAssessment: []
 }>()
 
 function daysDisplay(days: number) {
@@ -67,6 +73,14 @@ function daysDisplay(days: number) {
             <component :is="daysDisplay(days).icon" class="w-3.5 h-3.5" />
             {{ daysDisplay(days).text }}
           </span>
+          <RiskFlagBadge
+            v-if="riskLevel"
+            :risk-level="riskLevel"
+            :findings-count="riskFindingsCount ?? 0"
+            size="md"
+            @click="$emit('openRiskAssessment')"
+          />
+          <LockedStatusBadge v-if="approvalLocked" size="md" />
         </div>
       </div>
     </div>

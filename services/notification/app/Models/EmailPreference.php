@@ -25,6 +25,8 @@ final class EmailPreference extends Model
         'system_alerts_enabled',
         'sms_notifications_enabled',
         'login_alerts_enabled',
+        'ai_risk_assessment_enabled',
+        'ai_vendor_suggestions_enabled',
     ];
 
     /**
@@ -39,5 +41,7 @@ final class EmailPreference extends Model
         'system_alerts_enabled' => 'boolean',
         'sms_notifications_enabled' => 'boolean',
         'login_alerts_enabled' => 'boolean',
+        'ai_risk_assessment_enabled' => 'boolean',
+        'ai_vendor_suggestions_enabled' => 'boolean',
     ];
 }

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Building2, Truck, Search, LayoutGrid, List, Plus, Upload } from 'lucide-vue-next'
+import { Building2, Truck, Search, LayoutGrid, List, Plus, Upload, Sparkles } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { usePartners } from '@/composables/usePartners'
+import { useEmailPreferences } from '@/composables/useEmailPreferences'
 import PartnersGrid       from './PartnersGrid.vue'
 import PartnersTable      from './PartnersTable.vue'
 import DeleteConfirmDialog from './DeleteConfirmDialog.vue'
@@ -15,7 +16,14 @@ import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
 const router = useRouter()
 const { success, error } = useToast()
-const { hasPermission } = useAuth()
+const { hasPermission, role } = useAuth()
+
+// Feature 3: AI Suggestion button is Admin-only and respects the Admin's
+// own "Vendor AI Suggestions" profile toggle — off means the button is
+// hidden entirely, matching the same visibility pattern as the AI Risk
+// Assessment flag/warning in Feature 1.
+const { preferences: aiPreferences, fetchPreferences: fetchAiPreferences } = useEmailPreferences()
+const showAiSuggestionButton = computed(() => role.value === 'Admin' && (aiPreferences.value.aiVendorSuggestionsEnabled ?? true))
 
 const {
   partners,
@@ -83,6 +91,7 @@ watch([activeTab, totalItems], () => {
 }, { immediate: true })
 
 onMounted(async () => {
+  fetchAiPreferences()
   try {
     await fetchPartners('suppliers', 1, 1)
     suppliersCount.value = totalItems.value
@@ -180,6 +189,10 @@ function executeExport() {
       <div class="flex items-center gap-2">
         <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
+        </Button>
+        <Button v-if="showAiSuggestionButton" @click="router.push('/admin/vendor-suggestions')" variant="outline"
+          class="h-9 gap-2 text-sm font-medium border-[#2E85D8]/30 text-[#2E85D8] hover:bg-[#2E85D8]/5">
+          <Sparkles class="w-4 h-4" /> AI Suggestion
         </Button>
         <Button id="add-partner-btn" v-if="hasPermission('cms.partners.create')" @click="router.push('/admin/partners/create?type=' + activeTab)" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
           <Plus class="w-5 h-5" />

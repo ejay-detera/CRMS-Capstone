@@ -28,6 +28,8 @@ const preferences = reactive({
   systemAlerts:       true,
   contractExpiry:     true,
   loginAlerts:        true,
+  aiRiskAssessment:   true,
+  aiVendorSuggestions: true,
 })
 
 function loadProfile() {
@@ -55,6 +57,8 @@ onMounted(async () => {
   preferences.contractExpiry = apiPrefs.value.contractExpiryAlerts
   preferences.systemAlerts = apiPrefs.value.systemAlertsEnabled ?? true
   preferences.loginAlerts = apiPrefs.value.loginAlertsEnabled ?? true
+  preferences.aiRiskAssessment = apiPrefs.value.aiRiskAssessmentEnabled ?? true
+  preferences.aiVendorSuggestions = apiPrefs.value.aiVendorSuggestionsEnabled ?? true
 })
 
 async function handleProfileSave(data: Partial<typeof profile>) {
@@ -152,6 +156,8 @@ async function handlePreferencesSave(data: typeof preferences) {
     contractExpiryAlerts: data.contractExpiry,
     systemAlertsEnabled: data.systemAlerts,
     loginAlertsEnabled: data.loginAlerts,
+    aiRiskAssessmentEnabled: data.aiRiskAssessment,
+    aiVendorSuggestionsEnabled: data.aiVendorSuggestions,
   })
   if (success) {
     Object.assign(preferences, data)
