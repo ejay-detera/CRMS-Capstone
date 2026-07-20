@@ -24,7 +24,7 @@ final class InternalDocumentController extends Controller
     public function listForContract(Request $request, int $contractId)
     {
         $documents = Document::where('contract_id', $contractId)
-            ->where('scan_status', 'clean')
+            ->whereIn('scan_status', ['clean', 'unavailable'])
             ->get(['_id', 'file_name', 'file_type']);
 
         return response()->json([

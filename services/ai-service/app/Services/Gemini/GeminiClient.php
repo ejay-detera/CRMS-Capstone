@@ -37,28 +37,65 @@ class GeminiClient
      */
     public function generateJson(string $systemInstruction, string $userPrompt, array $responseSchema): ?array
     {
-        $result = $this->callGenerate($this->primaryModel, $systemInstruction, $userPrompt, $responseSchema);
+        $result = $this->callGenerateWithRetry($this->primaryModel, $systemInstruction, $userPrompt, $responseSchema);
 
         if ($result === null) {
-            Log::warning('Gemini primary model call failed, retrying with fallback model.', [
+            Log::warning('Gemini primary model failed after retries, trying fallback model.', [
                 'primary_model'  => $this->primaryModel,
                 'fallback_model' => $this->fallbackModel,
             ]);
-            $result = $this->callGenerate($this->fallbackModel, $systemInstruction, $userPrompt, $responseSchema);
+            $result = $this->callGenerateWithRetry($this->fallbackModel, $systemInstruction, $userPrompt, $responseSchema);
         }
 
         return $result;
     }
 
+    /**
+     * Retry wrapper: only retries on 429 (rate-limit) and 503 (overload).
+     * Hard failures like 404 (model not found) return null immediately.
+     */
+    protected function callGenerateWithRetry(string $model, string $systemInstruction, string $userPrompt, array $responseSchema): ?array
+    {
+        $delays = [2, 5]; // seconds between retries — short since 429/503 are usually transient
+        foreach ($delays as $i => $delay) {
+            [$result, $shouldRetry] = $this->callGenerateRaw($model, $systemInstruction, $userPrompt, $responseSchema);
+            if ($result !== null) {
+                return $result;
+            }
+            if (!$shouldRetry) {
+                // Hard failure (e.g. 404 model not found) — no point retrying
+                return null;
+            }
+            if ($i < count($delays) - 1) {
+                Log::info('Gemini call rate-limited/overloaded, retrying shortly.', [
+                    'model'        => $model,
+                    'attempt'      => $i + 1,
+                    'wait_seconds' => $delay,
+                ]);
+                sleep($delay);
+            }
+        }
+        return null;
+    }
+
     protected function callGenerate(string $model, string $systemInstruction, string $userPrompt, array $responseSchema): ?array
+    {
+        [$result] = $this->callGenerateRaw($model, $systemInstruction, $userPrompt, $responseSchema);
+        return $result;
+    }
+
+    /**
+     * Returns [result|null, shouldRetry].
+     */
+    protected function callGenerateRaw(string $model, string $systemInstruction, string $userPrompt, array $responseSchema): array
     {
         if (!$this->apiKey) {
             Log::error('Gemini API call skipped: GEMINI_API_KEY is not configured.');
-            return null;
+            return [null, false];
         }
 
         try {
-            $response = Http::timeout(60)
+            $response = Http::timeout(15)
                 ->withHeaders(['Content-Type' => 'application/json'])
                 ->post("{$this->baseUrl}/models/{$model}:generateContent?key={$this->apiKey}", [
                     'systemInstruction' => [
@@ -74,27 +111,30 @@ class GeminiClient
                 ]);
 
             if (!$response->successful()) {
+                $status = $response->status();
                 Log::warning('Gemini generateContent call failed.', [
                     'model'  => $model,
-                    'status' => $response->status(),
+                    'status' => $status,
                     'body'   => $response->body(),
                 ]);
-                return null;
+                // 429 = rate limit, 503 = overload → worth retrying
+                $retryable = in_array($status, [429, 503]);
+                return [null, $retryable];
             }
 
             $text = $response->json('candidates.0.content.parts.0.text');
             if (!$text) {
-                return null;
+                return [null, false];
             }
 
             $decoded = json_decode($text, true);
-            return is_array($decoded) ? $decoded : null;
+            return [is_array($decoded) ? $decoded : null, false];
         } catch (\Exception $e) {
             Log::error('Gemini generateContent connection error.', [
                 'model'   => $model,
                 'message' => $e->getMessage(),
             ]);
-            return null;
+            return [null, true]; // connection errors are worth retrying
         }
     }
 

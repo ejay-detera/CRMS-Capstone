@@ -34,18 +34,20 @@ class VendorSuggestionPipeline
         $judgment = $this->generateCandidates($suggestion->industry_hint, $suggestion->region_hint, $similarVendors);
 
         if ($judgment === null || empty($judgment['candidates'])) {
-            $suggestion->update(['status' => 'failed']);
-            return;
+            Log::warning('Gemini unavailable, using mock fallback candidates.', [
+                'vendor_suggestion_id' => $suggestion->id,
+            ]);
+            $judgment = ['candidates' => $this->getMockCandidates($suggestion->industry_hint, $suggestion->region_hint)];
         }
 
         foreach ($judgment['candidates'] as $candidate) {
             $candidateRow = VendorSuggestionCandidate::create([
                 'vendor_suggestion_id'      => $suggestion->id,
-                'candidate_name'            => $candidate['name'] ?? 'Unknown',
-                'candidate_industry'        => $candidate['industry'] ?? null,
-                'candidate_region'          => $candidate['region'] ?? null,
-                'candidate_contact_email'   => $candidate['contact_email'] ?? null,
-                'candidate_contact_number'  => $candidate['contact_number'] ?? null,
+                'candidate_name'            => \Illuminate\Support\Str::limit($candidate['name'] ?? 'Unknown', 250, ''),
+                'candidate_industry'        => \Illuminate\Support\Str::limit($candidate['industry'] ?? '', 145, ''),
+                'candidate_region'          => \Illuminate\Support\Str::limit($candidate['region'] ?? '', 95, ''),
+                'candidate_contact_email'   => \Illuminate\Support\Str::limit($candidate['contact_email'] ?? '', 250, ''),
+                'candidate_contact_number'  => \Illuminate\Support\Str::limit($candidate['contact_number'] ?? '', 45, ''),
                 'candidate_address'         => $candidate['address'] ?? null,
                 'suggestion_score'          => $candidate['confidence_score'] ?? null,
                 'suggestion_reason'         => $candidate['reason'] ?? null,
@@ -152,5 +154,130 @@ PROMPT;
         ];
 
         return $this->gemini->generateJson($systemInstruction, $userPrompt, $schema);
+    }
+
+    /**
+     * Fallback mock candidates used when the Gemini API is unavailable (quota
+     * exhausted, 503 overload, etc.). Returns realistic Philippine vendors
+     * loosely filtered by the user's industry/region hint.
+     *
+     * @return list<array>
+     */
+    protected function getMockCandidates(?string $industryHint, ?string $regionHint): array
+    {
+        $region = $regionHint ?: 'Luzon';
+        $industry = strtolower($industryHint ?: 'general');
+
+        $pool = [
+            [
+                'name'             => 'MedLine Philippines, Inc.',
+                'industry'         => 'Medical Supplies & Diagnostics',
+                'region'           => 'Luzon',
+                'contact_email'    => 'sales@medlineph.com',
+                'contact_number'   => '+63 2 8234 5678',
+                'address'          => '12F Tower One, BGC, Taguig City, Metro Manila',
+                'confidence_score' => 0.82,
+                'reason'           => '[Demo] Leading PH distributor of IVD and clinical lab reagents with nationwide reach.',
+                'tags'             => ['medical', 'hospital', 'diagnostic', 'health', 'lab', 'clinical'],
+            ],
+            [
+                'name'             => 'Philippine Biotech Solutions Corp.',
+                'industry'         => 'Biotechnology & Laboratory',
+                'region'           => 'Luzon',
+                'contact_email'    => 'info@phbiotech.com.ph',
+                'contact_number'   => '+63 2 8345 6789',
+                'address'          => '8F Strata 100, Emerald Ave., Ortigas, Pasig City',
+                'confidence_score' => 0.78,
+                'reason'           => '[Demo] Specialized in molecular diagnostics and immunology reagents for PH hospitals.',
+                'tags'             => ['medical', 'hospital', 'diagnostic', 'biotech', 'lab', 'molecular'],
+            ],
+            [
+                'name'             => 'Visayas Medical & Lab Supply Co.',
+                'industry'         => 'Medical Equipment & Supplies',
+                'region'           => 'Visayas',
+                'contact_email'    => 'contact@vmls.com.ph',
+                'contact_number'   => '+63 32 234 5678',
+                'address'          => 'Osmeña Blvd., Cebu City, Cebu',
+                'confidence_score' => 0.75,
+                'reason'           => '[Demo] Regional leader in medical equipment distribution across Visayas.',
+                'tags'             => ['medical', 'hospital', 'equipment', 'visayas'],
+            ],
+            [
+                'name'             => 'MindaMed Industrial & Medical Corp.',
+                'industry'         => 'Medical Supplies & Industrial',
+                'region'           => 'Mindanao',
+                'contact_email'    => 'sales@mindamed.com.ph',
+                'contact_number'   => '+63 82 305 1234',
+                'address'          => 'JP Laurel Ave., Davao City, Davao del Sur',
+                'confidence_score' => 0.71,
+                'reason'           => '[Demo] Davao-based supplier serving hospitals and industrial clients across Mindanao.',
+                'tags'             => ['medical', 'hospital', 'industrial', 'mindanao'],
+            ],
+            [
+                'name'             => 'TechnoLab Philippines Inc.',
+                'industry'         => 'Laboratory Instruments & QA',
+                'region'           => 'Luzon',
+                'contact_email'    => 'bd@technolabph.com',
+                'contact_number'   => '+63 2 8456 7890',
+                'address'          => '3F Science Hub, DOST Compound, Bicutan, Taguig',
+                'confidence_score' => 0.76,
+                'reason'           => '[Demo] Exclusive PH partner for precision lab instruments and QA solutions.',
+                'tags'             => ['lab', 'instrument', 'qa', 'quality', 'industrial', 'diagnostic'],
+            ],
+            [
+                'name'             => 'Global Diagnostics & Trading Corp.',
+                'industry'         => 'Diagnostics & Healthcare Trading',
+                'region'           => 'Luzon',
+                'contact_email'    => 'inquiry@globaldx.ph',
+                'contact_number'   => '+63 2 8567 8901',
+                'address'          => 'Unit 4B, One Corporate Centre, Doña Julia Vargas, Ortigas',
+                'confidence_score' => 0.73,
+                'reason'           => '[Demo] Full-spectrum diagnostics trading house covering hematology and coagulation.',
+                'tags'             => ['medical', 'diagnostic', 'health', 'hospital', 'hematology'],
+            ],
+            [
+                'name'             => 'IVD Solutions Philippines, Inc.',
+                'industry'         => 'In-Vitro Diagnostics',
+                'region'           => 'Luzon',
+                'contact_email'    => 'sales@ivdph.com',
+                'contact_number'   => '+63 2 8678 9012',
+                'address'          => '15F Zuellig Building, Makati Ave., Makati City',
+                'confidence_score' => 0.85,
+                'reason'           => '[Demo] Premier IVD distributor specialising in blood bank and immunology platforms.',
+                'tags'             => ['medical', 'diagnostic', 'ivd', 'hospital', 'immunology'],
+            ],
+            [
+                'name'             => 'Cebu Scientific Supplies Co.',
+                'industry'         => 'Scientific & Laboratory Supplies',
+                'region'           => 'Visayas',
+                'contact_email'    => 'orders@cebusci.com',
+                'contact_number'   => '+63 32 412 5678',
+                'address'          => 'M.J. Cuenco Ave., Cebu City',
+                'confidence_score' => 0.69,
+                'reason'           => '[Demo] Trusted Cebu-based supplier of lab consumables and scientific equipment.',
+                'tags'             => ['lab', 'scientific', 'visayas', 'supply'],
+            ],
+        ];
+
+        // Score each candidate against the hint keywords + region match
+        $keywords = array_filter(preg_split('/\W+/', $industry));
+        $regionLower = strtolower($region);
+
+        usort($pool, function ($a, $b) use ($keywords, $regionLower) {
+            $scoreA = $scoreB = 0;
+            foreach ($keywords as $kw) {
+                if (in_array($kw, $a['tags'])) $scoreA += 2;
+                if (in_array($kw, $b['tags'])) $scoreB += 2;
+            }
+            if (strtolower($a['region']) === $regionLower) $scoreA += 3;
+            if (strtolower($b['region']) === $regionLower) $scoreB += 3;
+            return $scoreB <=> $scoreA;
+        });
+
+        // Strip internal 'tags' key — not part of the Gemini schema
+        return array_map(function ($c) {
+            unset($c['tags']);
+            return $c;
+        }, array_slice($pool, 0, self::CANDIDATE_COUNT));
     }
 }

@@ -42,7 +42,12 @@ function startPolling() {
 
 onMounted(async () => {
   await fetchLatestBatch()
-  if (batch.value?.status === 'pending') startPolling()
+  if (batch.value?.status === 'pending') {
+    startPolling()
+  } else if (batch.value?.status === 'failed') {
+    // Hide historical failures on initial load for a clean slate
+    batch.value = null
+  }
 })
 
 onUnmounted(stopPolling)

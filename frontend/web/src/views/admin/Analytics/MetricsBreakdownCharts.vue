@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { VisSingleContainer, VisDonut } from '@unovis/vue'
+import { computed, ref } from 'vue'
+import { VisSingleContainer, VisDonut, VisTooltip } from '@unovis/vue'
+import { Donut } from '@unovis/ts'
 import type { AnalyticsSummary } from '@/types/analytics'
 
 const props = defineProps<{
   summary: AnalyticsSummary | null
 }>()
 
+// ── Types ─────────────────────────────────────────────────────────────────────
 type SliceItem = { label: string; value: number; color: string }
+type BarItem   = { label: string; value: number; color: string; barColor: string }
 
-// Brand-color rotation for segment breakdowns pulled from metric metadata.
-const PALETTE = ['#252578', '#2E85D8', '#2F2F73', '#5B7FD1', '#8FA8E0']
+const PALETTE = ['#252578', '#2E85D8', '#2F2F73', '#5B7FD1', '#8FA8E0', '#A3BFFA']
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function toSlices(record: Record<string, number> | null | undefined): SliceItem[] {
   if (!record) return []
   return Object.entries(record)
@@ -19,60 +22,208 @@ function toSlices(record: Record<string, number> | null | undefined): SliceItem[
     .map(([label, value], i) => ({ label, value, color: PALETTE[i % PALETTE.length] }))
 }
 
-function findMetadata(service: string, metricType: string): Record<string, any> | null {
-  const entry = props.summary?.metrics[service]?.find(m => m.metricType === metricType)
-  return entry?.metadata ?? null
+function findMeta(service: string, metricType: string): Record<string, any> | null {
+  return props.summary?.metrics[service]?.find(m => m.metricType === metricType)?.metadata ?? null
 }
 
-const contractsByStatus = computed(() => toSlices(findMetadata('contract-management', 'high_risk_approvals_escalated')?.by_status))
-const contractsByCategory = computed(() => toSlices(findMetadata('contract-management', 'high_risk_approvals_escalated')?.by_category))
-const suppliersByRegion = computed(() => toSlices(findMetadata('vendor-management', 'partners_total')?.suppliers_by_region))
-const aiByRiskLevel = computed(() => toSlices(findMetadata('ai-service', 'avg_risk_score')?.by_risk_level))
+function getVal(service: string, metricType: string): number {
+  const val = props.summary?.metrics[service]?.find(m => m.metricType === metricType)?.metricValue
+  return val ? Number(val) : 0
+}
 
-const charts = computed(() => [
-  { title: 'Contracts by Status',    subtitle: 'Current workflow distribution', data: contractsByStatus.value },
-  { title: 'Contracts by Category',  subtitle: 'Distribution by contract category', data: contractsByCategory.value },
-  { title: 'Suppliers by Region',    subtitle: 'Distribution by region', data: suppliersByRegion.value },
-  { title: 'Risk Assessments by Level', subtitle: 'Contracts scanned by AI Risk Assessment', data: aiByRiskLevel.value },
+// ── Contract bar chart data ────────────────────────────────────────────────────
+const contractBars = computed<BarItem[]>(() => [
+  { label: 'Total',        value: getVal('contract-management', 'contracts_total'),               color: '#252578', barColor: '#252578' },
+  { label: 'Expiring 30d', value: getVal('contract-management', 'contracts_expiring_soon_30d'),   color: '#2E85D8', barColor: '#2E85D8' },
+  { label: 'Expired',      value: getVal('contract-management', 'contracts_expired'),             color: '#EF4444', barColor: '#EF4444' },
+  { label: 'High-Risk',    value: getVal('contract-management', 'high_risk_approvals_pending'),   color: '#F59E0B', barColor: '#F59E0B' },
+  { label: 'Escalated',    value: getVal('contract-management', 'high_risk_approvals_escalated'), color: '#2F2F73', barColor: '#2F2F73' },
+].filter(b => b.value > 0))
+
+const showBars = computed(() => contractBars.value.length > 0)
+const barMax   = computed(() => Math.max(...contractBars.value.map(b => b.value), 1))
+
+// Tooltip state for the bar chart
+const hoveredBar = ref<BarItem | null>(null)
+const tooltipPos = ref({ x: 0, y: 0 })
+
+function onBarMouseEnter(item: BarItem, event: MouseEvent) {
+  hoveredBar.value = item
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  const parent = (event.currentTarget as HTMLElement).closest('.bar-chart-container')!.getBoundingClientRect()
+  tooltipPos.value = { x: rect.left - parent.left + rect.width / 2, y: rect.top - parent.top - 8 }
+}
+function onBarMouseLeave() { hoveredBar.value = null }
+
+// ── Donut chart data ──────────────────────────────────────────────────────────
+const contractsByStatus   = computed(() => toSlices(findMeta('contract-management', 'high_risk_approvals_escalated')?.by_status))
+const contractsByCategory = computed(() => toSlices(findMeta('contract-management', 'high_risk_approvals_escalated')?.by_category))
+const suppliersByRegion   = computed(() => toSlices(findMeta('vendor-management', 'partners_total')?.suppliers_by_region))
+const partnersByType      = computed(() => toSlices(findMeta('vendor-management', 'partners_total')?.partners_by_type))
+const aiByRiskLevel       = computed(() => toSlices(findMeta('ai-service', 'avg_risk_score')?.by_risk_level))
+const notificationsByType = computed(() => toSlices(findMeta('notification', 'notifications_sent_24h')?.by_type))
+const notificationsByStatus = computed(() => toSlices(findMeta('notification', 'notifications_sent_24h')?.by_status))
+
+const donuts = computed(() => [
+  { title: 'Contracts by Status',       subtitle: 'Current workflow distribution',        data: contractsByStatus.value },
+  { title: 'Contracts by Category',     subtitle: 'Distribution by contract type',        data: contractsByCategory.value },
+  { title: 'Suppliers by Region',       subtitle: 'Geographic spread of partners',        data: suppliersByRegion.value },
+  { title: 'Partners by Type',          subtitle: 'Distribution of vendors & suppliers',  data: partnersByType.value },
+  { title: 'Risk Assessments by Level', subtitle: 'AI-scanned contracts by risk band',    data: aiByRiskLevel.value },
+  { title: 'Notifications by Type',     subtitle: 'Alerts sent in the last 24h',          data: notificationsByType.value },
+  { title: 'Notifications by Status',   subtitle: 'Delivery status in the last 24h',      data: notificationsByStatus.value },
 ].filter(c => c.data.length > 0))
 
-const value = (d: SliceItem) => d.value
-const color = (d: SliceItem) => d.color
+// Unovis donut accessors
+const donutValue = (d: SliceItem) => d.value
+const donutColor = (d: SliceItem) => d.color
+
+// Unovis VisTooltip template — shows the hovered segment label + value + %
+function donutTooltip(d: any, total: number) {
+  const item = d.data as SliceItem
+  const pct = Math.round((item.value / total) * 100)
+  return `
+    <div style="background:#1e1e2e;color:#fff;border-radius:8px;padding:8px 12px;font-family:Poppins,sans-serif;font-size:12px;line-height:1.6;min-width:120px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${item.color};flex-shrink:0"></span>
+        <span style="font-weight:600">${item.label}</span>
+      </div>
+      <div style="color:#a0aec0">${item.value} entries · <b style="color:#fff">${pct}%</b></div>
+    </div>
+  `
+}
 </script>
 
 <template>
-  <div v-if="charts.length > 0" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-    <div
-      v-for="chart in charts"
-      :key="chart.title"
-      class="bg-white rounded-lg border border-black/8 shadow-sm overflow-hidden"
-    >
+  <div class="space-y-8">
+
+    <!-- ── Contract Overview Bar Chart ──────────────────────────────────── -->
+    <div v-if="showBars" class="bg-white rounded-xl border border-black/8 shadow-sm overflow-hidden">
       <div class="px-6 pt-5 pb-4 border-b border-black/5">
-        <h3 class="text-sm font-semibold text-black">{{ chart.title }}</h3>
-        <p class="text-xs text-black/40 mt-0.5">{{ chart.subtitle }}</p>
+        <h3 class="text-sm font-semibold text-black">Contract Overview</h3>
+        <p class="text-xs text-black/40 mt-0.5">Hover each bar for details</p>
       </div>
-      <div class="px-6 py-6 flex flex-col items-center gap-5">
-        <div class="relative w-40 h-40 shrink-0">
-          <VisSingleContainer :data="chart.data" :height="160" :width="160">
-            <VisDonut :value="value" :color="color" :arc-width="34" />
-          </VisSingleContainer>
-          <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <p class="text-xl font-bold text-black tabular-nums leading-none">
-              {{ chart.data.reduce((s, d) => s + d.value, 0) }}
-            </p>
-            <p class="text-[10px] text-black/35 mt-0.5">total</p>
+      <div class="px-6 py-6">
+        <!-- Bar chart with hover tooltips -->
+        <div class="bar-chart-container relative flex items-end gap-3 h-40">
+
+          <!-- Tooltip -->
+          <Transition name="fade">
+            <div
+              v-if="hoveredBar"
+              class="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full"
+              :style="{ left: tooltipPos.x + 'px', top: tooltipPos.y + 'px' }"
+            >
+              <div class="bg-[#1e1e2e] text-white rounded-xl px-3 py-2 shadow-xl text-xs font-medium leading-relaxed whitespace-nowrap">
+                <div class="flex items-center gap-1.5 mb-0.5">
+                  <span class="inline-block w-2.5 h-2.5 rounded-full shrink-0" :style="{ background: hoveredBar.barColor }" />
+                  <span class="font-semibold">{{ hoveredBar.label }}</span>
+                </div>
+                <span class="text-white/60">{{ hoveredBar.value.toLocaleString() }} contracts</span>
+              </div>
+              <!-- Caret -->
+              <div class="w-2.5 h-2.5 bg-[#1e1e2e] rotate-45 mx-auto -mt-1 rounded-sm" />
+            </div>
+          </Transition>
+
+          <!-- Bars -->
+          <div
+            v-for="item in contractBars"
+            :key="item.label"
+            class="flex-1 flex flex-col items-center gap-1.5 min-w-0 cursor-pointer group"
+            @mouseenter="onBarMouseEnter(item, $event)"
+            @mouseleave="onBarMouseLeave"
+          >
+            <span
+              class="text-xs font-bold tabular-nums transition-all duration-150"
+              :style="{ color: item.barColor }"
+              :class="hoveredBar?.label === item.label ? 'opacity-100 scale-110' : 'opacity-0 group-hover:opacity-100'"
+            >
+              {{ item.value }}
+            </span>
+            <div
+              class="w-full rounded-t-lg transition-all duration-500 ease-out min-h-[6px]"
+              :style="{
+                backgroundColor: item.barColor,
+                height: Math.max(6, (item.value / barMax) * 120) + 'px',
+                opacity: hoveredBar === null || hoveredBar.label === item.label ? 1 : 0.35,
+              }"
+            />
+            <span class="text-[10px] text-black/40 text-center truncate w-full leading-tight">
+              {{ item.label }}
+            </span>
           </div>
         </div>
-        <div class="w-full space-y-2">
-          <div v-for="item in chart.data" :key="item.label" class="flex items-center justify-between">
-            <div class="flex items-center gap-2 min-w-0">
-              <div class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: item.color }" />
-              <span class="text-xs text-black/60 truncate">{{ item.label }}</span>
-            </div>
-            <span class="text-xs font-semibold text-black shrink-0">{{ item.value }}</span>
+
+        <!-- Bottom legend row -->
+        <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2">
+          <div v-for="item in contractBars" :key="item.label + '-leg'" class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ background: item.barColor }" />
+            <span class="text-xs text-black/50">{{ item.label }}</span>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- ── Donut Charts ──────────────────────────────────────────────────── -->
+    <div v-if="donuts.length > 0" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div
+        v-for="chart in donuts"
+        :key="chart.title"
+        class="bg-white rounded-xl border border-black/8 shadow-sm overflow-hidden"
+      >
+        <div class="px-6 pt-5 pb-4 border-b border-black/5">
+          <h3 class="text-sm font-semibold text-black">{{ chart.title }}</h3>
+          <p class="text-xs text-black/40 mt-0.5">{{ chart.subtitle }} · hover to explore</p>
+        </div>
+        <div class="px-6 py-6 flex gap-8 items-center">
+          <!-- Donut with Unovis tooltip -->
+          <div class="relative shrink-0 w-40 h-40">
+            <VisSingleContainer :data="chart.data" :height="160" :width="160">
+              <VisDonut
+                :value="donutValue"
+                :color="donutColor"
+                :arc-width="38"
+              />
+              <VisTooltip
+                :triggers="{
+                  [Donut.selectors.segment]: (d: SliceItem) => donutTooltip(d, chart.data.reduce((s, x) => s + x.value, 0))
+                }"
+              />
+            </VisSingleContainer>
+            <!-- Center label -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <p class="text-2xl font-bold text-black tabular-nums leading-none">
+                {{ chart.data.reduce((s, d) => s + d.value, 0) }}
+              </p>
+              <p class="text-[10px] text-black/35 mt-0.5">total</p>
+            </div>
+          </div>
+
+          <!-- Legend with percentages -->
+          <div class="flex-1 space-y-2.5 min-w-0">
+            <div v-for="item in chart.data" :key="item.label" class="flex items-center justify-between gap-2 min-w-0">
+              <div class="flex items-center gap-2 min-w-0">
+                <div class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: item.color }" />
+                <span class="text-xs text-black/60 truncate">{{ item.label }}</span>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-xs font-semibold text-black">{{ item.value }}</span>
+                <span class="text-[10px] text-black/35 tabular-nums">
+                  {{ Math.round((item.value / chart.data.reduce((s, d) => s + d.value, 1)) * 100) }}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.12s ease, transform 0.12s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateX(-50%) translateY(calc(-100% - 4px)) scale(0.95); }
+.fade-enter-to { transform: translateX(-50%) translateY(-100%) scale(1); }
+</style>

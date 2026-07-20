@@ -139,6 +139,13 @@ function daysDisplay(days: number) {
           Version History
         </button>
 
+        <!-- AI Risk Assessment Button -->
+        <button v-if="!showRejectInput && !isSnapshot" @click="$emit('openRiskAssessment')"
+          class="px-4 py-2.5 bg-white border border-black/15 text-black/65 hover:text-black hover:bg-black/5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm">
+          <AlertTriangle class="w-4 h-4 text-[#2F2F73]" />
+          Risk Assessment
+        </button>
+
         <!-- Create Amendment Button — only for Approved contracts -->
         <button v-if="!showRejectInput && !isSnapshot && contract.approvalStatus === 'Approved'" @click="$emit('edit')"
           class="px-6 py-2.5 bg-[#252578] text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm">

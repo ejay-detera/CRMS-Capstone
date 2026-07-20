@@ -94,8 +94,8 @@ onMounted(loadAll)
 
     <!-- Descriptive tab -->
     <div v-else-if="activeTab === 'descriptive'" class="space-y-6">
-      <DescriptiveMetricsGrid :summary="summary" />
       <MetricsBreakdownCharts :summary="summary" />
+      <DescriptiveMetricsGrid :summary="summary" />
     </div>
 
     <!-- Diagnostic tab -->

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, ShieldQuestion, RefreshCw } from 'lucide-vue-next'
+import { ArrowLeft, ShieldQuestion, RefreshCw, Brain } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useRiskAssessment } from '@/composables/useRiskAssessment'
 import { useToast } from '@/composables/useToast'
@@ -25,8 +25,25 @@ const backPath = computed(() => {
   return `/sales/contracts/${contractId}`
 })
 
+const isPolling = ref(false)
+
+async function pollSummary() {
+  isPolling.value = true
+  while (isPolling.value) {
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    const s = await fetchSummary(contractId)
+    if (s && s.status !== 'pending') {
+      break
+    }
+  }
+  isPolling.value = false
+}
+
 async function load() {
-  await fetchSummary(contractId)
+  const s = await fetchSummary(contractId)
+  if (s && s.status === 'pending') {
+    pollSummary()
+  }
 }
 
 onMounted(load)
@@ -34,7 +51,7 @@ onMounted(load)
 async function handleRescan() {
   const ok = await triggerScan(contractId)
   if (ok) {
-    success('Scan queued', 'AI Risk Assessment is running. Refresh in a moment to see results.')
+    pollSummary()
   } else {
     showError('Failed to trigger scan', 'Something went wrong.')
   }
@@ -61,18 +78,24 @@ async function handleExport() {
         <p class="text-sm text-black/40 mt-0.5">Contract #{{ contractId }}</p>
       </div>
       <div class="flex items-center gap-2">
-        <Button variant="outline" :disabled="scanning" @click="handleRescan"
+        <Button variant="outline" :disabled="scanning || isPolling" @click="handleRescan"
           class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
-          <RefreshCw class="w-4 h-4" :class="scanning ? 'animate-spin' : ''" />
-          {{ scanning ? 'Queuing…' : 'Re-run Scan' }}
+          <RefreshCw class="w-4 h-4" :class="scanning || isPolling ? 'animate-spin' : ''" />
+          {{ scanning || isPolling ? 'Scanning…' : 'Re-run Scan' }}
         </Button>
         <RiskExportButton v-if="summary" :exporting="exporting" @export="handleExport" />
       </div>
     </div>
 
-    <div v-if="loading" class="space-y-6 animate-pulse">
-      <div class="h-40 bg-white rounded-lg border border-black/8"></div>
-      <div class="h-64 bg-white rounded-lg border border-black/8"></div>
+    <!-- Animated Scanning State -->
+    <div v-if="loading || isPolling" class="flex flex-col items-center justify-center py-28 bg-white rounded-xl border border-black/8 shadow-sm">
+      <div class="relative w-16 h-16 flex items-center justify-center mb-6">
+        <div class="absolute inset-0 bg-[#252578]/10 rounded-full animate-ping" style="animation-duration: 2s;"></div>
+        <div class="absolute inset-2 bg-[#2E85D8]/20 rounded-full animate-pulse"></div>
+        <Brain class="w-7 h-7 text-[#252578] relative z-10 animate-bounce" style="animation-duration: 2s;" />
+      </div>
+      <h3 class="text-lg font-semibold text-black mb-1">Scanning Document...</h3>
+      <p class="text-sm text-black/40">Analyzing contract against playbook clauses.</p>
     </div>
 
     <div v-else-if="!summary" class="flex flex-col items-center gap-3 py-24 text-black/30">
