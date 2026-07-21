@@ -19,11 +19,26 @@ import TablePagination from '@/components/shared/TablePagination.vue'
 import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus, formatRemainingTime } from '@/types/contract'
 import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
 import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
+import RiskFlagBadge from '@/components/shared/RiskFlagBadge.vue'
+import { useRiskAssessment } from '@/composables/useRiskAssessment'
+import { useEmailPreferences } from '@/composables/useEmailPreferences'
+import { onMounted } from 'vue'
+import type { RiskLevel } from '@/types/riskAssessment'
 
 type ContractWithDays = Contract & { days: number }
 
 const router = useRouter()
 const { hasPermission } = useAuth()
+const { fetchBulkLevels } = useRiskAssessment()
+const { preferences: aiPreferences, fetchPreferences: fetchAiPreferences } = useEmailPreferences()
+
+const aiRiskAssessmentVisible = computed(() => aiPreferences.value.aiRiskAssessmentEnabled ?? true)
+const riskLevels = ref<Record<string, { riskLevel: RiskLevel, findingsCount: number, status: string }>>({})
+const loadingRisk = ref(false)
+
+onMounted(async () => {
+  await fetchAiPreferences()
+})
 
 const props = defineProps<{
   paginated:     ContractWithDays[]
@@ -41,6 +56,21 @@ const props = defineProps<{
   loading?:      boolean
   totalItems?:   number
 }>()
+
+watch(() => props.paginated, async (list) => {
+  if (!aiRiskAssessmentVisible.value) return
+  const ids = list.map(c => c.id)
+  if (!ids.length) {
+    riskLevels.value = {}
+    return
+  }
+  loadingRisk.value = true
+  const res = await fetchBulkLevels(ids)
+  if (res) {
+    riskLevels.value = res
+  }
+  loadingRisk.value = false
+}, { immediate: true })
 
 const emit = defineEmits<{
   openDetail:              [c: ContractWithDays]
@@ -302,6 +332,7 @@ const categories = [
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">End Date</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Remaining Time</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Contract State</TableHead>
+          <TableHead v-if="aiRiskAssessmentVisible" class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">AI Risk</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Sales Rep</TableHead>
           <TableHead class="w-12 py-3" />
@@ -333,6 +364,9 @@ const categories = [
             <!-- Contract State -->
             <TableCell class="py-4">
               <div class="h-5 w-24 bg-black/5 animate-pulse rounded-full"></div>
+            </TableCell>
+            <TableCell v-if="aiRiskAssessmentVisible" class="py-4">
+              <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
             </TableCell>
             <TableCell class="py-4">
               <div class="flex flex-col gap-1">
@@ -379,6 +413,18 @@ const categories = [
             <!-- Contract State -->
             <TableCell class="py-4">
               <ContractLifecycleBadge :status="deriveLifecycleStatus(c.days, c.approvalStatus)" />
+            </TableCell>
+
+            <!-- AI Risk -->
+            <TableCell v-if="aiRiskAssessmentVisible" class="py-4">
+              <div v-if="loadingRisk" class="h-6 w-24 bg-black/5 animate-pulse rounded-full border border-black/10"></div>
+              <RiskFlagBadge
+                v-else-if="riskLevels[c.id] && riskLevels[c.id].status === 'completed'"
+                :risk-level="riskLevels[c.id].riskLevel"
+                :findings-count="riskLevels[c.id].findingsCount"
+                size="sm"
+              />
+              <span v-else class="text-xs text-black/35 font-medium">—</span>
             </TableCell>
 
             <!-- Status -->

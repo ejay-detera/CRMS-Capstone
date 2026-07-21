@@ -88,6 +88,37 @@ class RiskAssessmentController extends Controller
     }
 
     /**
+     * GET /contracts/risk-assessment/bulk-levels?ids=1,2,3
+     */
+    public function bulkLevels(Request $request)
+    {
+        $ids = array_filter(explode(',', $request->query('ids', '')));
+        if (empty($ids)) {
+            return response()->json(['data' => []]);
+        }
+
+        // Get latest result per contract ID
+        $results = RiskAssessmentResult::whereIn('contract_id', $ids)
+            ->orderByDesc('id')
+            ->get()
+            ->unique('contract_id');
+
+        $data = [];
+        foreach ($results as $result) {
+            if ($denied = $this->denyIfNotAuthorized($request, $result->contract_id)) {
+                continue; // Skip contracts the user is not allowed to view
+            }
+            $data[$result->contract_id] = [
+                'risk_level'     => $result->risk_level,
+                'findings_count' => $result->findingRows()->count(),
+                'status'         => $result->status,
+            ];
+        }
+
+        return response()->json(['data' => $data]);
+    }
+
+    /**
      * Manager/Admin can access any contract's assessment. Sales/Employee may
      * only access assessments for contracts they created. Returns a 403
      * JsonResponse if denied, or null if allowed.

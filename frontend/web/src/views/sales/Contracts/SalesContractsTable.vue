@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Search, MoreHorizontal, Eye, Pencil, Filter, X, Trash2, CheckCircle } from 'lucide-vue-next'
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
@@ -19,11 +19,25 @@ import TablePagination from '@/components/shared/TablePagination.vue'
 import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus, formatRemainingTime } from '@/types/contract'
 import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
 import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
+import RiskFlagBadge from '@/components/shared/RiskFlagBadge.vue'
+import { useRiskAssessment } from '@/composables/useRiskAssessment'
+import { useEmailPreferences } from '@/composables/useEmailPreferences'
+import type { RiskLevel } from '@/types/riskAssessment'
 
 type ContractWithDays = Contract & { days: number }
 
 const router = useRouter()
 const { hasPermission } = useAuth()
+const { fetchBulkLevels } = useRiskAssessment()
+const { preferences: aiPreferences, fetchPreferences: fetchAiPreferences } = useEmailPreferences()
+
+const aiRiskAssessmentVisible = computed(() => aiPreferences.value.aiRiskAssessmentEnabled ?? true)
+const riskLevels = ref<Record<string, { riskLevel: RiskLevel, findingsCount: number, status: string }>>({})
+const loadingRisk = ref(false)
+
+onMounted(async () => {
+  await fetchAiPreferences()
+})
 
 const props = defineProps<{
   paginated:    ContractWithDays[]
@@ -40,6 +54,21 @@ const props = defineProps<{
   loading?:      boolean
   totalItems?:   number
 }>()
+
+watch(() => props.paginated, async (list) => {
+  if (!aiRiskAssessmentVisible.value) return
+  const ids = list.map(c => c.id)
+  if (!ids.length) {
+    riskLevels.value = {}
+    return
+  }
+  loadingRisk.value = true
+  const res = await fetchBulkLevels(ids)
+  if (res) {
+    riskLevels.value = res
+  }
+  loadingRisk.value = false
+}, { immediate: true })
 
 const emit = defineEmits<{
   openDetail: [c: ContractWithDays]
@@ -300,6 +329,7 @@ const categories = [
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">End Date</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Remaining Time</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Contract State</TableHead>
+          <TableHead v-if="aiRiskAssessmentVisible" class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">AI Risk</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
           <TableHead class="w-12 py-3" />
         </TableRow>
@@ -308,39 +338,29 @@ const categories = [
       <TableBody>
         <template v-if="loading">
           <TableRow v-for="i in itemsPerPage" :key="i" class="border-b border-black/4 last:border-0">
-            <!-- Contract ID + Partner -->
             <TableCell class="py-4 pl-6">
               <div class="h-4 w-32 bg-black/5 animate-pulse rounded mb-1.5"></div>
               <div class="h-3 w-16 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Category -->
             <TableCell class="py-4">
               <div class="h-4 w-24 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Region -->
             <TableCell class="py-4">
               <div class="h-4 w-16 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- End Date -->
             <TableCell class="py-4">
               <div class="h-4 w-20 bg-black/5 animate-pulse rounded mb-1.5"></div>
               <div class="h-3 w-28 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Remaining Time -->
             <TableCell class="py-4">
               <div class="h-4 w-24 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Contract State -->
             <TableCell class="py-4">
               <div class="h-5 w-24 bg-black/5 animate-pulse rounded-full"></div>
             </TableCell>
-
-            <!-- Status -->
+            <TableCell v-if="aiRiskAssessmentVisible" class="py-4">
+              <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
+            </TableCell>
             <TableCell class="py-4">
               <div class="flex flex-col gap-1">
                 <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
@@ -382,6 +402,18 @@ const categories = [
             <!-- Contract State -->
             <TableCell class="py-4">
               <ContractLifecycleBadge :status="deriveLifecycleStatus(c.days, c.approvalStatus)" />
+            </TableCell>
+
+            <!-- AI Risk -->
+            <TableCell v-if="aiRiskAssessmentVisible" class="py-4">
+              <div v-if="loadingRisk" class="h-6 w-24 bg-black/5 animate-pulse rounded-full border border-black/10"></div>
+              <RiskFlagBadge
+                v-else-if="riskLevels[c.id] && riskLevels[c.id].status === 'completed'"
+                :risk-level="riskLevels[c.id].riskLevel"
+                :findings-count="riskLevels[c.id].findingsCount"
+                size="sm"
+              />
+              <span v-else class="text-xs text-black/35 font-medium">—</span>
             </TableCell>
 
             <!-- Status -->

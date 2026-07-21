@@ -159,7 +159,7 @@ const showRejectionModal = ref(false)
 // carries risk_level for the flag/warning badge below. That badge is itself
 // hidden entirely if the current user has turned off "AI Risk Assessment"
 // in their own profile preferences.
-const { gateState, saving: highRiskSaving, fetchGateState, recordDecision } = useHighRiskApproval()
+const { gateState, loading: loadingHighRiskGate, saving: highRiskSaving, fetchGateState, recordDecision } = useHighRiskApproval()
 const { preferences: aiPreferences, fetchPreferences: fetchAiPreferences } = useEmailPreferences()
 const showHighRiskModal = ref(false)
 
@@ -705,6 +705,7 @@ const activeSnapForDiff = computed(() => {
         :disabled="isUploadingOrScanFailed"
         :is-snapshot="viewingSnapshotVersion !== null"
         :risk-level="aiRiskAssessmentVisible ? (gateState?.riskLevel ?? null) : null"
+        :is-risk-loading="aiRiskAssessmentVisible && loadingHighRiskGate"
         :approval-locked="false"
         @back="router.push(backPath)"
         @edit="handleEditClick"

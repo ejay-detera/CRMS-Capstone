@@ -95,7 +95,7 @@ class GeminiClient
         }
 
         try {
-            $response = Http::timeout(15)
+            $response = Http::timeout(30)
                 ->withHeaders(['Content-Type' => 'application/json'])
                 ->post("{$this->baseUrl}/models/{$model}:generateContent?key={$this->apiKey}", [
                     'systemInstruction' => [

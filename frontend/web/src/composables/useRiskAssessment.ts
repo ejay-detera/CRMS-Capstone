@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { useAuth } from './useAuth'
-import type { RiskAssessmentSummary, RiskFinding } from '@/types/riskAssessment'
+import type { RiskAssessmentSummary, RiskFinding, RiskLevel } from '@/types/riskAssessment'
 
 // US-026: AI Risk Assessment — reads/triggers the RAG pipeline exposed by
 // ai-service's /contracts/{id}/risk-assessment/* endpoints.
@@ -61,6 +61,30 @@ export function useRiskAssessment() {
     }
   }
 
+  async function fetchBulkLevels(contractIds: string[]): Promise<Record<string, { riskLevel: RiskLevel, findingsCount: number, status: string }> | null> {
+    if (!contractIds.length) return {}
+    try {
+      const res = await fetch(`${BASE_URL}/contracts/risk-assessment/bulk-levels?ids=${contractIds.join(',')}`, {
+        headers: makeHeaders(),
+      })
+      if (!res.ok) return null
+      const json = await res.json()
+      
+      const result: Record<string, { riskLevel: RiskLevel, findingsCount: number, status: string }> = {}
+      for (const id in json.data) {
+        result[id] = {
+          riskLevel: json.data[id].risk_level as RiskLevel,
+          findingsCount: json.data[id].findings_count,
+          status: json.data[id].status
+        }
+      }
+      return result
+    } catch (e) {
+      console.error('Failed to fetch bulk risk levels', e)
+      return null
+    }
+  }
+
   async function triggerScan(contractId: string): Promise<boolean> {
     scanning.value = true
     try {
@@ -116,6 +140,7 @@ export function useRiskAssessment() {
     scanning,
     exporting,
     fetchSummary,
+    fetchBulkLevels,
     triggerScan,
     exportPdf,
   }

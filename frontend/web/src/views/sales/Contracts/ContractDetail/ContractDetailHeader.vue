@@ -21,6 +21,7 @@ const props = defineProps<{
   riskLevel?: RiskLevel | null
   riskFindingsCount?: number
   approvalLocked?: boolean
+  isRiskLoading?: boolean
 }>()
 
 defineEmits<{ 
@@ -73,8 +74,9 @@ function daysDisplay(days: number) {
             <component :is="daysDisplay(days).icon" class="w-3.5 h-3.5" />
             {{ daysDisplay(days).text }}
           </span>
+          <div v-if="isRiskLoading" class="h-6 w-28 bg-black/5 animate-pulse rounded-full border border-transparent"></div>
           <RiskFlagBadge
-            v-if="riskLevel"
+            v-else-if="riskLevel"
             :risk-level="riskLevel"
             :findings-count="riskFindingsCount ?? 0"
             size="md"

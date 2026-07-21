@@ -15,6 +15,7 @@ Route::middleware(['internal.secret'])->group(function () {
 
 // US-026: AI Risk Assessment — user-facing, bearer-token authenticated.
 Route::middleware(['auth.internal'])->group(function () {
+    Route::get('/contracts/risk-assessment/bulk-levels', [RiskAssessmentController::class, 'bulkLevels']);
     Route::post('/contracts/{contractId}/risk-assessment/scan', [RiskAssessmentController::class, 'scan']);
     Route::get('/contracts/{contractId}/risk-assessment/summary', [RiskAssessmentController::class, 'summary']);
     Route::get('/contracts/{contractId}/risk-assessment/summary/pdf', [RiskAssessmentController::class, 'summaryPdf']);

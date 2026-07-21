@@ -12,21 +12,26 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * US-026: AI Risk Assessment — the RAG pipeline.
+ * US-026: AI Risk Assessment — optimised single-call RAG pipeline.
  *
- * playbook clause embeddings (indexed ahead of time) → contract text
- * extraction/chunking/embedding → pgvector retrieval of the most relevant
- * playbook clause per chunk → Gemini structured-JSON judgment on whether the
- * chunk deviates from that clause → risk_assessment_findings rows + one
- * aggregated risk_assessment_results row per contract.
+ * Architecture (2 API calls per scan, down from 30+):
+ *   1. Extract full contract text from all attached documents
+ *   2. Embed the contract text once  → 1 embedding call
+ *   3. pgvector cosine-similarity retrieves the TOP_K most relevant playbook
+ *      clauses   → 0 API calls (DB query only)
+ *   4. Ask Gemini ONCE with the full contract + all retrieved clauses →
+ *      structured-JSON array of findings   → 1 generate call
+ *   5. Map clause_code back to DB IDs and persist findings + result
  *
- * This keeps the assessment explainable: every finding traces back to a
- * specific retrieved playbook clause (a real FK, not an LLM guess) and a
- * structured judgment, not a free-floating end-to-end model call.
+ * The previous per-chunk approach made N_chunks × (1 embed + TOP_K judges)
+ * calls (≈30 for a typical contract), exhausting the free-tier daily quota
+ * on a single scan.  This implementation keeps pgvector for semantic retrieval
+ * while collapsing all judgment calls into one.
  */
 class RiskAssessmentPipeline
 {
-    private const TOP_K = 2;
+    /** How many playbook clauses to retrieve per scan via pgvector */
+    private const TOP_K = 10;
 
     public function __construct(
         protected GeminiClient $gemini,
@@ -35,9 +40,13 @@ class RiskAssessmentPipeline
     ) {
     }
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // Public API
+    // ──────────────────────────────────────────────────────────────────────────
+
     /**
      * Ensures every active playbook clause has an up-to-date embedding.
-     * Idempotent — re-running only embeds clauses missing an embedding row.
+     * Idempotent — skips clauses that already have an embedding row.
      */
     public function indexPlaybook(): void
     {
@@ -68,24 +77,24 @@ class RiskAssessmentPipeline
     }
 
     /**
-     * Runs the full pipeline for a contract: fetches its documents, extracts
-     * text, chunks + embeds, retrieves relevant playbook clauses per chunk,
-     * asks Gemini for a deviation judgment, and writes the result.
+     * Runs the full pipeline for a contract.
      *
-     * Returns the created RiskAssessmentResult, or null if no extractable
-     * text was found across the contract's documents (e.g. scanned/image-only
-     * PDFs with no text layer — a known limitation, not a silent failure).
+     * Returns the created/updated RiskAssessmentResult, or a failed-status
+     * result row if something goes wrong (so the frontend always gets a real
+     * DB row to query, never a silent 404).
      */
     public function run(int $contractId): ?RiskAssessmentResult
     {
+        // Step 0: index any un-embedded playbook clauses (idempotent)
         $this->indexPlaybook();
 
+        // Step 1: fetch documents and extract full text
         $documents = $this->documentClient->listDocuments($contractId);
         if (empty($documents)) {
-            return $this->markFailed($contractId, null, 'No clean/scanned documents found for this contract.');
+            return $this->markFailed($contractId, null, 'No documents found for this contract.');
         }
 
-        $allChunks = [];
+        $fullText       = '';
         $usedDocumentId = null;
 
         foreach ($documents as $doc) {
@@ -100,10 +109,10 @@ class RiskAssessmentPipeline
             }
 
             $usedDocumentId ??= $doc['document_id'];
-            $allChunks = array_merge($allChunks, $this->extractor->chunk($text));
+            $fullText       .= ($fullText ? "\n\n" : '') . $text;
         }
 
-        if (empty($allChunks)) {
+        if ($fullText === '') {
             return $this->markFailed(
                 $contractId,
                 $usedDocumentId,
@@ -111,62 +120,84 @@ class RiskAssessmentPipeline
             );
         }
 
-        $findings = [];
-        foreach ($allChunks as $chunk) {
-            $chunkFindings = $this->assessChunk($chunk);
-            $findings = array_merge($findings, $chunkFindings);
+        Log::info('Risk assessment: extracted contract text.', [
+            'contract_id' => $contractId,
+            'char_count'  => strlen($fullText),
+        ]);
+
+        // Step 2: embed the contract text (1 API call) — truncate to first 8 000
+        // chars so the embedding stays within token limits while still capturing
+        // the contract's core structure and clauses.
+        $contractVector = $this->gemini->embed(mb_substr($fullText, 0, 8000));
+        if ($contractVector === null) {
+            return $this->markFailed(
+                $contractId,
+                $usedDocumentId,
+                'Failed to generate contract embedding — Gemini API may be unavailable or quota exhausted.'
+            );
         }
 
+        // Step 3: retrieve most-relevant playbook clauses via pgvector (0 API calls)
+        $clauses = $this->retrieveTopPlaybookClauses($contractVector, self::TOP_K);
+
+        if (empty($clauses)) {
+            // pgvector returned nothing — fall back to all active clauses so we
+            // can still run the assessment (just without semantic ranking).
+            $clauses = PlaybookClause::where('is_active', true)->get()->all();
+            Log::info('pgvector retrieval returned no results, falling back to all active clauses.', [
+                'contract_id' => $contractId,
+            ]);
+        }
+
+        if (empty($clauses)) {
+            return $this->markFailed(
+                $contractId,
+                $usedDocumentId,
+                'No active playbook clauses found to assess against.'
+            );
+        }
+
+        Log::info('Risk assessment: clauses retrieved for assessment.', [
+            'contract_id'  => $contractId,
+            'clause_count' => count($clauses),
+        ]);
+
+        // Step 4: single Gemini call to assess the full contract (1 API call)
+        $findings = $this->assessFullContract($fullText, $clauses);
+
+        if ($findings === null) {
+            // Gemini call failed — mark as failed rather than silently returning
+            // risk_level='low' with 0 findings (which was the old misleading behaviour).
+            return $this->markFailed(
+                $contractId,
+                $usedDocumentId,
+                'AI assessment failed — Gemini API unavailable or quota exhausted. Please retry later.'
+            );
+        }
+
+        Log::info('Risk assessment: Gemini returned findings.', [
+            'contract_id'   => $contractId,
+            'finding_count' => count($findings),
+        ]);
+
+        // Step 5: persist result
         return $this->saveResult($contractId, $usedDocumentId, $findings);
     }
 
-    /**
-     * @return list<array{clause_reference: string, severity: string, playbook_clause_id: ?int, retrieval_score: ?float, deviation_reason: string, recommended_remediation: string}>
-     */
-    protected function assessChunk(string $chunk): array
-    {
-        $chunkVector = $this->gemini->embed($chunk);
-        if ($chunkVector === null) {
-            return [];
-        }
-
-        $retrieved = $this->retrieveTopPlaybookClauses($chunkVector, self::TOP_K);
-        if (empty($retrieved)) {
-            return [];
-        }
-
-        $findings = [];
-        foreach ($retrieved as $candidate) {
-            $clause = $candidate['clause'];
-            $judgment = $this->judgeDeviation($chunk, $clause);
-
-            if ($judgment && ($judgment['deviates'] ?? false)) {
-                $findings[] = [
-                    'clause_reference'        => $chunk,
-                    'severity'                => $judgment['severity'] ?? 'medium',
-                    'playbook_clause_id'      => $clause->id,
-                    'retrieval_score'         => $candidate['score'],
-                    'deviation_reason'        => $judgment['deviation_reason'] ?? '',
-                    'recommended_remediation' => $judgment['recommended_remediation'] ?? '',
-                ];
-            }
-        }
-
-        return $findings;
-    }
+    // ──────────────────────────────────────────────────────────────────────────
+    // Pipeline steps
+    // ──────────────────────────────────────────────────────────────────────────
 
     /**
-     * @return list<array{clause: PlaybookClause, score: float}>
+     * Retrieves the TOP_K most-similar playbook clauses to the contract
+     * embedding using pgvector cosine distance.
+     *
+     * @return list<PlaybookClause>
      */
-    protected function retrieveTopPlaybookClauses(array $chunkVector, int $topK): array
+    protected function retrieveTopPlaybookClauses(array $contractVector, int $topK): array
     {
-        $vectorLiteral = $this->formatVector($chunkVector);
+        $vectorLiteral = $this->formatVector($contractVector);
 
-        // pgvector cosine-distance retrieval: `<=>` returns cosine distance
-        // (0 = identical, 2 = opposite), so ORDER BY it ascending gives the
-        // most similar rows first. Falls back to no results (rather than
-        // erroring) if the driver doesn't support pgvector operators — e.g.
-        // when this runs against SQLite in a non-Postgres test environment.
         try {
             $rows = DB::table('embeddings')
                 ->where('entity_type', 'playbook_clause')
@@ -175,51 +206,115 @@ class RiskAssessmentPipeline
                 ->limit($topK)
                 ->get();
         } catch (\Exception $e) {
-            Log::warning('pgvector retrieval query failed (expected on non-Postgres connections).', [
-                'message' => $e->getMessage(),
-            ]);
+            Log::warning('pgvector retrieval query failed.', ['message' => $e->getMessage()]);
             return [];
         }
 
         $clauseIds = $rows->pluck('entity_id')->all();
-        $clauses = PlaybookClause::whereIn('id', $clauseIds)->get()->keyBy('id');
 
-        $results = [];
-        foreach ($rows as $row) {
-            $clause = $clauses->get($row->entity_id);
-            if ($clause) {
-                $results[] = ['clause' => $clause, 'score' => (float) $row->similarity];
-            }
-        }
-
-        return $results;
+        return PlaybookClause::whereIn('id', $clauseIds)
+            ->where('is_active', true)
+            ->get()
+            ->all();
     }
 
-    protected function judgeDeviation(string $chunk, PlaybookClause $clause): ?array
+    /**
+     * Sends the full contract text + all retrieved clauses to Gemini in ONE
+     * call and returns the parsed findings array.
+     *
+     * Returns null when the Gemini call itself fails (quota/network error).
+     * Returns an empty array [] when Gemini succeeds but finds zero deviations
+     * (i.e. the contract is compliant) — callers must treat these differently.
+     *
+     * @param  list<PlaybookClause>  $clauses
+     * @return list<array{clause_reference: string, severity: string, playbook_clause_id: ?int, retrieval_score: null, deviation_reason: string, recommended_remediation: string}>|null
+     */
+    protected function assessFullContract(string $fullText, array $clauses): ?array
     {
         $systemInstruction = <<<'PROMPT'
-You are a contract-risk assistant grading a single excerpt of a commercial
-contract against one standard playbook clause. Judge ONLY whether the excerpt
-deviates from the cited clause. Be conservative: only flag a real, material
-deviation, not stylistic differences. Respond strictly in the requested JSON schema.
+You are a contract-risk analyst reviewing a commercial contract against a set of
+standard playbook clauses. For each clause provided, carefully assess whether the
+contract text deviates from that clause's standard requirement.
+
+Rules:
+- Only include a finding when deviates = true (a real, material deviation exists).
+- If the contract is silent on a clause topic, that is also a deviation — flag it.
+- Do NOT flag stylistic or formatting differences.
+- Be specific: quote or paraphrase the problematic contract language in deviation_reason.
+- Respond strictly in the requested JSON schema.
 PROMPT;
 
-        $userPrompt = "Playbook clause \"{$clause->title}\" ({$clause->clause_code}):\n{$clause->standard_text}\n\n"
-            . "Contract excerpt:\n{$chunk}";
+        // Build clause context block
+        $clausesContext = collect($clauses)
+            ->map(fn (PlaybookClause $c) =>
+                "CLAUSE [{$c->clause_code}] — {$c->title}:\n{$c->standard_text}"
+            )
+            ->implode("\n\n---\n\n");
+
+        // Truncate to ~20 000 chars to stay within context window safely
+        $contractExcerpt = mb_substr($fullText, 0, 20000);
+
+        $userPrompt = "PLAYBOOK CLAUSES TO ASSESS:\n\n{$clausesContext}\n\n"
+            . "====\n\n"
+            . "CONTRACT TEXT:\n\n{$contractExcerpt}";
 
         $schema = [
-            'type' => 'object',
+            'type'       => 'object',
             'properties' => [
-                'deviates' => ['type' => 'boolean'],
-                'severity' => ['type' => 'string', 'enum' => ['low', 'medium', 'high', 'critical']],
-                'deviation_reason' => ['type' => 'string'],
-                'recommended_remediation' => ['type' => 'string'],
+                'findings' => [
+                    'type'  => 'array',
+                    'items' => [
+                        'type'       => 'object',
+                        'properties' => [
+                            'clause_code'             => ['type' => 'string'],
+                            'severity'                => [
+                                'type' => 'string',
+                                'enum' => ['low', 'medium', 'high', 'critical'],
+                            ],
+                            'deviation_reason'        => ['type' => 'string'],
+                            'recommended_remediation' => ['type' => 'string'],
+                        ],
+                        'required' => ['clause_code', 'severity', 'deviation_reason', 'recommended_remediation'],
+                    ],
+                ],
             ],
-            'required' => ['deviates'],
+            'required' => ['findings'],
         ];
 
-        return $this->gemini->generateJson($systemInstruction, $userPrompt, $schema);
+        $result = $this->gemini->generateJson($systemInstruction, $userPrompt, $schema);
+
+        if ($result === null) {
+            Log::error('assessFullContract: Gemini call returned null.', [
+                'clause_count'        => count($clauses),
+                'contract_char_count' => strlen($fullText),
+            ]);
+            return null; // signals a hard failure to the caller
+        }
+
+        $rawFindings   = $result['findings'] ?? [];
+        $clausesByCode = collect($clauses)->keyBy('clause_code');
+        $mapped        = [];
+
+        foreach ($rawFindings as $f) {
+            $clauseCode = $f['clause_code'] ?? '';
+            $clause     = $clausesByCode->get($clauseCode);
+
+            $mapped[] = [
+                'clause_reference'        => $clauseCode,
+                'severity'                => $f['severity'] ?? 'medium',
+                'playbook_clause_id'      => $clause?->id,
+                'retrieval_score'         => null, // not applicable in single-call model
+                'deviation_reason'        => $f['deviation_reason'] ?? '',
+                'recommended_remediation' => $f['recommended_remediation'] ?? '',
+            ];
+        }
+
+        return $mapped;
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Persistence helpers
+    // ──────────────────────────────────────────────────────────────────────────
 
     protected function saveResult(int $contractId, ?string $documentId, array $findings): RiskAssessmentResult
     {
@@ -254,7 +349,7 @@ PROMPT;
 
     protected function markFailed(int $contractId, ?string $documentId, string $reason): RiskAssessmentResult
     {
-        Log::info("Risk assessment for contract {$contractId} failed: {$reason}");
+        Log::warning("Risk assessment marked failed for contract {$contractId}.", ['reason' => $reason]);
 
         return RiskAssessmentResult::create([
             'document_id' => $documentId,
@@ -267,10 +362,20 @@ PROMPT;
         ]);
     }
 
-    protected function aggregateRiskLevel(array $findings): ?string
+    // ──────────────────────────────────────────────────────────────────────────
+    // Aggregation helpers
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns the highest severity level across all findings.
+     * Returns 'low' only when Gemini genuinely found zero deviations (compliant contract).
+     * A null/failed result is handled upstream via markFailed() — this method is never
+     * called when the Gemini call itself failed.
+     */
+    protected function aggregateRiskLevel(array $findings): string
     {
         if (empty($findings)) {
-            return 'low';
+            return 'low'; // Gemini responded with an empty findings array = clean contract
         }
 
         $severities = array_column($findings, 'severity');
