@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { Sparkles, TrendingUp, TrendingDown, Minus, AlertCircle } from 'lucide-vue-next'
 import type { DiagnosticInsight } from '@/types/analytics'
 import { diagnosticLabels } from '@/types/analytics'
+import DiagnosticSegmentChart from './DiagnosticSegmentChart.vue'
 
 const props = defineProps<{
   insights: DiagnosticInsight[]
@@ -148,6 +149,8 @@ const cards = computed(() => props.insights.map(insight => {
           <Sparkles class="w-4 h-4 text-[#2E85D8] shrink-0 mt-0.5" />
           <p class="text-sm text-black/70 leading-relaxed">{{ card.insight.aiNarrative }}</p>
         </div>
+
+        <DiagnosticSegmentChart :insight="card.insight" />
 
       </div>
     </div>

@@ -79,6 +79,9 @@ async function uploadFile(doc: UploadedDoc, index: number) {
   try {
     const formData = new FormData()
     formData.append('file', doc.file)
+    if (contractId) {
+      formData.append('contract_id', contractId)
+    }
 
     const res = await fetch(`${import.meta.env.VITE_CONTRACT_API_URL}/documents/upload`, {
       method: 'POST',

@@ -29,12 +29,14 @@ const isPolling = ref(false)
 
 async function pollSummary() {
   isPolling.value = true
+  // Give the backend a moment to queue and start the job
+  await new Promise(resolve => setTimeout(resolve, 2000))
   while (isPolling.value) {
-    await new Promise(resolve => setTimeout(resolve, 3000))
     const s = await fetchSummary(contractId)
     if (s && s.status !== 'pending') {
       break
     }
+    await new Promise(resolve => setTimeout(resolve, 3000))
   }
   isPolling.value = false
 }
@@ -51,7 +53,15 @@ onMounted(load)
 async function handleRescan() {
   const ok = await triggerScan(contractId)
   if (ok) {
-    pollSummary()
+    // Force-set a pending state so the loading animation shows immediately.
+    // Without this, pollSummary() would see the OLD completed/failed result,
+    // think the scan is done, and exit before the new one finishes.
+    if (summary.value) {
+      summary.value = { ...summary.value, status: 'pending' }
+    }
+    await pollSummary()
+    // Final fetch to ensure we have the latest result after polling ends
+    await fetchSummary(contractId)
   } else {
     showError('Failed to trigger scan', 'Something went wrong.')
   }

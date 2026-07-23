@@ -46,11 +46,15 @@ final class InternalDocumentController extends Controller
             return response()->json(['message' => 'Document not found.'], 404);
         }
 
-        $disk = config('filesystems.default', 'local');
-        if (!Storage::disk($disk)->exists($document->file_path)) {
+        // file_path is encrypted in the DB; reconstruct the path from the uuid
+        // which is stored plaintext and matches the actual filename on disk.
+        $disk = 'public';
+        $path = "contracts/documents/{$document->uuid}.{$document->file_type}";
+
+        if (!Storage::disk($disk)->exists($path)) {
             return response()->json(['message' => 'File not found on storage disk.'], 404);
         }
 
-        return Storage::disk($disk)->response($document->file_path, $document->file_name);
+        return Storage::disk($disk)->response($path, $document->file_name);
     }
 }
