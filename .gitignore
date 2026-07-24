@@ -27,6 +27,7 @@ frontend/web/yarn-error.log*
 .vscode/
 .idea/
 .kiro/
+*.code-workspace
 .DS_Store
 Thumbs.db
 *.swp

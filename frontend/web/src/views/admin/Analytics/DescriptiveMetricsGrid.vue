@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { FileText, Users, ShieldAlert, Mail, Brain, Bell } from 'lucide-vue-next'
+import { FileText, Users, ShieldAlert, Brain, Bell } from 'lucide-vue-next'
 import type { AnalyticsSummary } from '@/types/analytics'
 import { metricLabels } from '@/types/analytics'
 
 const props = defineProps<{
   summary: AnalyticsSummary | null
+  service?: string
+  hideHeader?: boolean
 }>()
 
 const percentMetrics = new Set(['email_success_rate_pct'])
@@ -30,7 +32,9 @@ const serviceOrder = ['contract-management', 'vendor-management', 'ai-service', 
 
 const groups = computed(() => {
   if (!props.summary) return []
-  return serviceOrder
+  const filterList = props.service ? [props.service] : serviceOrder
+
+  return filterList
     .filter(s => props.summary!.metrics[s]?.length)
     .map(service => {
       const cfg = serviceConfig[service] ?? { icon: ShieldAlert, color: 'text-black/50', bg: 'bg-black/5', bar: '#888' }
@@ -50,15 +54,15 @@ const groups = computed(() => {
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-6">
     <div v-if="groups.length === 0" class="bg-white rounded-lg border border-black/8 shadow-sm p-10 text-center">
       <Brain class="w-8 h-8 mx-auto text-black/20 mb-3" />
       <p class="text-sm text-black/40">No metrics available yet. Try refreshing analytics.</p>
     </div>
 
     <div v-for="group in groups" :key="group.service" class="space-y-3">
-      <!-- Section header -->
-      <div class="flex items-center gap-2">
+      <!-- Section header (optional) -->
+      <div v-if="!props.hideHeader" class="flex items-center gap-2">
         <div class="p-1.5 rounded-lg" :class="group.cfg.bg">
           <component :is="group.cfg.icon" class="w-4 h-4" :class="group.cfg.color" />
         </div>

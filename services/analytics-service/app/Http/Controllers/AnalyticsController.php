@@ -4,13 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\AggregatedMetric;
 use App\Models\DiagnosticInsight;
+use App\Models\PredictiveInsight;
 use App\Services\DescriptiveAggregationService;
 use App\Services\DiagnosticAnalysisService;
+use App\Services\PredictiveAnalysisService;
 use Illuminate\Http\Request;
 
 /**
  * Feature 4: Analytics — Admin/Manager-only (enforced by role check here +
- * the frontend router guard). Descriptive + diagnostic read endpoints, plus
+ * the frontend router guard). Descriptive + diagnostic + predictive read endpoints, plus
  * a manual refresh trigger for on-demand aggregation instead of waiting for
  * the hourly schedule.
  */
@@ -19,6 +21,7 @@ class AnalyticsController extends Controller
     public function __construct(
         protected DescriptiveAggregationService $descriptive,
         protected DiagnosticAnalysisService $diagnostic,
+        protected PredictiveAnalysisService $predictive,
     ) {
     }
 
@@ -78,6 +81,34 @@ class AnalyticsController extends Controller
     }
 
     /**
+     * GET /analytics/predictive — latest 30-day forecast predictions per metric_type.
+     */
+    public function predictive(Request $request)
+    {
+        if ($denied = $this->denyIfNotAuthorized($request)) {
+            return $denied;
+        }
+
+        $insights = PredictiveInsight::orderByDesc('generated_at')
+            ->get()
+            ->groupBy('metric_type')
+            ->map(fn ($group) => $group->first())
+            ->values()
+            ->map(fn ($p) => [
+                'metric_type'           => $p->metric_type,
+                'forecast_date'         => $p->forecast_date->toDateString(),
+                'forecast_horizon_days' => $p->forecast_horizon_days,
+                'historical_series'     => $p->historical_series ?? [],
+                'predicted_series'      => $p->predicted_series ?? [],
+                'confidence'            => $p->confidence,
+                'ai_narrative'          => $p->ai_narrative,
+                'generated_at'          => $p->generated_at->toISOString(),
+            ]);
+
+        return response()->json(['data' => $insights]);
+    }
+
+    /**
      * POST /analytics/refresh — manually trigger an aggregation pass
      * (Admin/Manager only, same as read access) rather than waiting for the
      * hourly schedule.
@@ -90,11 +121,13 @@ class AnalyticsController extends Controller
 
         $written = $this->descriptive->runAll();
         $insights = $this->diagnostic->runAll();
+        $predictions = $this->predictive->runAll();
 
         return response()->json([
-            'message'          => 'Analytics refreshed.',
-            'metrics_written'  => $written,
-            'insights_generated' => count($insights),
+            'message'              => 'Analytics refreshed.',
+            'metrics_written'      => $written,
+            'insights_generated'   => count($insights),
+            'predictions_generated' => count($predictions),
         ]);
     }
 

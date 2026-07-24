@@ -9,15 +9,10 @@ use Faker\Factory as Faker;
 class ContractSimulationSeeder extends Seeder
 {
     /**
-     * Seed 100 realistic contracts:
-     *  - 10 expiring within 30 days  (picked up by the "Expiring Soon" filter)
-     *  - 10 already expired
-     *  - 80 active (end dates 6 months – 4 years out)
-     *
-     * All encrypted fields (bp_name, description) go through Eloquent so the
-     * EncryptedCast fires. Raw DB::table() inserts would bypass the cast and
-     * store plaintext — or worse, store whatever is currently in the encrypted
-     * column from the old key.
+     * Seed 100 active, long-term contracts:
+     *  - All contracts last for 1.5 to 4 years into the future.
+     *  - Zero expiring contracts so automated email notifications (Brevo free tier)
+     *    are not triggered unnecessarily.
      */
     public function run(): void
     {
@@ -42,27 +37,17 @@ class ContractSimulationSeeder extends Seeder
 
         $now = now();
 
-        // ── 3. Build 100 contracts ────────────────────────────────────────────
+        // ── 3. Build 100 long-term contracts ──────────────────────────────────
         $rows = [];
 
         for ($i = 1; $i <= 100; $i++) {
-            $itemCode    = 'ITM-' . str_pad((string) $i, 4, '0', STR_PAD_LEFT);
+            $itemCode     = 'ITM-' . str_pad((string) $i, 4, '0', STR_PAD_LEFT);
             $serialNumber = 'SN-' . str_pad((string) $i, 4, '0', STR_PAD_LEFT) . '-' . strtoupper($faker->bothify('??##'));
 
-            // Determine end_date bucket:
-            //  i 1–10  → expiring soon  (today + 1..29 days)
-            //  i 11–20 → expired        (today - 1..180 days)
-            //  i 21–100 → active        (+6 months .. +4 years)
-            if ($i <= 10) {
-                $startDate = $faker->dateTimeBetween('-2 years', '-6 months')->format('Y-m-d');
-                $endDate   = $now->copy()->addDays(rand(1, 29))->format('Y-m-d');
-            } elseif ($i <= 20) {
-                $startDate = $faker->dateTimeBetween('-3 years', '-1 year')->format('Y-m-d');
-                $endDate   = $now->copy()->subDays(rand(1, 180))->format('Y-m-d');
-            } else {
-                $startDate = $faker->dateTimeBetween('-1 year', 'now')->format('Y-m-d');
-                $endDate   = $faker->dateTimeBetween('+6 months', '+4 years')->format('Y-m-d');
-            }
+            // Start date: past 6 months to today
+            // End date: 1.5 years (+540 days) to 4 years (+1460 days) in the future
+            $startDate = $faker->dateTimeBetween('-6 months', 'now')->format('Y-m-d');
+            $endDate   = $faker->dateTimeBetween('+18 months', '+48 months')->format('Y-m-d');
 
             $rows[] = [
                 'category_id'        => $categoryIds[array_rand($categoryIds)],
@@ -82,13 +67,8 @@ class ContractSimulationSeeder extends Seeder
             ];
         }
 
-        // Insert in one batch — bp_name and description go in plain so the cast
-        // encrypts them on the way in when accessed via the model, but since we
-        // are using DB::table() directly here they will be stored as plaintext.
-        // That is intentional for seed data: the EncryptionService returns the
-        // value as-is when no FIELD_ENCRYPTION_KEY is set.
         DB::table('contracts')->insert($rows);
 
-        $this->command->info('Seeded 100 contracts (10 expiring soon, 10 expired, 80 active).');
+        $this->command->info('Seeded 100 long-term contracts (end dates 1.5 to 4 years out; 0 expiring).');
     }
 }

@@ -6,6 +6,7 @@ import type { AnalyticsSummary } from '@/types/analytics'
 
 const props = defineProps<{
   summary: AnalyticsSummary | null
+  service?: string
 }>()
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -40,7 +41,7 @@ const contractBars = computed<BarItem[]>(() => [
   { label: 'Escalated',    value: getVal('contract-management', 'high_risk_approvals_escalated'), color: '#2F2F73', barColor: '#2F2F73' },
 ].filter(b => b.value > 0))
 
-const showBars = computed(() => contractBars.value.length > 0)
+const showContractBars = computed(() => (!props.service || props.service === 'contract-management') && contractBars.value.length > 0)
 const barMax   = computed(() => Math.max(...contractBars.value.map(b => b.value), 1))
 
 // Tooltip state for the bar chart
@@ -64,21 +65,25 @@ const aiByRiskLevel       = computed(() => toSlices(findMeta('ai-service', 'avg_
 const notificationsByType = computed(() => toSlices(findMeta('notification', 'notifications_sent_24h')?.by_type))
 const notificationsByStatus = computed(() => toSlices(findMeta('notification', 'notifications_sent_24h')?.by_status))
 
-const donuts = computed(() => [
-  { title: 'Contracts by Status',       subtitle: 'Current workflow distribution',        data: contractsByStatus.value },
-  { title: 'Contracts by Category',     subtitle: 'Distribution by contract type',        data: contractsByCategory.value },
-  { title: 'Suppliers by Region',       subtitle: 'Geographic spread of partners',        data: suppliersByRegion.value },
-  { title: 'Partners by Type',          subtitle: 'Distribution of vendors & suppliers',  data: partnersByType.value },
-  { title: 'Risk Assessments by Level', subtitle: 'AI-scanned contracts by risk band',    data: aiByRiskLevel.value },
-  { title: 'Notifications by Type',     subtitle: 'Alerts sent in the last 24h',          data: notificationsByType.value },
-  { title: 'Notifications by Status',   subtitle: 'Delivery status in the last 24h',      data: notificationsByStatus.value },
-].filter(c => c.data.length > 0))
+const donuts = computed(() => {
+  const allDonuts = [
+    { service: 'contract-management', title: 'Contracts by Status',       subtitle: 'Current workflow distribution',        data: contractsByStatus.value },
+    { service: 'contract-management', title: 'Contracts by Category',     subtitle: 'Distribution by contract type',        data: contractsByCategory.value },
+    { service: 'vendor-management',   title: 'Suppliers by Region',       subtitle: 'Geographic spread of partners',        data: suppliersByRegion.value },
+    { service: 'vendor-management',   title: 'Partners by Type',          subtitle: 'Distribution of vendors & suppliers',  data: partnersByType.value },
+    { service: 'ai-service',          title: 'Risk Assessments by Level', subtitle: 'AI-scanned contracts by risk band',    data: aiByRiskLevel.value },
+    { service: 'notification',        title: 'Notifications by Type',     subtitle: 'Alerts sent in the last 24h',          data: notificationsByType.value },
+    { service: 'notification',        title: 'Notifications by Status',   subtitle: 'Delivery status in the last 24h',      data: notificationsByStatus.value },
+  ]
+
+  return allDonuts
+    .filter(c => (!props.service || c.service === props.service) && c.data.length > 0)
+})
 
 // Unovis donut accessors
 const donutValue = (d: SliceItem) => d.value
 const donutColor = (d: SliceItem) => d.color
 
-// Unovis VisTooltip template — shows the hovered segment label + value + %
 function donutTooltip(d: any, total: number) {
   const item = d.data as SliceItem
   const pct = Math.round((item.value / total) * 100)
@@ -95,19 +100,16 @@ function donutTooltip(d: any, total: number) {
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-6">
 
-    <!-- ── Contract Overview Bar Chart ──────────────────────────────────── -->
-    <div v-if="showBars" class="bg-white rounded-xl border border-black/8 shadow-sm overflow-hidden">
+    <!-- ── Contract Overview Bar Chart (Contract Management Section) ──────────────────────────────────── -->
+    <div v-if="showContractBars" class="bg-white rounded-xl border border-black/8 shadow-sm overflow-hidden">
       <div class="px-6 pt-5 pb-4 border-b border-black/5">
-        <h3 class="text-sm font-semibold text-black">Contract Overview</h3>
-        <p class="text-xs text-black/40 mt-0.5">Hover each bar for details</p>
+        <h3 class="text-sm font-semibold text-black">Contract Metrics Overview</h3>
+        <p class="text-xs text-black/40 mt-0.5">Summary bar breakdown for contract metrics</p>
       </div>
       <div class="px-6 py-6">
-        <!-- Bar chart with hover tooltips -->
         <div class="bar-chart-container relative flex items-end gap-3 h-40">
-
-          <!-- Tooltip -->
           <Transition name="fade">
             <div
               v-if="hoveredBar"
@@ -121,12 +123,10 @@ function donutTooltip(d: any, total: number) {
                 </div>
                 <span class="text-white/60">{{ hoveredBar.value.toLocaleString() }} contracts</span>
               </div>
-              <!-- Caret -->
               <div class="w-2.5 h-2.5 bg-[#1e1e2e] rotate-45 mx-auto -mt-1 rounded-sm" />
             </div>
           </Transition>
 
-          <!-- Bars -->
           <div
             v-for="item in contractBars"
             :key="item.label"
@@ -155,7 +155,6 @@ function donutTooltip(d: any, total: number) {
           </div>
         </div>
 
-        <!-- Bottom legend row -->
         <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2">
           <div v-for="item in contractBars" :key="item.label + '-leg'" class="flex items-center gap-1.5">
             <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ background: item.barColor }" />
@@ -177,7 +176,6 @@ function donutTooltip(d: any, total: number) {
           <p class="text-xs text-black/40 mt-0.5">{{ chart.subtitle }} · hover to explore</p>
         </div>
         <div class="px-6 py-6 flex gap-8 items-center">
-          <!-- Donut with Unovis tooltip -->
           <div class="relative shrink-0 w-40 h-40">
             <VisSingleContainer :data="chart.data" :height="160" :width="160">
               <VisDonut
@@ -191,7 +189,6 @@ function donutTooltip(d: any, total: number) {
                 }"
               />
             </VisSingleContainer>
-            <!-- Center label -->
             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <p class="text-2xl font-bold text-black tabular-nums leading-none">
                 {{ chart.data.reduce((s, d) => s + d.value, 0) }}
@@ -200,7 +197,6 @@ function donutTooltip(d: any, total: number) {
             </div>
           </div>
 
-          <!-- Legend with percentages -->
           <div class="flex-1 space-y-2.5 min-w-0">
             <div v-for="item in chart.data" :key="item.label" class="flex items-center justify-between gap-2 min-w-0">
               <div class="flex items-center gap-2 min-w-0">

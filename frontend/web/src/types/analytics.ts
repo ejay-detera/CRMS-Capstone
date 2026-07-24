@@ -1,5 +1,5 @@
 // Feature 4: Analytics — types matching analytics-service's
-// /analytics/summary and /analytics/diagnostics response shapes.
+// /analytics/summary, /analytics/diagnostics, and /analytics/predictive response shapes.
 
 export interface AggregatedMetricEntry {
   metricType: string
@@ -22,10 +22,27 @@ export interface DiagnosticInsight {
   generatedAt: string
 }
 
+export interface TimePoint {
+  date: string
+  value: number
+}
+
+export interface PredictiveInsight {
+  metricType: string
+  forecastDate: string
+  forecastHorizonDays: number
+  historicalSeries: TimePoint[]
+  predictedSeries: TimePoint[]
+  confidence: 'high' | 'medium' | 'low'
+  aiNarrative: string | null
+  generatedAt: string
+}
+
 export interface RefreshResult {
   message: string
   metricsWritten: Record<string, number>
   insightsGenerated: number
+  predictionsGenerated?: number
 }
 
 // ── Display labels ──────────────────────────────────────────────────
@@ -61,6 +78,11 @@ export const metricLabels: Record<string, string> = {
 export const diagnosticLabels: Record<string, string> = {
   risk_flag_rate:           'Risk Flag Rate',
   approval_sla_bottleneck:  'Approval SLA Bottleneck',
+}
+
+export const predictiveLabels: Record<string, string> = {
+  risk_score_forecast:     'Average Contract Risk Score Forecast',
+  approval_time_forecast:  'Approval SLA Turnaround Forecast',
 }
 
 export const findingFieldLabels: Record<string, string> = {
