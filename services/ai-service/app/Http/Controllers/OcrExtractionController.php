@@ -137,8 +137,8 @@ For the region, match one of: 'Luzon', 'Visayas', 'Mindanao'. If not mentioned, 
                     ],
                     'region' => [
                         'type' => 'STRING',
-                        'enum' => ['Luzon', 'Visayas', 'Mindanao', ''],
-                        'description' => 'The region mentioned in the contract. If not mentioned, return empty string.'
+                        'enum' => ['Luzon', 'Visayas', 'Mindanao', 'Unknown'],
+                        'description' => 'The region mentioned in the contract. If not mentioned, return "Unknown".'
                     ],
                     'start_date' => [
                         'type' => 'STRING',

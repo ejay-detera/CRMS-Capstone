@@ -1,4 +1,4 @@
-script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
 import { FileText, FileImage, UploadCloud, X, AlertCircle, Loader2 } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
@@ -184,7 +184,7 @@ async function handleExtract() {
       <div class="px-5 py-5 space-y-4">
 
         <!-- Drop zone -->
-        <div v-slot:default v-if="stage === 'idle'"
+        <div v-if="stage === 'idle'"
           @dragover.prevent="dragOver = true"
           @dragleave.prevent="dragOver = false"
           @drop.prevent="onDrop"
@@ -265,7 +265,7 @@ async function handleExtract() {
         </Button>
         <Button
           @click="handleExtract"
-          :disabled="stage !== 'selected' || stage === 'scanning'"
+          :disabled="stage !== 'selected'"
           class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
           {{ stage === 'scanning' ? 'Extracting…' : 'Extract & Autofill' }}
         </Button>

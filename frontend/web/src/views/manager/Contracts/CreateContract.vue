@@ -11,6 +11,8 @@ import { useRiskAssessment } from '@/composables/useRiskAssessment'
 import DocumentUpload from '@/views/sales/Contracts/DocumentUpload.vue'
 import type { ContractRegion, UploadedDoc } from '@/types/contract'
 import { useCreateContractDraft } from '@/composables/useCreateContractDraft'
+import OcrImportDialog from '@/views/admin/Contracts/OcrImportDialog.vue'
+import type { OcrExtractedData } from '@/types/ocr'
 
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
@@ -22,6 +24,34 @@ const { draft, saveDraft, restoreDraft, clearDraft } = useCreateContractDraft()
 const { preferences: aiPreferences, fetchPreferences: fetchAiPreferences } = useEmailPreferences()
 const { triggerScan } = useRiskAssessment()
 
+const ocrOpen = ref(false)
+
+const activePartnerNames = computed(() => {
+  return vendorOptions.value.filter(v => v.status !== 'Suspended').map(v => v.name)
+})
+
+function handleOcrSuccess(data: OcrExtractedData) {
+  if (data.business_partner) {
+    form.businessPartner = data.business_partner
+    touched.businessPartner = true
+  }
+  if (data.category) {
+    form.category = data.category
+    touched.category = true
+  }
+  if (data.start_date) {
+    form.startDate = data.start_date
+    touched.startDate = true
+  }
+  if (data.end_date) {
+    form.endDate = data.end_date
+    touched.endDate = true
+  }
+  if (data.description) {
+    form.description = data.description
+    touched.description = true
+  }
+}
 
 const loading      = ref(false)
 const showConfirm  = ref(false)
@@ -323,6 +353,11 @@ onClickOutside(suggestionsContainer, () => {
         <p class="text-sm text-black/40 mt-0.5">Fill in the details below to create a new contract.</p>
       </div>
 
+      <Button @click="ocrOpen = true" variant="outline"
+        class="h-9 px-4 text-sm border-black/15 text-[#252578] hover:text-[#2F2F73] hover:bg-black/2 flex items-center gap-2">
+        <ScanLine class="w-4 h-4 text-[#252578]" />
+        Fill with OCR
+      </Button>
     </div>
 
     <!-- Form card -->
@@ -553,5 +588,11 @@ onClickOutside(suggestionsContainer, () => {
     variant="default"
     :loading="loading"
     @confirm="confirmSubmit"
+  />
+
+  <OcrImportDialog
+    v-model:open="ocrOpen"
+    :candidate-partners="activePartnerNames"
+    @success="handleOcrSuccess"
   />
 </template>

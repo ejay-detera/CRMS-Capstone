@@ -5,7 +5,7 @@ export interface OcrExtractedData {
   description: string;
   serial_number: string;
   sbu_number: string;
-  region: 'Luzon' | 'Visayas' | 'Mindanao' | '';
+  region: 'Luzon' | 'Visayas' | 'Mindanao' | 'Unknown' | '';
   start_date: string;
   end_date: string;
   confidence_score: number;

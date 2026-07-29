@@ -1,9 +1,9 @@
 FROM php:8.3-cli
 
 RUN apt-get update && apt-get install -y \
-    curl unzip git libpng-dev libonig-dev libxml2-dev libpq-dev \
+    curl unzip git libpng-dev libonig-dev libxml2-dev libpq-dev libzip-dev \
     tesseract-ocr tesseract-ocr-eng poppler-utils \
-    && docker-php-ext-install pdo pdo_pgsql mbstring
+    && docker-php-ext-install pdo pdo_pgsql mbstring zip
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

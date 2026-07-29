@@ -44,8 +44,8 @@ function handleOcrSuccess(data: OcrExtractedData) {
     form.sbuNumber = data.sbu_number
     touched.sbuNumber = true
   }
-  if (data.region) {
-    form.region = data.region
+  if (data.region && data.region !== 'Unknown') {
+    form.region = data.region as ContractRegion
     touched.region = true
   }
   if (data.start_date) {
