@@ -67,4 +67,22 @@ class ContractDocumentClient
             return null;
         }
     }
+
+    public function getDocumentMetadata(string $documentId): ?array
+    {
+        try {
+            $response = Http::withHeaders([
+                'Accept'            => 'application/json',
+                'X-Internal-Secret' => $this->secret,
+            ])->get("{$this->baseUrl}/internal/documents/{$documentId}");
+
+            return $response->successful() ? $response->json('data') : null;
+        } catch (\Exception $e) {
+            Log::error('ContractDocumentClient: getDocumentMetadata connection error', [
+                'document_id' => $documentId,
+                'message'     => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
 }

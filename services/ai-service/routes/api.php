@@ -3,6 +3,7 @@
 use App\Http\Controllers\Internal\ContractRiskLevelController;
 use App\Http\Controllers\RiskAssessmentController;
 use App\Http\Controllers\VendorSuggestionController;
+use App\Http\Controllers\OcrExtractionController;
 use Illuminate\Support\Facades\Route;
 
 // Internal service-to-service reads — authenticated by X-Internal-Secret header.
@@ -19,6 +20,9 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::post('/contracts/{contractId}/risk-assessment/scan', [RiskAssessmentController::class, 'scan']);
     Route::get('/contracts/{contractId}/risk-assessment/summary', [RiskAssessmentController::class, 'summary']);
     Route::get('/contracts/{contractId}/risk-assessment/summary/pdf', [RiskAssessmentController::class, 'summaryPdf']);
+    
+    // OCR Service - US-OCR
+    Route::post('/ocr/extract', [OcrExtractionController::class, 'extract']);
 });
 
 // Feature 3: Vendor AI Suggestions — user-facing, bearer-token authenticated, Admin-only.

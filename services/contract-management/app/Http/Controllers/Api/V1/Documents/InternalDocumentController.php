@@ -57,4 +57,23 @@ final class InternalDocumentController extends Controller
 
         return Storage::disk($disk)->response($path, $document->file_name);
     }
+
+    /**
+     * GET /internal/documents/{id} — fetches document metadata.
+     */
+    public function show(Request $request, string $id)
+    {
+        $document = Document::find($id);
+        if (!$document) {
+            return response()->json(['message' => 'Document not found.'], 404);
+        }
+
+        return response()->json([
+            'data' => [
+                'document_id' => (string) $document->getKey(),
+                'file_name'   => $document->file_name,
+                'file_type'   => $document->file_type,
+            ],
+        ]);
+    }
 }

@@ -9,8 +9,54 @@ import { useApiCache } from '@/composables/useApiCache'
 import DocumentUpload from '@/views/sales/Contracts/DocumentUpload.vue'
 import type { ContractRegion, UploadedDoc } from '@/types/contract'
 import { useCreateContractDraft } from '@/composables/useCreateContractDraft'
+import OcrImportDialog from '@/views/admin/Contracts/OcrImportDialog.vue'
+import type { OcrExtractedData } from '@/types/ocr'
 
 const router = useRouter()
+const ocrOpen = ref(false)
+
+const activePartnerNames = computed(() => {
+  return vendorOptions.value.filter(v => v.status !== 'Suspended').map(v => v.name)
+})
+
+function handleOcrSuccess(data: OcrExtractedData) {
+  if (data.business_partner) {
+    form.businessPartner = data.business_partner
+    touched.businessPartner = true
+  }
+  if (data.category) {
+    form.category = data.category
+    touched.category = true
+  }
+  if (data.item_code) {
+    form.itemCode = data.item_code
+    touched.itemCode = true
+  }
+  if (data.description) {
+    form.description = data.description
+    touched.description = true
+  }
+  if (data.serial_number) {
+    form.serialNo = data.serial_number
+    touched.serialNo = true
+  }
+  if (data.sbu_number) {
+    form.sbuNumber = data.sbu_number
+    touched.sbuNumber = true
+  }
+  if (data.region) {
+    form.region = data.region
+    touched.region = true
+  }
+  if (data.start_date) {
+    form.startDate = data.start_date
+    touched.startDate = true
+  }
+  if (data.end_date) {
+    form.endDate = data.end_date
+    touched.endDate = true
+  }
+}
 const { success, error } = useToast()
 const { state: authState } = useAuth()
 const { invalidateContracts, invalidateRequests } = useApiCache()
@@ -280,16 +326,23 @@ onClickOutside(suggestionsContainer, () => {
   <div class="p-8 space-y-6">
 
     <!-- Header -->
-    <div class="flex items-center gap-4">
-      <button @click="router.push('/admin/contracts')"
-        class="flex items-center justify-center w-9 h-9 rounded-lg border border-black/10 bg-white hover:bg-black/4 text-black/50 hover:text-black transition shrink-0">
-        <ArrowLeft class="w-4 h-4" />
-      </button>
-      <div class="flex-1">
-        <h1 class="text-xl font-semibold text-black">Create New Contract</h1>
-        <p class="text-sm text-black/40 mt-0.5">Fill in the details below to create a new contract.</p>
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+      <div class="flex items-center gap-4">
+        <button @click="router.push('/admin/contracts')"
+          class="flex items-center justify-center w-9 h-9 rounded-lg border border-black/10 bg-white hover:bg-black/4 text-black/50 hover:text-black transition shrink-0">
+          <ArrowLeft class="w-4 h-4" />
+        </button>
+        <div class="flex-1">
+          <h1 class="text-xl font-semibold text-black">Create New Contract</h1>
+          <p class="text-sm text-black/40 mt-0.5">Fill in the details below to create a new contract.</p>
+        </div>
       </div>
-
+      
+      <Button @click="ocrOpen = true" variant="outline"
+        class="h-9 px-4 text-sm border-black/15 text-[#252578] hover:text-[#2F2F73] hover:bg-black/2 flex items-center gap-2">
+        <ScanLine class="w-4 h-4 text-[#252578]" />
+        Fill with OCR
+      </Button>
     </div>
 
     <!-- Form card -->
@@ -510,5 +563,10 @@ onClickOutside(suggestionsContainer, () => {
     </div>
   </div>
 
-
+  <!-- OCR Scan Dialog -->
+  <OcrImportDialog
+    v-model:open="ocrOpen"
+    :candidate-partners="activePartnerNames"
+    @success="handleOcrSuccess"
+  />
 </template>

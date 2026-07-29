@@ -13,18 +13,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Check if the index already exists before adding it, so migrations are safe
-        // when two services share the same cms-db and one has already run this migration.
-        if (DB::getDriverName() === 'sqlite') {
-            $indexExists = collect(DB::select("SELECT name FROM sqlite_master WHERE type='index' AND name='audit_logs_action_index'"))->isNotEmpty();
-        } else {
-            $indexExists = collect(DB::select("SHOW INDEX FROM audit_logs WHERE Key_name = 'audit_logs_action_index'"))->isNotEmpty();
-        }
-
-        if (!$indexExists) {
+        try {
             Schema::table('audit_logs', function (Blueprint $table) {
                 $table->index('action'); // for WHERE action = ?
             });
+        } catch (\Exception $e) {
+            // Ignore if index already exists
         }
     }
 
@@ -33,16 +27,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (DB::getDriverName() === 'sqlite') {
-            $indexExists = collect(DB::select("SELECT name FROM sqlite_master WHERE type='index' AND name='audit_logs_action_index'"))->isNotEmpty();
-        } else {
-            $indexExists = collect(DB::select("SHOW INDEX FROM audit_logs WHERE Key_name = 'audit_logs_action_index'"))->isNotEmpty();
-        }
-
-        if ($indexExists) {
+        try {
             Schema::table('audit_logs', function (Blueprint $table) {
                 $table->dropIndex(['action']);
             });
+        } catch (\Exception $e) {
+            // Ignore if index doesn't exist
         }
     }
 };

@@ -64,6 +64,7 @@ Route::post('/internal/audit-event', [\App\Http\Controllers\InternalAuditControl
 // Internal service-to-service reads for ai-service's RAG risk-assessment pipeline (Feature 1).
 Route::middleware(['internal.secret'])->group(function () {
     Route::get('/internal/contracts/{contractId}/documents', [\App\Http\Controllers\Api\V1\Documents\InternalDocumentController::class, 'listForContract']);
+    Route::get('/internal/documents/{id}', [\App\Http\Controllers\Api\V1\Documents\InternalDocumentController::class, 'show']);
     Route::get('/internal/documents/{id}/file', [\App\Http\Controllers\Api\V1\Documents\InternalDocumentController::class, 'file']);
     Route::get('/internal/contracts/{id}/owner', function (string $id) {
         $contract = \App\Models\Contract::find($id);
