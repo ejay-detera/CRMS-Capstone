@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
 test.describe('Login Module', () => {
 
@@ -10,8 +10,8 @@ test.describe('Login Module', () => {
         await page.getByRole('button', { name: 'Sign In' }).click();
 
         // Wait for successful login redirection
-        await page.waitForURL(/(?!.*login).*/, { timeout: 15000 });
-        await expect(page.locator('h1')).toContainText('Sales Marketing Manager Manager', { timeout: 15000 });
+        await page.waitForURL(/^(?!.*login).*$/, { timeout: 15000 });
+        await expect(page.locator('nav')).toContainText('Sales Marketing Manager', { timeout: 15000 });
 
         // Logout
         await page.getByRole('button', { name: 'Logout' }).click();
@@ -26,8 +26,8 @@ test.describe('Login Module', () => {
         await page.getByRole('button', { name: 'Sign In' }).click();
 
         // Wait for successful login redirection
-        await page.waitForURL(/(?!.*login).*/, { timeout: 15000 });
-        await expect(page.locator('h1')).toContainText('Sales Marketing Administrator Admin', { timeout: 15000 });
+        await page.waitForURL(/^(?!.*login).*$/, { timeout: 15000 });
+        await expect(page.locator('nav')).toContainText('Sales Marketing Administrator', { timeout: 15000 });
 
         // Logout
         await page.getByRole('button', { name: 'Logout' }).click();

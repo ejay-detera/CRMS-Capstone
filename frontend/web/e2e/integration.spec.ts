@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
 test.describe('PRS & CMS Integration Module', () => {
 
@@ -17,10 +17,10 @@ test.describe('PRS & CMS Integration Module', () => {
         await page.getByRole('button', { name: 'Sign In' }).click();
 
         // Wait for successful login redirection
-        await page.waitForURL(/(?!.*login).*/, { timeout: 15000 });
+        await page.waitForURL(/^(?!.*login).*$/, { timeout: 15000 });
 
         // 2. Open PRS (Productivity Report System) Module
-        await page.locator('div').filter({ hasText: /^Open module$/ }).nth(4).click();
+        await page.locator('.glass-card', { hasText: 'Productivity Report System' }).getByRole('button', { name: 'Launch System' }).click();
         await page.getByRole('link', { name: 'My Activities' }).click();
 
         // 3. Plan Activity
@@ -104,10 +104,10 @@ test.describe('PRS & CMS Integration Module', () => {
         await page.getByRole('textbox', { name: 'Email' }).fill('sales-marketing-officer@example.com');
         await page.getByRole('textbox', { name: 'Password' }).fill('password');
         await page.getByRole('button', { name: 'Sign In' }).click();
-        await page.waitForURL(/(?!.*login).*/, { timeout: 15000 });
+        await page.waitForURL(/^(?!.*login).*$/, { timeout: 15000 });
 
         // 2. Open My Activities
-        await page.locator('div').filter({ hasText: /^Open module$/ }).nth(4).click();
+        await page.locator('.glass-card', { hasText: 'Productivity Report System' }).getByRole('button', { name: 'Launch System' }).click();
         await page.getByRole('link', { name: 'My Activities' }).click();
 
         // 3. Plan Activity
@@ -145,10 +145,10 @@ test.describe('PRS & CMS Integration Module', () => {
         await page.getByRole('textbox', { name: 'Email' }).fill('sales-marketing-officer@example.com');
         await page.getByRole('textbox', { name: 'Password' }).fill('password');
         await page.getByRole('button', { name: 'Sign In' }).click();
-        await page.waitForURL(/(?!.*login).*/, { timeout: 15000 });
+        await page.waitForURL(/^(?!.*login).*$/, { timeout: 15000 });
 
         // 2. Go to My Activities
-        await page.locator('div').filter({ hasText: /^Open module$/ }).nth(4).click();
+        await page.locator('.glass-card', { hasText: 'Productivity Report System' }).getByRole('button', { name: 'Launch System' }).click();
         await page.getByRole('link', { name: 'My Activities' }).click();
 
         // 3. Open Plan Activity Dialog and create a test activity
@@ -186,10 +186,10 @@ test.describe('PRS & CMS Integration Module', () => {
         await page.getByRole('textbox', { name: 'Email' }).fill('sales-marketing-officer@example.com');
         await page.getByRole('textbox', { name: 'Password' }).fill('password');
         await page.getByRole('button', { name: 'Sign In' }).click();
-        await page.waitForURL(/(?!.*login).*/, { timeout: 15000 });
+        await page.waitForURL(/^(?!.*login).*$/, { timeout: 15000 });
 
         // 2. Open My Activities
-        await page.locator('div').filter({ hasText: /^Open module$/ }).nth(4).click();
+        await page.locator('.glass-card', { hasText: 'Productivity Report System' }).getByRole('button', { name: 'Launch System' }).click();
         await page.getByRole('link', { name: 'My Activities' }).click();
 
         // 3. Plan and submit an activity log to enable the "CRM / Contract Manager" link

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
 test.describe('Vendor Module', () => {
 
@@ -21,11 +21,11 @@ test.describe('Vendor Module', () => {
         await page.getByRole('textbox', { name: 'Email' }).fill('sales-marketing-admin@example.com');
         await page.getByRole('textbox', { name: 'Password' }).fill('password');
         await page.getByRole('button', { name: 'Sign In' }).click();
-        await page.waitForURL(/(?!.*login).*/, { timeout: 15000 });
-        await expect(page.locator('h1')).toContainText('Sales Marketing Administrator Admin', { timeout: 15000 });
+        await page.waitForURL(/^(?!.*login).*$/, { timeout: 15000 });
+        await expect(page.locator('nav')).toContainText('Sales Marketing Administrator', { timeout: 15000 });
 
         // 2. Open Business & Suppliers
-        await page.getByText('Open module').first().click();
+        await page.locator('.glass-card', { hasText: 'Contract Management' }).getByRole('button', { name: 'Launch System' }).click();
         await page.waitForURL(/.*admin.*/, { timeout: 15000 });
         await page.getByRole('link', { name: 'Business & Suppliers' }).click();
 
@@ -74,10 +74,10 @@ test.describe('Vendor Module', () => {
         await page.getByRole('textbox', { name: 'Email' }).fill('sales-marketing-admin@example.com');
         await page.getByRole('textbox', { name: 'Password' }).fill('password');
         await page.getByRole('button', { name: 'Sign In' }).click();
-        await page.waitForURL(/(?!.*login).*/, { timeout: 15000 });
+        await page.waitForURL(/^(?!.*login).*$/, { timeout: 15000 });
 
         // 2. Open Business & Suppliers
-        await page.getByText('Open module').first().click();
+        await page.locator('.glass-card', { hasText: 'Contract Management' }).getByRole('button', { name: 'Launch System' }).click();
         await page.waitForURL(/.*admin.*/, { timeout: 15000 });
         await page.getByRole('link', { name: 'Business & Suppliers' }).click();
 

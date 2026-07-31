@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
 const LOGIN_URL = 'http://localhost:5173/';
 const EMAIL = 'sales-marketing-officer@example.com';
@@ -10,10 +10,10 @@ async function loginAndGoToDashboard(page: any) {
     await page.getByRole('textbox', { name: 'Email' }).fill(EMAIL);
     await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL(/(?!.*login).*/, { timeout: 15000 });
+    await page.waitForURL(/^(?!.*login).*$/, { timeout: 15000 });
 
     // Click into the Contract Management System module
-    await page.getByText('Open module').first().click();
+    await page.locator('.glass-card', { hasText: 'Contract Management' }).getByRole('button', { name: 'Launch System' }).click();
     await page.waitForLoadState('networkidle', { timeout: 15000 });
 }
 

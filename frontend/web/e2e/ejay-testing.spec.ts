@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
 test('test', async ({ page }) => {
 
@@ -33,12 +33,12 @@ await page.getByRole('link', { name: 'Log in' }).click();
 await page.getByRole('textbox', { name: 'Email' }).fill('sales-marketing-manager@example.com');
 await page.getByRole('textbox', { name: 'Password' }).fill('password');
 await page.getByRole('button', { name: 'Sign In' }).click();
-await page.waitForURL(/(?!.*login).*/, { timeout: 10000 });
+await page.waitForURL(/^(?!.*login).*$/, { timeout: 10000 });
 
 //Contract Module as Finance Manager
 //Create Contract
-await expect(page.locator('h1')).toContainText('Sales Marketing Manager Manager', { timeout: 10000 });
-await page.getByText('Open module').first().click();
+await expect(page.locator('nav')).toContainText('Sales Marketing Manager', { timeout: 10000 });
+await page.locator('.glass-card', { hasText: 'Contract Management' }).getByRole('button', { name: 'Launch System' }).click();
 await page.getByRole('button', { name: 'Contracts' }).click();
 await page.getByRole('button').nth(4).click();
 await page.getByRole('textbox', { name: 'e.g. Globe Telecom' }).fill(contract.vendorName);
@@ -66,9 +66,9 @@ await page.getByRole('link', { name: 'Log in' }).click();
 await page.getByRole('textbox', { name: 'Email' }).fill('sales-marketing-admin@example.com');
 await page.getByRole('textbox', { name: 'Password' }).fill('password');
 await page.getByRole('button', { name: 'Sign In' }).click();
-await page.waitForURL(/(?!.*login).*/, { timeout: 10000 });
-await expect(page.locator('h1')).toContainText('Sales Marketing Administrator Admin', { timeout: 10000 });
-await page.getByText('Open module').first().click();
+await page.waitForURL(/^(?!.*login).*$/, { timeout: 10000 });
+await expect(page.locator('nav')).toContainText('Sales Marketing Administrator', { timeout: 10000 });
+await page.locator('.glass-card', { hasText: 'Contract Management' }).getByRole('button', { name: 'Launch System' }).click();
 await page.getByRole('link', { name: 'Business & Suppliers' }).click();
 
 //Create Business Partner
