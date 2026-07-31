@@ -85,6 +85,16 @@ class DescriptiveAggregationServiceTest extends TestCase
             'source_service' => 'ai-service',
             'metric_value'   => 20,
         ]);
+
+        // ai-service reports avg_risk_score on its internal 0-100
+        // severity-weighted scale (45.5); this must be normalized to the
+        // 0-10 scale analytics documents and displays everywhere before
+        // being persisted.
+        $this->assertDatabaseHas('aggregated_metrics', [
+            'metric_type'    => 'avg_risk_score',
+            'source_service' => 'ai-service',
+            'metric_value'   => 4.55,
+        ]);
     }
 
     public function test_degrades_gracefully_when_a_source_service_is_unreachable(): void

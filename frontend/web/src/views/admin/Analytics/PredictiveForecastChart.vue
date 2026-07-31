@@ -64,6 +64,25 @@ const x = (d: ChartPoint) => d.index
 const yHistorical = (d: ChartPoint) => d.historicalVal
 const yPredicted = (d: ChartPoint) => d.predictedVal
 
+// Fix the Y-axis domain to the full historical + forecast range (computed
+// once, independent of the active view toggle) so switching between
+// Combined / Historical Only / AI Forecast Only never rescales the axis.
+// Without this, each view mode auto-scaled to only its own visible points,
+// which could make a mild slope look dramatically steeper when viewed in
+// isolation than it does in the combined view.
+const yDomain = computed<[number, number]>(() => {
+  const hist = props.insight.historicalSeries ?? []
+  const pred = props.insight.predictedSeries ?? []
+  const values = [...hist, ...pred].map(p => Number(p.value)).filter(v => !isNaN(v))
+
+  if (values.length === 0) return [0, 1]
+
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const padding = (max - min) * 0.1 || 1
+  return [Math.max(0, min - padding), max + padding]
+})
+
 const xTickFormat = (i: number) => {
   const pt = chartData.value[Math.round(i)]
   if (!pt) return ''
@@ -169,6 +188,7 @@ const tooltipTemplate = (d: ChartPoint) => {
         <VisXYContainer
           :data="chartData"
           :height="240"
+          :y-domain="yDomain"
           :style="{
             '--vis-axis-tick-label-color': 'rgba(0,0,0,0.5)',
             '--vis-axis-domain-color': 'transparent',

@@ -111,9 +111,16 @@ class AnalyticsHistorySeeder extends Seeder
             ];
         }
 
-        // Insert in batches of 200
+        // Upsert (rather than raw insert) so re-running this seeder never
+        // creates duplicate rows for the same (metric_type, source_service,
+        // metric_date) — that duplication previously corrupted the
+        // predictive forecast's historical series.
         foreach (array_chunk($metrics, 200) as $chunk) {
-            DB::table('aggregated_metrics')->insert($chunk);
+            DB::table('aggregated_metrics')->upsert(
+                $chunk,
+                ['metric_type', 'source_service', 'metric_date'],
+                ['metric_value', 'metadata', 'updated_at']
+            );
         }
 
         $this->command->info('Seeded 90 days of daily analytics metrics for Diagnostic and Predictive analysis.');

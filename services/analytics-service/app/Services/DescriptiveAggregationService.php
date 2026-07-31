@@ -107,7 +107,17 @@ class DescriptiveAggregationService
         $count += $this->write('contracts_scanned', 'ai-service', $data['contracts_scanned'] ?? null, $date);
         $count += $this->write('scans_completed', 'ai-service', $data['scans_completed'] ?? null, $date);
         $count += $this->write('scans_failed', 'ai-service', $data['scans_failed'] ?? null, $date);
-        $count += $this->write('avg_risk_score', 'ai-service', $data['avg_risk_score'] ?? null, $date, [
+
+        // ai-service computes risk_score on a 0-100 severity-weighted scale
+        // (low=10, medium=40, high=70, critical=95), but analytics documents
+        // and displays "Average Contract Risk Score" on a 0-10 scale
+        // everywhere (labels, historical baselines, forecast unit). Normalize
+        // here at the single write point so the two scales can never mix in
+        // aggregated_metrics again.
+        $rawAvgRiskScore = $data['avg_risk_score'] ?? null;
+        $normalizedAvgRiskScore = is_numeric($rawAvgRiskScore) ? round($rawAvgRiskScore / 10, 2) : null;
+
+        $count += $this->write('avg_risk_score', 'ai-service', $normalizedAvgRiskScore, $date, [
             'by_risk_level'               => $data['by_risk_level'] ?? null,
             'most_cited_playbook_clauses' => $data['most_cited_playbook_clauses'] ?? null,
         ]);
