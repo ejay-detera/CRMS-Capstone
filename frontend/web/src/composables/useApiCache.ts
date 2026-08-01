@@ -1,5 +1,6 @@
 import { reactive, watch } from 'vue'
 import { useAuth } from './useAuth'
+import { getAuthHeaders } from '@/utils/apiHeaders'
 import type { Contract, ContractRegion, ContractApprovalStatus, ContractWorkflowStatus } from '@/types/contract'
 import type { ContractRequest, RequestStatus } from '@/types/contractRequest'
 
@@ -199,10 +200,8 @@ async function fetchDashboard(force = false): Promise<void> {
 
   try {
     const res = await fetch(`${apiBase}/dashboard`, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${state.cachedToken}`,
-      },
+      headers: getAuthHeaders(state.cachedToken),
+      credentials: 'same-origin',
     })
 
     if (!res.ok) throw new Error('Failed to fetch dashboard data')
@@ -273,10 +272,8 @@ async function fetchContracts(
     }
 
     const res = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${state.cachedToken}`,
-      },
+      headers: getAuthHeaders(state.cachedToken),
+      credentials: 'same-origin',
     })
 
     if (!res.ok) {
@@ -334,10 +331,8 @@ async function fetchRequests(userId?: number, force = false): Promise<ContractRe
       : `${apiBase}/contract-requests`
 
     const res = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${state.cachedToken}`,
-      },
+      headers: getAuthHeaders(state.cachedToken),
+      credentials: 'same-origin',
     })
 
     if (!res.ok) {

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, FileText, Download, ExternalLink, Loader2, Printer, Menu, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw } from 'lucide-vue-next'
 import { useApiCache } from '@/composables/useApiCache'
 import { useAuth } from '@/composables/useAuth'
+import { getAuthHeaders } from '@/utils/apiHeaders'
 import VuePdfEmbed from 'vue-pdf-embed'
 import mammoth from 'mammoth'
 
@@ -136,10 +137,8 @@ async function fetchFileBlob() {
   loadingFile.value = true
   try {
     const res = await fetch(`${apiBase}/documents/${docId}/file`, {
-      headers: {
-        'Authorization': `Bearer ${authState.token}`,
-        'Accept': 'application/json'
-      }
+      headers: getAuthHeaders(authState.token),
+      credentials: 'same-origin',
     })
     if (res.ok) {
       const blob = await res.blob()

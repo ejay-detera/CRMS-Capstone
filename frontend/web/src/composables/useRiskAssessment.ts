@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { useAuth } from './useAuth'
+import { getAuthHeaders } from '@/utils/apiHeaders'
 import type { RiskAssessmentSummary, RiskFinding, RiskLevel } from '@/types/riskAssessment'
 
 // US-026: AI Risk Assessment — reads/triggers the RAG pipeline exposed by
@@ -8,11 +9,7 @@ const BASE_URL = import.meta.env.VITE_AI_API_URL as string
 
 function makeHeaders(): HeadersInit {
   const { state } = useAuth()
-  return {
-    'Accept':        'application/json',
-    'Content-Type':  'application/json',
-    'Authorization': `Bearer ${state.token}`,
-  }
+  return getAuthHeaders(state.token, { 'Content-Type': 'application/json' })
 }
 
 function mapFinding(f: any): RiskFinding {
@@ -37,6 +34,7 @@ export function useRiskAssessment() {
     try {
       const res = await fetch(`${BASE_URL}/contracts/${contractId}/risk-assessment/summary`, {
         headers: makeHeaders(),
+        credentials: 'same-origin',
       })
       if (!res.ok) {
         summary.value = null
@@ -66,6 +64,7 @@ export function useRiskAssessment() {
     try {
       const res = await fetch(`${BASE_URL}/contracts/risk-assessment/bulk-levels?ids=${contractIds.join(',')}`, {
         headers: makeHeaders(),
+        credentials: 'same-origin',
       })
       if (!res.ok) return null
       const json = await res.json()
@@ -91,6 +90,7 @@ export function useRiskAssessment() {
       const res = await fetch(`${BASE_URL}/contracts/${contractId}/risk-assessment/scan`, {
         method: 'POST',
         headers: makeHeaders(),
+        credentials: 'same-origin',
       })
       return res.ok
     } catch (e) {
@@ -110,9 +110,9 @@ export function useRiskAssessment() {
   async function exportPdf(contractId: string): Promise<boolean> {
     exporting.value = true
     try {
-      const { state } = useAuth()
       const res = await fetch(`${BASE_URL}/contracts/${contractId}/risk-assessment/summary/pdf`, {
-        headers: { 'Authorization': `Bearer ${state.token}` },
+        headers: makeHeaders(),
+        credentials: 'same-origin',
       })
       if (!res.ok) return false
 
