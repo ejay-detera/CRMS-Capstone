@@ -209,6 +209,18 @@ const routes: Array<RouteRecordRaw> = [
         name: 'manager-profile',
         component: () => import('@/views/manager/Profile/index.vue'),
       },
+      {
+        path: 'vendor-suggestions',
+        name: 'manager-vendor-suggestions',
+        component: () => import('@/views/admin/VendorSuggestions/index.vue'),
+        meta: { requiresPermission: 'cms.ai.vendor_suggestions' },
+      },
+      {
+        path: 'vendor-suggestions/review',
+        name: 'manager-vendor-suggestions-review',
+        component: () => import('@/views/admin/VendorSuggestions/ReviewSuggestions.vue'),
+        meta: { requiresPermission: 'cms.ai.vendor_suggestions' },
+      },
     ],
   },
 
@@ -307,6 +319,18 @@ const routes: Array<RouteRecordRaw> = [
         path: 'profile',
         name: 'sales-profile',
         component: () => import('@/views/sales/Profile/index.vue'),
+      },
+      {
+        path: 'vendor-suggestions',
+        name: 'sales-vendor-suggestions',
+        component: () => import('@/views/admin/VendorSuggestions/index.vue'),
+        meta: { requiresPermission: 'cms.ai.vendor_suggestions' },
+      },
+      {
+        path: 'vendor-suggestions/review',
+        name: 'sales-vendor-suggestions-review',
+        component: () => import('@/views/admin/VendorSuggestions/ReviewSuggestions.vue'),
+        meta: { requiresPermission: 'cms.ai.vendor_suggestions' },
       },
     ],
   },

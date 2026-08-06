@@ -25,7 +25,7 @@ class VendorSuggestionController extends Controller
      */
     public function store(Request $request)
     {
-        if (!$this->isAdmin($request)) {
+        if (!$this->isAuthorized($request)) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -62,7 +62,7 @@ class VendorSuggestionController extends Controller
      */
     public function show(Request $request, int $id)
     {
-        if (!$this->isAdmin($request)) {
+        if (!$this->isAuthorized($request)) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -79,7 +79,7 @@ class VendorSuggestionController extends Controller
      */
     public function latest(Request $request)
     {
-        if (!$this->isAdmin($request)) {
+        if (!$this->isAuthorized($request)) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -104,7 +104,7 @@ class VendorSuggestionController extends Controller
      */
     public function decide(Request $request, int $id)
     {
-        if (!$this->isAdmin($request)) {
+        if (!$this->isAuthorized($request)) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -163,9 +163,10 @@ class VendorSuggestionController extends Controller
         ]);
     }
 
-    private function isAdmin(Request $request): bool
+    private function isAuthorized(Request $request): bool
     {
-        return $request->get('auth_role') === 'Admin';
+        $role = $request->get('auth_role');
+        return in_array($role, ['Admin', 'Manager', 'Sales'], true);
     }
 
     private function formatSuggestion(VendorSuggestion $suggestion): array

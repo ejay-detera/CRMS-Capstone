@@ -219,7 +219,7 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
           >Vendor Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu class="gap-0.5">
-              <SidebarMenuItem>
+              <SidebarMenuItem v-if="hasPermission('cms.partners.view')">
                 <SidebarMenuButton as-child :is-active="route.path === '/sales/partners'" class="h-auto p-0 rounded-lg">
                   <router-link
                     to="/sales/partners"

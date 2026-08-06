@@ -180,8 +180,28 @@ export function useAuth() {
     window.location.href = '/'
   }
 
+  const hasFrontendPermission = (slug: string): boolean => {
+    if (role.value === 'Admin') return true
+    const roleName = role.value
+    if (!roleName) return false
+    const stored = localStorage.getItem(`cms_frontend_perms_${roleName}`)
+    if (!stored) return false
+    const ids: number[] = JSON.parse(stored)
+    const FRONTEND_PERM_IDS: Record<string, number> = {
+      'cms.ai.risk_assessment':    -1,
+      'cms.ai.vendor_suggestions': -2,
+      'cms.ai.ocr':                -3,
+    }
+    const id = FRONTEND_PERM_IDS[slug]
+    return id !== undefined && ids.includes(id)
+  }
+
   const hasPermission = (permission: string) => {
     if (role.value === 'Admin') return true
+
+    if (permission.startsWith('cms.ai.')) {
+      return hasFrontendPermission(permission)
+    }
 
     // 1. Exact match
     if (permissions.value.includes(permission)) return true

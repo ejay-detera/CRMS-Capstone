@@ -12,6 +12,9 @@ import { useCreateContractDraft } from '@/composables/useCreateContractDraft'
 import OcrImportDialog from '@/views/admin/Contracts/OcrImportDialog.vue'
 import type { OcrExtractedData } from '@/types/ocr'
 
+const { hasPermission } = useAuth()
+const canUseOcr = computed(() => hasPermission('cms.ai.ocr'))
+
 const router = useRouter()
 const ocrOpen = ref(false)
 
@@ -338,7 +341,7 @@ onClickOutside(suggestionsContainer, () => {
         </div>
       </div>
       
-      <Button @click="ocrOpen = true" variant="outline"
+      <Button v-if="canUseOcr" @click="ocrOpen = true" variant="outline"
         class="h-9 px-4 text-sm border-black/15 text-[#252578] hover:text-[#2F2F73] hover:bg-black/2 flex items-center gap-2">
         <ScanLine class="w-4 h-4 text-[#252578]" />
         Fill with OCR

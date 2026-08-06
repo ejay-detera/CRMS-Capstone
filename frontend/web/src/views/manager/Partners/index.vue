@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Building2, Truck, Search, LayoutGrid, List, Upload, Plus } from 'lucide-vue-next'
+import { Building2, Truck, Search, LayoutGrid, List, Upload, Plus, Sparkles } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
@@ -19,6 +19,8 @@ const { success, error } = useToast()
 const { hasPermission } = useAuth()
 const { fetchPartners, fetchSuppliers } = useVendorService()
 const { deletePartner } = usePartners()
+
+const showAiSuggestionButton = computed(() => hasPermission('cms.ai.vendor_suggestions'))
 
 const businessPartners = ref<Partner[]>([])
 const suppliersData    = ref<Partner[]>([])
@@ -163,6 +165,9 @@ function executeExport() {
       <div class="flex items-center gap-2">
         <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
+        </Button>
+        <Button v-if="showAiSuggestionButton" @click="router.push('/manager/vendor-suggestions')" class="h-9 gap-2 text-sm bg-black/4 hover:bg-black/10 text-black border border-black/5 rounded-lg shadow-sm font-medium transition-colors">
+          <Sparkles class="w-4 h-4 text-black/60" /> AI Suggestions
         </Button>
         <Button v-if="hasPermission('cms.partners.create')" @click="router.push('/manager/partners/create?type=' + activeTab)" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
           <Plus class="w-5 h-5" />

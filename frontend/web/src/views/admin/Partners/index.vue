@@ -7,7 +7,6 @@ import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { usePartners } from '@/composables/usePartners'
-import { useEmailPreferences } from '@/composables/useEmailPreferences'
 import PartnersGrid       from './PartnersGrid.vue'
 import PartnersTable      from './PartnersTable.vue'
 import DeleteConfirmDialog from './DeleteConfirmDialog.vue'
@@ -16,14 +15,9 @@ import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
 const router = useRouter()
 const { success, error } = useToast()
-const { hasPermission, role } = useAuth()
+const { hasPermission } = useAuth()
 
-// Feature 3: AI Suggestion button is Admin-only and respects the Admin's
-// own "Vendor AI Suggestions" profile toggle — off means the button is
-// hidden entirely, matching the same visibility pattern as the AI Risk
-// Assessment flag/warning in Feature 1.
-const { preferences: aiPreferences, fetchPreferences: fetchAiPreferences } = useEmailPreferences()
-const showAiSuggestionButton = computed(() => role.value === 'Admin' && (aiPreferences.value.aiVendorSuggestionsEnabled ?? true))
+const showAiSuggestionButton = computed(() => hasPermission('cms.ai.vendor_suggestions'))
 
 const {
   partners,
@@ -91,7 +85,6 @@ watch([activeTab, totalItems], () => {
 }, { immediate: true })
 
 onMounted(async () => {
-  fetchAiPreferences()
   try {
     await fetchPartners('suppliers', 1, 1)
     suppliersCount.value = totalItems.value

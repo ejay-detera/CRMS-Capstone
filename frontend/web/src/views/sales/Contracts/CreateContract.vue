@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { useApiCache } from '@/composables/useApiCache'
-import { useEmailPreferences } from '@/composables/useEmailPreferences'
 import { useRiskAssessment } from '@/composables/useRiskAssessment'
 import DocumentUpload from './DocumentUpload.vue'
 import type { ContractRegion, UploadedDoc } from '@/types/contract'
@@ -19,11 +18,13 @@ import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 const router = useRouter()
 const route = useRoute()
 const { success, error } = useToast()
-const { state: authState } = useAuth()
+const { state: authState, hasPermission } = useAuth()
 const { invalidateContracts, invalidateRequests } = useApiCache()
 const { draft, saveDraft, restoreDraft, clearDraft } = useCreateContractDraft()
-const { preferences: aiPreferences, fetchPreferences: fetchAiPreferences } = useEmailPreferences()
 const { triggerScan } = useRiskAssessment()
+
+const canUseOcr = computed(() => hasPermission('cms.ai.ocr'))
+const canUseRiskAssessment = computed(() => hasPermission('cms.ai.risk_assessment'))
 
 const ocrOpen = ref(false)
 
@@ -53,10 +54,6 @@ function handleOcrSuccess(data: OcrExtractedData) {
     touched.description = true
   }
 }
-
-onMounted(fetchAiPreferences)
-
-
 const loading      = ref(false)
 const showConfirm  = ref(false)
 const contractDocs = ref<UploadedDoc[]>([])
@@ -235,10 +232,10 @@ async function confirmSubmit() {
     const newContractId = String(data.data.contract_id)
 
     // US-026: trigger the AI Risk Assessment RAG pipeline only if the user
-    // uploaded a document and has the feature enabled in their profile.
+    // uploaded a document and has the feature enabled via permissions.
     // Advisory only — never blocks contract creation itself.
     const hasUploadedDocument = contractDocs.value.some(d => !!d.id)
-    if (hasUploadedDocument && (aiPreferences.value.aiRiskAssessmentEnabled ?? true)) {
+    if (hasUploadedDocument && canUseRiskAssessment.value) {
       triggerScan(newContractId).catch(() => {
         // Best-effort: a failed scan trigger shouldn't block the user from
         // proceeding to their newly created contract.
@@ -457,7 +454,7 @@ onClickOutside(prsContainer, () => {
         <p class="text-sm text-black/40 mt-0.5">Fill in the details below to create a new contract.</p>
       </div>
 
-      <Button @click="ocrOpen = true" variant="outline"
+      <Button v-if="canUseOcr" @click="ocrOpen = true" variant="outline"
         class="h-9 px-4 text-sm border-black/15 text-[#252578] hover:text-[#2F2F73] hover:bg-black/2 flex items-center gap-2">
         <ScanLine class="w-4 h-4 text-[#252578]" />
         Fill with OCR

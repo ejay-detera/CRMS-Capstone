@@ -20,22 +20,17 @@ import type { Contract, FilterTab, StatusFilter } from '@/types/contract'
 import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
 import RiskFlagBadge from '@/components/shared/RiskFlagBadge.vue'
 import { useRiskAssessment } from '@/composables/useRiskAssessment'
-import { useEmailPreferences } from '@/composables/useEmailPreferences'
-import { onMounted } from 'vue'
 import type { RiskLevel } from '@/types/riskAssessment'
 
 type ContractWithDays = Contract & { days: number }
 
 const { fetchBulkLevels } = useRiskAssessment()
-const { preferences: aiPreferences, fetchPreferences: fetchAiPreferences } = useEmailPreferences()
+const { hasPermission } = useAuth()
 
-const aiRiskAssessmentVisible = computed(() => aiPreferences.value.aiRiskAssessmentEnabled ?? true)
+const aiRiskAssessmentVisible = computed(() => hasPermission('cms.ai.risk_assessment'))
 const riskLevels = ref<Record<string, { riskLevel: RiskLevel, findingsCount: number, status: string }>>({})
 const loadingRisk = ref(false)
 
-onMounted(async () => {
-  await fetchAiPreferences()
-})
 
 const props = defineProps<{
   paginated:      ContractWithDays[]
@@ -179,8 +174,6 @@ const statusOptions: { label: string; value: StatusFilter }[] = [
   { label: 'Client Review', value: 'Client Review'},
 ]
 
-
-const { hasPermission } = useAuth()
 
 const palette = ['#252578', '#2E85D8', '#2F2F73']
 function initials(name: string) {

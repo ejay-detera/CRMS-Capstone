@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Search, MoreHorizontal, Eye, Pencil, Filter, X, Trash2, CheckCircle } from 'lucide-vue-next'
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
@@ -21,7 +21,6 @@ import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.v
 import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
 import RiskFlagBadge from '@/components/shared/RiskFlagBadge.vue'
 import { useRiskAssessment } from '@/composables/useRiskAssessment'
-import { useEmailPreferences } from '@/composables/useEmailPreferences'
 import type { RiskLevel } from '@/types/riskAssessment'
 
 type ContractWithDays = Contract & { days: number }
@@ -29,15 +28,10 @@ type ContractWithDays = Contract & { days: number }
 const router = useRouter()
 const { hasPermission } = useAuth()
 const { fetchBulkLevels } = useRiskAssessment()
-const { preferences: aiPreferences, fetchPreferences: fetchAiPreferences } = useEmailPreferences()
 
-const aiRiskAssessmentVisible = computed(() => aiPreferences.value.aiRiskAssessmentEnabled ?? true)
+const aiRiskAssessmentVisible = computed(() => hasPermission('cms.ai.risk_assessment'))
 const riskLevels = ref<Record<string, { riskLevel: RiskLevel, findingsCount: number, status: string }>>({})
 const loadingRisk = ref(false)
-
-onMounted(async () => {
-  await fetchAiPreferences()
-})
 
 const props = defineProps<{
   paginated:    ContractWithDays[]

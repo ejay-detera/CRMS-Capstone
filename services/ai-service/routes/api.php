@@ -25,7 +25,7 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::post('/ocr/extract', [OcrExtractionController::class, 'extract']);
 });
 
-// Feature 3: Vendor AI Suggestions — user-facing, bearer-token authenticated, Admin-only.
+// Feature 3: Vendor AI Suggestions — user-facing, bearer-token authenticated.
 Route::middleware(['auth.internal'])->group(function () {
     Route::post('/vendor-suggestions', [VendorSuggestionController::class, 'store']);
     Route::get('/vendor-suggestions/latest', [VendorSuggestionController::class, 'latest']);

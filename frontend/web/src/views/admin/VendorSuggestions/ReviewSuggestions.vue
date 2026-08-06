@@ -5,6 +5,7 @@ import { ArrowLeft, X, Building2, Truck } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
 import { useVendorSuggestions } from '@/composables/useVendorSuggestions'
 import type { VendorSuggestionReviewForm } from '@/types/vendorSuggestion'
 
@@ -16,7 +17,14 @@ import type { VendorSuggestionReviewForm } from '@/types/vendorSuggestion'
 const route = useRoute()
 const router = useRouter()
 const { success, error } = useToast()
+const { role } = useAuth()
 const { batch, fetchBatch, decideCandidate } = useVendorSuggestions()
+
+function roleBase(): string {
+  if (role.value === 'Manager') return '/manager'
+  if (['Sales', 'Employee', 'Finance'].includes(role.value ?? '')) return '/sales'
+  return '/admin'
+}
 
 const batchId = Number(route.query.batchId)
 const candidateIds = String(route.query.candidateIds ?? '').split(',').filter(Boolean).map(Number)
@@ -59,7 +67,7 @@ function closeTab(id: number) {
     activeTabId.value = openTabIds.value[0] ?? null
   }
   if (openTabIds.value.length === 0) {
-    router.push('/admin/partners')
+    router.push(`${roleBase()}/partners`)
   }
 }
 
@@ -108,7 +116,7 @@ async function saveActiveTab() {
   <div class="p-8 space-y-6">
 
     <div class="flex items-center gap-4">
-      <button @click="router.push('/admin/vendor-suggestions')"
+      <button @click="router.push(`${roleBase()}/vendor-suggestions`)"
         class="flex items-center justify-center w-9 h-9 rounded-lg border border-black/10 bg-white hover:bg-black/4 text-black/50 hover:text-black transition shrink-0">
         <ArrowLeft class="w-4 h-4" />
       </button>

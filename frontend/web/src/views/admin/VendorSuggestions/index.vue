@@ -5,6 +5,7 @@ import { ArrowLeft, Sparkles, Loader2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/composables/useToast'
+import { useAuth } from '@/composables/useAuth'
 import { useVendorSuggestions } from '@/composables/useVendorSuggestions'
 import VendorSuggestionCard from './VendorSuggestionCard.vue'
 
@@ -13,7 +14,18 @@ import VendorSuggestionCard from './VendorSuggestionCard.vue'
 // multi-select candidates before proceeding to the review/tabs page.
 const router = useRouter()
 const { error } = useToast()
+const { role } = useAuth()
 const { batch, loading, requesting, requestSuggestions, fetchBatch, fetchLatestBatch } = useVendorSuggestions()
+
+function roleBase(): string {
+  if (role.value === 'Manager') return '/manager'
+  if (['Sales', 'Employee', 'Finance'].includes(role.value ?? '')) return '/sales'
+  return '/admin'
+}
+
+function goBack() {
+  router.push(`${roleBase()}/partners`)
+}
 
 const industryHint = ref('')
 const regionHint = ref('')
@@ -75,9 +87,22 @@ const pendingCandidates = computed(() =>
 function proceedToReview() {
   if (selectedIds.value.length === 0 || !batch.value) return
   router.push({
-    path: '/admin/vendor-suggestions/review',
+    path: `${roleBase()}/vendor-suggestions/review`,
     query: { batchId: String(batch.value.id), candidateIds: selectedIds.value.join(',') },
   })
+}
+
+const allSelected = computed(() => 
+  pendingCandidates.value.length > 0 &&
+  pendingCandidates.value.every(c => selectedIds.value.includes(c.id))
+)
+
+function toggleSelectAll() {
+  if (allSelected.value) {
+    selectedIds.value = []
+  } else {
+    selectedIds.value = pendingCandidates.value.map(c => c.id)
+  }
 }
 </script>
 
@@ -85,7 +110,7 @@ function proceedToReview() {
   <div class="p-8 space-y-6">
 
     <div class="flex items-center gap-4">
-      <button @click="router.push('/admin/partners')"
+      <button @click="goBack"
         class="flex items-center justify-center w-9 h-9 rounded-lg border border-black/10 bg-white hover:bg-black/4 text-black/50 hover:text-black transition shrink-0">
         <ArrowLeft class="w-4 h-4" />
       </button>
@@ -140,7 +165,12 @@ function proceedToReview() {
 
     <template v-else-if="batch && pendingCandidates.length > 0">
       <div class="flex items-center justify-between">
-        <h2 class="text-sm font-semibold text-black">Suggested Candidates ({{ pendingCandidates.length }})</h2>
+        <div class="flex items-baseline gap-4">
+          <h2 class="text-sm font-semibold text-black">Suggested Candidates ({{ pendingCandidates.length }})</h2>
+          <button @click="toggleSelectAll" class="text-xs font-medium text-[#2E85D8] hover:text-[#252578] transition-colors">
+            {{ allSelected ? 'Deselect All' : 'Select All' }}
+          </button>
+        </div>
         <Button :disabled="selectedIds.length === 0" @click="proceedToReview" class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white disabled:opacity-40">
           Accept Selected ({{ selectedIds.length }})
         </Button>
