@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_HEX } from '@/constants/theme'
 import { computed, ref } from 'vue'
 import { VisXYContainer, VisStackedBar, VisAxis, VisTooltip, VisCrosshair } from '@unovis/vue'
 import {
@@ -151,7 +152,7 @@ const tooltipTemplate = (d: any) =>
         
         <!-- Year Select dropdown -->
         <Select :model-value="selectedYear !== null ? String(selectedYear) : '__none__'" @update:model-value="handleYearSelect">
-          <SelectTrigger class="w-24 h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
+          <SelectTrigger class="w-24 h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-brand-blue/15">
             <SelectValue placeholder="Year" />
           </SelectTrigger>
           <SelectContent class="bg-white border border-black/10 shadow-lg">
@@ -161,7 +162,7 @@ const tooltipTemplate = (d: any) =>
         </Select>
 
         <div class="flex items-center gap-1.5 ml-2">
-          <div class="w-2.5 h-2.5 rounded-sm bg-[#2E85D8]"></div>
+          <div class="w-2.5 h-2.5 rounded-sm bg-brand-blue"></div>
           <span class="text-xs text-black/40">Contracts</span>
         </div>
       </div>
@@ -178,11 +179,11 @@ const tooltipTemplate = (d: any) =>
           '--vis-font-family': 'inherit',
         }"
       >
-        <VisStackedBar :x="x" :y="y" color="#2E85D8" :bar-padding="0.35" :rounded-corners="4" />
+        <VisStackedBar :x="x" :y="y" :color="BRAND_HEX.blue" :bar-padding="0.35" :rounded-corners="4" />
         <VisAxis type="x" :tick-format="xTickFormat" :tickValues="trendData.map((_, i) => i)" />
         <VisAxis type="y" :tickValues="yTickValues" :tickFormat="(v: number) => String(Math.round(v))" />
         <VisTooltip :horizontal-shift="20" />
-        <VisCrosshair :template="tooltipTemplate" color="#2E85D8" />
+        <VisCrosshair :template="tooltipTemplate" :color="BRAND_HEX.blue" />
       </VisXYContainer>
     </div>
   </div>

@@ -104,7 +104,7 @@ function statusClass(status: string) {
         >
           <TableCell class="py-4 pl-6">
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-[#252578]/8 text-[#252578]">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-brand-navy/8 text-brand-navy">
                 <component :is="activeTab === 'partners' ? Building2 : Truck" class="w-4 h-4" />
               </div>
               <div>

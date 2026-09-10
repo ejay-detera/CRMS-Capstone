@@ -25,7 +25,7 @@ const router = useRouter()
         </p>
       </div>
       <button @click="router.push('/sales/contracts')"
-        class="inline-flex items-center gap-1 text-xs font-semibold text-[#2E85D8] hover:underline">
+        class="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue hover:underline">
         View all <ArrowRight class="w-3 h-3" />
       </button>
     </div>

@@ -250,7 +250,7 @@ onMounted(async () => {
 
     <!-- Loading -->
     <div v-if="loadingData" class="flex flex-col items-center justify-center py-20 gap-2">
-      <Loader2 class="w-8 h-8 animate-spin text-[#252578]" />
+      <Loader2 class="w-8 h-8 animate-spin text-brand-navy" />
       <span class="text-sm text-black/40 font-medium">Syncing database references...</span>
     </div>
 
@@ -263,7 +263,7 @@ onMounted(async () => {
         <div class="bg-white rounded-xl border border-black/8 shadow-sm overflow-hidden">
           <div class="bg-black/[0.015] px-6 py-4 border-b border-black/5 flex items-center justify-between">
             <h3 class="text-xs font-bold text-black/50 uppercase tracking-wider">Field Comparison (Original vs Proposed)</h3>
-            <span class="text-xs text-[#252578] font-semibold">Contract Ref: {{ amendment.contractId }}</span>
+            <span class="text-xs text-brand-navy font-semibold">Contract Ref: {{ amendment.contractId }}</span>
           </div>
 
           <div class="divide-y divide-black/[0.04]">
@@ -309,22 +309,22 @@ onMounted(async () => {
               </div>
               <div v-else class="space-y-2">
                 <div v-for="doc in liveContract.docs" :key="doc.id" @click="viewDoc(doc.id)"
-                  class="group border border-black/10 rounded-lg p-3 flex items-center gap-3 hover:border-[#2E85D8] transition-all cursor-pointer bg-white shadow-sm">
-                  <div class="w-9 h-9 bg-black/[0.04] flex items-center justify-center rounded-lg text-black/40 group-hover:bg-[#2E85D8] group-hover:text-white transition-colors shrink-0">
+                  class="group border border-black/10 rounded-lg p-3 flex items-center gap-3 hover:border-brand-blue transition-all cursor-pointer bg-white shadow-sm">
+                  <div class="w-9 h-9 bg-black/[0.04] flex items-center justify-center rounded-lg text-black/40 group-hover:bg-brand-blue group-hover:text-white transition-colors shrink-0">
                     <FileType2 class="w-4.5 h-4.5" />
                   </div>
                   <div class="flex-1 overflow-hidden min-w-0">
                     <p class="text-xs text-black font-semibold truncate">{{ doc.name }}</p>
                     <p class="text-[10px] text-black/50 font-medium uppercase">{{ doc.type }}</p>
                   </div>
-                  <Download class="w-4 h-4 text-black/25 group-hover:text-[#252578] shrink-0" />
+                  <Download class="w-4 h-4 text-black/25 group-hover:text-brand-navy shrink-0" />
                 </div>
               </div>
             </div>
 
             <!-- Right: Proposed New Documents -->
             <div class="space-y-3">
-              <h4 class="text-xs font-bold text-[#2E85D8] uppercase tracking-wider">Proposed Amendments Documents (After)</h4>
+              <h4 class="text-xs font-bold text-brand-blue uppercase tracking-wider">Proposed Amendments Documents (After)</h4>
               
               <div v-if="!amendment.docs || amendment.docs.length === 0" class="flex items-center gap-2 text-black/30 border border-dashed border-black/10 rounded-lg p-4 justify-center bg-black/[0.005]">
                 <FileX class="w-4 h-4 text-black/25" />
@@ -332,15 +332,15 @@ onMounted(async () => {
               </div>
               <div v-else class="space-y-2">
                 <div v-for="doc in amendment.docs" :key="doc.id" @click="viewDoc(doc.id)"
-                  class="group border border-[#2E85D8]/20 rounded-lg p-3 flex items-center gap-3 hover:border-[#2E85D8] transition-all cursor-pointer bg-white shadow-sm">
-                  <div class="w-9 h-9 bg-[#2E85D8]/8 flex items-center justify-center rounded-lg text-[#2E85D8] group-hover:bg-[#2E85D8] group-hover:text-white transition-colors shrink-0">
+                  class="group border border-brand-blue/20 rounded-lg p-3 flex items-center gap-3 hover:border-brand-blue transition-all cursor-pointer bg-white shadow-sm">
+                  <div class="w-9 h-9 bg-brand-blue/8 flex items-center justify-center rounded-lg text-brand-blue group-hover:bg-brand-blue group-hover:text-white transition-colors shrink-0">
                     <FileType2 class="w-4.5 h-4.5" />
                   </div>
                   <div class="flex-1 overflow-hidden min-w-0">
                     <p class="text-xs text-black font-semibold truncate">{{ doc.name }}</p>
                     <p class="text-[10px] text-black/50 font-medium uppercase">{{ doc.type }}</p>
                   </div>
-                  <Download class="w-4 h-4 text-black/25 group-hover:text-[#252578] shrink-0" />
+                  <Download class="w-4 h-4 text-black/25 group-hover:text-brand-navy shrink-0" />
                 </div>
               </div>
             </div>
@@ -352,8 +352,8 @@ onMounted(async () => {
       <div class="space-y-6">
         <!-- Amendment Reason Card -->
         <div class="bg-white rounded-xl border border-black/8 shadow-sm p-6 space-y-4">
-          <span class="text-[10px] font-bold text-[#252578] uppercase tracking-wider block border-b border-black/5 pb-2">Proposed Reason</span>
-          <p class="text-xs text-black/85 leading-relaxed bg-[#2E85D8]/5 border border-[#2E85D8]/10 p-3.5 rounded-xl font-medium">
+          <span class="text-[10px] font-bold text-brand-navy uppercase tracking-wider block border-b border-black/5 pb-2">Proposed Reason</span>
+          <p class="text-xs text-black/85 leading-relaxed bg-brand-blue/5 border border-brand-blue/10 p-3.5 rounded-xl font-medium">
             {{ amendment.reason }}
           </p>
         </div>

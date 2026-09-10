@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_HEX } from '@/constants/theme'
 import { computed } from 'vue'
 import { VisXYContainer, VisStackedBar, VisAxis, VisTooltip, VisCrosshair } from '@unovis/vue'
 import type { Contract } from '@/types/contract'
@@ -26,7 +27,7 @@ const data = computed<CategoryItem[]>(() => {
   .slice(0, 5)
 
   // Map brand colors to segments
-  const colorsList = ['#252578', '#2E85D8', '#2F2F73', '#475569', '#64748b']
+  const colorsList = [BRAND_HEX.navy, BRAND_HEX.blue, BRAND_HEX.dark, '#475569', '#64748b']
 
   return list.map((item, idx) => ({
     ...item,
@@ -98,7 +99,7 @@ const tooltipTemplate = (d: CategoryItem) =>
         <VisAxis type="x" :tick-format="xTickFormat" :tickValues="data.map((_, i) => i)" />
         <VisAxis type="y" :tickValues="yTickValues" :tickFormat="(v: number) => String(Math.round(v))" />
         <VisTooltip :horizontal-shift="20" />
-        <VisCrosshair :template="tooltipTemplate" color="#2E85D8" />
+        <VisCrosshair :template="tooltipTemplate" :color="BRAND_HEX.blue" />
       </VisXYContainer>
     </div>
   </div>

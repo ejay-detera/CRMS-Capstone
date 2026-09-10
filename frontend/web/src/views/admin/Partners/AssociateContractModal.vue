@@ -96,7 +96,7 @@ const handleSubmit = () => {
       
       <!-- Header -->
       <div class="flex items-center justify-between pb-3 border-b border-black/[0.06]">
-        <DialogTitle class="text-base font-bold text-[#2F2F73]">Link a Contract</DialogTitle>
+        <DialogTitle class="text-base font-bold text-brand-dark">Link a Contract</DialogTitle>
       </div>
 
       <DialogDescription class="text-xs text-black/50 mt-1">
@@ -112,7 +112,7 @@ const handleSubmit = () => {
           v-model="search"
           type="text"
           placeholder="Search by Contract ID or description..."
-          class="w-full pl-9 pr-4 py-2 text-sm border border-black/10 rounded-lg focus:outline-none focus:border-[#2E85D8] focus:ring-1 focus:ring-[#2E85D8]/20 transition-all font-poppins placeholder-black/30 text-black/80"
+          class="w-full pl-9 pr-4 py-2 text-sm border border-black/10 rounded-lg focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20 transition-all font-poppins placeholder-black/30 text-black/80"
           @input="touched = true"
         />
       </div>
@@ -127,14 +127,14 @@ const handleSubmit = () => {
             isAlreadyLinked(c.contractId)
               ? 'bg-black/[0.02] opacity-50 cursor-not-allowed'
               : selected === c.contractId
-                ? 'bg-[#2E85D8]/5 border-[#2E85D8]/20'
+                ? 'bg-brand-blue/5 border-brand-blue/20'
                 : 'hover:bg-black/[0.005] cursor-pointer'
           ]"
           @click="!isAlreadyLinked(c.contractId) && selectContract(c.contractId)"
         >
           <div class="flex-1 min-w-0 pr-4">
             <div class="flex items-center gap-2 mb-1">
-              <span class="text-xs font-mono font-bold text-[#2F2F73]">
+              <span class="text-xs font-mono font-bold text-brand-dark">
                 {{ c.contractId }}
               </span>
               <span
@@ -165,7 +165,7 @@ const handleSubmit = () => {
               :value="c.contractId"
               :checked="selected === c.contractId"
               :disabled="isAlreadyLinked(c.contractId)"
-              class="w-4 h-4 text-[#2E85D8] border-black/10 focus:ring-[#2E85D8]"
+              class="w-4 h-4 text-brand-blue border-black/10 focus:ring-brand-blue"
             />
           </div>
         </div>
@@ -188,7 +188,7 @@ const handleSubmit = () => {
           type="button"
           @click="handleSubmit"
           :disabled="!selected"
-          class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-[#2E85D8] hover:bg-[#252578] rounded disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-brand-blue hover:bg-brand-navy rounded disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           <Link2 class="w-3.5 h-3.5" />
           Link Contract

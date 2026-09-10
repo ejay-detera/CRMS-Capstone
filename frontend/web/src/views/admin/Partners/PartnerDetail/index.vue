@@ -214,7 +214,7 @@ const statusClass = computed(() => {
             <Trash2 class="w-3.5 h-3.5" /> Delete
           </Button>
           <Button @click="openEdit"
-            class="h-9 px-4 gap-2 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
+            class="h-9 px-4 gap-2 text-sm bg-brand-navy hover:bg-brand-dark text-white">
             <Pencil class="w-3.5 h-3.5" /> Edit
           </Button>
         </div>
@@ -223,7 +223,7 @@ const statusClass = computed(() => {
       <!-- Hero card -->
       <div class="bg-white rounded-xl border border-black/8 shadow-sm p-6">
         <div class="flex items-center gap-4">
-          <div class="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 bg-[#252578]/8 text-[#252578]">
+          <div class="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 bg-brand-navy/8 text-brand-navy">
             <component :is="type === 'bp' ? Building2 : Truck" class="w-7 h-7" />
           </div>
           <div class="flex-1 min-w-0">
@@ -305,7 +305,7 @@ const statusClass = computed(() => {
             <Mail class="w-4 h-4 text-black/25 shrink-0 mt-0.5" />
             <div class="flex-1 min-w-0">
               <p class="text-[10px] font-semibold text-black/35 uppercase tracking-wider mb-0.5">Email</p>
-              <p class="text-sm text-[#2E85D8] break-all">{{ partner.email || '—' }}</p>
+              <p class="text-sm text-brand-blue break-all">{{ partner.email || '—' }}</p>
             </div>
           </div>
 

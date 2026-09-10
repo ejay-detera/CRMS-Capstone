@@ -13,10 +13,10 @@ defineEmits<{ toggle: [] }>()
 <template>
   <label
     class="flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-colors"
-    :class="selected ? 'border-[#2E85D8] bg-[#2E85D8]/[0.04]' : 'border-black/8 hover:border-black/15'"
+    :class="selected ? 'border-brand-blue bg-brand-blue/[0.04]' : 'border-black/8 hover:border-black/15'"
   >
     <input type="checkbox" :checked="selected" @change="$emit('toggle')"
-      class="mt-1 w-4 h-4 rounded border-black/20 text-[#252578] focus:ring-[#2E85D8]/30" />
+      class="mt-1 w-4 h-4 rounded border-black/20 text-brand-navy focus:ring-brand-blue/30" />
 
     <div class="flex-1 min-w-0">
       <div class="flex items-center justify-between gap-2">

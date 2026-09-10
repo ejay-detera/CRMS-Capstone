@@ -20,7 +20,7 @@ const expiringContracts = computed(() => {
 function cls(days: number) {
   if (days <= 7)  return { dot: 'bg-red-500',   badge: 'bg-red-50 text-red-600 border-red-200',     bar: 'bg-red-500'   }
   if (days <= 14) return { dot: 'bg-amber-500', badge: 'bg-amber-50 text-amber-700 border-amber-200', bar: 'bg-amber-500' }
-  return               { dot: 'bg-[#2E85D8]', badge: 'bg-[#2E85D8]/8 text-[#2E85D8] border-[#2E85D8]/20', bar: 'bg-[#2E85D8]' }
+  return               { dot: 'bg-brand-blue', badge: 'bg-brand-blue/8 text-brand-blue border-brand-blue/20', bar: 'bg-brand-blue' }
 }
 
 const urgentCount = computed(() => expiringContracts.value.filter(c => c.days <= 14).length)
@@ -38,7 +38,7 @@ const urgentCount = computed(() => expiringContracts.value.filter(c => c.days <=
       </div>
       <button
         @click="router.push('/manager/contracts')"
-        class="flex items-center gap-1 text-xs font-semibold text-[#2E85D8] hover:text-[#252578] transition-colors"
+        class="flex items-center gap-1 text-xs font-semibold text-brand-blue hover:text-brand-navy transition-colors"
       >
         View all <ArrowRight class="w-3.5 h-3.5" />
       </button>

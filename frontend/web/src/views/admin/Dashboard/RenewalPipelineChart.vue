@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_HEX } from '@/constants/theme'
 import { computed } from 'vue'
 import { VisXYContainer, VisStackedBar, VisAxis } from '@unovis/vue'
 import type { Contract } from '@/types/contract'
@@ -16,9 +17,9 @@ const data = computed<PipelineItem[]>(() => {
   const safe = props.contracts.filter(c => c.days > 90).length
 
   return [
-    { horizon: 'Expired',       count: expired, color: '#2F2F73' },
-    { horizon: '0 - 30 Days',   count: urgent,  color: '#252578' },
-    { horizon: '31 - 90 Days',  count: soon,    color: '#2E85D8' },
+    { horizon: 'Expired',       count: expired, color: BRAND_HEX.dark },
+    { horizon: '0 - 30 Days',   count: urgent,  color: BRAND_HEX.navy },
+    { horizon: '31 - 90 Days',  count: soon,    color: BRAND_HEX.blue },
     { horizon: '90+ Days',      count: safe,    color: '#e2e8f0' }
   ]
 })

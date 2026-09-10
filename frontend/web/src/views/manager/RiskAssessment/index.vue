@@ -100,9 +100,9 @@ async function handleExport() {
     <!-- Animated Scanning State -->
     <div v-if="loading || isPolling" class="flex flex-col items-center justify-center py-28 bg-white rounded-xl border border-black/8 shadow-sm">
       <div class="relative w-16 h-16 flex items-center justify-center mb-6">
-        <div class="absolute inset-0 bg-[#252578]/10 rounded-full animate-ping" style="animation-duration: 2s;"></div>
-        <div class="absolute inset-2 bg-[#2E85D8]/20 rounded-full animate-pulse"></div>
-        <Brain class="w-7 h-7 text-[#252578] relative z-10 animate-bounce" style="animation-duration: 2s;" />
+        <div class="absolute inset-0 bg-brand-navy/10 rounded-full animate-ping" style="animation-duration: 2s;"></div>
+        <div class="absolute inset-2 bg-brand-blue/20 rounded-full animate-pulse"></div>
+        <Brain class="w-7 h-7 text-brand-navy relative z-10 animate-bounce" style="animation-duration: 2s;" />
       </div>
       <h3 class="text-lg font-semibold text-black mb-1">Scanning Document...</h3>
       <p class="text-sm text-black/40">Analyzing contract against playbook clauses.</p>
@@ -112,7 +112,7 @@ async function handleExport() {
       <ShieldQuestion class="w-12 h-12" />
       <p class="text-base font-semibold">No assessment yet</p>
       <p class="text-sm text-black/25">Run an AI Risk Assessment scan for this contract to see results here.</p>
-      <Button :disabled="scanning" @click="handleRescan" class="mt-2 h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
+      <Button :disabled="scanning" @click="handleRescan" class="mt-2 h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white">
         {{ scanning ? 'Queuing…' : 'Run Scan Now' }}
       </Button>
     </div>

@@ -26,8 +26,8 @@ function isCategoryAllChecked(cat: Category): boolean {
 
     <!-- Panel header -->
     <div class="px-6 py-4 border-b border-black/5 flex items-center gap-3">
-      <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-[#252578]/8">
-        <component :is="activeRoleMeta.icon" class="w-4 h-4 text-[#252578]" />
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-brand-navy/8">
+        <component :is="activeRoleMeta.icon" class="w-4 h-4 text-brand-navy" />
       </div>
       <div>
         <h2 class="text-sm font-semibold text-black">{{ activeRoleName }} Role Permissions</h2>
@@ -57,7 +57,7 @@ function isCategoryAllChecked(cat: Category): boolean {
             @click="emit('toggle-category', cat)"
             class="text-xs font-medium transition-colors"
             :class="isCategoryAllChecked(cat)
-              ? 'text-[#2E85D8] hover:text-[#252578]'
+              ? 'text-brand-blue hover:text-brand-navy'
               : 'text-black/35 hover:text-black/60'"
           >
             {{ isCategoryAllChecked(cat) ? 'Deselect all' : 'Select all' }}
@@ -73,14 +73,14 @@ function isCategoryAllChecked(cat: Category): boolean {
             :disabled="isLocked"
             class="flex items-center justify-between gap-2 px-5 py-2.5 rounded-full border text-left transition-all duration-200 shrink-0"
             :class="activePermissions.includes(perm.key)
-              ? 'bg-[#252578]/6 border-[#252578]/25 text-[#252578] shadow-sm'
+              ? 'bg-brand-navy/6 border-brand-navy/25 text-brand-navy shadow-sm'
               : 'bg-black/[0.02] border-black/8 text-black/45 hover:bg-black/[0.04] hover:border-black/15'"
           >
             <div class="flex items-center gap-2.5">
               <div
                 class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-all duration-200"
                 :class="activePermissions.includes(perm.key)
-                  ? 'bg-[#252578] border-[#252578]'
+                  ? 'bg-brand-navy border-brand-navy'
                   : 'bg-white border-black/20'"
               >
                 <div

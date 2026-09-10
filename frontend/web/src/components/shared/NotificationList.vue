@@ -70,7 +70,7 @@ function confirmDeleteAll() {
       <div class="flex items-center gap-2">
         <h2 class="text-sm font-semibold text-black">List Notifications</h2>
         <span v-if="unreadCount > 0"
-          class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#2E85D8] text-white tabular-nums">
+          class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-blue text-white tabular-nums">
           {{ unreadCount }} unread
         </span>
       </div>
@@ -78,7 +78,7 @@ function confirmDeleteAll() {
         <Search class="w-3.5 h-3.5 text-black/35 absolute left-3 top-1/2 -translate-y-1/2" />
         <input :value="searchQuery" @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"
           type="text" placeholder="Search notifications..."
-          class="w-full rounded-lg border border-black/10 bg-black/2 py-2 pl-8 pr-3 text-sm text-black placeholder:text-black/35 focus:border-[#2E85D8] focus:outline-none transition-colors" />
+          class="w-full rounded-lg border border-black/10 bg-black/2 py-2 pl-8 pr-3 text-sm text-black placeholder:text-black/35 focus:border-brand-blue focus:outline-none transition-colors" />
       </div>
     </div>
 
@@ -90,7 +90,7 @@ function confirmDeleteAll() {
           :class="activeTab === tab.key ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'">
           {{ tab.label }}
           <span class="text-[10px] font-semibold tabular-nums px-1.5 py-0.5 rounded-full min-w-4.5 text-center"
-            :class="activeTab === tab.key ? 'bg-[#252578]/8 text-[#252578]' : 'bg-black/8 text-black/40'">
+            :class="activeTab === tab.key ? 'bg-brand-navy/8 text-brand-navy' : 'bg-black/8 text-black/40'">
             {{ tab.count }}
           </span>
         </button>
@@ -99,7 +99,7 @@ function confirmDeleteAll() {
         <button type="button" v-if="filtered.length > 0 && activeTab !== 'email_logs'" @click="toggleSelectAll"
           class="flex items-center gap-2 px-2.5 py-1.5 rounded-md hover:bg-black/[0.04] active:bg-black/[0.06] transition-colors group select-none -ml-2">
           <div class="w-4 h-4 rounded-[4px] flex items-center justify-center border transition-all duration-200"
-            :class="allSelected || someSelected ? 'bg-[#2E85D8] border-[#2E85D8] text-white shadow-sm' : 'border-black/20 bg-white group-hover:border-black/40 text-transparent'">
+            :class="allSelected || someSelected ? 'bg-brand-blue border-brand-blue text-white shadow-sm' : 'border-black/20 bg-white group-hover:border-black/40 text-transparent'">
             <Check v-if="allSelected" class="w-3 h-3" stroke-width="3.5" />
             <Minus v-else-if="someSelected" class="w-3 h-3" stroke-width="3.5" />
           </div>

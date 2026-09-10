@@ -103,7 +103,7 @@ onMounted(fetchExtraData)
     <!-- ── CATEGORY 1: CONTRACTS ────────────────────────────────────────────── -->
     <section class="space-y-6">
       <div class="flex items-center gap-2 pb-2 border-b border-black/8">
-        <div class="p-2 rounded-lg bg-[#252578]/10 text-[#252578]">
+        <div class="p-2 rounded-lg bg-brand-navy/10 text-brand-navy">
           <FileText class="w-5 h-5" />
         </div>
         <div>
@@ -138,7 +138,7 @@ onMounted(fetchExtraData)
     <!-- ── CATEGORY 2: VENDORS & PARTNERS ───────────────────────────────────── -->
     <section class="space-y-6">
       <div class="flex items-center gap-2 pb-2 border-b border-black/8">
-        <div class="p-2 rounded-lg bg-[#2E85D8]/10 text-[#2E85D8]">
+        <div class="p-2 rounded-lg bg-brand-blue/10 text-brand-blue">
           <Users class="w-5 h-5" />
         </div>
         <div>
@@ -165,7 +165,7 @@ onMounted(fetchExtraData)
     <!-- ── CATEGORY 3: AI SERVICES ─────────────────────────────────────────── -->
     <section class="space-y-6">
       <div class="flex items-center gap-2 pb-2 border-b border-black/8">
-        <div class="p-2 rounded-lg bg-[#2F2F73]/10 text-[#2F2F73]">
+        <div class="p-2 rounded-lg bg-brand-dark/10 text-brand-dark">
           <Brain class="w-5 h-5" />
         </div>
         <div>

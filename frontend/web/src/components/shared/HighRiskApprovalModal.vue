@@ -78,7 +78,7 @@ function submit(decision: 'approved' | 'rejected') {
             class="w-full rounded-md border bg-white px-3 py-2 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition resize-none"
             :class="touched.rationale && !isValid
               ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15'
-              : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+              : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
           />
           <p v-if="touched.rationale && !isValid" class="text-xs text-red-500">
             Rationale is required (minimum 5 characters).
@@ -96,7 +96,7 @@ function submit(decision: 'approved' | 'rejected') {
             @click="submit('rejected')">
             Reject Contract
           </Button>
-          <Button type="button" :disabled="saving" class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white"
+          <Button type="button" :disabled="saving" class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white"
             @click="submit('approved')">
             {{ saving ? 'Recording…' : 'Record Approval' }}
           </Button>

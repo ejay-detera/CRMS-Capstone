@@ -19,7 +19,7 @@ const config = computed(() => {
     case 'inactive':
       return {
         icon: Clock,
-        classes: 'bg-[#252578]/5 text-[#252578]/70 border-[#252578]/15',
+        classes: 'bg-brand-navy/5 text-brand-navy/70 border-brand-navy/15',
         label: 'Inactive'
       }
     case 'expired':

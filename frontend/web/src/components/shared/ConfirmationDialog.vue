@@ -53,7 +53,7 @@ function handleCancel() {
         <Button @click="handleConfirm" :disabled="loading"
           class="h-9 px-4 text-sm text-white shadow-sm"
           :class="{
-            'bg-[#252578] hover:bg-[#2F2F73]': variant === 'default',
+            'bg-brand-navy hover:bg-brand-dark': variant === 'default',
             'bg-red-600 hover:bg-red-700': variant === 'destructive',
             'bg-amber-600 hover:bg-amber-700': variant === 'warning',
           }">

@@ -23,16 +23,16 @@ const typeIcon: Record<NotifType, Component> = {
 
 <template>
   <div class="flex items-center gap-4 px-6 py-4 border-l-2 hover:bg-black/1.2 transition-colors group"
-    :class="!notif.isRead ? 'bg-[#2E85D8]/[0.06] border-l-[#2E85D8]' : 'border-l-transparent'">
+    :class="!notif.isRead ? 'bg-brand-blue/[0.06] border-l-brand-blue' : 'border-l-transparent'">
 
     <div class="w-2 shrink-0 flex justify-center">
       <div class="w-2 h-2 rounded-full transition-colors"
-        :class="!notif.isRead ? 'bg-[#2E85D8]' : 'bg-transparent'" />
+        :class="!notif.isRead ? 'bg-brand-blue' : 'bg-transparent'" />
     </div>
 
     <button type="button" @click="$emit('update:selected', !selected)" 
       class="w-4 h-4 rounded-[4px] flex items-center justify-center border transition-all duration-200 shrink-0 mt-0.5"
-      :class="selected ? 'bg-[#2E85D8] border-[#2E85D8] text-white scale-105 shadow-sm' : 'border-black/20 bg-white hover:border-black/40 text-transparent'">
+      :class="selected ? 'bg-brand-blue border-brand-blue text-white scale-105 shadow-sm' : 'border-black/20 bg-white hover:border-black/40 text-transparent'">
       <Check class="w-3 h-3 transition-opacity" stroke-width="3.5" :class="selected ? 'opacity-100' : 'opacity-0'" />
     </button>
 

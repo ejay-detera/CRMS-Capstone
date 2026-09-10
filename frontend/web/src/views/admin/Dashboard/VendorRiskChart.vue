@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_HEX } from '@/constants/theme'
 import { computed } from 'vue'
 import { VisSingleContainer, VisDonut } from '@unovis/vue'
 
@@ -42,9 +43,9 @@ const data = computed<RiskItem[]>(() => {
   }
 
   return [
-    { label: 'Low Risk',    value: low,    color: '#2E85D8' },
-    { label: 'Medium Risk', value: medium, color: '#2F2F73' },
-    { label: 'High Risk',   value: high,   color: '#252578' }
+    { label: 'Low Risk',    value: low,    color: BRAND_HEX.blue },
+    { label: 'Medium Risk', value: medium, color: BRAND_HEX.dark },
+    { label: 'High Risk',   value: high,   color: BRAND_HEX.navy }
   ]
 })
 

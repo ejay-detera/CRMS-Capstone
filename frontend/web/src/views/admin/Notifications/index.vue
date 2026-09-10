@@ -72,7 +72,7 @@ onMounted(async () => {
         <p class="text-sm text-black/40 mt-0.5">View and manage all system notifications.</p>
       </div>
       <button v-if="unreadCount > 0 && activeTab !== 'email_logs'" @click="markAllRead"
-        class="flex items-center gap-2 text-sm font-medium text-[#2E85D8] hover:text-[#252578] transition-colors">
+        class="flex items-center gap-2 text-sm font-medium text-brand-blue hover:text-brand-navy transition-colors">
         <CheckCheck class="w-4 h-4" /> Mark all as read
       </button>
     </div>

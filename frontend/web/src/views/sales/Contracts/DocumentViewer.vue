@@ -262,13 +262,13 @@ function printFile() {
           </div>
           <!-- DOCX icon (blue) -->
           <div v-else
-            class="w-8 h-8 rounded bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2E85D8]">
+            class="w-8 h-8 rounded bg-blue-50 border border-blue-100 flex items-center justify-center text-brand-blue">
             <FileText class="w-4.5 h-4.5" />
           </div>
           <div>
             <h1 class="text-sm font-semibold text-black leading-tight truncate max-w-md">{{ document.name }}</h1>
             <p class="text-[10px] text-black/35 mt-0.5">
-              <span v-if="document.type === 'docx'" class="mr-1.5 font-bold text-[#2E85D8] uppercase text-[9px] tracking-wide">DOCX · Read-only</span>
+              <span v-if="document.type === 'docx'" class="mr-1.5 font-bold text-brand-blue uppercase text-[9px] tracking-wide">DOCX · Read-only</span>
               {{ (document.size / 1024 / 1024).toFixed(2) }} MB
             </p>
           </div>
@@ -287,7 +287,7 @@ function printFile() {
           Download
         </button>
         <a :href="pdfBlobUrl" target="_blank" v-if="pdfBlobUrl && document.type === 'pdf'"
-          class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#2E85D8] hover:bg-[#252578] text-xs font-semibold text-white transition shadow-sm">
+          class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-brand-blue hover:bg-brand-navy text-xs font-semibold text-white transition shadow-sm">
           <ExternalLink class="w-3.5 h-3.5" />
           Open in New Tab
         </a>
@@ -295,14 +295,14 @@ function printFile() {
     </header>
 
     <!-- ── Preview Mode Banner ── -->
-    <div v-if="fromCreate" class="bg-[#2E85D8]/10 border-b border-[#2E85D8]/20 px-6 py-2.5 flex items-center justify-between shrink-0 shadow-sm z-20">
+    <div v-if="fromCreate" class="bg-brand-blue/10 border-b border-brand-blue/20 px-6 py-2.5 flex items-center justify-between shrink-0 shadow-sm z-20">
       <div class="flex items-center gap-2">
-        <div class="w-5 h-5 rounded-full bg-[#2E85D8] flex items-center justify-center text-white">
+        <div class="w-5 h-5 rounded-full bg-brand-blue flex items-center justify-center text-white">
           <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
         </div>
         <span class="text-xs font-medium text-[#1A4F82]">Previewing document during contract creation.</span>
       </div>
-      <button @click="router.push(backPath)" class="flex items-center gap-1.5 text-xs font-bold text-[#2E85D8] hover:text-[#1A4F82] transition-colors">
+      <button @click="router.push(backPath)" class="flex items-center gap-1.5 text-xs font-bold text-brand-blue hover:text-[#1A4F82] transition-colors">
         <ArrowLeft class="w-3.5 h-3.5" />
         Return to form
       </button>
@@ -314,7 +314,7 @@ function printFile() {
         <!-- Sidebar Toggle Button -->
         <button @click="showSidebar = !showSidebar" 
           class="flex items-center justify-center w-8 h-8 rounded-lg border border-black/8 hover:bg-black/2 transition text-black/60 hover:text-black"
-          :class="showSidebar ? 'bg-blue-50 border-blue-200 text-[#2E85D8]' : ''"
+          :class="showSidebar ? 'bg-blue-50 border-blue-200 text-brand-blue' : ''"
           title="Toggle sidebar">
           <Menu class="w-4 h-4" />
         </button>
@@ -329,7 +329,7 @@ function printFile() {
           
           <div class="flex items-center gap-1">
             <input type="text" :value="currentPage" @change="handlePageInput"
-              class="w-10 h-7 text-center text-xs font-semibold border border-black/10 rounded focus:border-[#2E85D8] focus:outline-none" />
+              class="w-10 h-7 text-center text-xs font-semibold border border-black/10 rounded focus:border-brand-blue focus:outline-none" />
             <span class="text-xs text-black/45 font-medium">/ {{ pageCount }}</span>
           </div>
           
@@ -365,7 +365,7 @@ function printFile() {
     <div v-else-if="document && document.type === 'docx'" class="h-12 border-b border-black/8 bg-white px-6 flex items-center justify-between shrink-0 shadow-sm z-10">
       <!-- Read-only badge -->
       <div class="flex items-center gap-2">
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 border border-blue-100 text-[11px] font-semibold text-[#2E85D8] select-none">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 border border-blue-100 text-[11px] font-semibold text-brand-blue select-none">
           <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
           </svg>
@@ -407,9 +407,9 @@ function printFile() {
           <div v-for="page in pageCount" :key="page"
             @click="currentPage = page"
             class="flex items-center gap-3 p-2 rounded-lg cursor-pointer transition select-none"
-            :class="currentPage === page ? 'bg-blue-50 border border-blue-100 text-[#2E85D8]' : 'border border-transparent hover:bg-black/[0.02] text-black/60 hover:text-black'">
+            :class="currentPage === page ? 'bg-blue-50 border border-blue-100 text-brand-blue' : 'border border-transparent hover:bg-black/[0.02] text-black/60 hover:text-black'">
             <div class="w-7 h-9 rounded bg-white border shadow-sm flex items-center justify-center text-xs font-bold"
-              :class="currentPage === page ? 'border-blue-300 text-[#2E85D8]' : 'border-black/10 text-black/40'">
+              :class="currentPage === page ? 'border-blue-300 text-brand-blue' : 'border-black/10 text-black/40'">
               {{ page }}
             </div>
             <div class="flex flex-col">
@@ -424,7 +424,7 @@ function printFile() {
 
         <!-- Global loading -->
         <div v-if="loading" class="absolute inset-0 flex flex-col items-center justify-center gap-3">
-          <Loader2 class="w-8 h-8 text-[#2E85D8] animate-spin" />
+          <Loader2 class="w-8 h-8 text-brand-blue animate-spin" />
           <span class="text-xs font-medium text-black/45">Loading document viewer...</span>
         </div>
 
@@ -439,7 +439,7 @@ function printFile() {
         <div v-else-if="document.type === 'pdf'" class="w-full flex justify-center py-4">
           <!-- PDF loading -->
           <div v-if="!pdfBlobUrl" class="absolute inset-0 flex flex-col items-center justify-center gap-3">
-            <Loader2 class="w-8 h-8 text-[#2E85D8] animate-spin" />
+            <Loader2 class="w-8 h-8 text-brand-blue animate-spin" />
             <span class="text-xs font-medium text-black/45">Loading document viewer...</span>
           </div>
 
@@ -460,7 +460,7 @@ function printFile() {
         <div v-else-if="document.type === 'docx'" class="w-full flex justify-center py-4">
           <!-- DOCX loading (mammoth converting) -->
           <div v-if="docxLoading || loadingFile" class="absolute inset-0 flex flex-col items-center justify-center gap-3">
-            <Loader2 class="w-8 h-8 text-[#2E85D8] animate-spin" />
+            <Loader2 class="w-8 h-8 text-brand-blue animate-spin" />
             <span class="text-xs font-medium text-black/45">Rendering document...</span>
           </div>
 
@@ -519,7 +519,7 @@ function printFile() {
 .docx-content :deep(h3) {
   font-size: 1.1em;
   font-weight: 600;
-  color: #252578;
+  color: var(--brand-navy);
   margin-top: 1.4em;
   margin-bottom: 0.4em;
 }
@@ -612,11 +612,11 @@ function printFile() {
 
 /* Blockquote */
 .docx-content :deep(blockquote) {
-  border-left: 3px solid #2E85D8;
+  border-left: 3px solid var(--brand-blue);
   padding: 0.5em 1em;
   margin: 1em 0;
   color: rgba(0, 0, 0, 0.6);
-  background: rgba(46, 133, 216, 0.04);
+  background: color-mix(in srgb, var(--brand-blue) 4%, transparent);
   border-radius: 0 6px 6px 0;
 }
 
@@ -637,7 +637,7 @@ function printFile() {
 
 /* Links — visible but not clickable (read-only) */
 .docx-content :deep(a) {
-  color: #2E85D8;
+  color: var(--brand-blue);
   text-decoration: underline;
   text-underline-offset: 2px;
   pointer-events: none;

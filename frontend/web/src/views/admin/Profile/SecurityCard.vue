@@ -23,7 +23,7 @@ const passwordMismatch = computed(() => form.confirm.length > 0 && form.next !==
 function fieldCls(field: keyof typeof touched, invalid: boolean) {
   return touched[field] && invalid
     ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15'
-    : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
+    : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'
 }
 
 function save() {

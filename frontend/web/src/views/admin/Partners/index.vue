@@ -184,10 +184,10 @@ function executeExport() {
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
         <Button v-if="showAiSuggestionButton" @click="router.push('/admin/vendor-suggestions')" variant="outline"
-          class="h-9 gap-2 text-sm font-medium border-[#2E85D8]/30 text-[#2E85D8] hover:bg-[#2E85D8]/5">
+          class="h-9 gap-2 text-sm font-medium border-brand-blue/30 text-brand-blue hover:bg-brand-blue/5">
           <Sparkles class="w-4 h-4" /> AI Suggestion
         </Button>
-        <Button id="add-partner-btn" v-if="hasPermission('cms.partners.create')" @click="router.push('/admin/partners/create?type=' + activeTab)" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+        <Button id="add-partner-btn" v-if="hasPermission('cms.partners.create')" @click="router.push('/admin/partners/create?type=' + activeTab)" class="h-9 w-9 p-0 bg-brand-navy hover:bg-brand-dark text-white rounded-lg shadow-sm">
           <Plus class="w-5 h-5" />
         </Button>
       </div>
@@ -231,14 +231,14 @@ function executeExport() {
       <div class="relative flex-1">
         <Search class="w-3.5 h-3.5 text-black/30 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input v-model="search" type="text" :placeholder="`Search ${activeTab === 'partners' ? 'partners' : 'suppliers'}...`"
-          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none transition" />
+          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-brand-blue focus:outline-none transition" />
       </div>
       <select v-model="regionFilter"
-        class="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors">
+        class="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors">
         <option v-for="r in regions" :key="r" :value="r">{{ r === 'All' ? 'All Regions' : r }}</option>
       </select>
       <select v-model="industryFilter"
-        class="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors">
+        class="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors">
         <option v-for="ind in industries" :key="ind" :value="ind">{{ ind === 'All' ? 'All Industries' : ind }}</option>
       </select>
     </div>

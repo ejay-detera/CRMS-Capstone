@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_HEX } from '@/constants/theme'
 import { computed, ref } from 'vue'
 import { VisSingleContainer, VisDonut, VisTooltip } from '@unovis/vue'
 import { Donut } from '@unovis/ts'
@@ -13,7 +14,7 @@ const props = defineProps<{
 type SliceItem = { label: string; value: number; color: string }
 type BarItem   = { label: string; value: number; color: string; barColor: string }
 
-const PALETTE = ['#252578', '#2E85D8', '#2F2F73', '#5B7FD1', '#8FA8E0', '#A3BFFA']
+const PALETTE = [BRAND_HEX.navy, BRAND_HEX.blue, BRAND_HEX.dark, '#5B7FD1', '#8FA8E0', '#A3BFFA']
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function toSlices(record: Record<string, number> | null | undefined): SliceItem[] {
@@ -34,11 +35,11 @@ function getVal(service: string, metricType: string): number {
 
 // ── Contract bar chart data ────────────────────────────────────────────────────
 const contractBars = computed<BarItem[]>(() => [
-  { label: 'Total',        value: getVal('contract-management', 'contracts_total'),               color: '#252578', barColor: '#252578' },
-  { label: 'Expiring 30d', value: getVal('contract-management', 'contracts_expiring_soon_30d'),   color: '#2E85D8', barColor: '#2E85D8' },
+  { label: 'Total',        value: getVal('contract-management', 'contracts_total'),               color: BRAND_HEX.navy, barColor: BRAND_HEX.navy },
+  { label: 'Expiring 30d', value: getVal('contract-management', 'contracts_expiring_soon_30d'),   color: BRAND_HEX.blue, barColor: BRAND_HEX.blue },
   { label: 'Expired',      value: getVal('contract-management', 'contracts_expired'),             color: '#EF4444', barColor: '#EF4444' },
   { label: 'High-Risk',    value: getVal('contract-management', 'high_risk_approvals_pending'),   color: '#F59E0B', barColor: '#F59E0B' },
-  { label: 'Escalated',    value: getVal('contract-management', 'high_risk_approvals_escalated'), color: '#2F2F73', barColor: '#2F2F73' },
+  { label: 'Escalated',    value: getVal('contract-management', 'high_risk_approvals_escalated'), color: BRAND_HEX.dark, barColor: BRAND_HEX.dark },
 ].filter(b => b.value > 0))
 
 const showContractBars = computed(() => (!props.service || props.service === 'contract-management') && contractBars.value.length > 0)

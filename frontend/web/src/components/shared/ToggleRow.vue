@@ -17,7 +17,7 @@ defineEmits<{ 'update:modelValue': [value: boolean] }>()
     <button
       @click="$emit('update:modelValue', !modelValue)"
       class="relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0"
-      :class="modelValue ? 'bg-[#2E85D8]' : 'bg-black/15'"
+      :class="modelValue ? 'bg-brand-blue' : 'bg-black/15'"
     >
       <span
         class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200"

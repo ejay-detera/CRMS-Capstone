@@ -45,7 +45,7 @@ function daysDisplay(days: number) {
       </button>
 
       <div class="flex items-start gap-3.5 flex-1 min-w-0">
-        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 bg-[#252578]">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 bg-brand-navy">
           <ClipboardList class="w-5 h-5" />
         </div>
         <div class="flex-1 min-w-0">
@@ -75,7 +75,7 @@ function daysDisplay(days: number) {
           Cancel
         </Button>
         <Button @click="$emit('save')" :disabled="saving"
-          class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+          class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <Loader2 v-if="saving" class="w-3.5 h-3.5 animate-spin mr-1.5" />
           {{ saving ? 'Saving…' : 'Save Changes' }}
         </Button>
@@ -86,7 +86,7 @@ function daysDisplay(days: number) {
         <Button
           v-if="(request.status === 'Pending' || request.status === 'Under Review') && !showRejectInput"
           @click="$emit('edit')" variant="outline"
-          class="h-9 gap-2 text-sm font-medium border-[#252578]/25 text-[#252578] hover:bg-[#252578]/5 hover:border-[#252578]/40">
+          class="h-9 gap-2 text-sm font-medium border-brand-navy/25 text-brand-navy hover:bg-brand-navy/5 hover:border-brand-navy/40">
           <FilePenLine class="w-4 h-4" />
           Edit Request
         </Button>

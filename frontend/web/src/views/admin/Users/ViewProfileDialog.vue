@@ -46,7 +46,7 @@ const emit  = defineEmits<{ 'update:open': [v: boolean]; edit: [u: User] }>()
             <Mail class="w-3.5 h-3.5 text-black/25 shrink-0" />
             <div class="flex-1 min-w-0 flex items-baseline justify-between gap-4">
               <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider shrink-0">Email</span>
-              <span class="text-sm text-[#2E85D8] truncate text-right">{{ user.email }}</span>
+              <span class="text-sm text-brand-blue truncate text-right">{{ user.email }}</span>
             </div>
           </div>
 
@@ -75,7 +75,7 @@ const emit  = defineEmits<{ 'update:open': [v: boolean]; edit: [u: User] }>()
             Close
           </Button>
           <Button @click="$emit('edit', user)"
-            class="h-8 px-4 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
+            class="h-8 px-4 text-sm bg-brand-navy hover:bg-brand-dark text-white">
             <Pencil class="w-3.5 h-3.5 mr-1.5" /> Edit user
           </Button>
         </div>

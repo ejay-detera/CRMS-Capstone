@@ -130,7 +130,7 @@ onMounted(async () => {
       <button
         @click="saveChanges"
         :disabled="isSaving || isLocked || isLoading"
-        class="flex items-center gap-2 bg-[#252578] hover:bg-[#2F2F73] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
+        class="flex items-center gap-2 bg-brand-navy hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
       >
         <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
         <Save v-else class="w-4 h-4" />

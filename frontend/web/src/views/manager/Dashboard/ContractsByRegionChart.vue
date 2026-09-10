@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_HEX } from '@/constants/theme'
 import { computed } from 'vue'
 import { VisXYContainer, VisStackedBar, VisAxis, VisTooltip, VisCrosshair } from '@unovis/vue'
 import type { Contract } from '@/types/contract'
@@ -15,9 +16,9 @@ const data = computed<RegionItem[]>(() => {
   const mindanao = props.contracts.filter(c => c.region === 'Mindanao').length
 
   return [
-    { region: 'Luzon',    count: luzon,    color: '#252578' },
-    { region: 'Visayas',  count: visayas,  color: '#2E85D8' },
-    { region: 'Mindanao', count: mindanao, color: '#2F2F73' }
+    { region: 'Luzon',    count: luzon,    color: BRAND_HEX.navy },
+    { region: 'Visayas',  count: visayas,  color: BRAND_HEX.blue },
+    { region: 'Mindanao', count: mindanao, color: BRAND_HEX.dark }
   ]
 })
 
@@ -85,7 +86,7 @@ const tooltipTemplate = (d: RegionItem) =>
         <VisAxis type="x" :tick-format="xTickFormat" :tickValues="data.map((_, i) => i)" />
         <VisAxis type="y" :tickValues="yTickValues" :tickFormat="(v: number) => String(Math.round(v))" />
         <VisTooltip :horizontal-shift="20" />
-        <VisCrosshair :template="tooltipTemplate" color="#2E85D8" />
+        <VisCrosshair :template="tooltipTemplate" :color="BRAND_HEX.blue" />
       </VisXYContainer>
     </div>
   </div>

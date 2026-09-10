@@ -12,20 +12,20 @@ const cfg = inject<SystemCfg>('cfg')!
   <div class="space-y-4">
 
     <SettingCard title="General Settings" description="Basic system identity and preferences."
-      :icon="Globe" icon-bg="bg-[#2E85D8]/8" icon-color="text-[#2E85D8]">
+      :icon="Globe" icon-bg="bg-brand-blue/8" icon-color="text-brand-blue">
       <div class="px-6 py-5 space-y-5">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
             <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">System name</label>
             <input v-model="cfg.systemName" type="text" maxlength="100"
-              class="w-full mt-2 rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors" />
+              class="w-full mt-2 rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors" />
           </div>
           <div>
             <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Support email</label>
             <div class="relative mt-2">
               <Mail class="w-3.5 h-3.5 text-black/30 absolute left-3 top-1/2 -translate-y-1/2" />
               <input v-model="cfg.supportEmail" type="email"
-                class="w-full rounded-lg border border-black/10 bg-white pl-8 pr-3 py-2 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors" />
+                class="w-full rounded-lg border border-black/10 bg-white pl-8 pr-3 py-2 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors" />
             </div>
           </div>
         </div>
@@ -34,7 +34,7 @@ const cfg = inject<SystemCfg>('cfg')!
             <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Timezone</label>
             <div class="relative mt-2">
               <select v-model="cfg.timezone"
-                class="w-full appearance-none rounded-lg border border-black/10 bg-white px-3 py-2 pr-8 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors cursor-pointer">
+                class="w-full appearance-none rounded-lg border border-black/10 bg-white px-3 py-2 pr-8 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors cursor-pointer">
                 <option>Asia/Manila</option>
                 <option>Asia/Singapore</option>
                 <option>UTC</option>
@@ -48,7 +48,7 @@ const cfg = inject<SystemCfg>('cfg')!
             <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Date format</label>
             <div class="relative mt-2">
               <select v-model="cfg.dateFormat"
-                class="w-full appearance-none rounded-lg border border-black/10 bg-white px-3 py-2 pr-8 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors cursor-pointer">
+                class="w-full appearance-none rounded-lg border border-black/10 bg-white px-3 py-2 pr-8 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors cursor-pointer">
                 <option>MM/DD/YYYY</option>
                 <option>DD/MM/YYYY</option>
                 <option>YYYY-MM-DD</option>
@@ -72,7 +72,7 @@ const cfg = inject<SystemCfg>('cfg')!
               <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Backup frequency</label>
               <div class="relative mt-2">
                 <select v-model="cfg.backupFrequency"
-                  class="w-full appearance-none rounded-lg border border-black/10 bg-white px-3 py-2 pr-8 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors cursor-pointer">
+                  class="w-full appearance-none rounded-lg border border-black/10 bg-white px-3 py-2 pr-8 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors cursor-pointer">
                   <option value="hourly">Hourly</option>
                   <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>
@@ -85,7 +85,7 @@ const cfg = inject<SystemCfg>('cfg')!
               <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Data retention period</label>
               <div class="relative mt-2">
                 <input v-model.number="cfg.dataRetentionDays" type="number" min="30" max="3650"
-                  class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-12 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors" />
+                  class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-12 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors" />
                 <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/35 pointer-events-none">days</span>
               </div>
             </div>

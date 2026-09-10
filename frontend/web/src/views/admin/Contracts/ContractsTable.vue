@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_PALETTE } from '@/constants/theme'
 import { ref, watch, computed } from 'vue'
 import { Search, MoreHorizontal, Eye, Pencil, Trash2, Filter, X } from 'lucide-vue-next'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
@@ -175,7 +176,7 @@ const statusOptions: { label: string; value: StatusFilter }[] = [
 ]
 
 
-const palette = ['#252578', '#2E85D8', '#2F2F73']
+const palette = BRAND_PALETTE
 function initials(name: string) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
@@ -225,7 +226,7 @@ function avatarColor(name: string) {
             <div class="space-y-1">
               <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Category</label>
               <Select :model-value="draftCategory || '__all__'" @update:model-value="(v) => draftCategory = (v === '__all__' ? '' : v as string)">
-                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
+                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-brand-blue/15">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent class="bg-white border border-black/10 shadow-lg">
@@ -239,7 +240,7 @@ function avatarColor(name: string) {
             <div class="space-y-1">
               <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Region</label>
               <Select :model-value="draftRegion || '__all__'" @update:model-value="(v) => draftRegion = (v === '__all__' ? '' : v as string)">
-                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
+                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-brand-blue/15">
                   <SelectValue placeholder="All Regions" />
                 </SelectTrigger>
                 <SelectContent class="bg-white border border-black/10 shadow-lg">
@@ -255,7 +256,7 @@ function avatarColor(name: string) {
             <div class="space-y-1">
               <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Status</label>
               <Select :model-value="draftStatus || '__all__'" @update:model-value="(v) => draftStatus = (v === '__all__' ? '' : (v as StatusFilter))">
-                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
+                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-brand-blue/15">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent class="bg-white border border-black/10 shadow-lg">
@@ -272,12 +273,12 @@ function avatarColor(name: string) {
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-[11px] font-medium text-black/65">Start Date</span>
                   <input type="date" v-model="draftStartDate"
-                    class="h-7 w-36 rounded-md border border-black/10 bg-white px-2 text-xs focus:border-[#2E85D8] focus:outline-none transition-colors" />
+                    class="h-7 w-36 rounded-md border border-black/10 bg-white px-2 text-xs focus:border-brand-blue focus:outline-none transition-colors" />
                 </div>
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-[11px] font-medium text-black/65">End Date</span>
                   <input type="date" v-model="draftEndDate"
-                    class="h-7 w-36 rounded-md border border-black/10 bg-white px-2 text-xs focus:border-[#2E85D8] focus:outline-none transition-colors" />
+                    class="h-7 w-36 rounded-md border border-black/10 bg-white px-2 text-xs focus:border-brand-blue focus:outline-none transition-colors" />
                 </div>
               </div>
             </div>
@@ -289,7 +290,7 @@ function avatarColor(name: string) {
                 Clear All
               </Button>
               <Button size="sm" @click="applyFilters"
-                class="flex-1 h-8 text-xs bg-[#252578] hover:bg-[#2F2F73] text-white font-medium shadow-sm">
+                class="flex-1 h-8 text-xs bg-brand-navy hover:bg-brand-dark text-white font-medium shadow-sm">
                 Apply Filters
               </Button>
             </div>
@@ -304,7 +305,7 @@ function avatarColor(name: string) {
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"
           type="text" placeholder="Search contracts..."
           maxlength="100"
-          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
+          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15 transition" />
       </div>
     </div>
 

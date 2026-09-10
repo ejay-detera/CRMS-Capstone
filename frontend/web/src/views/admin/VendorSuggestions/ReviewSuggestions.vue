@@ -132,7 +132,7 @@ async function saveActiveTab() {
         v-for="id in openTabIds" :key="id"
         @click="activeTabId = id"
         class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors shrink-0"
-        :class="activeTabId === id ? 'border-[#252578] text-[#252578]' : 'border-transparent text-black/40 hover:text-black/60'"
+        :class="activeTabId === id ? 'border-brand-navy text-brand-navy' : 'border-transparent text-black/40 hover:text-black/60'"
       >
         {{ forms[id]?.name || `Candidate ${id}` }}
         <X class="w-3.5 h-3.5 text-black/30 hover:text-black/60" @click.stop="closeTab(id)" />
@@ -165,12 +165,12 @@ async function saveActiveTab() {
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Name <span class="text-red-500">*</span></label>
             <input v-model="activeForm.name" type="text" maxlength="255"
-              class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15 transition" />
+              class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:border-brand-blue focus:ring-brand-blue/15 transition" />
           </div>
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Industry <span class="text-red-500">*</span></label>
             <input v-model="activeForm.industry" type="text" maxlength="150"
-              class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15 transition" />
+              class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:border-brand-blue focus:ring-brand-blue/15 transition" />
           </div>
         </div>
       </div>
@@ -198,12 +198,12 @@ async function saveActiveTab() {
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Contact Person</label>
             <input v-model="activeForm.contactPerson" type="text" maxlength="255"
-              class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15 transition" />
+              class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:border-brand-blue focus:ring-brand-blue/15 transition" />
           </div>
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Phone</label>
             <input v-model="activeForm.phone" type="text" inputmode="numeric" maxlength="20"
-              class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15 transition" />
+              class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:border-brand-blue focus:ring-brand-blue/15 transition" />
           </div>
         </div>
         <div class="flex flex-col gap-1.5 mb-4">
@@ -212,13 +212,13 @@ async function saveActiveTab() {
           </label>
           <input v-model="activeForm.email" type="email"
             class="w-full h-9 rounded-md border bg-white px-3 text-sm focus:outline-none focus:ring-2 transition"
-            :class="!emailValid ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'" />
+            :class="!emailValid ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'" />
           <p v-if="!emailValid" class="text-xs text-red-500">Enter a valid email address.</p>
         </div>
         <div class="flex flex-col gap-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Address</label>
           <input v-model="activeForm.address" type="text" maxlength="200"
-            class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15 transition" />
+            class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:border-brand-blue focus:ring-brand-blue/15 transition" />
         </div>
       </div>
 
@@ -228,7 +228,7 @@ async function saveActiveTab() {
         <div class="flex flex-col gap-1.5 max-w-xs">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">TIN Number <span class="text-red-500">*</span></label>
           <input v-model="activeForm.tinNumber" type="text" placeholder="000-000-000-000" maxlength="100"
-            class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15 transition" />
+            class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:border-brand-blue focus:ring-brand-blue/15 transition" />
         </div>
       </div>
 
@@ -237,7 +237,7 @@ async function saveActiveTab() {
         <Button type="button" variant="outline" class="h-9 px-4 text-sm border-black/15 text-black/60 hover:text-black"
           @click="closeTab(activeForm.candidateId)">Discard</Button>
         <Button :disabled="!isFormValid || savingTabId === activeForm.candidateId" @click="saveActiveTab"
-          class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white disabled:opacity-50">
+          class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white disabled:opacity-50">
           {{ savingTabId === activeForm.candidateId ? 'Saving…' : `Save ${activeForm.vendorType === 'supplier' ? 'Supplier' : 'Partner'}` }}
         </Button>
       </div>

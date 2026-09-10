@@ -7,6 +7,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-dark: var(--brand-dark);
   --font-sans: 'Poppins', sans-serif;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -47,6 +50,11 @@
 }
 
 :root {
+  /* ── Brand Theme Color Variables ── */
+  --brand-navy: #252578;
+  --brand-blue: #2E85D8;
+  --brand-dark: #2F2F73;
+
   --radius: 0.75rem;
   --background: oklch(0.97 0 0);
   --foreground: oklch(0.145 0 0);
@@ -54,7 +62,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #252578;
+  --primary: var(--brand-navy);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -65,21 +73,21 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: #2E85D8;
+  --ring: var(--brand-blue);
   /* Brand chart colors */
-  --chart-1: #2E85D8;
-  --chart-2: #252578;
-  --chart-3: #2F2F73;
+  --chart-1: var(--brand-blue);
+  --chart-2: var(--brand-navy);
+  --chart-3: var(--brand-dark);
   --chart-4: #f59e0b;
   --chart-5: #10b981;
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #252578;
+  --sidebar-primary: var(--brand-navy);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.96 0.01 260);
-  --sidebar-accent-foreground: #252578;
+  --sidebar-accent-foreground: var(--brand-navy);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: #2E85D8;
+  --sidebar-ring: var(--brand-blue);
 }
 
 .dark {
@@ -145,7 +153,7 @@
   /* Premium scrollbar styling for modals */
   .modal-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(46, 133, 216, 0.25) transparent;
+    scrollbar-color: color-mix(in srgb, var(--brand-blue) 25%, transparent) transparent;
   }
   .modal-scrollbar::-webkit-scrollbar {
     width: 6px;
@@ -155,23 +163,31 @@
     background: transparent;
   }
   .modal-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(46, 133, 216, 0.25); /* #2E85D8 with opacity */
+    background: color-mix(in srgb, var(--brand-blue) 25%, transparent);
     border-radius: 9999px;
     transition: background 0.2s ease-in-out;
   }
   .modal-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(37, 37, 120, 0.45); /* #252578 with opacity */
+    background: color-mix(in srgb, var(--brand-navy) 45%, transparent);
   }
 
   /* Dark themed scrollbars for the sidebar */
+  [class*="bg-brand-navy"]::-webkit-scrollbar-thumb,
+  [class*="bg-brand-dark"]::-webkit-scrollbar-thumb,
   [class*="bg-[#252578]"]::-webkit-scrollbar-thumb,
   [class*="bg-[#2F2F73]"]::-webkit-scrollbar-thumb,
+  [class*="bg-brand-navy"] *::-webkit-scrollbar-thumb,
+  [class*="bg-brand-dark"] *::-webkit-scrollbar-thumb,
   [class*="bg-[#252578]"] *::-webkit-scrollbar-thumb,
   [class*="bg-[#2F2F73]"] *::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.15);
   }
+  [class*="bg-brand-navy"]::-webkit-scrollbar-thumb:hover,
+  [class*="bg-brand-dark"]::-webkit-scrollbar-thumb:hover,
   [class*="bg-[#252578]"]::-webkit-scrollbar-thumb:hover,
   [class*="bg-[#2F2F73]"]::-webkit-scrollbar-thumb:hover,
+  [class*="bg-brand-navy"] *::-webkit-scrollbar-thumb:hover,
+  [class*="bg-brand-dark"] *::-webkit-scrollbar-thumb:hover,
   [class*="bg-[#252578]"] *::-webkit-scrollbar-thumb:hover,
   [class*="bg-[#2F2F73]"] *::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.35);
@@ -182,8 +198,12 @@
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
   }
+  [class*="bg-brand-navy"],
+  [class*="bg-brand-dark"],
   [class*="bg-[#252578]"],
   [class*="bg-[#2F2F73]"],
+  [class*="bg-brand-navy"] *,
+  [class*="bg-brand-dark"] *,
   [class*="bg-[#252578]"] *,
   [class*="bg-[#2F2F73]"] * {
     scrollbar-color: rgba(255, 255, 255, 0.15) transparent;

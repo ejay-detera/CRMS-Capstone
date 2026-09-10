@@ -455,8 +455,8 @@ onClickOutside(prsContainer, () => {
       </div>
 
       <Button v-if="canUseOcr" @click="ocrOpen = true" variant="outline"
-        class="h-9 px-4 text-sm border-black/15 text-[#252578] hover:text-[#2F2F73] hover:bg-black/2 flex items-center gap-2">
-        <ScanLine class="w-4 h-4 text-[#252578]" />
+        class="h-9 px-4 text-sm border-black/15 text-brand-navy hover:text-brand-dark hover:bg-black/2 flex items-center gap-2">
+        <ScanLine class="w-4 h-4 text-brand-navy" />
         Fill with OCR
       </Button>
     </div>
@@ -482,7 +482,7 @@ onClickOutside(prsContainer, () => {
                 class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition w-full"
                 :class="errors.businessPartner
                   ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                  : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+                  : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
               />
               <div
                 v-if="showSuggestions && partnerSuggestions.length > 0"
@@ -493,7 +493,7 @@ onClickOutside(prsContainer, () => {
                   :key="name"
                   type="button"
                   @click="selectSuggestion(name)"
-                  class="w-full text-left px-3.5 py-2 text-xs text-black/75 hover:bg-black/[0.03] hover:text-[#2E85D8] font-medium transition-colors"
+                  class="w-full text-left px-3.5 py-2 text-xs text-black/75 hover:bg-black/[0.03] hover:text-brand-blue font-medium transition-colors"
                 >
                   {{ name }}
                 </button>
@@ -513,7 +513,7 @@ onClickOutside(prsContainer, () => {
                 !form.category ? 'text-black/30' : 'text-black',
                 errors.category
                   ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                  : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
+                  : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'
               ]">
               <option value="" disabled>Select category</option>
               <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
@@ -531,7 +531,7 @@ onClickOutside(prsContainer, () => {
                 type="number"
                 :readonly="prefilledFromPrs"
                 placeholder="e.g. 12 (Select or type)"
-                class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition w-full border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15"
+                class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition w-full border-black/12 focus:border-brand-blue focus:ring-brand-blue/15"
                 :class="prefilledFromPrs ? 'bg-black/[0.02] border-black/8 cursor-not-allowed' : ''"
               />
               <p v-if="prefilledFromPrs" class="text-xs text-emerald-600 mt-1 font-medium">
@@ -546,7 +546,7 @@ onClickOutside(prsContainer, () => {
                   :key="act.id"
                   type="button"
                   @click="selectPrsActivity(act)"
-                  class="w-full text-left px-3.5 py-2 text-xs text-black/75 hover:bg-black/[0.03] hover:text-[#2E85D8] font-medium transition-colors"
+                  class="w-full text-left px-3.5 py-2 text-xs text-black/75 hover:bg-black/[0.03] hover:text-brand-blue font-medium transition-colors"
                 >
                   <div class="flex items-center justify-between font-semibold">
                     <span>ID: {{ act.id }} - {{ act.institution }}</span>
@@ -584,7 +584,7 @@ onClickOutside(prsContainer, () => {
               class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
               :class="errors.itemCode
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.itemCode" class="text-xs text-red-500">{{ errors.itemCode }}</p>
           </div>
@@ -600,7 +600,7 @@ onClickOutside(prsContainer, () => {
               class="h-9 rounded-lg border px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
               :class="errors.description
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.description" class="text-xs text-red-500">{{ errors.description }}</p>
           </div>
@@ -616,7 +616,7 @@ onClickOutside(prsContainer, () => {
               class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
               :class="errors.serialNo
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.serialNo" class="text-xs text-red-500">{{ errors.serialNo }}</p>
           </div>
@@ -632,7 +632,7 @@ onClickOutside(prsContainer, () => {
               class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
               :class="errors.sbuNumber
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.sbuNumber" class="text-xs text-red-500">{{ errors.sbuNumber }}</p>
           </div>
@@ -656,7 +656,7 @@ onClickOutside(prsContainer, () => {
                 !form.region ? 'text-black/30' : 'text-black',
                 errors.region
                   ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                  : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
+                  : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'
               ]">
               <option value="" disabled>Select region</option>
               <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
@@ -676,7 +676,7 @@ onClickOutside(prsContainer, () => {
               class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition"
               :class="errors.startDate
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.startDate" class="text-xs text-red-500">{{ errors.startDate }}</p>
           </div>
@@ -693,7 +693,7 @@ onClickOutside(prsContainer, () => {
               class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition"
               :class="errors.endDate
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.endDate" class="text-xs text-red-500">{{ errors.endDate }}</p>
           </div>
@@ -715,7 +715,7 @@ onClickOutside(prsContainer, () => {
           Cancel
         </Button>
         <Button @click="handleSubmit" :disabled="loading || isUploadingOrScanFailed"
-          class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+          class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           {{ loading ? 'Saving…' : 'Create Contract' }}
         </Button>
       </div>

@@ -464,7 +464,7 @@ function fmtSize(bytes: number) {
       <div class="bg-white border border-black/[0.08] rounded-xl overflow-hidden shadow-sm mt-6">
         <div class="p-8 pb-4 flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <h3 class="text-[10px] font-bold text-[#252578]/60 uppercase tracking-widest">Documents</h3>
+            <h3 class="text-[10px] font-bold text-brand-navy/60 uppercase tracking-widest">Documents</h3>
             <span class="text-[10px] font-bold text-black/35 bg-black/5 px-2 py-0.5 rounded-full tabular-nums">{{ allDocs.length }}</span>
           </div>
         </div>
@@ -476,7 +476,7 @@ function fmtSize(bytes: number) {
           <div v-else class="flex flex-wrap gap-4">
             <a v-for="doc in allDocs" :key="doc.name"
               :href="safeHref(doc.previewUrl)" target="_blank" rel="noopener noreferrer"
-              class="relative w-36 rounded-lg border border-black/8 overflow-hidden shadow-sm bg-white flex flex-col group hover:border-[#2E85D8]/50 transition-colors">
+              class="relative w-36 rounded-lg border border-black/8 overflow-hidden shadow-sm bg-white flex flex-col group hover:border-brand-blue/50 transition-colors">
               <template v-if="doc.type === 'pdf'">
                 <div class="w-full h-44 bg-red-50 flex flex-col items-center justify-center gap-2 relative group-hover:bg-red-100 transition-all border-b border-black/5">
                   <FileType2 class="w-10 h-10 text-red-400" />

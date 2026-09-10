@@ -12,7 +12,7 @@ const cfg = inject<SystemCfg>('cfg')!
   <div class="space-y-4">
 
     <SettingCard title="Contract Lifecycle" description="Control how contracts move through the approval pipeline."
-      :icon="FileText" icon-bg="bg-[#2E85D8]/8" icon-color="text-[#2E85D8]">
+      :icon="FileText" icon-bg="bg-brand-blue/8" icon-color="text-brand-blue">
       <div class="divide-y divide-black/4">
         <ToggleRow v-model="cfg.autoRenew"           label="Auto-Renew Contracts"    description="Automatically renew contracts before they expire." />
         <ToggleRow v-model="cfg.dualApproval"         label="Require Dual Approval"   description="Contracts must be approved by two authorized users." />
@@ -28,7 +28,7 @@ const cfg = inject<SystemCfg>('cfg')!
           <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Max contract duration</label>
           <div class="relative mt-2">
             <input v-model.number="cfg.maxContractDays" type="number" min="30" max="3650"
-              class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-12 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors" />
+              class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-12 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors" />
             <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/35 pointer-events-none">days</span>
           </div>
         </div>
@@ -36,7 +36,7 @@ const cfg = inject<SystemCfg>('cfg')!
           <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Expiry warning threshold</label>
           <div class="relative mt-2">
             <input v-model.number="cfg.expiryWarningDays" type="number" min="1" max="180"
-              class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-12 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors" />
+              class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-12 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors" />
             <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/35 pointer-events-none">days</span>
           </div>
         </div>

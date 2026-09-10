@@ -18,8 +18,8 @@ const emit = defineEmits<{
     <!-- Header -->
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-2">
-        <h3 class="text-base font-semibold text-[#2F2F73]">Linked Contracts</h3>
-        <span class="px-2 py-0.5 text-xs font-medium bg-[#2E85D8]/10 text-[#2E85D8] rounded-full">
+        <h3 class="text-base font-semibold text-brand-dark">Linked Contracts</h3>
+        <span class="px-2 py-0.5 text-xs font-medium bg-brand-blue/10 text-brand-blue rounded-full">
           {{ contracts.length }}
         </span>
       </div>
@@ -27,7 +27,7 @@ const emit = defineEmits<{
         v-if="canManage"
         type="button"
         @click="emit('open-associate')"
-        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-[#2E85D8] hover:bg-[#252578] rounded transition-colors"
+        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-brand-blue hover:bg-brand-navy rounded transition-colors"
       >
         Link Contract
       </button>
@@ -43,7 +43,7 @@ const emit = defineEmits<{
         v-if="canManage"
         type="button"
         @click="emit('open-associate')"
-        class="text-xs font-medium text-[#2E85D8] hover:text-[#252578] hover:underline"
+        class="text-xs font-medium text-brand-blue hover:text-brand-navy hover:underline"
       >
         Associate a contract now
       </button>
@@ -63,7 +63,7 @@ const emit = defineEmits<{
         </thead>
         <tbody class="divide-y divide-black/[0.04]">
           <tr v-for="c in contracts" :key="c.associationId" class="hover:bg-black/[0.005] transition-colors">
-            <td class="px-4 py-3 text-xs font-mono font-medium text-[#2F2F73]">
+            <td class="px-4 py-3 text-xs font-mono font-medium text-brand-dark">
               {{ c.contractId }}
             </td>
             <td class="px-4 py-3 text-xs text-black/70 font-medium">

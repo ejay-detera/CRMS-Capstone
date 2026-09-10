@@ -7,7 +7,7 @@ const { toasts, remove } = useToast()
 const config = {
   success: { icon: CheckCircle2, iconClass: 'text-emerald-500' },
   error:   { icon: XCircle,      iconClass: 'text-red-500'     },
-  info:    { icon: Info,         iconClass: 'text-[#2E85D8]'   },
+  info:    { icon: Info,         iconClass: 'text-brand-blue'   },
   warning: { icon: AlertTriangle, iconClass: 'text-amber-500'  },
 }
 </script>

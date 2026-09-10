@@ -88,7 +88,7 @@ const displayUser = computed(() => {
 
 function lnk(active: boolean) {
   return active
-    ? "bg-[#2F2F73] text-white"
+    ? "bg-brand-dark text-white"
     : "text-white/45 hover:text-white/80 hover:bg-white/10";
 }
 function ico(active: boolean) { return active ? "text-white" : "text-white/45"; }
@@ -100,13 +100,13 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
     <!-- ── Sidebar ── -->
     <Sidebar
       collapsible="icon"
-      class="border-r border-[#2F2F73] bg-[#252578] text-white shadow-sm"
+      class="border-r border-brand-dark bg-brand-navy text-white shadow-sm"
       :style="{
-        '--sidebar': '#252578',
+        '--sidebar': 'var(--brand-navy)',
         '--sidebar-foreground': '#FFFFFF',
-        '--sidebar-accent': '#2F2F73',
+        '--sidebar-accent': 'var(--brand-dark)',
         '--sidebar-accent-foreground': '#FFFFFF',
-        '--sidebar-border': '#2F2F73',
+        '--sidebar-border': 'var(--brand-dark)',
       }"
     >
       <!-- Logo -->
@@ -305,7 +305,7 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
               <button class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors text-black/60 relative">
                 <Bell class="w-4.5 h-4.5" />
                 <span v-if="unreadCount > 0"
-                  class="absolute top-1 right-1 min-w-[16px] h-4 rounded-full bg-[#2E85D8] border-2 border-white flex items-center justify-center text-[9px] font-bold text-white px-0.5">
+                  class="absolute top-1 right-1 min-w-[16px] h-4 rounded-full bg-brand-blue border-2 border-white flex items-center justify-center text-[9px] font-bold text-white px-0.5">
                   {{ unreadCount > 9 ? '9+' : unreadCount }}
                 </span>
               </button>
@@ -314,7 +314,7 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
               <div class="flex items-center justify-between px-4 py-3 border-b border-black/6">
                 <p class="text-sm font-semibold text-black">Notifications</p>
                 <button v-if="unreadCount > 0" @click="markAllRead"
-                  class="text-xs text-[#2E85D8] hover:text-[#252578] transition-colors font-medium">
+                  class="text-xs text-brand-blue hover:text-brand-navy transition-colors font-medium">
                   Mark all read
                 </button>
               </div>
@@ -325,17 +325,17 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
               <ul v-else class="divide-y divide-black/4 max-h-72 overflow-y-auto">
                 <li v-for="n in recentNotifs" :key="n.id"
                   class="flex items-start gap-3 px-4 py-3 hover:bg-black/2 transition-colors cursor-pointer"
-                  :class="{ 'bg-[#2E85D8]/[0.06]': !n.isRead }"
+                  :class="{ 'bg-brand-blue/[0.06]': !n.isRead }"
                   @click="openNotification(n)">
                   <span class="mt-0.5 w-1.5 h-1.5 rounded-full shrink-0"
-                    :class="n.isRead ? 'bg-transparent' : 'bg-[#2E85D8]'" />
+                    :class="n.isRead ? 'bg-transparent' : 'bg-brand-blue'" />
                   <p class="text-xs leading-relaxed line-clamp-2"
                     :class="n.isRead ? 'text-black/45' : 'text-black font-medium'">{{ n.message }}</p>
                 </li>
               </ul>
               <div class="px-4 py-2.5 border-t border-black/6">
                 <button @click="router.push('/sales/notifications')"
-                  class="w-full text-xs text-center text-[#2E85D8] hover:text-[#252578] font-medium transition-colors">
+                  class="w-full text-xs text-center text-brand-blue hover:text-brand-navy font-medium transition-colors">
                   View all notifications
                 </button>
               </div>
@@ -345,8 +345,8 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
           <Popover>
             <PopoverTrigger as-child>
               <div class="flex items-center gap-2.5 cursor-pointer hover:bg-black/5 rounded-lg px-2 py-1 transition-colors">
-                <Avatar class="w-9 h-9 ring-2 ring-[#252578]/20">
-                  <AvatarFallback class="bg-[#252578] text-white text-sm font-bold">
+                <Avatar class="w-9 h-9 ring-2 ring-brand-navy/20">
+                  <AvatarFallback class="bg-brand-navy text-white text-sm font-bold">
                     {{ displayUser.initials }}
                   </AvatarFallback>
                 </Avatar>

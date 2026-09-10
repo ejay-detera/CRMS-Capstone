@@ -214,7 +214,7 @@ function executeExport() {
           :key="card.label"
           @click="activeFilter = card.filter"
           class="bg-white rounded-lg border px-6 py-5 shadow-sm block hover:shadow-md cursor-pointer transition-all duration-200"
-          :class="activeFilter === card.filter ? 'border-[#2E85D8]' : 'border-black/8'"
+          :class="activeFilter === card.filter ? 'border-brand-blue' : 'border-black/8'"
         >
           <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
           <div class="flex items-end justify-between gap-2">

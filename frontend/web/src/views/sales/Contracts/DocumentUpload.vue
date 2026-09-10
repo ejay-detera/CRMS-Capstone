@@ -166,8 +166,8 @@ const fileSizeMB = (bytes: number) => (bytes / 1024 / 1024).toFixed(2)
       @click="fileInput?.click()"
       class="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-7 cursor-pointer transition-colors select-none"
       :class="dragOver
-        ? 'border-[#2E85D8] bg-[#2E85D8]/4'
-        : 'border-black/12 bg-black/1.5 hover:border-[#2E85D8]/50 hover:bg-[#2E85D8]/2'">
+        ? 'border-brand-blue bg-brand-blue/4'
+        : 'border-black/12 bg-black/1.5 hover:border-brand-blue/50 hover:bg-brand-blue/2'">
 
       <input
         ref="fileInput"
@@ -184,7 +184,7 @@ const fileSizeMB = (bytes: number) => (bytes / 1024 / 1024).toFixed(2)
 
       <div class="text-center">
         <p class="text-sm font-medium text-black/70">
-          <span class="text-[#2E85D8] font-semibold">Click to upload</span> or drag & drop
+          <span class="text-brand-blue font-semibold">Click to upload</span> or drag & drop
         </p>
         <p class="text-xs text-black/35 mt-1">PDF or DOCX · Max 10 MB per file</p>
       </div>
@@ -255,7 +255,7 @@ const fileSizeMB = (bytes: number) => (bytes / 1024 / 1024).toFixed(2)
 
         <!-- Success overlay/badge -->
         <div v-if="doc.uploadStatus === 'success' && !hideSuccessBadge"
-          class="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 rounded bg-[#2E85D8] px-1.5 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider shadow-sm select-none pointer-events-none"
+          class="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 rounded bg-brand-blue px-1.5 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider shadow-sm select-none pointer-events-none"
           :title="doc.scanWarning || 'Malware scan completed successfully.'">
           <span>{{ doc.scanWarning ? 'Scan Skipped' : 'Malware Free' }}</span>
         </div>

@@ -43,13 +43,13 @@ function daysDisplay(days: number) {
       <!-- Back button -->
       <button @click="$emit('back')"
         class="w-10 h-10 bg-white rounded-lg border border-black/10 flex items-center justify-center hover:bg-black/5 transition-colors shadow-sm shrink-0">
-        <ArrowLeft class="w-5 h-5 text-[#252578]" />
+        <ArrowLeft class="w-5 h-5 text-brand-navy" />
       </button>
 
       <div>
         <div class="flex items-center gap-3 mb-1">
           <!-- Icon box -->
-          <div class="p-2 bg-[#252578]/10 rounded-lg text-[#252578] flex items-center justify-center">
+          <div class="p-2 bg-brand-navy/10 rounded-lg text-brand-navy flex items-center justify-center">
             <FileText class="w-5 h-5" />
           </div>
           <!-- Title -->
@@ -96,7 +96,7 @@ function daysDisplay(days: number) {
           Cancel
         </button>
         <button @click="$emit('save')" :disabled="saving || disabled || actionInProgress"
-          class="px-6 py-2.5 bg-[#252578] text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-[#2F2F73] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+          class="px-6 py-2.5 bg-brand-navy text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-brand-dark transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
           <Loader2 v-if="saving" class="w-4 h-4 animate-spin" />
           {{ saving ? 'Saving…' : 'Save Changes' }}
         </button>
@@ -130,27 +130,27 @@ function daysDisplay(days: number) {
 
         <!-- Notify Manager -->
         <button v-if="!isManager && contract.approvalStatus === 'Pending' && !disabled && !isSnapshot" @click="$emit('notifyManager')"
-          class="px-6 py-2.5 bg-white border border-[#252578] text-[#252578] rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-[#252578]/5 transition-colors shadow-sm">
+          class="px-6 py-2.5 bg-white border border-brand-navy text-brand-navy rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-brand-navy/5 transition-colors shadow-sm">
           Notify Manager
         </button>
         
         <!-- Version History Button -->
         <button v-if="!showRejectInput" @click="$emit('openHistory')"
           class="px-4 py-2.5 bg-white border border-black/15 text-black/65 hover:text-black hover:bg-black/5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm">
-          <Clock class="w-4 h-4 text-[#2E85D8]" />
+          <Clock class="w-4 h-4 text-brand-blue" />
           Version History
         </button>
 
         <!-- AI Risk Assessment Button -->
         <button v-if="!showRejectInput && !isSnapshot" @click="$emit('openRiskAssessment')"
           class="px-4 py-2.5 bg-white border border-black/15 text-black/65 hover:text-black hover:bg-black/5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm">
-          <AlertTriangle class="w-4 h-4 text-[#2F2F73]" />
+          <AlertTriangle class="w-4 h-4 text-brand-dark" />
           Risk Assessment
         </button>
 
         <!-- Create Amendment Button — only for Approved contracts -->
         <button v-if="!showRejectInput && !isSnapshot && contract.approvalStatus === 'Approved'" @click="$emit('edit')"
-          class="px-6 py-2.5 bg-[#252578] text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm">
+          class="px-6 py-2.5 bg-brand-navy text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm">
           <FilePenLine class="w-4 h-4" />
           Create Amendment
         </button>

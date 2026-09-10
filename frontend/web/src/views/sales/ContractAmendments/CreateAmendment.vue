@@ -237,7 +237,7 @@ onMounted(async () => {
 
     <!-- Loading -->
     <div v-if="loadingContract" class="flex flex-col items-center justify-center py-20 gap-2">
-      <Loader2 class="w-8 h-8 animate-spin text-[#252578]" />
+      <Loader2 class="w-8 h-8 animate-spin text-brand-navy" />
       <span class="text-sm text-black/40 font-medium">Loading contract details...</span>
     </div>
 
@@ -245,8 +245,8 @@ onMounted(async () => {
     <div v-else-if="contract" class="bg-white rounded-lg border border-black/8 shadow-sm overflow-hidden font-poppins">
       
       <!-- Section: Amendment Reason -->
-      <div class="px-6 py-5 border-b border-black/6 bg-[#2E85D8]/5">
-        <h2 class="text-xs font-bold text-[#252578] uppercase tracking-widest mb-3">Amendment Reason</h2>
+      <div class="px-6 py-5 border-b border-black/6 bg-brand-blue/5">
+        <h2 class="text-xs font-bold text-brand-navy uppercase tracking-widest mb-3">Amendment Reason</h2>
         <div class="flex flex-col gap-1.5">
           <label class="text-xs font-semibold text-black/55">Why are you amending this contract? <span class="text-red-500">*</span></label>
           <textarea
@@ -257,7 +257,7 @@ onMounted(async () => {
             class="w-full rounded-lg border px-3 py-2 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
             :class="errors.reason
               ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-              : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+              : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
           />
           <p v-if="errors.reason" class="text-xs text-red-500 font-medium">{{ errors.reason }}</p>
         </div>
@@ -277,7 +277,7 @@ onMounted(async () => {
               class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition w-full"
               :class="errors.businessPartner
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.businessPartner" class="text-xs text-red-500">{{ errors.businessPartner }}</p>
           </div>
@@ -293,7 +293,7 @@ onMounted(async () => {
                 !form.category ? 'text-black/30' : 'text-black',
                 errors.category
                   ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                  : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
+                  : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'
               ]">
               <option value="" disabled>Select category</option>
               <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
@@ -312,7 +312,7 @@ onMounted(async () => {
               class="h-9 rounded-lg border px-3 text-sm font-mono focus:outline-none focus:ring-2 transition"
               :class="errors.sbuNumber
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.sbuNumber" class="text-xs text-red-500">{{ errors.sbuNumber }}</p>
           </div>
@@ -334,7 +334,7 @@ onMounted(async () => {
               class="h-9 rounded-lg border px-3 text-sm font-mono focus:outline-none focus:ring-2 transition"
               :class="errors.itemCode
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.itemCode" class="text-xs text-red-500">{{ errors.itemCode }}</p>
           </div>
@@ -349,7 +349,7 @@ onMounted(async () => {
               class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition"
               :class="errors.description
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.description" class="text-xs text-red-500">{{ errors.description }}</p>
           </div>
@@ -365,7 +365,7 @@ onMounted(async () => {
               class="h-9 rounded-lg border px-3 text-sm font-mono focus:outline-none focus:ring-2 transition"
               :class="errors.serialNo
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.serialNo" class="text-xs text-red-500">{{ errors.serialNo }}</p>
           </div>
@@ -387,7 +387,7 @@ onMounted(async () => {
                 !form.region ? 'text-black/30' : 'text-black',
                 errors.region
                   ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                  : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
+                  : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'
               ]">
               <option value="" disabled>Select region</option>
               <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
@@ -405,7 +405,7 @@ onMounted(async () => {
               class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition"
               :class="errors.startDate
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.startDate" class="text-xs text-red-500">{{ errors.startDate }}</p>
           </div>
@@ -420,7 +420,7 @@ onMounted(async () => {
               class="h-9 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 transition"
               :class="errors.endDate
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'"
+                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.endDate" class="text-xs text-red-500">{{ errors.endDate }}</p>
           </div>
@@ -441,7 +441,7 @@ onMounted(async () => {
           Cancel
         </Button>
         <Button @click="handleSubmit" :disabled="loading || isUploadingOrScanFailed"
-          class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white font-medium shadow-sm">
+          class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white font-medium shadow-sm">
           Submit Amendment Request
         </Button>
       </div>

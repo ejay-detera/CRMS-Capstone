@@ -85,7 +85,7 @@ function onPhoneInput(e: Event) {
 }
 
 function err(field: keyof typeof touched, extra = true) {
-  return touched[field] && extra ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
+  return touched[field] && extra ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'
 }
 
 function handleSubmit() {
@@ -160,8 +160,8 @@ async function confirmSubmit() {
           <ArrowLeft class="w-4 h-4" />
         </button>
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-[#252578]/8 flex items-center justify-center shrink-0">
-            <Pencil class="w-4.5 h-4.5 text-[#252578]" />
+          <div class="w-9 h-9 rounded-lg bg-brand-navy/8 flex items-center justify-center shrink-0">
+            <Pencil class="w-4.5 h-4.5 text-brand-navy" />
           </div>
           <div>
             <h1 class="text-xl font-semibold text-black">Edit {{ activeTab === 'partners' ? 'Business Partner' : 'Supplier' }}</h1>
@@ -182,7 +182,7 @@ async function confirmSubmit() {
               <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Name <span class="text-red-500">*</span></label>
               <input v-model="form.name" @blur="touched.name = true" type="text" placeholder="Organization name" maxlength="100"
                 class="w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-                :class="(touched.name && (!form.name || form.name.trim().length < 2)) ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'" />
+                :class="(touched.name && (!form.name || form.name.trim().length < 2)) ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'" />
               <p v-if="touched.name && !form.name" class="text-xs text-red-500">Name is required.</p>
               <p v-else-if="touched.name && form.name.trim().length < 2" class="text-xs text-red-500">Name must be at least 2 characters.</p>
             </div>
@@ -207,7 +207,7 @@ async function confirmSubmit() {
               <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Region <span class="text-red-500">*</span></label>
               <select v-model="form.region" @blur="touched.region = true"
                 class="h-9 rounded-md border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition"
-                :class="[!form.region ? 'text-black/30' : 'text-black', touched.region && !form.region ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']">
+                :class="[!form.region ? 'text-black/30' : 'text-black', touched.region && !form.region ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15']">
                 <option value="" disabled>Select region</option>
                 <option value="Luzon">Luzon</option>
                 <option value="Visayas">Visayas</option>
@@ -219,7 +219,7 @@ async function confirmSubmit() {
             <div class="flex flex-col gap-1.5">
               <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Status <span class="text-red-500">*</span></label>
               <select v-model="form.status"
-                class="h-9 rounded-md border border-black/12 bg-white px-3 text-sm text-black focus:outline-none focus:ring-2 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15 transition">
+                class="h-9 rounded-md border border-black/12 bg-white px-3 text-sm text-black focus:outline-none focus:ring-2 focus:border-brand-blue focus:ring-brand-blue/15 transition">
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
                 <option value="Suspended">Suspended</option>
@@ -288,7 +288,7 @@ async function confirmSubmit() {
         <div class="px-6 py-4 flex items-center justify-end gap-3 bg-black/[0.015]">
           <Button type="button" variant="outline" class="h-9 px-4 text-sm border-black/15 text-black/60 hover:text-black"
             @click="router.push(`/admin/partners/${code}`)">Cancel</Button>
-          <Button @click="handleSubmit" :disabled="isSaving" class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+          <Button @click="handleSubmit" :disabled="isSaving" class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
             {{ isSaving ? 'Saving...' : 'Save Changes' }}
           </Button>
         </div>

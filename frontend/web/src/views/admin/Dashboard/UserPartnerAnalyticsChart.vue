@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_HEX } from '@/constants/theme'
 import { computed } from 'vue'
 import { VisSingleContainer, VisDonut, VisXYContainer, VisGroupedBar, VisAxis } from '@unovis/vue'
 
@@ -31,9 +32,9 @@ const userData = computed<UserStatusItem[]>(() => {
     if (u.role in counts) counts[u.role]++
   })
   return [
-    { label: 'Admin',   value: counts.Admin,   color: '#252578' },
-    { label: 'Manager', value: counts.Manager, color: '#2F2F73' },
-    { label: 'Sales',   value: counts.Sales,   color: '#2E85D8' },
+    { label: 'Admin',   value: counts.Admin,   color: BRAND_HEX.navy },
+    { label: 'Manager', value: counts.Manager, color: BRAND_HEX.dark },
+    { label: 'Sales',   value: counts.Sales,   color: BRAND_HEX.blue },
   ]
 })
 
@@ -59,7 +60,7 @@ const partnerData = computed<RegionalPartnerData[]>(() => {
 })
 
 const yPartner     = [(d: RegionalPartnerData) => d.partners, (d: RegionalPartnerData) => d.suppliers]
-const colorsPartner = ['#252578', '#2E85D8']
+const colorsPartner = [BRAND_HEX.navy, BRAND_HEX.blue]
 
 const yTickValues = computed(() => {
   const maxVal = Math.max(...partnerData.value.map(d => Math.max(d.partners, d.suppliers)), 0)
@@ -133,11 +134,11 @@ const xTickFormat = (i: number) => partnerData.value[Math.round(i)]?.region ?? '
           </div>
           <div class="flex items-center gap-3">
             <div class="flex items-center gap-1.5">
-              <div class="w-2.5 h-2.5 rounded-sm bg-[#252578]"></div>
+              <div class="w-2.5 h-2.5 rounded-sm bg-brand-navy"></div>
               <span class="text-xs text-black/40">Partners</span>
             </div>
             <div class="flex items-center gap-1.5">
-              <div class="w-2.5 h-2.5 rounded-sm bg-[#2E85D8]"></div>
+              <div class="w-2.5 h-2.5 rounded-sm bg-brand-blue"></div>
               <span class="text-xs text-black/40">Suppliers</span>
             </div>
           </div>

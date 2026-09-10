@@ -116,7 +116,7 @@ function toggleSelectAll() {
       </button>
       <div class="flex-1">
         <h1 class="text-xl font-semibold text-black flex items-center gap-2">
-          <Sparkles class="w-5 h-5 text-[#2E85D8]" /> AI Vendor Suggestions
+          <Sparkles class="w-5 h-5 text-brand-blue" /> AI Vendor Suggestions
         </h1>
         <p class="text-sm text-black/40 mt-0.5">Gemini-suggested candidate Philippine business partners/suppliers for SBSI. Review and edit before saving.</p>
       </div>
@@ -129,7 +129,7 @@ function toggleSelectAll() {
         <div class="flex flex-col gap-1.5">
           <label class="text-xs font-semibold text-black/55">Industry Hint</label>
           <input v-model="industryHint" type="text" placeholder="e.g. clinical diagnostics"
-            class="h-9 rounded-lg border border-black/12 px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15 transition" />
+            class="h-9 rounded-lg border border-black/12 px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 focus:border-brand-blue focus:ring-brand-blue/15 transition" />
         </div>
         <div class="flex flex-col gap-1.5">
           <label class="text-xs font-semibold text-black/55">Region Hint</label>
@@ -143,7 +143,7 @@ function toggleSelectAll() {
           </Select>
         </div>
         <div class="flex items-end">
-          <Button :disabled="requesting" @click="handleRequest" class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white w-full">
+          <Button :disabled="requesting" @click="handleRequest" class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white w-full">
             <Loader2 v-if="requesting" class="w-4 h-4 animate-spin mr-1" />
             {{ requesting ? 'Requesting…' : 'Get Suggestions' }}
           </Button>
@@ -155,7 +155,7 @@ function toggleSelectAll() {
     <div v-if="loading && !batch" class="text-center py-16 text-sm text-black/35">Loading…</div>
 
     <div v-else-if="batch?.status === 'pending'" class="flex flex-col items-center gap-3 py-16 text-black/35">
-      <Loader2 class="w-8 h-8 animate-spin text-[#2E85D8]" />
+      <Loader2 class="w-8 h-8 animate-spin text-brand-blue" />
       <p class="text-sm font-medium">Gemini is generating candidate suggestions…</p>
     </div>
 
@@ -167,11 +167,11 @@ function toggleSelectAll() {
       <div class="flex items-center justify-between">
         <div class="flex items-baseline gap-4">
           <h2 class="text-sm font-semibold text-black">Suggested Candidates ({{ pendingCandidates.length }})</h2>
-          <button @click="toggleSelectAll" class="text-xs font-medium text-[#2E85D8] hover:text-[#252578] transition-colors">
+          <button @click="toggleSelectAll" class="text-xs font-medium text-brand-blue hover:text-brand-navy transition-colors">
             {{ allSelected ? 'Deselect All' : 'Select All' }}
           </button>
         </div>
-        <Button :disabled="selectedIds.length === 0" @click="proceedToReview" class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white disabled:opacity-40">
+        <Button :disabled="selectedIds.length === 0" @click="proceedToReview" class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white disabled:opacity-40">
           Accept Selected ({{ selectedIds.length }})
         </Button>
       </div>

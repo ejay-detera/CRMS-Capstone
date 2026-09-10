@@ -93,7 +93,7 @@ function fmtDate(iso: string): string {
           v-model="searchQuery"
           type="text" 
           placeholder="Search amendments..."
-          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" 
+          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15 transition" 
         />
       </div>
     </div>
@@ -124,7 +124,7 @@ function fmtDate(iso: string): string {
             <TableCell class="py-4 text-sm font-semibold text-black leading-snug">{{ a.businessPartner }}</TableCell>
             <TableCell class="py-4 text-sm text-black/60">{{ a.category }}</TableCell>
             <TableCell class="py-4 text-sm font-medium text-center">
-              <span class="inline-flex px-2 py-0.5 rounded-full bg-[#2E85D8]/8 text-[#2E85D8] text-xs font-bold border border-[#2E85D8]/15">
+              <span class="inline-flex px-2 py-0.5 rounded-full bg-brand-blue/8 text-brand-blue text-xs font-bold border border-brand-blue/15">
                 v{{ a.version }}
               </span>
             </TableCell>

@@ -269,7 +269,7 @@ async function executeApprove() {
           class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
-        <Button v-if="hasPermission('cms.contracts.create')" @click="router.push('/manager/contracts/create')" class="group h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm transition-all duration-200 hover:scale-105 active:scale-95">
+        <Button v-if="hasPermission('cms.contracts.create')" @click="router.push('/manager/contracts/create')" class="group h-9 w-9 p-0 bg-brand-navy hover:bg-brand-dark text-white rounded-lg shadow-sm transition-all duration-200 hover:scale-105 active:scale-95">
           <Plus class="w-5 h-5 transition-transform duration-300 group-hover:rotate-90" />
         </Button>
       </div>
@@ -293,7 +293,7 @@ async function executeApprove() {
           :key="card.label"
           @click="activeFilter = card.filter"
           class="bg-white rounded-lg border px-6 py-5 shadow-sm block hover:shadow-md cursor-pointer transition-all duration-200"
-          :class="activeFilter === card.filter ? 'border-[#2E85D8]' : 'border-black/8'"
+          :class="activeFilter === card.filter ? 'border-brand-blue' : 'border-black/8'"
         >
           <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
           <div class="flex items-end justify-between gap-2">

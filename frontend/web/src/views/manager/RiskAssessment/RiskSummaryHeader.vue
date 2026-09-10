@@ -15,12 +15,12 @@ const props = defineProps<{
       <div class="flex items-start gap-3">
         <div
           class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-          :class="isHighRisk(summary.riskLevel) ? 'bg-red-50' : 'bg-[#252578]/8'"
+          :class="isHighRisk(summary.riskLevel) ? 'bg-red-50' : 'bg-brand-navy/8'"
         >
           <component
             :is="isHighRisk(summary.riskLevel) ? ShieldAlert : ShieldCheck"
             class="w-5 h-5"
-            :class="isHighRisk(summary.riskLevel) ? 'text-red-600' : 'text-[#252578]'"
+            :class="isHighRisk(summary.riskLevel) ? 'text-red-600' : 'text-brand-navy'"
           />
         </div>
         <div>

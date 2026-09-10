@@ -18,7 +18,7 @@ const expiryThresholds = [
   <div class="space-y-4">
 
     <SettingCard title="Delivery Channels" description="Choose how notifications are sent to users."
-      :icon="Send" icon-bg="bg-[#2E85D8]/8" icon-color="text-[#2E85D8]">
+      :icon="Send" icon-bg="bg-brand-blue/8" icon-color="text-brand-blue">
       <div class="divide-y divide-black/4">
         <ToggleRow v-model="cfg.emailNotifs"  label="Email Notifications"  description="Send alerts via email to relevant users." />
         <ToggleRow v-model="cfg.inAppNotifs"  label="In-App Notifications" description="Show notification bell alerts inside the system." />
@@ -42,7 +42,7 @@ const expiryThresholds = [
             <ul class="divide-y divide-black/4">
               <li v-for="t in expiryThresholds" :key="t.type"
                 class="flex items-center gap-3 px-4 py-3">
-                <span class="w-2 h-2 rounded-full bg-[#2E85D8] shrink-0" />
+                <span class="w-2 h-2 rounded-full bg-brand-blue shrink-0" />
                 <div>
                   <p class="text-sm font-medium text-black">{{ t.label }}</p>
                   <p class="text-xs text-black/40 mt-0.5">{{ t.sublabel }}</p>

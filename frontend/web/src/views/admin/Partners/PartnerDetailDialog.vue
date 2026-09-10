@@ -32,7 +32,7 @@ const statusClass = computed(() => {
         <!-- Header -->
         <div class="px-5 pt-5 pb-4 border-b border-black/6">
           <div class="flex items-start gap-3.5">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 bg-[#252578]">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 bg-brand-navy">
               <component :is="activeTab === 'partners' ? Building2 : Truck" class="w-5 h-5" />
             </div>
             <div class="flex-1 min-w-0 pr-6">
@@ -78,7 +78,7 @@ const statusClass = computed(() => {
             <Mail class="w-3.5 h-3.5 text-black/25 shrink-0" />
             <div class="flex-1 min-w-0 flex items-baseline justify-between gap-4">
               <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider shrink-0">Email</span>
-              <span class="text-sm text-[#2E85D8] truncate text-right">{{ partner.email || '—' }}</span>
+              <span class="text-sm text-brand-blue truncate text-right">{{ partner.email || '—' }}</span>
             </div>
           </div>
 

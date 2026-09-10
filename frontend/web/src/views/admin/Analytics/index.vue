@@ -74,7 +74,7 @@ onMounted(loadAll)
       <button
         @click="handleRefresh"
         :disabled="refreshing"
-        class="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-[#252578] text-white hover:bg-[#2F2F73] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+        class="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-brand-navy text-white hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
       >
         <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': refreshing }" />
         {{ refreshing ? 'Refreshing AI & Data…' : 'Refresh Analytics' }}
@@ -88,7 +88,7 @@ onMounted(loadAll)
         class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all"
         :class="activeTab === 'descriptive' ? 'bg-white text-black shadow-xs' : 'text-black/50 hover:text-black'"
       >
-        <Activity class="w-4 h-4 text-[#252578]" />
+        <Activity class="w-4 h-4 text-brand-navy" />
         Descriptive
       </button>
 
@@ -97,7 +97,7 @@ onMounted(loadAll)
         class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all"
         :class="activeTab === 'diagnostic' ? 'bg-white text-black shadow-xs' : 'text-black/50 hover:text-black'"
       >
-        <Sparkles class="w-4 h-4 text-[#2E85D8]" />
+        <Sparkles class="w-4 h-4 text-brand-blue" />
         Diagnostic Health Report
       </button>
 
@@ -106,7 +106,7 @@ onMounted(loadAll)
         class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all"
         :class="activeTab === 'predictive' ? 'bg-white text-black shadow-xs' : 'text-black/50 hover:text-black'"
       >
-        <TrendingUp class="w-4 h-4 text-[#252578]" />
+        <TrendingUp class="w-4 h-4 text-brand-navy" />
         Predictive 30-Day Forecast
       </button>
     </div>

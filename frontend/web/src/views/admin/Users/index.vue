@@ -350,7 +350,7 @@ function executeExport() {
         <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
-        <Button @click="showAddUser = true" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+        <Button @click="showAddUser = true" class="h-9 w-9 p-0 bg-brand-navy hover:bg-brand-dark text-white rounded-lg shadow-sm">
           <Plus class="w-5 h-5" />
         </Button>
       </div>
@@ -428,7 +428,7 @@ function executeExport() {
       </DialogHeader>
       <DialogFooter class="flex items-center justify-end mt-2">
         <Button @click="showResultDialog = false"
-          class="h-9 px-4 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white shadow-sm font-medium">
+          class="h-9 px-4 text-sm bg-brand-navy hover:bg-brand-dark text-white shadow-sm font-medium">
           Close
         </Button>
       </DialogFooter>

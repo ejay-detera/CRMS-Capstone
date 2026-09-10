@@ -15,9 +15,9 @@ defineProps<{
     <div class="px-6 py-4 border-b border-black/4 flex items-center gap-3">
       <div
         class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-        :class="iconBg ?? 'bg-[#252578]/8'"
+        :class="iconBg ?? 'bg-brand-navy/8'"
       >
-        <component :is="icon" class="w-4 h-4" :class="iconColor ?? 'text-[#252578]'" />
+        <component :is="icon" class="w-4 h-4" :class="iconColor ?? 'text-brand-navy'" />
       </div>
       <div>
         <p class="text-sm font-semibold text-black">{{ title }}</p>

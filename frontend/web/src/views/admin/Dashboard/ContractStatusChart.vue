@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_HEX } from '@/constants/theme'
 import { VisSingleContainer, VisDonut } from '@unovis/vue'
 import { computed } from 'vue'
 import type { Contract } from '@/types/contract'
@@ -23,9 +24,9 @@ const data = computed<StatusItem[]>(() => {
   })
 
   return [
-    { label: 'Notarized Pdf', value: counts['Notarized PDF'], color: '#252578' },
-    { label: 'Client Review', value: counts['Client Review'], color: '#2E85D8' },
-    { label: 'SBSI Review',   value: counts['SBSI Review'],   color: '#2F2F73' },
+    { label: 'Notarized Pdf', value: counts['Notarized PDF'], color: BRAND_HEX.navy },
+    { label: 'Client Review', value: counts['Client Review'], color: BRAND_HEX.blue },
+    { label: 'SBSI Review',   value: counts['SBSI Review'],   color: BRAND_HEX.dark },
   ]
 })
 

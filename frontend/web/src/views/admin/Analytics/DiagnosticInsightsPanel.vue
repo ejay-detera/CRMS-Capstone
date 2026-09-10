@@ -114,7 +114,7 @@ const cards = computed(() => props.insights.map(insight => {
       <div class="px-6 py-4 border-b border-black/6 flex items-center justify-between gap-4 flex-wrap bg-slate-50/50">
         <div class="flex items-center gap-3">
           <div class="p-2 rounded-lg bg-white border border-black/8 shadow-xs">
-            <component :is="card.insight.metricType === 'approval_sla_bottleneck' ? Clock : ShieldAlert" class="w-5 h-5 text-[#252578]" />
+            <component :is="card.insight.metricType === 'approval_sla_bottleneck' ? Clock : ShieldAlert" class="w-5 h-5 text-brand-navy" />
           </div>
           <div>
             <h3 class="text-base font-bold text-black">
@@ -144,12 +144,12 @@ const cards = computed(() => props.insights.map(insight => {
         </div>
 
         <!-- 2. AI Summary (Promoted to Top) -->
-        <div v-if="card.insight.aiNarrative" class="bg-[#252578]/5 border border-[#252578]/15 rounded-xl p-4 flex items-start gap-3">
-          <div class="p-1.5 bg-[#252578] text-white rounded-lg shrink-0 mt-0.5">
+        <div v-if="card.insight.aiNarrative" class="bg-brand-navy/5 border border-brand-navy/15 rounded-xl p-4 flex items-start gap-3">
+          <div class="p-1.5 bg-brand-navy text-white rounded-lg shrink-0 mt-0.5">
             <Sparkles class="w-4 h-4" />
           </div>
           <div>
-            <p class="text-xs font-bold uppercase tracking-wider text-[#252578] mb-1">AI Executive Summary</p>
+            <p class="text-xs font-bold uppercase tracking-wider text-brand-navy mb-1">AI Executive Summary</p>
             <p class="text-sm text-black/80 leading-relaxed font-normal">
               {{ card.insight.aiNarrative }}
             </p>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_HEX } from '@/constants/theme'
 import { computed } from 'vue'
 import { VisXYContainer, VisStackedBar, VisAxis, VisTooltip, VisCrosshair } from '@unovis/vue'
 import type { DiagnosticInsight } from '@/types/analytics'
@@ -24,7 +25,7 @@ const segmentData = computed(() => {
 
 const x = (_: any, i: number) => i
 const y = (d: any) => d.count
-const color = () => '#252578' // Brand Navy
+const color = () => BRAND_HEX.navy // Brand Navy
 
 const xTickFormat = (i: number) => {
   const label = segmentData.value?.[Math.round(i)]?.label ?? ''
@@ -73,7 +74,7 @@ const tooltipTemplate = (d: any) =>
         <VisAxis type="x" :tick-format="xTickFormat" :tickValues="segmentData.map((_, i) => i)" />
         <VisAxis type="y" :tickValues="yTickValues" :tickFormat="(v: number) => String(Math.round(v))" />
         <VisTooltip :horizontal-shift="20" />
-        <VisCrosshair :template="tooltipTemplate" color="#252578" />
+        <VisCrosshair :template="tooltipTemplate" :color="BRAND_HEX.navy" />
       </VisXYContainer>
     </div>
   </div>

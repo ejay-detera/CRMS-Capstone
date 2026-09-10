@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_HEX } from '@/constants/theme'
 import { computed } from 'vue'
 import { FileText, Users, ShieldAlert, Brain, Bell } from 'lucide-vue-next'
 import type { AnalyticsSummary } from '@/types/analytics'
@@ -22,9 +23,9 @@ function formatValue(metricType: string, value: number | null): string {
 
 // Icon + color per service
 const serviceConfig: Record<string, { icon: any; color: string; bg: string; bar: string }> = {
-  'contract-management': { icon: FileText,   color: 'text-[#252578]', bg: 'bg-[#252578]/8',  bar: '#252578' },
-  'vendor-management':   { icon: Users,      color: 'text-[#2E85D8]', bg: 'bg-[#2E85D8]/8',  bar: '#2E85D8' },
-  'ai-service':          { icon: Brain,      color: 'text-[#2F2F73]', bg: 'bg-[#2F2F73]/8',  bar: '#2F2F73' },
+  'contract-management': { icon: FileText,   color: 'text-brand-navy', bg: 'bg-brand-navy/8',  bar: BRAND_HEX.navy },
+  'vendor-management':   { icon: Users,      color: 'text-brand-blue', bg: 'bg-brand-blue/8',  bar: BRAND_HEX.blue },
+  'ai-service':          { icon: Brain,      color: 'text-brand-dark', bg: 'bg-brand-dark/8',  bar: BRAND_HEX.dark },
   'notification':        { icon: Bell,       color: 'text-[#5B7FD1]', bg: 'bg-[#5B7FD1]/8',  bar: '#5B7FD1' },
 }
 

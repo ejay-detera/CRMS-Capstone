@@ -12,7 +12,7 @@ const cfg = inject<SystemCfg>('cfg')!
   <div class="space-y-4">
 
     <SettingCard title="Registration & Onboarding" description="Control how new users join the system."
-      :icon="UserPlus" icon-bg="bg-[#2E85D8]/8" icon-color="text-[#2E85D8]">
+      :icon="UserPlus" icon-bg="bg-brand-blue/8" icon-color="text-brand-blue">
       <div class="divide-y divide-black/4">
         <ToggleRow v-model="cfg.allowSelfReg"       label="Allow Self-Registration"    description="Users can create their own accounts without admin invite." />
         <ToggleRow v-model="cfg.requireEmailVerify" label="Require Email Verification" description="New accounts must verify their email before access." />
@@ -28,7 +28,7 @@ const cfg = inject<SystemCfg>('cfg')!
             <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Session timeout</label>
             <div class="relative mt-2">
               <input v-model.number="cfg.sessionTimeout" type="number" min="5"
-                class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-10 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors" />
+                class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-10 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors" />
               <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/35 pointer-events-none">min</span>
             </div>
           </div>
@@ -36,7 +36,7 @@ const cfg = inject<SystemCfg>('cfg')!
             <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Max login attempts</label>
             <div class="mt-2">
               <input v-model.number="cfg.maxLoginAttempts" type="number" min="1" max="20"
-                class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors" />
+                class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors" />
               <p class="text-[11px] text-black/30 mt-1">Account locks after this many failed attempts.</p>
             </div>
           </div>
@@ -44,7 +44,7 @@ const cfg = inject<SystemCfg>('cfg')!
             <label class="text-[11px] font-semibold text-black/40 uppercase tracking-wider">Min password length</label>
             <div class="relative mt-2">
               <input v-model.number="cfg.minPasswordLength" type="number" min="6" max="32"
-                class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-12 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors" />
+                class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-12 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors" />
               <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/35 pointer-events-none">chars</span>
             </div>
           </div>

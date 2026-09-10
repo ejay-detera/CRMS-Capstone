@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_PALETTE } from '@/constants/theme'
 import { fmtReqDate } from '@/types/contractRequest'
 import type { ContractRequest } from '@/types/contractRequest'
 import { CalendarCheck, CalendarX } from 'lucide-vue-next'
@@ -21,7 +22,7 @@ const props = defineProps<{
   dateError: string
 }>()
 
-const palette = ['#252578', '#2E85D8', '#2F2F73']
+const palette = BRAND_PALETTE
 function initials(name: string) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
@@ -33,7 +34,7 @@ function avatarColor(name: string) {
 function fieldCls(field: string, invalid: boolean) {
   return props.touched[field] && invalid
     ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-    : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
+    : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'
 }
 
 const categories = [
@@ -79,7 +80,7 @@ onClickOutside(suggestionsContainer, () => {
     <!-- Section: Contract Info -->
     <div class="bg-white border border-black/[0.08] rounded-xl overflow-hidden shadow-sm">
       <div class="p-8 pb-4 border-b border-black/[0.04]">
-        <h3 class="text-[10px] font-bold text-[#252578]/60 uppercase tracking-widest mb-2">Contract Info</h3>
+        <h3 class="text-[10px] font-bold text-brand-navy/60 uppercase tracking-widest mb-2">Contract Info</h3>
       </div>
       <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
 
@@ -106,7 +107,7 @@ onClickOutside(suggestionsContainer, () => {
                   :key="name"
                   type="button"
                   @click="selectSuggestion(name)"
-                  class="w-full text-left px-3.5 py-2 text-xs text-black/75 hover:bg-black/[0.03] hover:text-[#2E85D8] font-medium transition-colors"
+                  class="w-full text-left px-3.5 py-2 text-xs text-black/75 hover:bg-black/[0.03] hover:text-brand-blue font-medium transition-colors"
                 >
                   {{ name }}
                 </button>
@@ -161,7 +162,7 @@ onClickOutside(suggestionsContainer, () => {
     <!-- Section: Item Details -->
     <div class="bg-white border border-black/[0.08] rounded-xl overflow-hidden shadow-sm">
       <div class="p-8 pb-4 border-b border-black/[0.04]">
-        <h3 class="text-[10px] font-bold text-[#252578]/60 uppercase tracking-widest mb-2">Item Details</h3>
+        <h3 class="text-[10px] font-bold text-brand-navy/60 uppercase tracking-widest mb-2">Item Details</h3>
       </div>
       <!-- View mode table -->
       <div v-if="!isEditing" class="overflow-x-auto">
@@ -242,7 +243,7 @@ onClickOutside(suggestionsContainer, () => {
     <!-- Section: Schedule & Location -->
     <div class="bg-white border border-black/[0.08] rounded-xl overflow-hidden shadow-sm">
       <div class="p-8 pb-4 border-b border-black/[0.04]">
-        <h3 class="text-[10px] font-bold text-[#252578]/60 uppercase tracking-widest mb-2">Schedule & Location</h3>
+        <h3 class="text-[10px] font-bold text-brand-navy/60 uppercase tracking-widest mb-2">Schedule & Location</h3>
       </div>
       <div class="p-8 grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
 
@@ -271,7 +272,7 @@ onClickOutside(suggestionsContainer, () => {
             Start Date <span v-if="isEditing" class="text-red-500">*</span>
           </label>
           <div v-if="!isEditing" class="flex items-center gap-2 mt-0.5 text-[15px] text-black">
-            <CalendarCheck class="w-4 h-4 text-[#2E85D8]/70" />
+            <CalendarCheck class="w-4 h-4 text-brand-blue/70" />
             <span>{{ fmtReqDate(request.startDate) }}</span>
           </div>
           <template v-else>
@@ -306,13 +307,13 @@ onClickOutside(suggestionsContainer, () => {
       
       <!-- Footer: Created by -->
       <div class="px-8 py-4 bg-black/[0.015] border-t border-black/[0.04] flex items-center gap-3">
-        <span class="text-[11px] font-bold text-[#252578]/50 uppercase tracking-wide">Created by</span>
+        <span class="text-[11px] font-bold text-brand-navy/50 uppercase tracking-wide">Created by</span>
         <div class="flex items-center gap-2">
           <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0 select-none shadow-sm"
             :style="{ backgroundColor: avatarColor(request.createdBy) }">
             {{ initials(request.createdBy) }}
           </div>
-          <span class="text-[13px] font-semibold text-[#252578]">{{ request.createdBy }}</span>
+          <span class="text-[13px] font-semibold text-brand-navy">{{ request.createdBy }}</span>
         </div>
       </div>
     </div>

@@ -27,8 +27,8 @@ function save() {
   <div class="bg-white rounded-lg border border-black/8 shadow-sm">
 
     <div class="px-6 pt-5 pb-4 border-b border-black/5 flex items-center gap-3">
-      <div class="w-8 h-8 rounded-lg bg-[#2E85D8]/8 flex items-center justify-center shrink-0">
-        <SlidersHorizontal class="w-4 h-4 text-[#2E85D8]" />
+      <div class="w-8 h-8 rounded-lg bg-brand-blue/8 flex items-center justify-center shrink-0">
+        <SlidersHorizontal class="w-4 h-4 text-brand-blue" />
       </div>
       <div>
         <h3 class="text-sm font-semibold text-black">Preferences</h3>
@@ -54,7 +54,7 @@ function save() {
 
 
       <div class="px-6 pb-5 pt-2">
-        <Button @click="save" class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
+        <Button @click="save" class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white">
           Save preferences
         </Button>
       </div>

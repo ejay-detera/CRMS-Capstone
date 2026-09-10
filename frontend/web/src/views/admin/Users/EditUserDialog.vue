@@ -79,8 +79,8 @@ function confirmSubmit() {
 
       <div class="px-6 pt-6 pb-5 border-b border-black/6">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-[#2E85D8]/8 flex items-center justify-center shrink-0">
-            <Pencil class="w-4 h-4 text-[#2E85D8]" />
+          <div class="w-9 h-9 rounded-lg bg-brand-blue/8 flex items-center justify-center shrink-0">
+            <Pencil class="w-4 h-4 text-brand-blue" />
           </div>
           <DialogHeader>
             <DialogTitle>Edit user</DialogTitle>
@@ -99,7 +99,7 @@ function confirmSubmit() {
             <input :value="form.firstName" @input="onNameInput('firstName', $event)" @blur="touched.firstName = true"
               type="text" placeholder="e.g. Sarah" maxlength="50"
               :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
-                touched.firstName && !form.firstName ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
+                touched.firstName && !form.firstName ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15']" />
             <p v-if="touched.firstName && !form.firstName" class="text-xs text-red-500">Required.</p>
           </div>
           <div class="space-y-1.5">
@@ -107,7 +107,7 @@ function confirmSubmit() {
             <input :value="form.lastName" @input="onNameInput('lastName', $event)" @blur="touched.lastName = true"
               type="text" placeholder="e.g. Jenkins" maxlength="50"
               :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
-                touched.lastName && !form.lastName ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
+                touched.lastName && !form.lastName ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15']" />
             <p v-if="touched.lastName && !form.lastName" class="text-xs text-red-500">Required.</p>
           </div>
         </div>
@@ -118,7 +118,7 @@ function confirmSubmit() {
           </label>
           <input :value="form.middleName" @input="onNameInput('middleName', $event)"
             type="text" placeholder="e.g. Anne" maxlength="50"
-            class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
+            class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm placeholder:text-black/25 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15 transition" />
           <p class="text-[11px] text-black/30">Letters only — no numbers or special characters.</p>
         </div>
 
@@ -126,7 +126,7 @@ function confirmSubmit() {
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Email address <span class="text-red-500">*</span></label>
           <input v-model="form.email" @blur="touched.email = true" type="email" placeholder="e.g. sarah.j@sbsi.com" maxlength="254"
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
-              touched.email && (!form.email || !emailValid) ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
+              touched.email && (!form.email || !emailValid) ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15']" />
           <p v-if="touched.email && !form.email" class="text-xs text-red-500">Required.</p>
           <p v-else-if="touched.email && !emailValid" class="text-xs text-red-500">Enter a valid email address.</p>
         </div>
@@ -167,7 +167,7 @@ function confirmSubmit() {
           <DialogFooter>
             <Button type="button" variant="outline" @click="$emit('update:open', false)"
               class="h-9 px-4 text-sm border-black/15 text-black/60 hover:text-black">Cancel</Button>
-            <Button type="submit" class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">Save changes</Button>
+            <Button type="submit" class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white">Save changes</Button>
           </DialogFooter>
         </div>
 

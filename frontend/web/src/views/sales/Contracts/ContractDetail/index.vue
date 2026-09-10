@@ -802,7 +802,7 @@ const activeSnapForDiff = computed(() => {
       <!-- Drawer Header -->
       <div class="p-6 border-b border-black/5 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <Clock class="w-5 h-5 text-[#2E85D8]" />
+          <Clock class="w-5 h-5 text-brand-blue" />
           <h3 class="text-base font-bold text-black">Version History</h3>
         </div>
         <button @click="showHistoryDrawer = false" class="p-1.5 hover:bg-black/5 rounded-lg text-black/40 hover:text-black transition-colors">
@@ -817,15 +817,15 @@ const activeSnapForDiff = computed(() => {
           <!-- Current Active Version -->
           <div class="relative">
             <!-- Timeline dot -->
-            <div class="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#2E85D8] border-2 border-white ring-4 ring-[#2E85D8]/15"></div>
+            <div class="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-brand-blue border-2 border-white ring-4 ring-brand-blue/15"></div>
             
             <div 
               @click="toggleVersionExpand(activeVersion)"
               class="group cursor-pointer hover:bg-black/[0.02] p-3 rounded-lg border border-black/[0.04] transition-all duration-200"
-              :class="expandedVersion === activeVersion ? 'bg-[#2E85D8]/[0.02] border-[#2E85D8]/30 shadow-sm' : ''"
+              :class="expandedVersion === activeVersion ? 'bg-brand-blue/[0.02] border-brand-blue/30 shadow-sm' : ''"
             >
               <div class="flex items-center justify-between">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-[#2E85D8]/8 text-[#2E85D8] text-[10px] font-bold uppercase tracking-wider">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-brand-blue/8 text-brand-blue text-[10px] font-bold uppercase tracking-wider">
                   Version {{ activeVersion }} (Current)
                 </span>
                 <span class="text-[10px] text-black/35 font-medium">Active</span>
@@ -865,10 +865,10 @@ const activeSnapForDiff = computed(() => {
             <div 
               @click="toggleVersionExpand(snap.version)"
               class="group cursor-pointer hover:bg-black/[0.02] p-3 rounded-lg border border-black/[0.04] transition-all duration-200"
-              :class="expandedVersion === snap.version ? 'bg-black/[0.01] border-[#2E85D8]/30 shadow-sm' : ''"
+              :class="expandedVersion === snap.version ? 'bg-black/[0.01] border-brand-blue/30 shadow-sm' : ''"
             >
               <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-[#252578] uppercase tracking-wide">
+                <span class="text-xs font-semibold text-brand-navy uppercase tracking-wide">
                   Version {{ snap.version }}
                 </span>
                 <span class="text-[10px] text-black/35 font-medium">{{ snap.approvedDate }}</span>
@@ -909,7 +909,7 @@ const activeSnapForDiff = computed(() => {
                   <Button 
                     @click="selectSnapshot(snap.version, snap.approvedDate)"
                     variant="outline"
-                    class="h-8 text-xs font-semibold border-[#2E85D8] text-[#2E85D8] hover:bg-[#2E85D8]/5 flex items-center gap-1.5 transition-colors"
+                    class="h-8 text-xs font-semibold border-brand-blue text-brand-blue hover:bg-brand-blue/5 flex items-center gap-1.5 transition-colors"
                   >
                     <Clock class="w-3.5 h-3.5" />
                     View Snapshot

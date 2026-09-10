@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_HEX } from '@/constants/theme'
 import { computed, ref } from 'vue'
 import { VisXYContainer, VisLine, VisAxis, VisTooltip, VisCrosshair } from '@unovis/vue'
 import { Sparkles, TrendingUp, ShieldCheck, Eye, History } from 'lucide-vue-next'
@@ -118,7 +119,7 @@ const tooltipTemplate = (d: ChartPoint) => {
     <!-- Card Header -->
     <div class="px-6 py-4 border-b border-black/6 flex items-center justify-between gap-4 flex-wrap bg-slate-50/50">
       <div class="flex items-center gap-3">
-        <div class="p-2 rounded-lg bg-[#252578] text-white shadow-xs">
+        <div class="p-2 rounded-lg bg-brand-navy text-white shadow-xs">
           <TrendingUp class="w-5 h-5" />
         </div>
         <div>
@@ -139,7 +140,7 @@ const tooltipTemplate = (d: ChartPoint) => {
             class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1"
             :class="viewMode === 'all' ? 'bg-white text-black shadow-xs' : 'text-black/50 hover:text-black'"
           >
-            <Eye class="w-3.5 h-3.5 text-[#252578]" />
+            <Eye class="w-3.5 h-3.5 text-brand-navy" />
             Combined View
           </button>
 
@@ -148,7 +149,7 @@ const tooltipTemplate = (d: ChartPoint) => {
             class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1"
             :class="viewMode === 'historical' ? 'bg-white text-black shadow-xs' : 'text-black/50 hover:text-black'"
           >
-            <History class="w-3.5 h-3.5 text-[#252578]" />
+            <History class="w-3.5 h-3.5 text-brand-navy" />
             Historical Only
           </button>
 
@@ -157,7 +158,7 @@ const tooltipTemplate = (d: ChartPoint) => {
             class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all flex items-center gap-1"
             :class="viewMode === 'forecast' ? 'bg-white text-black shadow-xs' : 'text-black/50 hover:text-black'"
           >
-            <Sparkles class="w-3.5 h-3.5 text-[#2E85D8]" />
+            <Sparkles class="w-3.5 h-3.5 text-brand-blue" />
             AI Forecast Only
           </button>
         </div>
@@ -174,11 +175,11 @@ const tooltipTemplate = (d: ChartPoint) => {
       <!-- Chart Legend -->
       <div class="flex items-center gap-6 text-xs font-semibold text-black/60 flex-wrap">
         <div v-if="viewMode === 'all' || viewMode === 'historical'" class="flex items-center gap-2">
-          <span class="w-4 h-1 bg-[#252578] rounded-full inline-block"></span>
+          <span class="w-4 h-1 bg-brand-navy rounded-full inline-block"></span>
           <span>Historical (Actual Data)</span>
         </div>
         <div v-if="viewMode === 'all' || viewMode === 'forecast'" class="flex items-center gap-2">
-          <span class="w-4 h-1 bg-[#2E85D8] rounded-full border-t border-dashed border-[#2E85D8] inline-block"></span>
+          <span class="w-4 h-1 bg-brand-blue rounded-full border-t border-dashed border-brand-blue inline-block"></span>
           <span>AI Forecast (Next 30 Days)</span>
         </div>
       </div>
@@ -198,25 +199,25 @@ const tooltipTemplate = (d: ChartPoint) => {
           }"
         >
           <!-- Solid Historical Line -->
-          <VisLine v-if="viewMode === 'all' || viewMode === 'historical'" :x="x" :y="yHistorical" color="#252578" :stroke-width="2.5" />
+          <VisLine v-if="viewMode === 'all' || viewMode === 'historical'" :x="x" :y="yHistorical" :color="BRAND_HEX.navy" :stroke-width="2.5" />
           
           <!-- Dotted Forecast Line -->
-          <VisLine v-if="viewMode === 'all' || viewMode === 'forecast'" :x="x" :y="yPredicted" color="#2E85D8" :stroke-dasharray="'4 4'" :stroke-width="2.5" />
+          <VisLine v-if="viewMode === 'all' || viewMode === 'forecast'" :x="x" :y="yPredicted" :color="BRAND_HEX.blue" :stroke-dasharray="'4 4'" :stroke-width="2.5" />
           
           <VisAxis type="x" :tick-format="xTickFormat" />
           <VisAxis type="y" :tickFormat="(v: number) => String(Number(v).toFixed(1))" />
           <VisTooltip :horizontal-shift="20" />
-          <VisCrosshair :template="tooltipTemplate" color="#252578" />
+          <VisCrosshair :template="tooltipTemplate" :color="BRAND_HEX.navy" />
         </VisXYContainer>
       </div>
 
       <!-- AI Executive Summary Narrative -->
-      <div v-if="props.insight.aiNarrative" class="bg-[#2E85D8]/8 border border-[#2E85D8]/20 rounded-xl p-4 flex items-start gap-3">
-        <div class="p-1.5 bg-[#2E85D8] text-white rounded-lg shrink-0 mt-0.5">
+      <div v-if="props.insight.aiNarrative" class="bg-brand-blue/8 border border-brand-blue/20 rounded-xl p-4 flex items-start gap-3">
+        <div class="p-1.5 bg-brand-blue text-white rounded-lg shrink-0 mt-0.5">
           <Sparkles class="w-4 h-4" />
         </div>
         <div>
-          <p class="text-xs font-bold uppercase tracking-wider text-[#2E85D8] mb-1">AI Predictive Analysis & Recommendation</p>
+          <p class="text-xs font-bold uppercase tracking-wider text-brand-blue mb-1">AI Predictive Analysis & Recommendation</p>
           <p class="text-sm text-black/80 leading-relaxed font-normal">
             {{ props.insight.aiNarrative }}
           </p>

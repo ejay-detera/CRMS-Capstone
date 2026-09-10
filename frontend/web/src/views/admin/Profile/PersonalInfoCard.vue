@@ -38,7 +38,7 @@ function onNameInput(field: 'firstName' | 'lastName' | 'middleName', e: Event) {
 function fieldCls(field: keyof typeof touched, invalid: boolean) {
   return touched[field] && invalid
     ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15'
-    : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
+    : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'
 }
 
 const showConfirm = ref(false)
@@ -59,8 +59,8 @@ function save() {
   <div class="bg-white rounded-lg border border-black/8 shadow-sm">
 
     <div class="px-6 pt-5 pb-4 border-b border-black/5 flex items-center gap-3">
-      <div class="w-8 h-8 rounded-lg bg-[#252578]/8 flex items-center justify-center shrink-0">
-        <UserRound class="w-4 h-4 text-[#252578]" />
+      <div class="w-8 h-8 rounded-lg bg-brand-navy/8 flex items-center justify-center shrink-0">
+        <UserRound class="w-4 h-4 text-brand-navy" />
       </div>
       <div>
         <h3 class="text-sm font-semibold text-black">Personal Information</h3>
@@ -92,7 +92,7 @@ function save() {
           Middle name <span class="normal-case font-normal text-black/30 ml-1">(optional)</span>
         </label>
         <input :value="form.middleName" @input="onNameInput('middleName', $event)" type="text" placeholder="e.g. Miguel" maxlength="50"
-          class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
+          class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm placeholder:text-black/25 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15 transition" />
       </div>
 
       <div class="space-y-1.5">
@@ -130,7 +130,7 @@ function save() {
       </div>
 
       <div class="pt-1">
-        <Button type="submit" class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
+        <Button type="submit" class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white">
           Save changes
         </Button>
       </div>

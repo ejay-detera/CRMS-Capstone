@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_PALETTE } from '@/constants/theme'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowRight } from 'lucide-vue-next'
@@ -27,12 +28,12 @@ const filteredUsers = computed(() =>
 )
 
 const roleBadge: Record<Role, string> = {
-  Admin:   'bg-[#252578]/8 text-[#252578] border-[#252578]/20',
-  Manager: 'bg-[#2F2F73]/8 text-[#2F2F73] border-[#2F2F73]/20',
-  Sales:   'bg-[#2E85D8]/8 text-[#2E85D8] border-[#2E85D8]/20',
+  Admin:   'bg-brand-navy/8 text-brand-navy border-brand-navy/20',
+  Manager: 'bg-brand-dark/8 text-brand-dark border-brand-dark/20',
+  Sales:   'bg-brand-blue/8 text-brand-blue border-brand-blue/20',
 }
 
-const palette = ['#252578', '#2E85D8', '#2F2F73']
+const palette = BRAND_PALETTE
 function getInitials(name: string) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
@@ -110,7 +111,7 @@ function avatarColor(idx: number) { return palette[idx % palette.length] }
     </Table>
 
     <div class="px-6 py-3 border-t border-black/5">
-      <button @click="router.push('/admin/users')" class="flex items-center gap-1.5 text-xs font-semibold text-[#2E85D8] hover:text-[#252578] transition-colors">
+      <button @click="router.push('/admin/users')" class="flex items-center gap-1.5 text-xs font-semibold text-brand-blue hover:text-brand-navy transition-colors">
         View all users <ArrowRight class="w-3.5 h-3.5" />
       </button>
     </div>

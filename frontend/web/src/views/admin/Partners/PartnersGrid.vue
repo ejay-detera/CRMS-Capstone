@@ -59,10 +59,10 @@ function statusClass(status: string) {
       tabindex="0"
       @click="emit('openDetail', partner)"
       @keydown.enter="emit('openDetail', partner)"
-      class="text-left bg-white rounded-xl border border-black/8 shadow-sm p-5 hover:border-[#2E85D8]/40 hover:shadow-md transition-all duration-200 group cursor-pointer"
+      class="text-left bg-white rounded-xl border border-black/8 shadow-sm p-5 hover:border-brand-blue/40 hover:shadow-md transition-all duration-200 group cursor-pointer"
     >
       <div class="flex items-start justify-between mb-4">
-        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-[#252578]/8 text-[#252578]">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-brand-navy/8 text-brand-navy">
           <component :is="activeTab === 'partners' ? Building2 : Truck" class="w-5 h-5" />
         </div>
         <div class="flex items-center gap-1.5">
@@ -91,7 +91,7 @@ function statusClass(status: string) {
           </DropdownMenu>
         </div>
       </div>
-      <p class="text-sm font-semibold text-black leading-snug group-hover:text-[#252578] transition-colors">{{ partner.name }}</p>
+      <p class="text-sm font-semibold text-black leading-snug group-hover:text-brand-navy transition-colors">{{ partner.name }}</p>
       <p class="text-xs text-black/40 mt-0.5 mb-4">{{ partner.industry || '—' }}</p>
       <div class="space-y-1.5 border-t border-black/5 pt-3">
         <div class="flex items-center justify-between text-xs">
