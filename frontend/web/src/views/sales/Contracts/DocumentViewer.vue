@@ -6,6 +6,7 @@ import { useApiCache } from '@/composables/useApiCache'
 import { useAuth } from '@/composables/useAuth'
 import VuePdfEmbed from 'vue-pdf-embed'
 import mammoth from 'mammoth'
+import DOMPurify from 'dompurify'
 
 // Import styles for annotation and text layers
 import 'vue-pdf-embed/dist/styles/annotationLayer.css'
@@ -155,7 +156,7 @@ async function fetchFileBlob() {
         try {
           const arrayBuffer = await blob.arrayBuffer()
           const result = await mammoth.convertToHtml({ arrayBuffer })
-          docxHtml.value = result.value
+          docxHtml.value = DOMPurify.sanitize(result.value)
         } catch (err) {
           console.error('mammoth conversion error:', err)
           docxHtml.value = '<p style="color:red">Failed to render document.</p>'
