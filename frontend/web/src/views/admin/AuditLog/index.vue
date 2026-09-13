@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { Upload } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import * as XLSX from 'xlsx'
+import { exportToExcel } from '@/utils/excelExport'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import AuditLogFilters from './AuditLogFilters.vue'
@@ -143,19 +142,7 @@ async function executeExport() {
         'Description': l.description,
         'Timestamp': new Date(l.performed_at).toLocaleString()
       }))
-      const ws = XLSX.utils.json_to_sheet(rows)
-      ws['!cols'] = [
-        { wch: 12 },
-        { wch: 20 },
-        { wch: 25 },
-        { wch: 12 },
-        { wch: 18 },
-        { wch: 35 },
-        { wch: 25 }
-      ]
-      const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, 'Audit Log')
-      XLSX.writeFile(wb, 'audit-log.xlsx')
+      await exportToExcel('audit-log.xlsx', 'Audit Log', rows)
       showSuccess('Export complete', `${data.data.length} logs exported to audit-log.xlsx`)
     } else {
       showError('Export failed', 'Could not retrieve data for export.')

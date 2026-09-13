@@ -12,22 +12,22 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
-    "@tanstack/vue-table": "^8.21.3",
+    "@types/dompurify": "^3.0.5",
     "@unovis/ts": "^1.6.5",
     "@unovis/vue": "^1.6.5",
     "@vueuse/core": "^14.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dompurify": "^3.4.15",
+    "exceljs": "^4.4.0",
     "lucide-vue-next": "^1.0.0",
     "mammoth": "^1.12.0",
-    "recharts": "^3.8.1",
     "reka-ui": "2.9.0",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.0",
     "vue": "^3.5.32",
     "vue-pdf-embed": "^2.1.4",
-    "vue-router": "^5.0.7",
-    "xlsx": "^0.18.5"
+    "vue-router": "^5.0.7"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",

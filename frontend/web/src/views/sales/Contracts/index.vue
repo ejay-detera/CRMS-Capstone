@@ -2,8 +2,7 @@
 import { computed, ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Upload, Plus } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import * as XLSX from 'xlsx'
+import { exportToExcel } from '@/utils/excelExport'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import SalesContractsTable  from './SalesContractsTable.vue'
@@ -114,7 +113,7 @@ function exportXLSX() {
   showExportConfirm.value = true
 }
 
-function executeExport() {
+async function executeExport() {
   showExportConfirm.value = false
   const rows = filtered.value.map(c => ({
     'Contract ID': c.id, 'Business Partner': c.businessPartner, 'Category': c.category,
@@ -122,10 +121,7 @@ function executeExport() {
     'Region': c.region, 'Start Date': c.startDate, 'End Date': c.endDate,
     'Remaining Days': c.days, 'Approval Status': c.approvalStatus, 'Workflow Status': c.workflowStatus ?? '',
   }))
-  const ws = XLSX.utils.json_to_sheet(rows)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'My Contracts')
-  XLSX.writeFile(wb, 'my-contracts.xlsx')
+  await exportToExcel('my-contracts.xlsx', 'My Contracts', rows)
   success('Export complete', `${filtered.value.length} contracts exported.`)
 }
 

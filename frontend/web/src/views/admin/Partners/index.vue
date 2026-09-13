@@ -2,8 +2,7 @@
 import { computed, ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Building2, Truck, Search, LayoutGrid, List, Plus, Upload, Sparkles } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import * as XLSX from 'xlsx'
+import { exportToExcel } from '@/utils/excelExport'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { usePartners } from '@/composables/usePartners'
@@ -147,7 +146,7 @@ function exportXLSX() {
   showExportConfirm.value = true
 }
 
-function executeExport() {
+async function executeExport() {
   showExportConfirm.value = false
   const type = activeTab.value === 'partners' ? 'Business Partner' : 'Supplier'
   const rows = filtered.value.map(p => ({
@@ -163,10 +162,7 @@ function executeExport() {
     'Address':        p.address,
     ...(activeTab.value === 'partners' ? { 'BP Code': p.bpCode ?? '' } : { 'TIN': p.tinNumber ?? '' }),
   }))
-  const ws = XLSX.utils.json_to_sheet(rows)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, type === 'Business Partner' ? 'Partners' : 'Suppliers')
-  XLSX.writeFile(wb, `sbsi-${activeTab.value}.xlsx`)
+  await exportToExcel(`sbsi-${activeTab.value}.xlsx`, type === 'Business Partner' ? 'Partners' : 'Suppliers', rows)
   success('Export complete', `${filtered.value.length} records exported.`)
 }
 </script>

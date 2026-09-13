@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
 import { Plus, Upload, CheckCircle2, XCircle } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import * as XLSX from 'xlsx'
+import { exportToExcel } from '@/utils/excelExport'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { useLoader } from '@/composables/useLoader'
@@ -319,7 +318,7 @@ function exportXLSX() {
   showExportConfirm.value = true
 }
 
-function executeExport() {
+async function executeExport() {
   showExportConfirm.value = false
   function splitName(full: string) {
     const parts = full.trim().split(/\s+/)
@@ -329,11 +328,7 @@ function executeExport() {
     const { firstName, middleName, lastName } = splitName(u.name)
     return { 'First Name': firstName, 'Last Name': lastName, 'Middle Name': middleName, 'Email': u.email, 'Role': u.role, 'Department': 'Sales Department', 'Status': u.status }
   })
-  const ws = XLSX.utils.json_to_sheet(rows)
-  ws['!cols'] = [{ wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 30 }, { wch: 12 }, { wch: 20 }, { wch: 10 }]
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Users')
-  XLSX.writeFile(wb, 'sbsi-users.xlsx')
+  await exportToExcel('sbsi-users.xlsx', 'Users', rows)
   success('Export complete', `${users.value.length} users exported to sbsi-users.xlsx`)
 }
 </script>
