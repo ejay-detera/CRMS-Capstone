@@ -550,7 +550,12 @@ class ContractAmendmentController extends Controller
 
     public function versionHistory(Request $request, $contractId)
     {
-        $snapshots = ContractVersionSnapshot::where('contract_id', $contractId)
+        $contract = \App\Models\Contract::where('contract_code', $contractId)
+            ->orWhere('contract_id', $contractId)
+            ->first();
+        $numericId = $contract ? $contract->contract_id : $contractId;
+
+        $snapshots = ContractVersionSnapshot::where('contract_id', $numericId)
             ->orderBy('version', 'desc')
             ->get();
 

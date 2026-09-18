@@ -36,7 +36,7 @@ class ContractApprovalController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $contract = Contract::findOrFail($id);
+        $contract = Contract::where('contract_code', $id)->orWhere('contract_id', $id)->firstOrFail();
 
         if (!config('services.features.high_risk_approval_gate_enabled')) {
             $riskLevel = $this->aiRiskService->getLatestRiskLevel((int) $contract->contract_id);
@@ -78,7 +78,7 @@ class ContractApprovalController extends Controller
             ], 404);
         }
 
-        $contract = Contract::findOrFail($id);
+        $contract = Contract::where('contract_code', $id)->orWhere('contract_id', $id)->firstOrFail();
 
         $validator = Validator::make($request->all(), [
             'decision'  => 'required|string|in:approved,rejected',

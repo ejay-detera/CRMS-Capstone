@@ -29,7 +29,9 @@ class ContractController extends Controller
     private function formatContract(Contract $contract): array
     {
         return [
-            'contract_id'     => $contract->contract_id,
+            'contract_id'     => $contract->contract_code ?? (string) $contract->contract_id,
+            'contract_db_id'  => $contract->contract_id,
+            'contract_code'   => $contract->contract_code,
             'bp_name'         => $contract->bp_name,
             'category'        => $contract->category?->category_name,
             'approval_status' => $contract->approvalStatus?->status_name,
@@ -72,7 +74,8 @@ class ContractController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('bp_name', 'like', $search . '%')
                   ->orWhere('item_code', 'like', $search . '%')
-                  ->orWhere('contract_id', 'like', $search . '%');
+                  ->orWhere('contract_id', 'like', $search . '%')
+                  ->orWhere('contract_code', 'like', $search . '%');
             });
         }
 
@@ -131,7 +134,9 @@ class ContractController extends Controller
             $query->where('created_by', $request->get('auth_id'));
         }
 
-        $query->orderBy('contract_id', 'desc');
+        // Rejected contracts (approval_status_id = 3) always appear at the bottom of the list
+        $query->orderByRaw('CASE WHEN approval_status_id = 3 THEN 1 ELSE 0 END ASC')
+              ->orderBy('contract_id', 'desc');
 
         if ($request->has('paginate') && $request->paginate === 'true') {
             $perPage = (int) $request->get('per_page', 10);
@@ -441,7 +446,9 @@ class ContractController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $contract = Contract::find($id);
+        $contract = Contract::where('contract_code', $id)
+            ->orWhere('contract_id', $id)
+            ->first();
 
         if (!$contract) {
             return response()->json(['message' => 'Contract not found.'], 404);
@@ -477,7 +484,7 @@ class ContractController extends Controller
             'status'          => 'nullable|string|max:255',
             'item_code'       => 'required|string|max:255',
             'description'     => 'required|string',
-            'serial_number'   => "required|string|max:255|unique:contracts,serial_number,{$id},contract_id",
+            'serial_number'   => "required|string|max:255|unique:contracts,serial_number,{$contract->contract_id},contract_id",
             'sbu_number'      => 'required|string|max:255',
             'region'          => 'required|string|in:Luzon,Visayas,Mindanao',
             'start_date'      => 'required|date',
@@ -615,7 +622,9 @@ class ContractController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        $contract = Contract::find($id);
+        $contract = Contract::where('contract_code', $id)
+            ->orWhere('contract_id', $id)
+            ->first();
 
         if (!$contract) {
             return response()->json(['message' => 'Contract not found.'], 404);
@@ -645,20 +654,21 @@ class ContractController extends Controller
         }
 
         $oldData = $contract->toArray();
+        $contractId = $contract->contract_id;
         $contract->delete();
 
         // Audit Logging
         $this->auditLogService->log(
             'deleted',
             'Contract',
-            $id,
+            $contractId,
             $userId,
             $oldData,
             [],
             $request->get('auth_department')
         );
 
-        RemoveContractFromMeilisearch::dispatch((int) $id);
+        RemoveContractFromMeilisearch::dispatch((int) $contractId);
 
         return response()->json(['message' => 'Contract deleted successfully.']);
     }
@@ -677,7 +687,9 @@ class ContractController extends Controller
             $query->where('created_by', $request->get('auth_id'));
         }
 
-        $contracts = $query->orderByDesc('contract_id')->get();
+        $contracts = $query->orderByRaw('CASE WHEN approval_status_id = 3 THEN 1 ELSE 0 END ASC')
+                           ->orderByDesc('contract_id')
+                           ->get();
 
         $userIds = $contracts->pluck('created_by')->filter()->unique()->toArray();
         $users = $this->authService->getUsersBatch($userIds);
@@ -692,7 +704,9 @@ class ContractController extends Controller
                 }
 
                 return [
-                    'contract_id'     => $c->contract_id,
+                    'contract_id'     => $c->contract_code ?? (string) $c->contract_id,
+                    'contract_db_id'  => $c->contract_id,
+                    'contract_code'   => $c->contract_code,
                     'bp_name'         => $c->bp_name,
                     'category'        => $c->category?->category_name,
                     'approval_status' => $c->approvalStatus?->status_name,
@@ -768,7 +782,9 @@ class ContractController extends Controller
             'approvalStatus',
             'workflowStatus',
             'region',
-        ])->findOrFail($id);
+        ])->where('contract_code', $id)
+          ->orWhere('contract_id', $id)
+          ->firstOrFail();
 
         $role = $request->get('auth_role');
         if (in_array($role, ['Sales', 'Employee']) && $contract->created_by !== $request->get('auth_id')) {
@@ -790,7 +806,9 @@ class ContractController extends Controller
 
     public function updateStatus(Request $request, $id)
     {
-        $contract = Contract::findOrFail($id);
+        $contract = Contract::where('contract_code', $id)
+            ->orWhere('contract_id', $id)
+            ->firstOrFail();
 
         $request->validate([
             'approval_status' => 'required|string|in:Approved,Rejected',
@@ -917,7 +935,9 @@ class ContractController extends Controller
 
     public function notifyManager(Request $request, $id)
     {
-        $contract = Contract::findOrFail($id);
+        $contract = Contract::where('contract_code', $id)
+            ->orWhere('contract_id', $id)
+            ->firstOrFail();
 
         if ($contract->notify_manager_count >= 2) {
             return response()->json(['message' => 'The manager is already notified, please wait.'], 429);
