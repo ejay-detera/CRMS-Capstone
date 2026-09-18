@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, computed, ref, onMounted } from 'vue'
+import { reactive, computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, ScanLine } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,7 @@ import type { ContractRegion, UploadedDoc } from '@/types/contract'
 import { useCreateContractDraft } from '@/composables/useCreateContractDraft'
 import OcrImportDialog from '@/views/admin/Contracts/OcrImportDialog.vue'
 import type { OcrExtractedData } from '@/types/ocr'
+import PrefixedNumberInput from '@/components/shared/PrefixedNumberInput.vue'
 
 const { hasPermission } = useAuth()
 const canUseOcr = computed(() => hasPermission('cms.ai.ocr'))
@@ -62,7 +63,7 @@ function handleOcrSuccess(data: OcrExtractedData) {
 }
 const { success, error } = useToast()
 const { state: authState } = useAuth()
-const { invalidateContracts, invalidateRequests } = useApiCache()
+const { state: cacheState, fetchContracts, invalidateContracts, invalidateRequests } = useApiCache()
 const { draft, saveDraft, restoreDraft, clearDraft } = useCreateContractDraft()
 
 
@@ -113,6 +114,24 @@ const touched = reactive<Record<keyof FormState, boolean>>({
   endDate:         false,
 })
 
+const serverErrors = reactive({
+  serialNo: '',
+  itemCode: '',
+  sbuNumber: '',
+})
+
+watch(() => form.serialNo, () => { serverErrors.serialNo = '' })
+watch(() => form.itemCode, () => { serverErrors.itemCode = '' })
+watch(() => form.sbuNumber, () => { serverErrors.sbuNumber = '' })
+
+const existingSerialNumbers = computed(() => {
+  return new Set(
+    (cacheState.contracts || [])
+      .map(c => c.serialNo?.trim().toLowerCase())
+      .filter(Boolean)
+  )
+})
+
 const errors = computed(() => ({
   businessPartner: touched.businessPartner && !form.businessPartner.trim()
     ? 'Business partner is required.'
@@ -120,10 +139,24 @@ const errors = computed(() => ({
     ? 'This vendor is suspended and cannot be assigned to a new contract.'
     : '',
   category:        touched.category        && !form.category                  ? 'Category is required.' : '',
-  itemCode:        touched.itemCode        && !form.itemCode.trim()           ? 'Item code is required.' : '',
+  itemCode:        touched.itemCode        && !form.itemCode.trim()
+    ? 'Item code is required.'
+    : touched.itemCode && !/^ITM-\d{4}$/.test(form.itemCode.trim())
+    ? 'Item code must start with ITM- followed by 4 digits (e.g., ITM-0041).'
+    : serverErrors.itemCode || '',
   description:     touched.description     && !form.description.trim()        ? 'Description is required.' : '',
-  serialNo:        touched.serialNo        && !form.serialNo.trim()           ? 'Serial number is required.' : '',
-  sbuNumber:       touched.sbuNumber       && !form.sbuNumber.trim()          ? 'SBU number is required.' : '',
+  serialNo:        touched.serialNo        && !form.serialNo.trim()
+    ? 'Serial number is required.'
+    : touched.serialNo && !/^SN-\d{4}-\d{4}$/.test(form.serialNo.trim())
+    ? 'Serial number must be in the format SN-YYYY-xxxx (e.g., SN-2024-0041).'
+    : touched.serialNo && existingSerialNumbers.value.has(form.serialNo.trim().toLowerCase())
+    ? 'This serial number is already registered in an existing contract.'
+    : serverErrors.serialNo || '',
+  sbuNumber:       touched.sbuNumber       && !form.sbuNumber.trim()
+    ? 'SBU number is required.'
+    : touched.sbuNumber && !/^SBU-\d{3}$/.test(form.sbuNumber.trim())
+    ? 'SBU number must start with SBU- followed by 3 digits (e.g., SBU-001).'
+    : serverErrors.sbuNumber || '',
   region:          touched.region          && !form.region                    ? 'Region is required.' : '',
   startDate:       touched.startDate       && !form.startDate                 
     ? 'Start date is required.' 
@@ -160,10 +193,11 @@ function isValid() {
     String(form.businessPartner || '').trim() &&
     !suspendedVendorMatch.value &&
     form.category &&
-    form.itemCode.trim() &&
+    form.itemCode.trim() && /^ITM-\d{4}$/.test(form.itemCode.trim()) &&
     form.description.trim() &&
-    form.serialNo.trim() &&
-    form.sbuNumber.trim() &&
+    form.serialNo.trim() && /^SN-\d{4}-\d{4}$/.test(form.serialNo.trim()) &&
+    !existingSerialNumbers.value.has(form.serialNo.trim().toLowerCase()) &&
+    form.sbuNumber.trim() && /^SBU-\d{3}$/.test(form.sbuNumber.trim()) &&
     form.region &&
     form.startDate && form.startDate >= minDate && form.startDate <= maxDate &&
     form.endDate && form.endDate <= maxDate &&
@@ -216,6 +250,15 @@ async function handleSubmit() {
     const data = await res.json().catch(() => ({}))
 
     if (!res.ok) {
+      if (data?.errors?.serial_number) {
+        serverErrors.serialNo = Array.isArray(data.errors.serial_number) ? data.errors.serial_number[0] : String(data.errors.serial_number)
+      }
+      if (data?.errors?.item_code) {
+        serverErrors.itemCode = Array.isArray(data.errors.item_code) ? data.errors.item_code[0] : String(data.errors.item_code)
+      }
+      if (data?.errors?.sbu_number) {
+        serverErrors.sbuNumber = Array.isArray(data.errors.sbu_number) ? data.errors.sbu_number[0] : String(data.errors.sbu_number)
+      }
       error('Failed to create contract', getApiErrorMessage(data))
       return
     }
@@ -272,6 +315,9 @@ async function fetchPartnerNames() {
 
 onMounted(() => {
   fetchPartnerNames()
+  if (!cacheState.contracts) {
+    fetchContracts().catch(() => {})
+  }
 
   if (draft.active && draft.role === 'admin') {
     const saved = restoreDraft()
@@ -419,15 +465,14 @@ onClickOutside(suggestionsContainer, () => {
           <!-- Item Code -->
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-black/55">Item Code <span class="text-red-500">*</span></label>
-            <input
+            <PrefixedNumberInput
               v-model="form.itemCode"
+              prefix="ITM-"
+              placeholder="0041"
+              numeric-only
+              :max-length="4"
+              :error="!!errors.itemCode"
               @blur="touched.itemCode = true"
-              type="text"
-              placeholder="e.g. ITM-0041"
-              class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="errors.itemCode
-                ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.itemCode" class="text-xs text-red-500">{{ errors.itemCode }}</p>
           </div>
@@ -451,15 +496,15 @@ onClickOutside(suggestionsContainer, () => {
           <!-- Serial No -->
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-black/55">Serial No <span class="text-red-500">*</span></label>
-            <input
+            <PrefixedNumberInput
               v-model="form.serialNo"
+              prefix="SN-"
+              placeholder="2026-0041"
+              numeric-only
+              :auto-dash-after="4"
+              :max-length="9"
+              :error="!!errors.serialNo"
               @blur="touched.serialNo = true"
-              type="text"
-              placeholder="e.g. SN-2024-0041"
-              class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="errors.serialNo
-                ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.serialNo" class="text-xs text-red-500">{{ errors.serialNo }}</p>
           </div>
@@ -467,15 +512,14 @@ onClickOutside(suggestionsContainer, () => {
           <!-- SBU Number -->
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-black/55">SBU Number <span class="text-red-500">*</span></label>
-            <input
+            <PrefixedNumberInput
               v-model="form.sbuNumber"
+              prefix="SBU-"
+              placeholder="001"
+              numeric-only
+              :max-length="3"
+              :error="!!errors.sbuNumber"
               @blur="touched.sbuNumber = true"
-              type="text"
-              placeholder="e.g. SBU-001"
-              class="h-9 rounded-lg border px-3 text-sm font-mono placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-              :class="errors.sbuNumber
-                ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'"
             />
             <p v-if="errors.sbuNumber" class="text-xs text-red-500">{{ errors.sbuNumber }}</p>
           </div>
