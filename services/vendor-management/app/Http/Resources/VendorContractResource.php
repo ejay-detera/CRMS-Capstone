@@ -37,6 +37,7 @@ final class VendorContractResource extends JsonResource
             'vendor_id' => $this->vendor_id,
             'engagement_status' => $engagementStatus,
             'contract' => $contract ? [
+                'contract_code' => $contract->contract_code ?? null,
                 'description' => $contract->description,
                 'bp_name' => $contract->bp_name,
                 'start_date' => $contract->start_date?->toDateString(),

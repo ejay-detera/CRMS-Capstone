@@ -19,6 +19,7 @@ class Contract extends Model
     protected $primaryKey = 'contract_id';
 
     protected $fillable = [
+        'contract_code',
         'category_id',
         'supplier_id',
         'approval_status_id',
@@ -45,8 +46,28 @@ class Contract extends Model
         'prs_activity_id' => 'integer',
     ];
 
+    public static function generateUniqueContractCode(): string
+    {
+        $characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        do {
+            $rand = '';
+            for ($i = 0; $i < 6; $i++) {
+                $rand .= $characters[random_int(0, strlen($characters) - 1)];
+            }
+            $code = 'CTR-' . $rand;
+        } while (static::where('contract_code', $code)->exists());
+
+        return $code;
+    }
+
     protected static function booted()
     {
+        static::creating(function ($contract) {
+            if (empty($contract->contract_code)) {
+                $contract->contract_code = static::generateUniqueContractCode();
+            }
+        });
+
         static::deleting(function ($contract) {
             $associatedDocs = Document::where('contract_id', $contract->contract_id)->get();
             foreach ($associatedDocs as $doc) {

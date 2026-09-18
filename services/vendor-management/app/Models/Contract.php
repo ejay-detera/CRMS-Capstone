@@ -16,6 +16,7 @@ class Contract extends Model
     protected $primaryKey = 'contract_id';
 
     protected $fillable = [
+        'contract_code',
         'category_id',
         'supplier_id',
         'status_id',
