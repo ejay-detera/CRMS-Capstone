@@ -105,14 +105,27 @@ function normalizeDocumentUrl(url?: string): string {
   return url
 }
 
+function sortContractsWithRejectedAtBottom(contracts: Contract[]): Contract[] {
+  return [...contracts].sort((a, b) => {
+    const aRejected = a.approvalStatus === 'Rejected' ? 1 : 0
+    const bRejected = b.approvalStatus === 'Rejected' ? 1 : 0
+    return aRejected - bRejected
+  })
+}
+
 function mapApiContract(d: any, currentUserId: number | null, firstName?: string, lastName?: string): Contract {
   const isCreatedByCurrentUser = currentUserId !== null && d.created_by === currentUserId
   const createdBy = isCreatedByCurrentUser
     ? `${firstName || ''} ${lastName || ''}`.trim() || 'Me'
     : d.creator_name ? d.creator_name : (d.created_by ? `User #${d.created_by}` : '—')
 
+  const contractCode = d.contract_code || d.contract_id
+  const contractId = contractCode ? String(contractCode) : String(d.contract_id || '')
+
   return {
-    id: String(d.contract_id),
+    id: contractId,
+    contractCode: d.contract_code,
+    contractDbId: d.contract_db_id ? Number(d.contract_db_id) : (typeof d.contract_id === 'number' ? d.contract_id : undefined),
     businessPartner: d.bp_name ?? '',
     category: d.category ?? '',
     itemCode: d.item_code ?? '',
@@ -213,7 +226,7 @@ async function fetchDashboard(force = false): Promise<void> {
     const lastName = (user as any)?.profile?.last_name || user?.last_name
     const data: any[] = json.data ?? []
 
-    state.contracts = data.map(d => mapApiContract(d, state.cachedUserId, firstName, lastName))
+    state.contracts = sortContractsWithRejectedAtBottom(data.map(d => mapApiContract(d, state.cachedUserId, firstName, lastName)))
     state.requests = data.map(d => mapApiToRequest(d, state.cachedUserId, firstName, lastName))
     state.contractsScope = scope
     state.requestsScope = scope
@@ -288,8 +301,10 @@ async function fetchContracts(
     const firstName = (user as any)?.profile?.first_name || user?.first_name
     const lastName = (user as any)?.profile?.last_name || user?.last_name
 
-    state.contracts = (json.data ?? []).map((d: any) =>
-      mapApiContract(d, state.cachedUserId, firstName, lastName)
+    state.contracts = sortContractsWithRejectedAtBottom(
+      (json.data ?? []).map((d: any) =>
+        mapApiContract(d, state.cachedUserId, firstName, lastName)
+      )
     )
     state.contractsScope = scope
 

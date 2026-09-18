@@ -18,6 +18,8 @@ export type StatusFilter   = '' | ContractApprovalStatus | ContractWorkflowStatu
 
 export interface Contract {
   id:              string
+  contractCode?:   string
+  contractDbId?:   number
   businessPartner: string
   category:        string
   itemCode:        string
