@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Building2, Truck, ArrowLeft, Pencil, Trash2,
@@ -10,6 +10,7 @@ import { useToast } from '@/composables/useToast'
 import { useVendorService } from '@/composables/useVendorService'
 import { usePartners } from '@/composables/usePartners'
 import { useAuth } from '@/composables/useAuth'
+import { setBreadcrumbTitle } from '@/composables/useBreadcrumbs'
 import PartnerLinkedContracts from '@/views/admin/Partners/PartnerLinkedContracts.vue'
 import AssociateContractModal from '@/views/admin/Partners/AssociateContractModal.vue'
 import DeleteConfirmDialog from '@/views/admin/Partners/DeleteConfirmDialog.vue'
@@ -29,6 +30,12 @@ const activeTab = computed<TabKey>(() => type === 'bp' ? 'partners' : 'suppliers
 
 const partner   = ref<Partner | null>(null)
 const loading   = ref(true)
+
+watchEffect(() => {
+  if (partner.value?.name) {
+    setBreadcrumbTitle(partner.value.name)
+  }
+})
 const isAdmin   = computed(() => route.path.startsWith('/admin'))
 
 const showAssociateModal = ref(false)

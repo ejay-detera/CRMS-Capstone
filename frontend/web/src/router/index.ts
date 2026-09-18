@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw, type RouteLocation
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { useLoader } from '@/composables/useLoader'
+import { setBreadcrumbTitle } from '@/composables/useBreadcrumbs'
 
 const routes: Array<RouteRecordRaw> = [
   // Admin Route Group
@@ -421,6 +422,7 @@ router.beforeEach((to: RouteLocationNormalized) => {
 let isInitialNavigation = true
 
 router.afterEach(() => {
+  setBreadcrumbTitle(null)
   if (isInitialNavigation) {
     const { hideLoader } = useLoader()
     hideLoader()

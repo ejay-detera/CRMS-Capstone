@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Trash2, Loader2, CheckCircle, XCircle, FileType2, Download, FileX } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
@@ -7,6 +7,7 @@ import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { useApiCache } from '@/composables/useApiCache'
 import { useAmendmentStore } from '@/composables/useAmendmentStore'
+import { setBreadcrumbTitle } from '@/composables/useBreadcrumbs'
 import type { ContractAmendment } from '@/types/contractAmendment'
 import { amendmentStatusBadge } from '@/types/contractAmendment'
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
@@ -25,6 +26,12 @@ const loadingData = ref(true)
 const actionLoading = ref(false)
 const showUnsubmitConfirm = ref(false)
 const amendment = ref<ContractAmendment | null>(null)
+
+watchEffect(() => {
+  if (amendment.value?.businessPartner) {
+    setBreadcrumbTitle(amendment.value.businessPartner)
+  }
+})
 
 const liveContract = computed(() => {
   if (!amendment.value) return null

@@ -36,6 +36,7 @@ import { useAuth } from "@/composables/useAuth";
 import { useNotifications } from "@/composables/useNotifications";
 import type { Notification } from "@/types/notification";
 import logoUrl from "@/assets/sbsi logo.png";
+import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 
 const route  = useRoute();
 const router = useRouter();
@@ -318,9 +319,10 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
     <main class="flex-1 flex flex-col min-w-0 bg-[#F5F6FA] min-h-screen">
       <!-- Top Header -->
       <header class="h-16 flex items-center justify-between px-6 bg-white border-b border-black/10 shrink-0">
-        <div class="flex items-center gap-3 flex-1">
-          <SidebarTrigger class="text-black/60" />
-          <div class="relative w-full max-w-md hidden"></div>
+        <div class="flex items-center gap-3.5 flex-1 min-w-0 mr-4">
+          <SidebarTrigger class="text-black/60 shrink-0" />
+          <div class="h-4 w-px bg-black/10 shrink-0 hidden sm:block"></div>
+          <AppBreadcrumbs />
         </div>
 
         <div class="flex items-center gap-3">

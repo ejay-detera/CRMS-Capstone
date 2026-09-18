@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ClipboardList, FileX, FileType2, ExternalLink, AlertCircle } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
+import { setBreadcrumbTitle } from '@/composables/useBreadcrumbs'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { useApiCache } from '@/composables/useApiCache'
@@ -23,6 +24,12 @@ const { state: cacheState, fetchRequests, updateRequestStatusInCache, updateRequ
 const id = route.params.id as string
 const request = ref<ContractRequest | null>(null)
 const loading = ref(true)
+
+watchEffect(() => {
+  if (request.value?.businessPartner) {
+    setBreadcrumbTitle(request.value.businessPartner)
+  }
+})
 
 const backPath = computed(() =>
   route.path.startsWith('/manager') ? '/manager/contract-requests' : '/sales/contract-requests'

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, FileText, Download, ExternalLink, Loader2, Printer, Menu, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw } from 'lucide-vue-next'
 import { useApiCache } from '@/composables/useApiCache'
 import { useAuth } from '@/composables/useAuth'
+import { setBreadcrumbTitle } from '@/composables/useBreadcrumbs'
 import VuePdfEmbed from 'vue-pdf-embed'
 import mammoth from 'mammoth'
 import DOMPurify from 'dompurify'
@@ -23,6 +24,11 @@ const docId = route.params.docId as string
 const loading = ref(true)
 const loadingFile = ref(false)
 const contract = ref<any>(null)
+watchEffect(() => {
+  if (contract.value?.businessPartner) {
+    setBreadcrumbTitle(contract.value.businessPartner)
+  }
+})
 const pdfBlobUrl = ref('')
 
 // DOCX state

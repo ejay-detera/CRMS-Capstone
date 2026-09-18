@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { FileX, X, ChevronDown, Clock } from 'lucide-vue-next'
 import { useAmendmentStore } from '@/composables/useAmendmentStore'
+import { setBreadcrumbTitle } from '@/composables/useBreadcrumbs'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
@@ -58,6 +59,12 @@ const displayedContract = computed<StoredContract | null>(() => {
     startDate:       found.startDate,
     endDate:         found.endDate,
     docs:            found.docs,
+  }
+})
+
+watchEffect(() => {
+  if (displayedContract.value?.businessPartner) {
+    setBreadcrumbTitle(displayedContract.value.businessPartner)
   }
 })
 

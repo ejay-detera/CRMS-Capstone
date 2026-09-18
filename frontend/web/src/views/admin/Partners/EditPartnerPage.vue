@@ -5,6 +5,7 @@ import { ArrowLeft, Pencil } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useVendorService } from '@/composables/useVendorService'
+import { setBreadcrumbTitle } from '@/composables/useBreadcrumbs'
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 import type { AddPartnerForm, TabKey } from '@/types/partner'
 
@@ -44,6 +45,7 @@ onMounted(async () => {
   try {
     const partner = type === 'bp' ? await fetchPartnerById(id) : await fetchSupplierById(id)
     if (partner) {
+      setBreadcrumbTitle(partner.name)
       targetDbId.value = partner.db_id ?? null
       originalBpCode.value = partner.bpCode ?? null
 
