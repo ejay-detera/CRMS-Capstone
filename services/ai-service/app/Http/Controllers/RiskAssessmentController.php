@@ -21,15 +21,49 @@ class RiskAssessmentController extends Controller
     }
 
     /**
+     * Resolve an alphanumeric contract code (or numeric ID) to its numeric ID and metadata.
+     */
+    protected function resolveNumericContractId(string $contractId): ?array
+    {
+        if (is_numeric($contractId)) {
+            $num = (int) $contractId;
+            $info = $this->ownership->resolveContract($num);
+            return [
+                'contract_id'   => $num,
+                'contract_code' => $info['contract_code'] ?? null,
+                'created_by'    => $info['created_by'] ?? null,
+            ];
+        }
+
+        $info = $this->ownership->resolveContract($contractId);
+        if (!$info || empty($info['contract_id'])) {
+            return null;
+        }
+
+        return [
+            'contract_id'   => (int) $info['contract_id'],
+            'contract_code' => $info['contract_code'] ?? $contractId,
+            'created_by'    => $info['created_by'] ?? null,
+        ];
+    }
+
+    /**
      * POST /contracts/{contractId}/risk-assessment/scan
      */
-    public function scan(Request $request, int $contractId)
+    public function scan(Request $request, string $contractId)
     {
-        if ($denied = $this->denyIfNotAuthorized($request, $contractId)) {
+        $resolved = $this->resolveNumericContractId($contractId);
+        if (!$resolved) {
+            return response()->json(['message' => 'Contract not found.'], 404);
+        }
+
+        $numericId = $resolved['contract_id'];
+
+        if ($denied = $this->denyIfNotAuthorized($request, $numericId, $resolved['created_by'])) {
             return $denied;
         }
 
-        RunRiskAssessmentPipeline::dispatch($contractId);
+        RunRiskAssessmentPipeline::dispatch($numericId);
 
         return response()->json([
             'message' => 'AI Risk Assessment scan queued.',
@@ -39,31 +73,50 @@ class RiskAssessmentController extends Controller
     /**
      * GET /contracts/{contractId}/risk-assessment/summary
      */
-    public function summary(Request $request, int $contractId)
+    public function summary(Request $request, string $contractId)
     {
-        if ($denied = $this->denyIfNotAuthorized($request, $contractId)) {
+        $resolved = $this->resolveNumericContractId($contractId);
+        if (!$resolved) {
+            return response()->json(['message' => 'No risk assessment has been run for this contract yet.'], 404);
+        }
+
+        $numericId = $resolved['contract_id'];
+
+        if ($denied = $this->denyIfNotAuthorized($request, $numericId, $resolved['created_by'])) {
             return $denied;
         }
 
-        $result = $this->latestResult($contractId);
+        $result = $this->latestResult($numericId);
 
         if (!$result) {
             return response()->json(['message' => 'No risk assessment has been run for this contract yet.'], 404);
         }
 
-        return response()->json(['data' => $this->formatResult($result)]);
+        $formatted = $this->formatResult($result);
+        if (!empty($resolved['contract_code'])) {
+            $formatted['contract_code'] = $resolved['contract_code'];
+        }
+
+        return response()->json(['data' => $formatted]);
     }
 
     /**
      * GET /contracts/{contractId}/risk-assessment/summary/pdf
      */
-    public function summaryPdf(Request $request, int $contractId)
+    public function summaryPdf(Request $request, string $contractId)
     {
-        if ($denied = $this->denyIfNotAuthorized($request, $contractId)) {
+        $resolved = $this->resolveNumericContractId($contractId);
+        if (!$resolved) {
+            return response()->json(['message' => 'No risk assessment has been run for this contract yet.'], 404);
+        }
+
+        $numericId = $resolved['contract_id'];
+
+        if ($denied = $this->denyIfNotAuthorized($request, $numericId, $resolved['created_by'])) {
             return $denied;
         }
 
-        $result = $this->latestResult($contractId);
+        $result = $this->latestResult($numericId);
 
         if (!$result) {
             return response()->json(['message' => 'No risk assessment has been run for this contract yet.'], 404);
@@ -81,9 +134,11 @@ class RiskAssessmentController extends Controller
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
+        $fileIdentifier = $resolved['contract_code'] ?? $numericId;
+
         return new Response($dompdf->output(), 200, [
             'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"risk-assessment-contract-{$contractId}.pdf\"",
+            'Content-Disposition' => "inline; filename=\"risk-assessment-contract-{$fileIdentifier}.pdf\"",
         ]);
     }
 
@@ -92,27 +147,64 @@ class RiskAssessmentController extends Controller
      */
     public function bulkLevels(Request $request)
     {
-        $ids = array_filter(explode(',', $request->query('ids', '')));
-        if (empty($ids)) {
+        $rawIds = array_filter(explode(',', $request->query('ids', '')));
+        if (empty($rawIds)) {
             return response()->json(['data' => []]);
         }
 
-        // Get latest result per contract ID
-        $results = RiskAssessmentResult::whereIn('contract_id', $ids)
+        // Batch resolve IDs (handling both numeric IDs and alphanumeric contract codes)
+        $resolvedList = $this->ownership->resolveBatch($rawIds);
+
+        $numericToCode = [];
+        $numericToOwner = [];
+        $allNumericIds = [];
+
+        foreach ($resolvedList as $item) {
+            if (isset($item['contract_id'])) {
+                $num = (int) $item['contract_id'];
+                $allNumericIds[] = $num;
+                if (!empty($item['contract_code'])) {
+                    $numericToCode[$num] = $item['contract_code'];
+                }
+                $numericToOwner[$num] = $item['created_by'] ?? null;
+            }
+        }
+
+        foreach ($rawIds as $id) {
+            if (is_numeric($id)) {
+                $allNumericIds[] = (int) $id;
+            }
+        }
+        $allNumericIds = array_values(array_unique($allNumericIds));
+
+        if (empty($allNumericIds)) {
+            return response()->json(['data' => []]);
+        }
+
+        // Query only with clean integers so Postgres bigint column does not error
+        $results = RiskAssessmentResult::whereIn('contract_id', $allNumericIds)
             ->orderByDesc('id')
             ->get()
             ->unique('contract_id');
 
         $data = [];
         foreach ($results as $result) {
-            if ($denied = $this->denyIfNotAuthorized($request, $result->contract_id)) {
+            $numId = (int) $result->contract_id;
+            $owner = $numericToOwner[$numId] ?? null;
+            if ($denied = $this->denyIfNotAuthorized($request, $numId, $owner)) {
                 continue; // Skip contracts the user is not allowed to view
             }
-            $data[$result->contract_id] = [
+            $payload = [
                 'risk_level'     => $result->risk_level,
                 'findings_count' => $result->findingRows()->count(),
                 'status'         => $result->status,
             ];
+            // Key by numeric ID
+            $data[(string) $numId] = $payload;
+            // Also key by contract_code if known so frontend matches by contract code
+            if (isset($numericToCode[$numId])) {
+                $data[$numericToCode[$numId]] = $payload;
+            }
         }
 
         return response()->json(['data' => $data]);
@@ -123,7 +215,7 @@ class RiskAssessmentController extends Controller
      * only access assessments for contracts they created. Returns a 403
      * JsonResponse if denied, or null if allowed.
      */
-    protected function denyIfNotAuthorized(Request $request, int $contractId): ?\Illuminate\Http\JsonResponse
+    protected function denyIfNotAuthorized(Request $request, int $contractId, ?int $createdBy = null): ?\Illuminate\Http\JsonResponse
     {
         $role = $request->get('auth_role');
 
@@ -132,7 +224,9 @@ class RiskAssessmentController extends Controller
         }
 
         $userId = (int) $request->get('auth_id');
-        $createdBy = $this->ownership->getCreatedBy($contractId);
+        if ($createdBy === null) {
+            $createdBy = $this->ownership->getCreatedBy($contractId);
+        }
 
         if ($createdBy !== null && $createdBy === $userId) {
             return null;

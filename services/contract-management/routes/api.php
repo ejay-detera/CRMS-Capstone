@@ -67,11 +67,43 @@ Route::middleware(['internal.secret'])->group(function () {
     Route::get('/internal/documents/{id}', [\App\Http\Controllers\Api\V1\Documents\InternalDocumentController::class, 'show']);
     Route::get('/internal/documents/{id}/file', [\App\Http\Controllers\Api\V1\Documents\InternalDocumentController::class, 'file']);
     Route::get('/internal/contracts/{id}/owner', function (string $id) {
-        $contract = \App\Models\Contract::find($id);
+        $contract = \App\Models\Contract::where('contract_code', $id)
+            ->orWhere('contract_id', is_numeric($id) ? (int) $id : 0)
+            ->first();
         if (!$contract) {
             return response()->json(['message' => 'Contract not found.'], 404);
         }
-        return response()->json(['created_by' => $contract->created_by]);
+        return response()->json([
+            'contract_id'   => $contract->contract_id,
+            'contract_code' => $contract->contract_code,
+            'created_by'    => $contract->created_by,
+        ]);
+    });
+
+    Route::post('/internal/contracts/resolve-batch', function (\Illuminate\Http\Request $request) {
+        $rawIds = (array) ($request->input('ids') ?? []);
+        $numericIds = array_map('intval', array_filter($rawIds, 'is_numeric'));
+        $stringCodes = array_filter($rawIds, fn ($v) => !is_numeric($v));
+
+        $query = \App\Models\Contract::query();
+        $query->where(function ($q) use ($numericIds, $stringCodes) {
+            if (!empty($numericIds)) {
+                $q->orWhereIn('contract_id', $numericIds);
+            }
+            if (!empty($stringCodes)) {
+                $q->orWhereIn('contract_code', $stringCodes);
+            }
+        });
+
+        $contracts = $query->get(['contract_id', 'contract_code', 'created_by']);
+
+        return response()->json([
+            'data' => $contracts->map(fn ($c) => [
+                'contract_id'   => $c->contract_id,
+                'contract_code' => $c->contract_code,
+                'created_by'    => $c->created_by,
+            ])->values(),
+        ]);
     });
 
     // Feature 4: Analytics — descriptive/diagnostic metrics snapshot for analytics-service.

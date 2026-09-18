@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { BRAND_PALETTE } from '@/constants/theme'
-import { Search, MoreHorizontal, Eye, Pencil, Filter, X, Trash2, CheckCircle } from 'lucide-vue-next'
+import { Search, MoreHorizontal, Eye, Pencil, Filter, X, Trash2, CheckCircle, Flag } from 'lucide-vue-next'
 import { ref, watch, computed } from 'vue'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { useRouter } from 'vue-router'
@@ -20,9 +20,9 @@ import TablePagination from '@/components/shared/TablePagination.vue'
 import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus, formatRemainingTime } from '@/types/contract'
 import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
 import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
-import RiskFlagBadge from '@/components/shared/RiskFlagBadge.vue'
 import { useRiskAssessment } from '@/composables/useRiskAssessment'
 import type { RiskLevel } from '@/types/riskAssessment'
+import { severityIconColor, severityLabel } from '@/types/riskAssessment'
 
 type ContractWithDays = Contract & { days: number }
 
@@ -326,7 +326,6 @@ const categories = [
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">End Date</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Remaining Time</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Contract State</TableHead>
-          <TableHead v-if="aiRiskAssessmentVisible" class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">AI Risk</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Sales Rep</TableHead>
           <TableHead class="w-12 py-3" />
@@ -359,9 +358,6 @@ const categories = [
             <TableCell class="py-4">
               <div class="h-5 w-24 bg-black/5 animate-pulse rounded-full"></div>
             </TableCell>
-            <TableCell v-if="aiRiskAssessmentVisible" class="py-4">
-              <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
-            </TableCell>
             <TableCell class="py-4">
               <div class="flex flex-col gap-1">
                 <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
@@ -386,7 +382,15 @@ const categories = [
 
             <!-- Contract ID + Partner -->
             <TableCell class="py-4 pl-6">
-              <p class="text-sm font-medium text-black leading-snug">{{ c.businessPartner }}</p>
+              <div class="flex items-center gap-2">
+                <p class="text-sm font-medium text-black leading-snug">{{ c.businessPartner }}</p>
+                <Flag
+                  v-if="aiRiskAssessmentVisible && riskLevels[c.id]?.status === 'completed' && riskLevels[c.id]?.riskLevel"
+                  class="w-3.5 h-3.5 shrink-0 fill-current"
+                  :class="severityIconColor[riskLevels[c.id].riskLevel]"
+                  :title="`AI Risk: ${severityLabel[riskLevels[c.id].riskLevel]}${riskLevels[c.id].findingsCount ? ` (${riskLevels[c.id].findingsCount} flagged clause${riskLevels[c.id].findingsCount === 1 ? '' : 's'})` : ''}`"
+                />
+              </div>
               <p class="text-xs font-mono text-black/40 mt-0.5">{{ c.contractCode || c.id }}</p>
             </TableCell>
 
@@ -408,18 +412,6 @@ const categories = [
             <!-- Contract State -->
             <TableCell class="py-4">
               <ContractLifecycleBadge :status="deriveLifecycleStatus(c.days, c.approvalStatus)" />
-            </TableCell>
-
-            <!-- AI Risk -->
-            <TableCell v-if="aiRiskAssessmentVisible" class="py-4">
-              <div v-if="loadingRisk" class="h-6 w-24 bg-black/5 animate-pulse rounded-full border border-black/10"></div>
-              <RiskFlagBadge
-                v-else-if="riskLevels[c.id] && riskLevels[c.id].status === 'completed'"
-                :risk-level="riskLevels[c.id].riskLevel"
-                :findings-count="riskLevels[c.id].findingsCount"
-                size="sm"
-              />
-              <span v-else class="text-xs text-black/35 font-medium">—</span>
             </TableCell>
 
             <!-- Status -->

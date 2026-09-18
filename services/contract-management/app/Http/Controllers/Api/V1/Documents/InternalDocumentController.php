@@ -21,9 +21,19 @@ final class InternalDocumentController extends Controller
     /**
      * GET /internal/contracts/{contractId}/documents
      */
-    public function listForContract(Request $request, int $contractId)
+    public function listForContract(Request $request, $contractId)
     {
-        $documents = Document::where('contract_id', $contractId)
+        $numericId = is_numeric($contractId) ? (int) $contractId : null;
+        if (!$numericId) {
+            $contract = \App\Models\Contract::where('contract_code', $contractId)->first();
+            $numericId = $contract?->contract_id;
+        }
+
+        if (!$numericId) {
+            return response()->json(['data' => []]);
+        }
+
+        $documents = Document::where('contract_id', $numericId)
             ->whereIn('scan_status', ['clean', 'unavailable'])
             ->get(['_id', 'file_name', 'file_type']);
 

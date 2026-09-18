@@ -24,7 +24,7 @@ class ContractDocumentClient
     /**
      * @return array{document_id: string, file_name: string, file_type: string}[] 
      */
-    public function listDocuments(int $contractId): array
+    public function listDocuments(string|int $contractId): array
     {
         try {
             $response = Http::withHeaders([

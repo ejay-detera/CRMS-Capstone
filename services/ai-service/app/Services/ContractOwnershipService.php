@@ -21,7 +21,7 @@ class ContractOwnershipService
         $this->secret  = env('INTERNAL_SERVICE_SECRET', '');
     }
 
-    public function getCreatedBy(int $contractId): ?int
+    public function resolveContract(string|int $contractId): ?array
     {
         try {
             $response = Http::withHeaders([
@@ -29,13 +29,43 @@ class ContractOwnershipService
                 'X-Internal-Secret' => $this->secret,
             ])->get("{$this->baseUrl}/internal/contracts/{$contractId}/owner");
 
-            return $response->successful() ? $response->json('created_by') : null;
+            return $response->successful() ? $response->json() : null;
         } catch (\Exception $e) {
-            Log::error('ContractOwnershipService connection error', [
+            Log::error('ContractOwnershipService resolveContract connection error', [
                 'contract_id' => $contractId,
                 'message'     => $e->getMessage(),
             ]);
             return null;
+        }
+    }
+
+    public function getCreatedBy(string|int $contractId): ?int
+    {
+        $info = $this->resolveContract($contractId);
+        return $info['created_by'] ?? null;
+    }
+
+    public function resolveBatch(array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'Accept'            => 'application/json',
+                'X-Internal-Secret' => $this->secret,
+            ])->post("{$this->baseUrl}/internal/contracts/resolve-batch", [
+                'ids' => array_values($ids),
+            ]);
+
+            return $response->successful() ? ($response->json('data') ?? []) : [];
+        } catch (\Exception $e) {
+            Log::error('ContractOwnershipService resolveBatch connection error', [
+                'ids'     => $ids,
+                'message' => $e->getMessage(),
+            ]);
+            return [];
         }
     }
 }
