@@ -102,7 +102,9 @@ function mapApiToContract(data: any): StoredContract {
     : `User #${data.created_by}`
 
   return {
-    id:              String(data.contract_id),
+    id:              String(data.contract_code || data.contract_id),
+    contractCode:    data.contract_code,
+    contractDbId:    data.contract_db_id || (typeof data.contract_id === 'number' ? data.contract_id : undefined),
     businessPartner: data.bp_name ?? '',
     category:        data.category ?? '',
     itemCode:        data.item_code ?? '',
@@ -129,7 +131,7 @@ function mapApiToContract(data: any): StoredContract {
 }
 
 function loadLocalContract() {
-  const c = (cacheState.contracts || []).find(item => item.id === id)
+  const c = (cacheState.contracts || []).find(item => item.id === id || item.contractCode === id)
   if (c) {
     contract.value = c as StoredContract
   }
@@ -149,6 +151,21 @@ async function loadContract() {
     const userId = (isAdmin || isManager) ? undefined : authState.user?.id
     await fetchContracts(userId)
     loadLocalContract()
+
+    if (!contract.value) {
+      const res = await fetch(`${apiBase}/contracts/${id}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${authState.token}`,
+        }
+      })
+      if (res.ok) {
+        const json = await res.json()
+        if (json.data) {
+          contract.value = mapApiToContract(json.data)
+        }
+      }
+    }
   } catch {
     if (!contract.value) {
       contract.value = null
