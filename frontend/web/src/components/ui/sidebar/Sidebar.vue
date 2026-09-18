@@ -36,16 +36,21 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
       data-slot="sidebar"
       data-mobile="true"
       :side="side"
-      class="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+      :class="cn('bg-brand-navy text-white border-r border-brand-dark w-(--sidebar-width) p-0 [&>button]:hidden', props.class)"
       :style="{
         '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
+        '--sidebar': 'var(--brand-navy)',
+        '--sidebar-foreground': '#FFFFFF',
+        '--sidebar-accent': 'var(--brand-dark)',
+        '--sidebar-accent-foreground': '#FFFFFF',
+        '--sidebar-border': 'var(--brand-dark)',
       }"
     >
       <SheetHeader class="sr-only">
         <SheetTitle>Sidebar</SheetTitle>
         <SheetDescription>Displays the mobile sidebar.</SheetDescription>
       </SheetHeader>
-      <div class="flex h-full w-full flex-col">
+      <div class="flex h-full w-full flex-col bg-brand-navy text-white">
         <slot />
       </div>
     </SheetContent>
