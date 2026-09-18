@@ -2,6 +2,7 @@
 import { ref, watch, onMounted } from 'vue'
 import { Upload } from 'lucide-vue-next'
 import { exportToExcel } from '@/utils/excelExport'
+import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import AuditLogFilters from './AuditLogFilters.vue'
