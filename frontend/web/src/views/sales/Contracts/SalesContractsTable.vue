@@ -181,7 +181,7 @@ const categories = [
 
     <div class="px-6 pt-5 pb-4 border-b border-black/5">
       <h2 class="text-sm font-semibold text-black">
-        My Contracts <span class="text-black/30 font-normal">({{ loading ? 0 : (totalItems !== undefined ? totalItems : filtered.length) }})</span>
+        My Contracts <span class="text-black/30 font-normal">({{ totalItems !== undefined ? totalItems : filtered.length }})</span>
       </h2>
     </div>
 
@@ -472,7 +472,7 @@ const categories = [
 
     <!-- Pagination -->
     <div class="flex justify-center px-6 py-4 border-t border-black/5">
-      <TablePagination :current-page="currentPage" :total-items="loading ? itemsPerPage : (totalItems !== undefined ? totalItems : filtered.length)"
+      <TablePagination :current-page="currentPage" :total-items="totalItems !== undefined ? totalItems : filtered.length"
         :items-per-page="itemsPerPage" :current-page-items-count="paginated.length" @update:current-page="emit('update:currentPage', $event)" />
     </div>
 
