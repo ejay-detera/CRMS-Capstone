@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, computed, ref, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeft, ScanLine } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
@@ -17,6 +17,7 @@ const { hasPermission } = useAuth()
 const canUseOcr = computed(() => hasPermission('cms.ai.ocr'))
 
 const router = useRouter()
+const route  = useRoute()
 const ocrOpen = ref(false)
 
 const activePartnerNames = computed(() => {
@@ -132,11 +133,19 @@ const existingSerialNumbers = computed(() => {
   )
 })
 
+const isVerifiedPartner = computed(() => {
+  const name = form.businessPartner.trim().toLowerCase()
+  if (!name) return false
+  return vendorOptions.value.some(v => v.name.toLowerCase() === name && v.status !== 'Suspended')
+})
+
 const errors = computed(() => ({
   businessPartner: touched.businessPartner && !form.businessPartner.trim()
     ? 'Business partner is required.'
     : touched.businessPartner && suspendedVendorMatch.value
     ? 'This vendor is suspended and cannot be assigned to a new contract.'
+    : touched.businessPartner && vendorOptions.value.length > 0 && !isVerifiedPartner.value
+    ? 'Contract must be created with an existing verified Business Partner.'
     : '',
   category:        touched.category        && !form.category                  ? 'Category is required.' : '',
   itemCode:        touched.itemCode        && !form.itemCode.trim()
@@ -192,6 +201,7 @@ function isValid() {
   return (
     String(form.businessPartner || '').trim() &&
     !suspendedVendorMatch.value &&
+    (vendorOptions.value.length === 0 || isVerifiedPartner.value) &&
     form.category &&
     form.itemCode.trim() && /^ITM-\d{4}$/.test(form.itemCode.trim()) &&
     form.description.trim() &&
@@ -313,8 +323,13 @@ async function fetchPartnerNames() {
   }
 }
 
-onMounted(() => {
-  fetchPartnerNames()
+onMounted(async () => {
+  await fetchPartnerNames()
+  if (route.query.partner) {
+    form.businessPartner = String(route.query.partner)
+    touched.businessPartner = true
+  }
+
   if (!cacheState.contracts) {
     fetchContracts().catch(() => {})
   }

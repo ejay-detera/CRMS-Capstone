@@ -124,11 +124,19 @@ const existingSerialNumbers = computed(() => {
   )
 })
 
+const isVerifiedPartner = computed(() => {
+  const name = String(form.businessPartner || '').trim().toLowerCase()
+  if (!name) return false
+  return vendorOptions.value.some(v => v.name.toLowerCase() === name && v.status !== 'Suspended')
+})
+
 const errors = computed(() => ({
   businessPartner: touched.businessPartner && !String(form.businessPartner || '').trim()
     ? 'Business partner is required.'
     : touched.businessPartner && suspendedVendorMatch.value
     ? 'This vendor is suspended and cannot be assigned to a new contract.'
+    : touched.businessPartner && vendorOptions.value.length > 0 && !isVerifiedPartner.value
+    ? 'Contract must be created with an existing verified Business Partner.'
     : '',
   category:        touched.category        && !form.category                  ? 'Category is required.' : '',
   itemCode:        touched.itemCode        && !String(form.itemCode || '').trim()
@@ -184,6 +192,7 @@ function isValid() {
   return (
     String(form.businessPartner || '').trim() &&
     !suspendedVendorMatch.value &&
+    (vendorOptions.value.length === 0 || isVerifiedPartner.value) &&
     form.category &&
     String(form.itemCode || '').trim() && /^ITM-\d{4}$/.test(String(form.itemCode || '').trim()) &&
     String(form.description || '').trim() &&
@@ -349,6 +358,10 @@ onMounted(() => {
   if (prsIdParam) {
     form.prsActivityId = Number(prsIdParam)
     prefilledFromPrs.value = true
+  }
+  const partnerParam = route.query.partner
+  if (partnerParam) {
+    form.businessPartner = String(partnerParam)
   }
   const bpNameParam = route.query.bp_name
   if (bpNameParam) {
