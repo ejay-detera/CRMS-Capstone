@@ -35,8 +35,14 @@ const emit = defineEmits<{
 }>()
 
 function displayId(p: Partner) {
-  const prefix = props.activeTab === 'partners' ? 'BP' : 'SP'
-  return `${prefix}-${String(p.id).padStart(4, '0')}`
+  if (props.activeTab === 'partners') {
+    const raw = p.bpCode || String(p.id)
+    if (raw.startsWith('BP-')) return raw.replace(/^(BP-)+/i, 'BP-')
+    return `BP-${String(p.db_id || p.id).padStart(4, '0')}`
+  }
+  const raw = String(p.id)
+  if (raw.startsWith('SP-')) return raw.replace(/^(SP-)+/i, 'SP-')
+  return `SP-${String(p.db_id || p.id).padStart(4, '0')}`
 }
 
 function statusClass(status: string) {
@@ -109,6 +115,7 @@ function statusClass(status: string) {
               </div>
               <div>
                 <p class="text-sm font-medium text-black leading-snug">{{ partner.name }}</p>
+                <p class="text-xs font-mono text-black/40 mt-0.5">{{ displayId(partner) }}</p>
               </div>
             </div>
           </TableCell>

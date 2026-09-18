@@ -124,7 +124,12 @@ class BusinessPartnerController extends Controller
      */
     public function show($id)
     {
-        $partner = BusinessPartner::find($id);
+        $cleanId = preg_replace('/^(BP-)+/i', 'BP-', (string) $id);
+        $partner = BusinessPartner::where('bp_code', $cleanId)
+            ->orWhere('bp_code', $id)
+            ->orWhere('partner_id', $cleanId)
+            ->orWhere('partner_id', $id)
+            ->first();
 
         if (!$partner) {
             return response()->json(['message' => 'Business partner not found.'], 404);
@@ -138,7 +143,12 @@ class BusinessPartnerController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $partner = BusinessPartner::find($id);
+        $cleanId = preg_replace('/^(BP-)+/i', 'BP-', (string) $id);
+        $partner = BusinessPartner::where('bp_code', $cleanId)
+            ->orWhere('bp_code', $id)
+            ->orWhere('partner_id', $cleanId)
+            ->orWhere('partner_id', $id)
+            ->first();
 
         if (!$partner) {
             return response()->json(['message' => 'Business partner not found.'], 404);
@@ -169,7 +179,7 @@ class BusinessPartnerController extends Controller
             $data['bp_code'],
             'partner_name',
             $data['partner_name'],
-            $id,
+            $partner->partner_id,
             'partner_id'
         );
 
@@ -206,18 +216,24 @@ class BusinessPartnerController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        $partner = BusinessPartner::find($id);
+        $cleanId = preg_replace('/^(BP-)+/i', 'BP-', (string) $id);
+        $partner = BusinessPartner::where('bp_code', $cleanId)
+            ->orWhere('bp_code', $id)
+            ->orWhere('partner_id', $cleanId)
+            ->orWhere('partner_id', $id)
+            ->first();
 
         if (!$partner) {
             return response()->json(['message' => 'Business partner not found.'], 404);
         }
 
+        $partnerId = $partner->partner_id;
         $oldData = $partner->toArray();
         $partner->delete();
 
         // Audit Log
         $userId = $request->get('auth_id');
-        $this->auditLogService->log('deleted', 'BusinessPartner', $id, $userId, $oldData, [], $request->get('auth_department'));
+        $this->auditLogService->log('deleted', 'BusinessPartner', $partnerId, $userId, $oldData, [], $request->get('auth_department'));
 
         return response()->json(['message' => 'Business partner deleted successfully.']);
     }

@@ -12,7 +12,6 @@ import { usePartners } from '@/composables/usePartners'
 import { useAuth } from '@/composables/useAuth'
 import { setBreadcrumbTitle } from '@/composables/useBreadcrumbs'
 import PartnerLinkedContracts from '@/views/admin/Partners/PartnerLinkedContracts.vue'
-import AssociateContractModal from '@/views/admin/Partners/AssociateContractModal.vue'
 import DeleteConfirmDialog from '@/views/admin/Partners/DeleteConfirmDialog.vue'
 import type { Partner, TabKey } from '@/types/partner'
 
@@ -20,12 +19,16 @@ const route  = useRoute()
 const router = useRouter()
 const { success, error } = useToast()
 const { fetchPartnerById, fetchSupplierById } = useVendorService()
-const { fetchVendorContracts, fetchLinkedContractIds, linkContract, detachContract, deletePartner } = usePartners()
+const { fetchVendorContracts, detachContract, deletePartner } = usePartners()
 const { hasPermission } = useAuth()
 
-const code = route.params.code as string
-const type = code.startsWith('BP') ? 'bp' : 'sp'
-const id   = parseInt(code.split('-')[1])
+const rawCode = route.params.code as string
+const code = rawCode ? rawCode.replace(/^(BP-)+/i, 'BP-').replace(/^(SP-)+/i, 'SP-') : ''
+if (rawCode && rawCode !== code) {
+  const currentPath = route.path.replace(`/${rawCode}`, `/${code}`)
+  router.replace(currentPath)
+}
+const type = code.startsWith('SP') ? 'sp' : 'bp'
 const activeTab = computed<TabKey>(() => type === 'bp' ? 'partners' : 'suppliers')
 
 const partner   = ref<Partner | null>(null)
@@ -38,12 +41,6 @@ watchEffect(() => {
 })
 const isAdmin   = computed(() => route.path.startsWith('/admin'))
 
-const showAssociateModal = ref(false)
-const alreadyLinkedContractIds = computed(() =>
-  partner.value?.linkedContracts?.map(c => c.contractId) || []
-)
-const globallyLinkedContractIds = ref<string[]>([])
-
 const backPath = computed(() =>
   route.path.startsWith('/admin')   ? '/admin/partners'
 : route.path.startsWith('/manager') ? '/manager/partners'
@@ -52,17 +49,13 @@ const backPath = computed(() =>
 
 async function handleDetachContract(associationId: string) {
   if (!partner.value) return
-  const dbId = Number(partner.value.id)
+  const dbId = Number(partner.value.db_id || partner.value.id)
   const foundContract = partner.value.linkedContracts?.find(c => c.associationId === associationId)
   if (foundContract) {
     try {
       await detachContract(activeTab.value, dbId, foundContract.contractId)
-      const [contracts, linkedIds] = await Promise.all([
-        fetchVendorContracts(activeTab.value, dbId),
-        fetchLinkedContractIds()
-      ])
+      const contracts = await fetchVendorContracts(activeTab.value, dbId)
       partner.value.linkedContracts = contracts
-      globallyLinkedContractIds.value = linkedIds
       success('Contract unlinked', 'The contract has been detached successfully.')
     } catch (err: any) {
       error('Detach failed', err.message || 'Could not detach contract.')
@@ -70,44 +63,37 @@ async function handleDetachContract(associationId: string) {
   }
 }
 
-async function handleLinkContract(contractId: string) {
-  if (!partner.value) return
-  const dbId = Number(partner.value.id)
-  try {
-    await linkContract(activeTab.value, dbId, contractId)
-    const [contracts, linkedIds] = await Promise.all([
-      fetchVendorContracts(activeTab.value, dbId),
-      fetchLinkedContractIds()
-    ])
-    partner.value.linkedContracts = contracts
-    globallyLinkedContractIds.value = linkedIds
-    success('Contract linked', `Contract is now associated with ${partner.value.name}.`)
-  } catch (err: any) {
-    error('Link failed', err.message || 'Could not link contract.')
-  }
-}
-
 async function loadPartner() {
   loading.value = true
   try {
-    partner.value = type === 'bp'
-      ? await fetchPartnerById(id)
-      : await fetchSupplierById(id)
+    if (type === 'bp') {
+      partner.value = await fetchPartnerById(code)
+    } else {
+      const spId = parseInt(code.replace(/\D/g, '')) || 0
+      partner.value = await fetchSupplierById(spId)
+    }
     
     if (partner.value) {
-      const dbId = Number(partner.value.id)
-      const [contracts, linkedIds] = await Promise.all([
-        fetchVendorContracts(activeTab.value, dbId),
-        fetchLinkedContractIds()
-      ])
+      const dbId = Number(partner.value.db_id || partner.value.id)
+      const contracts = await fetchVendorContracts(activeTab.value, dbId)
       partner.value.linkedContracts = contracts
-      globallyLinkedContractIds.value = linkedIds
     }
   } catch {
     partner.value = null
   } finally {
     loading.value = false
   }
+}
+
+function handleCreateContractForPartner() {
+  if (!partner.value) return
+  const prefix = route.path.startsWith('/admin') ? '/admin' : route.path.startsWith('/manager') ? '/manager' : '/sales'
+  router.push(`${prefix}/contracts/create?partner=${encodeURIComponent(partner.value.name)}`)
+}
+
+function handleOpenContract(contractId: string) {
+  const prefix = route.path.startsWith('/admin') ? '/admin' : route.path.startsWith('/manager') ? '/manager' : '/sales'
+  router.push(`${prefix}/contracts/${contractId}`)
 }
 
 onMounted(loadPartner)
@@ -127,7 +113,7 @@ async function confirmDelete() {
   const name = partner.value.name
   showDelete.value = false
   try {
-    await deletePartner(activeTab.value, id)
+    await deletePartner(activeTab.value, code)
     success('Entry deleted', `${name} has been removed.`)
     router.push(backPath.value)
   } catch {
@@ -139,8 +125,12 @@ async function confirmDelete() {
 
 const displayId = computed(() => {
   if (!partner.value) return ''
-  const prefix = type === 'bp' ? 'BP' : 'SP'
-  return `${prefix}-${String(partner.value.id).padStart(4, '0')}`
+  if (type === 'bp') {
+    const raw = partner.value.bpCode || String(partner.value.id)
+    return raw.replace(/^(BP-)+/i, 'BP-')
+  }
+  const raw = String(partner.value.db_id || partner.value.id)
+  return `SP-${raw.replace(/^SP-?/i, '').padStart(4, '0')}`
 })
 
 const statusClass = computed(() => {
@@ -215,12 +205,18 @@ const statusClass = computed(() => {
           <ArrowLeft class="w-4 h-4" />
           Back to Partners
         </button>
-        <div v-if="isAdmin" class="flex items-center gap-2">
-          <Button v-if="hasPermission('cms.partners.delete')" variant="outline" @click="showDelete = true"
+        <div class="flex items-center gap-2">
+          <Button
+            v-if="activeTab === 'partners' && partner?.status !== 'Suspended'"
+            @click="handleCreateContractForPartner"
+            class="h-9 px-4 gap-2 text-sm bg-brand-blue hover:bg-brand-navy text-white font-medium">
+            <FileText class="w-3.5 h-3.5" /> Create Contract
+          </Button>
+          <Button v-if="isAdmin && hasPermission('cms.partners.delete')" variant="outline" @click="showDelete = true"
             class="h-9 px-4 gap-2 text-sm border-red-200 text-red-600 hover:bg-red-50">
             <Trash2 class="w-3.5 h-3.5" /> Delete
           </Button>
-          <Button @click="openEdit"
+          <Button v-if="isAdmin" @click="openEdit"
             class="h-9 px-4 gap-2 text-sm bg-brand-navy hover:bg-brand-dark text-white">
             <Pencil class="w-3.5 h-3.5" /> Edit
           </Button>
@@ -333,21 +329,13 @@ const statusClass = computed(() => {
           :contracts="partner.linkedContracts || []"
           :vendor-type="activeTab"
           :can-manage="isAdmin"
-          @open-associate="showAssociateModal = true"
           @detach="handleDetachContract"
+          @open-contract="handleOpenContract"
         />
       </div>
 
     </template>
   </div>
-
-  <AssociateContractModal
-    :open="showAssociateModal"
-    :already-linked="alreadyLinkedContractIds"
-    :globally-linked="globallyLinkedContractIds"
-    @update:open="showAssociateModal = $event"
-    @submit="handleLinkContract"
-  />
 
   <DeleteConfirmDialog
     v-model:open="showDelete"

@@ -98,10 +98,19 @@ function toggleRow(id: string | number) {
   i >= 0 ? selectedIds.value.splice(i, 1) : selectedIds.value.push(id)
 }
 
+function getPartnerCode(p: Partner): string {
+  if (activeTab.value === 'partners') {
+    const raw = p.bpCode || String(p.id)
+    if (raw.startsWith('BP-')) return raw.replace(/^(BP-)+/i, 'BP-')
+    return `BP-${String(p.db_id || p.id).padStart(4, '0')}`
+  }
+  const raw = String(p.id)
+  if (raw.startsWith('SP-')) return raw.replace(/^(SP-)+/i, 'SP-')
+  return `SP-${String(p.db_id || p.id).padStart(4, '0')}`
+}
+
 function openDetail(p: Partner) {
-  const prefix = activeTab.value === 'partners' ? 'BP' : 'SP'
-  const code   = `${prefix}-${String(p.id).padStart(4, '0')}`
-  router.push(`/manager/partners/${code}`)
+  router.push(`/manager/partners/${getPartnerCode(p)}`)
 }
 
 const showDelete   = ref(false)

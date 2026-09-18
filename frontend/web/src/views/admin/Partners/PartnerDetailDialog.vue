@@ -9,8 +9,14 @@ defineEmits<{ 'update:open': [v: boolean] }>()
 
 const displayId = computed(() => {
   if (!props.partner) return ''
-  const prefix = props.activeTab === 'partners' ? 'BP' : 'SP'
-  return `${prefix}-${String(props.partner.id).padStart(4, '0')}`
+  if (props.activeTab === 'partners') {
+    const raw = props.partner.bpCode || String(props.partner.id)
+    if (raw.startsWith('BP-')) return raw.replace(/^(BP-)+/i, 'BP-')
+    return `BP-${String(props.partner.db_id || props.partner.id).padStart(4, '0')}`
+  }
+  const raw = String(props.partner.id)
+  if (raw.startsWith('SP-')) return raw.replace(/^(SP-)+/i, 'SP-')
+  return `SP-${String(props.partner.db_id || props.partner.id).padStart(4, '0')}`
 })
 
 const statusClass = computed(() => {

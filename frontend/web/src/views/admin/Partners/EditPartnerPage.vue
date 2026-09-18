@@ -14,9 +14,13 @@ const route = useRoute()
 const { success, error, warning } = useToast()
 const { updatePartner, updateSupplier, fetchPartnerById, fetchSupplierById } = useVendorService()
 
-const code = route.params.code as string
-const type = code.startsWith('BP') ? 'bp' : 'sp'
-const id = parseInt(code.split('-')[1])
+const rawCode = route.params.code as string
+const code = rawCode ? rawCode.replace(/^(BP-)+/i, 'BP-').replace(/^(SP-)+/i, 'SP-') : ''
+if (rawCode && rawCode !== code) {
+  const currentPath = route.path.replace(`/${rawCode}`, `/${code}`)
+  router.replace(currentPath)
+}
+const type = code.startsWith('SP') ? 'sp' : 'bp'
 const activeTab = computed<TabKey>(() => type === 'bp' ? 'partners' : 'suppliers')
 
 const loading = ref(true)
@@ -43,7 +47,9 @@ const tinValid = computed(() => /^\d{3}-\d{3}-\d{3}(-\d{3,5})?$/.test(form.tinNu
 onMounted(async () => {
   loading.value = true
   try {
-    const partner = type === 'bp' ? await fetchPartnerById(id) : await fetchSupplierById(id)
+    const partner = type === 'bp'
+      ? await fetchPartnerById(code)
+      : await fetchSupplierById(parseInt(code.replace(/\D/g, '')) || 0)
     if (partner) {
       setBreadcrumbTitle(partner.name)
       targetDbId.value = partner.db_id ?? null

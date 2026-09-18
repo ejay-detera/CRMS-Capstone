@@ -48,8 +48,10 @@ export function usePartners() {
 
       partners.value = (json.data || []).map((item: any) => {
         if (type === 'partners') {
+          const rawCode = item.bp_code || `BP-${String(item.partner_id).padStart(4, '0')}`
+          const bpCode = rawCode.replace(/^(BP-)+/i, 'BP-')
           return {
-            id: item.bp_code || `BP-${String(item.partner_id).padStart(3, '0')}`,
+            id: bpCode,
             db_id: item.partner_id,
             name: item.partner_name || '',
             industry: item.industry || 'Banking & Finance',
@@ -60,7 +62,8 @@ export function usePartners() {
             contactPerson: item.contact_person || '',
             email: item.email || '',
             phone: item.contact_number || '',
-            address: item.address || ''
+            address: item.address || '',
+            bpCode: bpCode,
           }
         } else {
           return {
@@ -106,7 +109,7 @@ export function usePartners() {
 
       return data.map((item: any) => ({
         associationId: String(item.association_id),
-        contractId: String(item.contract_id),
+        contractId: item.contract?.contract_code || String(item.contract_id),
         description: item.contract?.description || 'No description',
         businessPartner: item.contract?.bp_name || '',
         startDate: item.contract?.start_date || '',

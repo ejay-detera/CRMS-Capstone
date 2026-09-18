@@ -13,8 +13,10 @@ function makeHeaders(): HeadersInit {
 }
 
 function mapPartner(d: any): Partner {
+  const rawCode = d.bp_code || `BP-${String(d.partner_id).padStart(4, '0')}`
+  const code = String(rawCode).replace(/^(BP-)+/i, 'BP-')
   return {
-    id:            d.partner_id,
+    id:            code,
     db_id:         d.partner_id,
     name:          d.partner_name   ?? '',
     industry:      d.industry       ?? '',
@@ -24,7 +26,7 @@ function mapPartner(d: any): Partner {
     email:         d.email          ?? '',
     phone:         d.contact_number ?? '',
     address:       d.address        ?? '',
-    bpCode:        d.bp_code        ?? null,
+    bpCode:        code,
     tinNumber:     null,
   }
 }
@@ -108,8 +110,9 @@ async function updatePartner(id: number, form: AddPartnerForm, bpCode: string | 
   return { partner: mapPartner(json.data), warnings: json.warnings ?? [] }
 }
 
-async function fetchPartnerById(id: number): Promise<Partner> {
-  const res = await fetch(`${BASE_URL}/partners/${id}`, { headers: makeHeaders() })
+async function fetchPartnerById(id: number | string): Promise<Partner> {
+  const cleanId = String(id).replace(/^(BP-)+/i, 'BP-')
+  const res = await fetch(`${BASE_URL}/partners/${cleanId}`, { headers: makeHeaders() })
   const json = await res.json()
   if (!res.ok) throw json
   return mapPartner(json.data)
