@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type LinkedContract, engagementBadge } from '@/types/partner'
+import { ExternalLink } from 'lucide-vue-next'
 
 defineProps<{
   contracts: LinkedContract[]
@@ -8,8 +9,8 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'open-associate'): void
   (e: 'detach', associationId: string): void
+  (e: 'open-contract', contractId: string): void
 }>()
 </script>
 
@@ -23,14 +24,6 @@ const emit = defineEmits<{
           {{ contracts.length }}
         </span>
       </div>
-      <button
-        v-if="canManage"
-        type="button"
-        @click="emit('open-associate')"
-        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-brand-blue hover:bg-brand-navy rounded transition-colors"
-      >
-        Link Contract
-      </button>
     </div>
 
     <!-- Empty State -->
@@ -38,15 +31,8 @@ const emit = defineEmits<{
       v-if="contracts.length === 0"
       class="flex flex-col items-center justify-center p-6 border border-dashed border-black/[0.08] rounded-lg bg-black/[0.005]"
     >
-      <p class="text-sm text-black/40 mb-3">No contracts linked to this {{ vendorType === 'partners' ? 'business partner' : 'supplier' }} yet.</p>
-      <button
-        v-if="canManage"
-        type="button"
-        @click="emit('open-associate')"
-        class="text-xs font-medium text-brand-blue hover:text-brand-navy hover:underline"
-      >
-        Associate a contract now
-      </button>
+      <p class="text-sm text-black/40">No contracts associated with this {{ vendorType === 'partners' ? 'business partner' : 'supplier' }} yet.</p>
+      <p class="text-xs text-black/30 mt-1">Contracts created for this {{ vendorType === 'partners' ? 'business partner' : 'supplier' }} will automatically appear here.</p>
     </div>
 
     <!-- Table -->
@@ -54,7 +40,7 @@ const emit = defineEmits<{
       <table class="w-full text-left border-collapse">
         <thead>
           <tr class="bg-black/[0.018] border-b border-black/[0.04]">
-            <th class="px-4 py-2 text-xs font-semibold text-black/50 w-[120px]">Contract ID</th>
+            <th class="px-4 py-2 text-xs font-semibold text-black/50 w-[140px]">Contract ID</th>
             <th class="px-4 py-2 text-xs font-semibold text-black/50">Description</th>
             <th class="px-4 py-2 text-xs font-semibold text-black/50 w-[180px]">Period</th>
             <th class="px-4 py-2 text-xs font-semibold text-black/50 w-[100px]">Status</th>
@@ -62,11 +48,19 @@ const emit = defineEmits<{
           </tr>
         </thead>
         <tbody class="divide-y divide-black/[0.04]">
-          <tr v-for="c in contracts" :key="c.associationId" class="hover:bg-black/[0.005] transition-colors">
-            <td class="px-4 py-3 text-xs font-mono font-medium text-brand-dark">
-              {{ c.contractId }}
+          <tr
+            v-for="c in contracts"
+            :key="c.associationId"
+            @click="emit('open-contract', c.contractId)"
+            class="hover:bg-black/[0.018] cursor-pointer transition-colors group"
+          >
+            <td class="px-4 py-3 text-xs font-mono font-medium text-brand-dark group-hover:text-brand-blue transition-colors">
+              <span class="inline-flex items-center gap-1.5 font-semibold underline decoration-transparent group-hover:decoration-brand-blue transition-all">
+                {{ c.contractId }}
+                <ExternalLink class="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </span>
             </td>
-            <td class="px-4 py-3 text-xs text-black/70 font-medium">
+            <td class="px-4 py-3 text-xs text-black/70 font-medium group-hover:text-black transition-colors">
               {{ c.description }}
             </td>
             <td class="px-4 py-3 text-xs text-black/50">
@@ -80,7 +74,7 @@ const emit = defineEmits<{
                 {{ c.engagementStatus }}
               </span>
             </td>
-            <td v-if="canManage" class="px-4 py-3 text-xs text-right">
+            <td v-if="canManage" class="px-4 py-3 text-xs text-right" @click.stop>
               <button
                 type="button"
                 @click="emit('detach', c.associationId)"
