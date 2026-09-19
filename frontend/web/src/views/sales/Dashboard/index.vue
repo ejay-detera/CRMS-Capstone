@@ -1,16 +1,21 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { LayoutDashboard, Sparkles, TrendingUp } from 'lucide-vue-next'
 import { remainingDays } from '@/types/contract'
-import RecentRequestsTable from './RecentRequestsTable.vue'
-import ContractStatusPanel from './ContractStatusPanel.vue'
-import SalesTrendChart from './SalesTrendChart.vue'
-import SalesStatusChart from './SalesStatusChart.vue'
-import SalesCategoryChart from './SalesCategoryChart.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
+import { useApiCache } from '@/composables/useApiCache'
+import DashboardOverviewTab from './DashboardOverviewTab.vue'
+import OwnDiagnosticTab from '@/components/dashboard/insights/OwnDiagnosticTab.vue'
+import OwnPredictiveTab from '@/components/dashboard/insights/OwnPredictiveTab.vue'
 
-const { state: authState } = useAuth()
+const { state: authState, hasPermission } = useAuth()
 const { error } = useToast()
+
+const canUseAiInsights = computed(() => hasPermission('cms.ai.risk_assessment'))
+
+type Tab = 'overview' | 'diagnostic' | 'predictive'
+const activeTab = ref<Tab>('overview')
 
 // ── Live clock ──────────────────────────────────────────────────
 const now = ref(new Date())
@@ -33,14 +38,11 @@ const formattedTime = computed(() =>
 
 const userFirstName = computed(() => (authState.user as any)?.profile?.first_name || authState.user?.first_name || 'Sales Rep')
 
-import { useApiCache } from '@/composables/useApiCache'
-
 const { state: cacheState, fetchDashboard } = useApiCache()
 
-// ── Cached live data ─────────────────────────────────────────────
+// ── Cached live data — scoped to the current user by useApiCache/backend ──
 const contracts = computed(() => cacheState.contracts || [])
 const requests = computed(() => cacheState.requests || [])
-const recentRequests = computed(() => requests.value.slice(0, 6))
 const loading = computed(() => cacheState.contractsLoading || cacheState.requestsLoading)
 
 async function fetchDashboardData() {
@@ -56,13 +58,6 @@ onMounted(() => {
 })
 
 const withDays = computed(() => contracts.value.map(c => ({ ...c, days: remainingDays(c.endDate) })))
-
-const statCards = computed(() => [
-  { label: 'My Contracts',    value: withDays.value.filter(c => c.approvalStatus === 'Approved').length },
-  { label: 'Pending',         value: requests.value.filter(r => r.status === 'Pending' || r.status === 'Under Review').length },
-  { label: 'Expiring Soon',   value: withDays.value.filter(c => c.approvalStatus === 'Approved' && c.days >= 0 && c.days <= 30).length },
-  { label: 'Approved',        value: requests.value.filter(r => r.status === 'Approved').length },
-])
 </script>
 
 <template>
@@ -81,88 +76,50 @@ const statCards = computed(() => [
       </div>
     </div>
 
+    <!-- Tabs -->
+    <div class="flex items-center gap-1 bg-black/4 rounded-xl p-1 w-fit border border-black/5">
+      <button
+        @click="activeTab = 'overview'"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all"
+        :class="activeTab === 'overview' ? 'bg-white text-black shadow-xs' : 'text-black/50 hover:text-black'"
+      >
+        <LayoutDashboard class="w-4 h-4 text-brand-navy" />
+        Overview
+      </button>
+      <button
+        v-if="canUseAiInsights"
+        @click="activeTab = 'diagnostic'"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all"
+        :class="activeTab === 'diagnostic' ? 'bg-white text-black shadow-xs' : 'text-black/50 hover:text-black'"
+      >
+        <Sparkles class="w-4 h-4 text-brand-blue" />
+        My Diagnostic
+      </button>
+      <button
+        v-if="canUseAiInsights"
+        @click="activeTab = 'predictive'"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all"
+        :class="activeTab === 'predictive' ? 'bg-white text-black shadow-xs' : 'text-black/50 hover:text-black'"
+      >
+        <TrendingUp class="w-4 h-4 text-brand-navy" />
+        My Predictive
+      </button>
+    </div>
+
     <!-- Skeletal loader during fetch -->
     <div v-if="loading" class="space-y-6">
-      <!-- 1. KPI Cards (Stats summary) -->
       <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 animate-pulse">
         <div v-for="i in 4" :key="i" class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
           <div class="h-3.5 w-24 bg-black/5 rounded mb-4"></div>
           <div class="h-8 w-12 bg-black/5 rounded"></div>
         </div>
       </div>
-      
-      <!-- 2. Row 1: Trend Chart + Status Donut -->
-      <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 animate-pulse">
-        <div class="xl:col-span-3 bg-white rounded-lg border border-black/8 p-6 h-[280px] flex flex-col justify-between">
-          <div class="h-4 w-32 bg-black/5 rounded"></div>
-          <div class="h-40 w-full bg-black/5 rounded"></div>
-        </div>
-        <div class="xl:col-span-2 bg-white rounded-lg border border-black/8 p-6 h-[280px] flex flex-col justify-between">
-          <div class="h-4 w-24 bg-black/5 rounded"></div>
-          <div class="h-40 w-full bg-black/5 rounded"></div>
-        </div>
-      </div>
-
-      <!-- 3. Row 2: Category Chart + Status Panel -->
-      <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 animate-pulse">
-        <div class="xl:col-span-3 bg-white rounded-lg border border-black/8 p-6 h-[280px] flex flex-col justify-between">
-          <div class="h-4 w-36 bg-black/5 rounded"></div>
-          <div class="h-40 w-full bg-black/5 rounded"></div>
-        </div>
-        <!-- Status Panel Skeleton (covers Expiring Soon & Quick Actions) -->
-        <div class="xl:col-span-2 space-y-4">
-          <div class="bg-white rounded-lg border border-black/8 p-5 h-[160px] flex flex-col justify-between">
-            <div class="h-3.5 w-24 bg-black/5 rounded"></div>
-            <div class="h-20 w-full bg-black/5 rounded"></div>
-          </div>
-          <div class="bg-white rounded-lg border border-black/8 p-5 h-[106px] flex flex-col justify-between">
-            <div class="h-3.5 w-24 bg-black/5 rounded"></div>
-            <div class="h-10 w-full bg-black/5 rounded"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4. Row 3: Recent Requests Table (Full Width) -->
-      <div class="bg-white rounded-lg border border-black/8 p-6 h-[320px] animate-pulse flex flex-col justify-between">
-        <div class="h-4 w-28 bg-black/5 rounded"></div>
-        <div class="h-48 w-full bg-black/5 rounded"></div>
-      </div>
     </div>
 
-    <!-- Active Analytics Dashboard -->
-    <div v-else class="space-y-6">
-      <!-- Stat cards -->
-      <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <div v-for="card in statCards" :key="card.label"
-          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
-          <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
-          <p class="text-3xl font-semibold tabular-nums text-black">{{ card.value }}</p>
-        </div>
-      </div>
+    <DashboardOverviewTab v-else-if="activeTab === 'overview'" :contracts="withDays" :requests="requests" />
 
-      <!-- Row 1: Trend Chart + Status Donut -->
-      <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        <div class="xl:col-span-3">
-          <SalesTrendChart :contracts="contracts" />
-        </div>
-        <div class="xl:col-span-2">
-          <SalesStatusChart :requests="requests" />
-        </div>
-      </div>
-
-      <!-- Row 2: Category Chart + Status Panel -->
-      <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        <div class="xl:col-span-3">
-          <SalesCategoryChart :contracts="contracts" />
-        </div>
-        <div class="xl:col-span-2">
-          <ContractStatusPanel :contracts="withDays" />
-        </div>
-      </div>
-
-      <!-- Row 3: Recent Requests Table (Full Width) -->
-      <RecentRequestsTable :requests="recentRequests" />
-    </div>
+    <OwnDiagnosticTab v-else-if="activeTab === 'diagnostic' && canUseAiInsights" :contracts="withDays" />
+    <OwnPredictiveTab v-else-if="activeTab === 'predictive' && canUseAiInsights" :contracts="withDays" />
 
   </div>
 </template>

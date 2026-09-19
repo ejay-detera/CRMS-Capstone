@@ -2,7 +2,7 @@
 import { ref, onUnmounted } from 'vue'
 import { UploadCloud, FileType2, X, AlertCircle } from 'lucide-vue-next'
 import type { UploadedDoc } from '@/types/contract'
-import { useAuth } from '@/composables/useAuth'
+import { useDocumentUpload } from '@/composables/useDocumentUpload'
 
 export type { UploadedDoc }
 
@@ -13,98 +13,22 @@ const props = defineProps<{
 }>()
 const emit  = defineEmits<{ 'update:modelValue': [v: UploadedDoc[]] }>()
 
-const { state: authState } = useAuth()
-const MAX_BYTES = 10 * 1024 * 1024 // 10 MB
+const { detectType, validate: validateDoc, uploadFile: uploadDoc } = useDocumentUpload()
 const fileInput = ref<HTMLInputElement | null>(null)
 const dragOver  = ref(false)
 const fileError = ref('')
 
-function detectType(f: File): 'pdf' | 'docx' | null {
-  const name = f.name.toLowerCase()
-  if (f.type === 'application/pdf' || name.endsWith('.pdf')) return 'pdf'
-  if (
-    f.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-    name.endsWith('.docx')
-  ) return 'docx'
-  return null
-}
-
 function validate(f: File): string {
-  if (!detectType(f))     return 'Only PDF or DOCX files are accepted.'
-  if (f.size > MAX_BYTES) return `File exceeds the 10 MB limit (${(f.size / 1024 / 1024).toFixed(2)} MB).`
-  const isDuplicate = props.modelValue.some(d => d.name === f.name && d.size === f.size)
-  if (isDuplicate)        return 'This file has already been added.'
-  return ''
+  return validateDoc(f, props.modelValue)
 }
 
 async function uploadFile(doc: UploadedDoc, index: number) {
-  if (!doc.file) return
-
-  // 1. Set status to uploading
-  const updatedValue = [...props.modelValue]
-  updatedValue[index] = {
-    ...doc,
-    uploadStatus: 'uploading'
-  }
-  emit('update:modelValue', updatedValue)
-
-  // Transition to scanning state after 400ms to show the upload step
-  const scanTimer = setTimeout(() => {
-    if (props.modelValue[index] && props.modelValue[index].uploadStatus === 'uploading') {
-      const scanningValue = [...props.modelValue]
-      scanningValue[index] = {
-        ...scanningValue[index],
-        uploadStatus: 'scanning'
-      }
-      emit('update:modelValue', scanningValue)
-    }
-  }, 450)
-
-  try {
-    const formData = new FormData()
-    formData.append('file', doc.file)
-
-    const res = await fetch(`${import.meta.env.VITE_CONTRACT_API_URL}/documents/upload`, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${authState.token}`,
-      },
-      body: formData,
-    })
-
-    clearTimeout(scanTimer)
-    const data = await res.json()
-
-    const finalValue = [...props.modelValue]
-    if (res.ok) {
-      // 2. Success (Malware free)
-      finalValue[index] = {
-        ...finalValue[index],
-        id: data.data.document_id,
-        uploadStatus: 'success',
-        scanWarning: data.scan_warning
-      }
-    } else {
-      // 3. Error (Malware detected or validation failure)
-      const msg = data.errors?.file?.[0] || data.message || 'Upload failed.'
-      finalValue[index] = {
-        ...finalValue[index],
-        uploadStatus: 'error',
-        errorMessage: msg
-      }
-    }
-    emit('update:modelValue', finalValue)
-  } catch (err) {
-    clearTimeout(scanTimer)
-    const finalValue = [...props.modelValue]
-    finalValue[index] = {
-      ...finalValue[index],
-      uploadStatus: 'error',
-      errorMessage: 'Network error. Failed to scan file.'
-    }
-    emit('update:modelValue', finalValue)
-  }
+  await uploadDoc(doc, (patch) => {
+    const updatedValue = [...props.modelValue]
+    if (!updatedValue[index]) return
+    updatedValue[index] = { ...updatedValue[index], ...patch }
+    emit('update:modelValue', updatedValue)
+  })
 }
 
 function selectFile(f: File) {

@@ -31,7 +31,6 @@ import {
   Bell,
   User,
   Home,
-  BarChart3,
 } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
@@ -77,7 +76,6 @@ const navGroups = [
     items: [
       { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
       { title: "Contracts", url: "/admin/contracts", icon: FileText },
-      { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
     ],
   },
   {

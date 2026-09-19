@@ -14,7 +14,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [v: boolean]
-  'success': [data: OcrExtractedData]
+  'success': [data: OcrExtractedData, file: File]
 }>()
 
 const { error: ocrError, loading: ocrLoading, extractFromFile } = useOcr()
@@ -135,11 +135,12 @@ onUnmounted(() => {
 
 async function handleExtract() {
   if (!file.value) return
+  const scannedFile = file.value
   stage.value = 'scanning'
   startProgressSimulation()
 
   try {
-    const result = await extractFromFile(file.value, props.candidatePartners)
+    const result = await extractFromFile(scannedFile, props.candidatePartners)
     stopProgressSimulation()
 
     if (result) {
@@ -148,7 +149,7 @@ async function handleExtract() {
       
       // Short delay before closing and populating form to show success state
       setTimeout(() => {
-        emit('success', result)
+        emit('success', result, scannedFile)
         handleClose()
       }, 800)
     } else {

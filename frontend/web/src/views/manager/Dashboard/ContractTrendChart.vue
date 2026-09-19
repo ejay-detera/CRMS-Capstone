@@ -1,106 +1,107 @@
 <script setup lang="ts">
 import { BRAND_HEX } from '@/constants/theme'
-import { computed, ref } from 'vue'
-import { VisXYContainer, VisStackedBar, VisAxis, VisTooltip, VisCrosshair } from '@unovis/vue'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select'
+import { computed } from 'vue'
+import { VisXYContainer, VisLine, VisAxis, VisTooltip, VisCrosshair } from '@unovis/vue'
 import type { Contract } from '@/types/contract'
+import type { TimeFilterOption } from '@/composables/useTimeFilter'
+import { TIME_FILTER_LABELS } from '@/composables/useTimeFilter'
 
+// Pure display component: the Today/This Week/Last Month filter and the
+// Year override both live in the parent Overview tab (single filter row,
+// see TimeFilterBar + YearFilterSelect) so there's only one set of filter
+// controls on screen. This chart just renders whichever mode is active.
 const props = defineProps<{
   contracts: Contract[]
+  timeFilter: TimeFilterOption
+  year: number | null
 }>()
 
-type Range = '3M' | '6M' | '12M'
+// Buckets to plot along the X axis, depending on mode:
+// - Year override: 12 calendar months of that year.
+// - 'today': hourly buckets for the current day.
+// - 'week': the 7 days of the current Monday-start week.
+// - 'month': daily buckets across the prior completed calendar month.
+type Bucket = { label: string; key: string; count: number }
 
-const range = ref<Range>('12M')
-const selectedYear = ref<number | null>(null)
+const today = new Date()
 
-const availableYears = computed(() => {
-  const years = new Set<number>()
-  props.contracts.forEach(c => {
-    if (!c.startDate) return
-    const yr = new Date(c.startDate).getFullYear()
-    years.add(yr)
+const buckets = computed<Bucket[]>(() => {
+  if (props.year !== null) {
+    const yr = props.year
+    return Array.from({ length: 12 }, (_, m) => {
+      const d = new Date(yr, m, 1)
+      return {
+        label: d.toLocaleString('en-US', { month: 'short' }),
+        key: `${yr}-${String(m + 1).padStart(2, '0')}`,
+        count: 0,
+      }
+    })
+  }
+
+  if (props.timeFilter === 'today') {
+    return Array.from({ length: 24 }, (_, h) => ({
+      label: h === 0 ? '12am' : h < 12 ? `${h}am` : h === 12 ? '12pm' : `${h - 12}pm`,
+      key: `${today.toISOString().split('T')[0]}-${String(h).padStart(2, '0')}`,
+      count: 0,
+    }))
+  }
+
+  if (props.timeFilter === 'week') {
+    const day = today.getDay()
+    const diffToMonday = day === 0 ? 6 : day - 1
+    const monday = new Date(today)
+    monday.setDate(monday.getDate() - diffToMonday)
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday)
+      d.setDate(monday.getDate() + i)
+      return {
+        label: d.toLocaleString('en-US', { weekday: 'short' }),
+        key: d.toISOString().split('T')[0],
+        count: 0,
+      }
+    })
+  }
+
+  // 'month': daily buckets across the most recently completed calendar month
+  const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const firstOfLastMonth = new Date(firstOfThisMonth.getFullYear(), firstOfThisMonth.getMonth() - 1, 1)
+  const daysInLastMonth = new Date(firstOfLastMonth.getFullYear(), firstOfLastMonth.getMonth() + 1, 0).getDate()
+  return Array.from({ length: daysInLastMonth }, (_, i) => {
+    const d = new Date(firstOfLastMonth.getFullYear(), firstOfLastMonth.getMonth(), i + 1)
+    return {
+      label: String(d.getDate()),
+      key: d.toISOString().split('T')[0],
+      count: 0,
+    }
   })
-  return Array.from(years).sort((a, b) => b - a)
 })
 
-function handleYearSelect(v: string) {
-  if (v === '__none__') {
-    selectedYear.value = null
-  } else {
-    selectedYear.value = Number(v)
+function bucketKeyFor(date: Date): string {
+  if (props.year !== null) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
   }
-}
-
-function handleRangeClick(r: Range) {
-  selectedYear.value = null
-  range.value = r
+  if (props.timeFilter === 'today') {
+    return `${date.toISOString().split('T')[0]}-${String(date.getHours()).padStart(2, '0')}`
+  }
+  return date.toISOString().split('T')[0]
 }
 
 const trendData = computed(() => {
-  const months: { month: string; count: number; yearMonth: string; monthIndex: number }[] = []
-  
-  // Find reference date (latest start date among all contracts, or today, whichever is later)
-  const today = new Date()
-  let latestDate = new Date()
-  
+  const filled = buckets.value.map(b => ({ ...b }))
   props.contracts.forEach(c => {
     if (!c.startDate) return
     const d = new Date(c.startDate)
-    if (!isNaN(d.getTime()) && d > latestDate) {
-      latestDate = d
-    }
+    if (isNaN(d.getTime())) return
+    const key = bucketKeyFor(d)
+    const found = filled.find(b => b.key === key)
+    if (found) found.count++
   })
-
-  if (selectedYear.value !== null) {
-    const yr = selectedYear.value
-    // Generate all 12 months for selected calendar year
-    for (let m = 0; m < 12; m++) {
-      const d = new Date(yr, m, 1)
-      const label = d.toLocaleString('en-US', { month: 'short' })
-      const yearMonth = `${yr}-${String(m + 1).padStart(2, '0')}`
-      months.push({ month: label, count: 0, yearMonth, monthIndex: m })
-    }
-  } else {
-    // Generate relative months based on the reference date
-    let monthsToGenerate = 12
-    if (range.value === '3M') monthsToGenerate = 3
-    else if (range.value === '6M') monthsToGenerate = 6
-    else if (range.value === '12M') monthsToGenerate = 12
-
-    for (let i = monthsToGenerate - 1; i >= 0; i--) {
-      const d = new Date(latestDate.getFullYear(), latestDate.getMonth() - i, 1)
-      const label = d.toLocaleString('en-US', { month: 'short' })
-      const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-      months.push({ month: label, count: 0, yearMonth, monthIndex: d.getMonth() })
-    }
-  }
-
-  // Populate counts
-  props.contracts.forEach(c => {
-    if (!c.startDate) return
-    const cDate = new Date(c.startDate)
-    if (isNaN(cDate.getTime())) return
-    const ym = `${cDate.getFullYear()}-${String(cDate.getMonth() + 1).padStart(2, '0')}`
-    const found = months.find(m => m.yearMonth === ym)
-    if (found) {
-      found.count++
-    }
-  })
-
-  // Ensure chronological calendar month sorting ascending (June to December)
-  months.sort((a, b) => a.monthIndex - b.monthIndex)
-
-  return months
+  return filled
 })
 
 const chartSubtitle = computed(() => {
-  if (selectedYear.value !== null) {
-    return `Monthly trend for year ${selectedYear.value}`
-  }
-  return `Last ${range.value === '3M' ? 3 : (range.value === '6M' ? 6 : 12)} months`
+  if (props.year !== null) return `Monthly trend for year ${props.year}`
+  return `Trend for: ${TIME_FILTER_LABELS[props.timeFilter]}`
 })
 
 const yTickValues = computed(() => {
@@ -122,10 +123,10 @@ const yTickValues = computed(() => {
 
 const x = (_: any, i: number) => i
 const y = (d: any) => d.count
-const xTickFormat = (i: number) => trendData.value[Math.round(i)]?.month ?? ''
+const xTickFormat = (i: number) => trendData.value[Math.round(i)]?.label ?? ''
 const tooltipTemplate = (d: any) =>
   `<div class="bg-white border border-black/10 rounded-lg shadow-lg px-3 py-2 text-xs">
-    <p class="font-semibold text-black">${d.month}</p>
+    <p class="font-semibold text-black">${d.label}</p>
     <p class="text-black/50 mt-0.5">${d.count} contracts</p>
   </div>`
 </script>
@@ -134,37 +135,12 @@ const tooltipTemplate = (d: any) =>
   <div class="bg-white rounded-lg border border-black/8 shadow-sm overflow-hidden h-full">
     <div class="px-6 pt-5 pb-4 border-b border-black/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <h3 class="text-sm font-semibold text-black">Contracts per Month</h3>
+        <h3 class="text-sm font-semibold text-black">Contracts Trend</h3>
         <p class="text-xs text-black/40 mt-0.5">{{ chartSubtitle }}</p>
       </div>
-      <div class="flex items-center gap-3">
-        <!-- Relative range buttons -->
-        <div class="flex items-center gap-0.5 bg-black/4 rounded-md p-1">
-          <button v-for="r in (['3M', '6M', '12M'] as Range[])" :key="r"
-            @click="handleRangeClick(r)"
-            class="px-3 py-1 text-xs rounded transition-all font-medium"
-            :class="range === r && selectedYear === null
-              ? 'bg-white text-black shadow-sm'
-              : 'text-black/40 hover:text-black/60'">
-            {{ r }}
-          </button>
-        </div>
-        
-        <!-- Year Select dropdown -->
-        <Select :model-value="selectedYear !== null ? String(selectedYear) : '__none__'" @update:model-value="handleYearSelect">
-          <SelectTrigger class="w-24 h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-brand-blue/15">
-            <SelectValue placeholder="Year" />
-          </SelectTrigger>
-          <SelectContent class="bg-white border border-black/10 shadow-lg">
-            <SelectItem value="__none__">Year</SelectItem>
-            <SelectItem v-for="yr in availableYears" :key="yr" :value="String(yr)">{{ yr }}</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <div class="flex items-center gap-1.5 ml-2">
-          <div class="w-2.5 h-2.5 rounded-sm bg-brand-blue"></div>
-          <span class="text-xs text-black/40">Contracts</span>
-        </div>
+      <div class="flex items-center gap-1.5">
+        <div class="w-2.5 h-2.5 rounded-sm bg-brand-blue"></div>
+        <span class="text-xs text-black/40">Contracts</span>
       </div>
     </div>
     <div class="px-6 py-5 overflow-x-auto">
@@ -179,7 +155,7 @@ const tooltipTemplate = (d: any) =>
           '--vis-font-family': 'inherit',
         }"
       >
-        <VisStackedBar :x="x" :y="y" :color="BRAND_HEX.blue" :bar-padding="0.35" :rounded-corners="4" />
+        <VisLine :x="x" :y="y" :color="BRAND_HEX.blue" />
         <VisAxis type="x" :tick-format="xTickFormat" :tickValues="trendData.map((_, i) => i)" />
         <VisAxis type="y" :tickValues="yTickValues" :tickFormat="(v: number) => String(Math.round(v))" />
         <VisTooltip :horizontal-shift="20" />

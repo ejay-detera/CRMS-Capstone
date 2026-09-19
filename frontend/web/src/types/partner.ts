@@ -18,6 +18,8 @@ export interface Partner {
   tinNumber?: string | null
   contracts?: number
   totalValue?: string
+  /** ISO date the partner/supplier record was created, if the API returns it. */
+  createdAt?: string | null
 }
 
 export interface AddPartnerForm {

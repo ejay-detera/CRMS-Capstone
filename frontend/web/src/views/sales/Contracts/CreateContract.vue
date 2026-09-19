@@ -13,6 +13,7 @@ import { useCreateContractDraft } from '@/composables/useCreateContractDraft'
 import OcrImportDialog from '@/views/admin/Contracts/OcrImportDialog.vue'
 import type { OcrExtractedData } from '@/types/ocr'
 import PrefixedNumberInput from '@/components/shared/PrefixedNumberInput.vue'
+import { useDocumentUpload } from '@/composables/useDocumentUpload'
 
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
@@ -28,12 +29,40 @@ const canUseOcr = computed(() => hasPermission('cms.ai.ocr'))
 const canUseRiskAssessment = computed(() => hasPermission('cms.ai.risk_assessment'))
 
 const ocrOpen = ref(false)
+const { detectType: detectOcrDocType, validate: validateOcrDoc, uploadFile: uploadOcrDoc } = useDocumentUpload()
 
 const activePartnerNames = computed(() => {
   return vendorOptions.value.filter(v => v.status !== 'Suspended').map(v => v.name)
 })
 
-function handleOcrSuccess(data: OcrExtractedData) {
+function attachOcrFile(file: File) {
+  // Only PDF/DOCX are supported as contract documents; OCR also accepts
+  // images, which can't be represented as an UploadedDoc, so skip those.
+  const type = detectOcrDocType(file)
+  if (!type) return
+  if (validateOcrDoc(file, contractDocs.value)) return
+
+  const previewUrl = type === 'pdf' ? URL.createObjectURL(file) : ''
+  const newDoc: UploadedDoc = {
+    file,
+    name: file.name,
+    size: file.size,
+    type,
+    previewUrl,
+    uploadStatus: 'uploading',
+  }
+  contractDocs.value = [...contractDocs.value, newDoc]
+  const index = contractDocs.value.length - 1
+
+  uploadOcrDoc(newDoc, (patch) => {
+    if (!contractDocs.value[index]) return
+    const updated = [...contractDocs.value]
+    updated[index] = { ...updated[index], ...patch }
+    contractDocs.value = updated
+  })
+}
+
+function handleOcrSuccess(data: OcrExtractedData, file: File) {
   if (data.business_partner) {
     form.businessPartner = data.business_partner
     touched.businessPartner = true
@@ -54,6 +83,7 @@ function handleOcrSuccess(data: OcrExtractedData) {
     form.description = data.description
     touched.description = true
   }
+  attachOcrFile(file)
 }
 const loading      = ref(false)
 const showConfirm  = ref(false)

@@ -64,6 +64,7 @@ export function usePartners() {
             phone: item.contact_number || '',
             address: item.address || '',
             bpCode: bpCode,
+            createdAt: item.created_at ?? null,
           }
         } else {
           return {
@@ -78,7 +79,8 @@ export function usePartners() {
             contactPerson: item.contact_person || '',
             email: item.email || '',
             phone: item.contact_number || '',
-            address: item.address || ''
+            address: item.address || '',
+            createdAt: item.created_at ?? null,
           }
         }
       })

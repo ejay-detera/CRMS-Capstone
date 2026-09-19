@@ -43,11 +43,6 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/manager/RiskAssessment/index.vue'),
       },
       {
-        path: 'analytics',
-        name: 'admin-analytics',
-        component: () => import('@/views/admin/Analytics/index.vue'),
-      },
-      {
         path: 'users',
         name: 'admin-users',
         component: () => import('@/views/admin/Users/index.vue'),
@@ -121,11 +116,6 @@ const routes: Array<RouteRecordRaw> = [
         path: 'dashboard',
         name: 'manager-dashboard',
         component: () => import('@/views/manager/Dashboard/index.vue'),
-      },
-      {
-        path: 'analytics',
-        name: 'manager-analytics',
-        component: () => import('@/views/admin/Analytics/index.vue'),
       },
       {
         path: 'contracts',
