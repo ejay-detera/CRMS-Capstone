@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { CheckCheck } from 'lucide-vue-next'
 import NotificationList from '@/components/shared/NotificationList.vue'
 import { useNotifications } from '@/composables/useNotifications'
@@ -11,20 +11,25 @@ const { success } = useToast()
 
 const activeTab   = ref<TabKey>('all')
 const searchQuery = ref('')
+const currentPage = ref(1)
+const itemsPerPage = 15
 
-const allCount      = computed(() => notifications.value.filter(n => !n.isArchived).length)
+const allCount      = computed(() => notifications.value.filter(n => !n.isArchived && n.type !== 'system').length)
+const systemCount   = computed(() => notifications.value.filter(n => !n.isArchived && n.type === 'system').length)
 const archiveCount  = computed(() => notifications.value.filter(n => n.isArchived).length)
 const favoriteCount = computed(() => notifications.value.filter(n => n.isFavorite && !n.isArchived).length)
 
 const tabs = computed(() => [
   { key: 'all'      as TabKey, label: 'All',       count: allCount.value      },
+  { key: 'system'   as TabKey, label: 'System',    count: systemCount.value   },
   { key: 'archive'  as TabKey, label: 'Archive',   count: archiveCount.value  },
   { key: 'favorite' as TabKey, label: 'Favorite',  count: favoriteCount.value },
 ])
 
 const filtered = computed(() => {
   let list = notifications.value
-  if (activeTab.value === 'all')      list = list.filter(n => !n.isArchived)
+  if (activeTab.value === 'all')      list = list.filter(n => !n.isArchived && n.type !== 'system')
+  if (activeTab.value === 'system')   list = list.filter(n => !n.isArchived && n.type === 'system')
   if (activeTab.value === 'archive')  list = list.filter(n =>  n.isArchived)
   if (activeTab.value === 'favorite') list = list.filter(n =>  n.isFavorite && !n.isArchived)
   if (searchQuery.value.trim()) {
@@ -33,6 +38,12 @@ const filtered = computed(() => {
   }
   return list
 })
+
+watch([activeTab, searchQuery], () => { currentPage.value = 1 })
+
+const paginated = computed(() =>
+  filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
+)
 
 function toggleRead(id: string)     { markRead(id) }
 function toggleFavorite(id: string) { const n = notifications.value.find(x => x.id === id); if (n) updateState(id, { isFavorite: !n.isFavorite }) }
@@ -69,9 +80,13 @@ onMounted(async () => {
     <NotificationList
       :tabs="tabs"
       :filtered="filtered"
+      :paginated="paginated"
+      :current-page="currentPage"
+      :items-per-page="itemsPerPage"
       :unread-count="unreadCount"
       v-model:active-tab="activeTab"
       v-model:search-query="searchQuery"
+      @update:current-page="currentPage = $event"
       @toggle-read="toggleRead"
       @toggle-favorite="toggleFavorite"
       @delete="deleteNotif"

@@ -14,13 +14,17 @@ const { success } = useToast()
 
 const activeTab   = ref<TabKey>('all')
 const searchQuery = ref('')
+const currentNotifPage = ref(1)
+const itemsPerPage = 15
 
-const allCount      = computed(() => notifications.value.filter(n => !n.isArchived).length)
+const allCount      = computed(() => notifications.value.filter(n => !n.isArchived && n.type !== 'system').length)
+const systemCount   = computed(() => notifications.value.filter(n => !n.isArchived && n.type === 'system').length)
 const archiveCount  = computed(() => notifications.value.filter(n => n.isArchived).length)
 const favoriteCount = computed(() => notifications.value.filter(n => n.isFavorite && !n.isArchived).length)
 
 const tabs = computed(() => [
   { key: 'all'      as TabKey, label: 'All',       count: allCount.value      },
+  { key: 'system'   as TabKey, label: 'System',    count: systemCount.value   },
   { key: 'archive'  as TabKey, label: 'Archive',   count: archiveCount.value  },
   { key: 'favorite' as TabKey, label: 'Favorite',  count: favoriteCount.value },
   { key: 'email_logs' as TabKey, label: 'Email Log', count: totalLogs.value     },
@@ -28,7 +32,8 @@ const tabs = computed(() => [
 
 const filtered = computed(() => {
   let list = notifications.value
-  if (activeTab.value === 'all')      list = list.filter(n => !n.isArchived)
+  if (activeTab.value === 'all')      list = list.filter(n => !n.isArchived && n.type !== 'system')
+  if (activeTab.value === 'system')   list = list.filter(n => !n.isArchived && n.type === 'system')
   if (activeTab.value === 'archive')  list = list.filter(n =>  n.isArchived)
   if (activeTab.value === 'favorite') list = list.filter(n =>  n.isFavorite && !n.isArchived)
   if (searchQuery.value.trim()) {
@@ -37,6 +42,12 @@ const filtered = computed(() => {
   }
   return list
 })
+
+watch([activeTab, searchQuery], () => { currentNotifPage.value = 1 })
+
+const paginatedNotifs = computed(() =>
+  filtered.value.slice((currentNotifPage.value - 1) * itemsPerPage, currentNotifPage.value * itemsPerPage)
+)
 
 function toggleRead(id: string)     { markRead(id) }
 function toggleFavorite(id: string) { const n = notifications.value.find(x => x.id === id); if (n) updateState(id, { isFavorite: !n.isFavorite }) }
@@ -80,9 +91,13 @@ onMounted(async () => {
     <NotificationList
       :tabs="tabs"
       :filtered="filtered"
+      :paginated="paginatedNotifs"
+      :current-page="currentNotifPage"
+      :items-per-page="itemsPerPage"
       :unread-count="unreadCount"
       v-model:active-tab="activeTab"
       v-model:search-query="searchQuery"
+      @update:current-page="currentNotifPage = $event"
       @toggle-read="toggleRead"
       @toggle-favorite="toggleFavorite"
       @delete="deleteNotif"

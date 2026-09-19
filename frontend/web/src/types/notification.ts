@@ -1,5 +1,5 @@
 export type NotifType = 'contract' | 'user' | 'partner' | 'system' | 'reminder'
-export type TabKey    = 'all' | 'archive' | 'favorite' | 'email_logs'
+export type TabKey    = 'all' | 'system' | 'archive' | 'favorite' | 'email_logs'
 
 export interface Notification {
   id:           string

@@ -17,6 +17,9 @@ function apiTypeToNotifType(notifType: string | undefined): NotifType {
   if (notifType === 'expiry_90' || notifType === 'expiry_30' || notifType === 'expiry_1') {
     return 'reminder'
   }
+  if (notifType === 'email_dispatch' || notifType === 'new_vendor') {
+    return 'system'
+  }
   return 'contract'
 }
 

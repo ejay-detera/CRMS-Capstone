@@ -3,24 +3,31 @@ import { ref, watch, computed } from 'vue'
 import { Bell, Search, Trash2, Check, Minus } from 'lucide-vue-next'
 import NotificationItem from './NotificationItem.vue'
 import ConfirmationDialog from './ConfirmationDialog.vue'
+import TablePagination from './TablePagination.vue'
 import type { Notification, TabKey } from '@/types/notification'
 
 const props = defineProps<{
-  tabs:        { key: TabKey; label: string; count: number }[]
-  activeTab:   TabKey
-  searchQuery: string
-  filtered:    Notification[]
+  tabs:         { key: TabKey; label: string; count: number }[]
+  activeTab:    TabKey
+  searchQuery:  string
+  filtered:     Notification[]
+  paginated?:   Notification[]
+  currentPage?: number
+  itemsPerPage?: number
   unreadCount: number
 }>()
 
 const emit = defineEmits<{
   'update:activeTab':   [tab: TabKey]
   'update:searchQuery': [q: string]
+  'update:currentPage': [page: number]
   'toggle-read':        [id: string]
   'toggle-favorite':    [id: string]
   'delete':             [id: string]
   'delete-selected':    [ids: string[]]
 }>()
+
+const displayed = computed(() => props.paginated ?? props.filtered)
 
 const showDeleteConfirm = ref(false)
 const notifIdToDelete = ref<string | null>(null)
@@ -41,8 +48,8 @@ function confirmDelete() {
 const showDeleteAllConfirm = ref(false)
 const selectedIds = ref<Set<string>>(new Set())
 
-const allSelected = computed(() => props.filtered.length > 0 && selectedIds.value.size === props.filtered.length)
-const someSelected = computed(() => selectedIds.value.size > 0 && selectedIds.value.size < props.filtered.length)
+const allSelected = computed(() => displayed.value.length > 0 && selectedIds.value.size === displayed.value.length)
+const someSelected = computed(() => selectedIds.value.size > 0 && selectedIds.value.size < displayed.value.length)
 
 watch(() => props.filtered, () => {
   selectedIds.value.clear()
@@ -52,7 +59,7 @@ function toggleSelectAll() {
   if (allSelected.value) {
     selectedIds.value.clear()
   } else {
-    props.filtered.forEach(n => selectedIds.value.add(n.id))
+    displayed.value.forEach(n => selectedIds.value.add(n.id))
   }
 }
 
@@ -128,7 +135,7 @@ function confirmDeleteAll() {
         </div>
 
         <NotificationItem
-          v-for="notif in filtered"
+          v-for="notif in displayed"
           :key="notif.id"
           :notif="notif"
           :selected="selectedIds.has(notif.id)"
@@ -138,6 +145,17 @@ function confirmDeleteAll() {
           @delete="triggerDelete"
         />
       </template>
+    </div>
+
+    <div v-if="activeTab !== 'email_logs' && paginated && currentPage !== undefined && itemsPerPage !== undefined"
+      class="flex justify-center px-6 py-4 border-t border-black/5">
+      <TablePagination
+        :current-page="currentPage"
+        :total-items="filtered.length"
+        :items-per-page="itemsPerPage"
+        :current-page-items-count="paginated.length"
+        @update:current-page="emit('update:currentPage', $event)"
+      />
     </div>
 
     <ConfirmationDialog
