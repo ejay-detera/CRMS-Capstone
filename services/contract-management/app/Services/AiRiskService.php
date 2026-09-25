@@ -32,7 +32,7 @@ class AiRiskService
             $response = Http::withHeaders([
                 'Accept'            => 'application/json',
                 'X-Internal-Secret' => $this->secret,
-            ])->get("{$this->baseUrl}/internal/contracts/{$contractId}/risk-level");
+            ])->timeout(5)->get("{$this->baseUrl}/internal/contracts/{$contractId}/risk-level");
 
             if ($response->successful()) {
                 return $response->json('risk_level');

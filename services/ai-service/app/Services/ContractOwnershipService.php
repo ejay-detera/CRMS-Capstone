@@ -27,7 +27,7 @@ class ContractOwnershipService
             $response = Http::withHeaders([
                 'Accept'            => 'application/json',
                 'X-Internal-Secret' => $this->secret,
-            ])->get("{$this->baseUrl}/internal/contracts/{$contractId}/owner");
+            ])->timeout(5)->get("{$this->baseUrl}/internal/contracts/{$contractId}/owner");
 
             return $response->successful() ? $response->json() : null;
         } catch (\Exception $e) {
@@ -55,7 +55,7 @@ class ContractOwnershipService
             $response = Http::withHeaders([
                 'Accept'            => 'application/json',
                 'X-Internal-Secret' => $this->secret,
-            ])->post("{$this->baseUrl}/internal/contracts/resolve-batch", [
+            ])->timeout(5)->post("{$this->baseUrl}/internal/contracts/resolve-batch", [
                 'ids' => array_values($ids),
             ]);
 

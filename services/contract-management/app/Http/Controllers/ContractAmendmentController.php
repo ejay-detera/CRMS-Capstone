@@ -31,6 +31,24 @@ class ContractAmendmentController extends Controller
         $this->notificationService = $notificationService;
     }
 
+    /**
+     * Resolve a contract code (e.g. 'CTR-JUEIF7') or numeric ID to its integer primary key.
+     */
+    private function resolveContractId(mixed $id): ?int
+    {
+        if ($id === null) {
+            return null;
+        }
+        if (is_numeric($id)) {
+            return (int) $id;
+        }
+        if (is_string($id)) {
+            $contract = Contract::where('contract_code', $id)->first();
+            return $contract?->contract_id;
+        }
+        return null;
+    }
+
     private function formatAmendment(ContractAmendment $amd): array
     {
         $docs = [];
@@ -104,7 +122,7 @@ class ContractAmendmentController extends Controller
 
         // Normalize camelCase fields from frontend
         $normalized = [
-            'contract_id'     => $data['contract_id'] ?? $data['contractId'] ?? null,
+            'contract_id'     => $this->resolveContractId($data['contract_id'] ?? $data['contractId'] ?? null),
             'bp_name'         => $data['bp_name'] ?? $data['businessPartner'] ?? null,
             'category'        => $data['category'] ?? null,
             'item_code'       => $data['item_code'] ?? $data['itemCode'] ?? null,
