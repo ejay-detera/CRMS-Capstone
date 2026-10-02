@@ -283,7 +283,7 @@ const user = computed(() => {
                   <User class="w-4 h-4 text-black/60" />
                   <span>My Profile</span>
                 </button>
-                <a href="http://localhost:5173/"
+                <a href="/"
                   class="w-full flex items-center gap-3 px-2 py-2 text-sm text-black hover:bg-black/5 rounded-lg transition-colors text-left no-underline">
                   <Home class="w-4 h-4 text-black/60" />
                   <span>Back to Home</span>

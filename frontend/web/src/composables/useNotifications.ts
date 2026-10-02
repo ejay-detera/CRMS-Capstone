@@ -6,11 +6,14 @@ const BASE_URL = import.meta.env.VITE_NOTIFICATION_API_URL as string
 
 function makeHeaders(): HeadersInit {
   const { state } = useAuth()
-  return {
+  const headers: Record<string, string> = {
     'Accept':        'application/json',
     'Content-Type':  'application/json',
-    'Authorization': `Bearer ${state.token}`,
   }
+  if (state.token && state.token !== 'null' && state.token !== 'undefined') {
+    headers['Authorization'] = `Bearer ${state.token}`
+  }
+  return headers
 }
 
 function apiTypeToNotifType(notifType: string | undefined): NotifType {
@@ -66,7 +69,10 @@ export function useNotifications() {
   async function fetchNotifications(): Promise<void> {
     loading.value = true
     try {
-      const res  = await fetch(`${BASE_URL}/notifications`, { headers: makeHeaders() })
+      const res  = await fetch(`${BASE_URL}/notifications`, {
+        headers: makeHeaders(),
+        credentials: 'same-origin',
+      })
       const json = await res.json()
       if (res.ok) {
         notifications.value = (json.data ?? []).map(mapNotification)
@@ -83,8 +89,9 @@ export function useNotifications() {
     if (notif) notif.isRead = true
     try {
       await fetch(`${BASE_URL}/notifications/${id}/read`, {
-        method:  'PATCH',
-        headers: makeHeaders(),
+        method:      'PATCH',
+        headers:     makeHeaders(),
+        credentials: 'same-origin',
       })
     } catch (e) {
       console.error('Failed to mark read', e)
@@ -95,8 +102,9 @@ export function useNotifications() {
     notifications.value.forEach(n => { if (!n.isArchived) n.isRead = true })
     try {
       await fetch(`${BASE_URL}/notifications/read-all`, {
-        method:  'PATCH',
-        headers: makeHeaders(),
+        method:      'PATCH',
+        headers:     makeHeaders(),
+        credentials: 'same-origin',
       })
     } catch (e) {
       console.error('Failed to mark all read', e)
@@ -111,9 +119,10 @@ export function useNotifications() {
     }
     try {
       await fetch(`${BASE_URL}/notifications/${id}/state`, {
-        method:  'PATCH',
-        headers: makeHeaders(),
-        body:    JSON.stringify({
+        method:      'PATCH',
+        headers:     makeHeaders(),
+        credentials: 'same-origin',
+        body:        JSON.stringify({
           is_archived: patch.isArchived,
           is_favorite: patch.isFavorite,
         }),
