@@ -34,6 +34,15 @@ export function useAuth() {
     const profileRole = (state.user as any).profile?.role?.name
     return profileRole || state.user.role
   })
+
+  // The role's navigation group ("admin" | "manager" | "staff"), set by auth-module
+  // per role rather than hardcoded by role name. Drives CMS routing/layout
+  // selection so new custom roles (e.g. "Regulatory Officer") are routable
+  // just by tagging a nav_group — no CMS code change required.
+  const navGroup = computed<string | undefined>(() => {
+    if (!state.user) return undefined
+    return (state.user as any).profile?.role?.nav_group ?? undefined
+  })
   
   // Robustly extract and normalize permissions from state.user
   const permissions = computed<string[]>(() => {
@@ -234,6 +243,7 @@ export function useAuth() {
     isAuthenticated,
     user,
     role,
+    navGroup,
     permissions,
     setAuth,
     refreshPermissions,

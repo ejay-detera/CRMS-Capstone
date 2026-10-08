@@ -14,6 +14,7 @@ import OcrImportDialog from '@/views/admin/Contracts/OcrImportDialog.vue'
 import type { OcrExtractedData } from '@/types/ocr'
 import PrefixedNumberInput from '@/components/shared/PrefixedNumberInput.vue'
 import { useDocumentUpload } from '@/composables/useDocumentUpload'
+import { useContractTypes } from '@/composables/useContractTypes'
 
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
@@ -24,6 +25,7 @@ const { state: authState, hasPermission, role } = useAuth()
 const { state: cacheState, fetchContracts, invalidateContracts, invalidateRequests } = useApiCache()
 const { draft, saveDraft, restoreDraft, clearDraft } = useCreateContractDraft()
 const { triggerScan } = useRiskAssessment()
+const { contractTypes, fetchContractTypes } = useContractTypes()
 
 const canUseOcr = computed(() => hasPermission('cms.ai.ocr') || role.value === 'Admin')
 const canUseRiskAssessment = computed(() => hasPermission('cms.ai.risk_assessment') || role.value === 'Admin')
@@ -202,13 +204,10 @@ const errors = computed(() => ({
     : '',
 }))
 
-const categories = [
-  'Service Agreement',
-  'Partnership Agreement',
-  'Supply Contract',
-  'Equipment Lease',
-  'Equipment Maintenance',
-]
+// Sourced from contract-management's contract_categories lookup table
+// (fetched on mount) rather than hardcoded, so new contract types become
+// selectable without a frontend code change.
+const categories = computed(() => contractTypes.value)
 
 const regions: ContractRegion[] = ['Luzon', 'Visayas', 'Mindanao']
 
@@ -357,6 +356,7 @@ async function fetchPartnerNames() {
 
 onMounted(async () => {
   await fetchPartnerNames()
+  fetchContractTypes()
   if (route.query.partner) {
     form.businessPartner = String(route.query.partner)
     touched.businessPartner = true

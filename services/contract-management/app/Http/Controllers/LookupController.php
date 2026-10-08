@@ -23,7 +23,9 @@ class LookupController extends Controller
     {
         return match ($type) {
             'categories' => response()->json([
-                'data' => ContractCategory::orderBy('category_name')->pluck('category_name'),
+                'data' => ContractCategory::where('is_active', true)
+                    ->orderBy('category_name')
+                    ->pluck('category_name'),
             ]),
 
             'approval-statuses' => response()->json([

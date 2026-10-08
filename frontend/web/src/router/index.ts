@@ -330,10 +330,10 @@ const routes: Array<RouteRecordRaw> = [
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     redirect: () => {
-      const { role } = useAuth()
-      if (role.value === 'Admin') return '/admin/dashboard'
-      if (role.value === 'Manager') return '/manager/dashboard'
-      if (['Sales', 'Employee', 'Finance'].includes(role.value || '')) return '/sales/dashboard'
+      const { navGroup } = useAuth()
+      if (navGroup.value === 'admin') return '/admin/dashboard'
+      if (navGroup.value === 'manager') return '/manager/dashboard'
+      if (navGroup.value === 'staff') return '/sales/dashboard'
 
       // Fallback: escape CMS router entirely and go to auth-module login
       window.location.href = '/'
@@ -348,7 +348,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to: RouteLocationNormalized) => {
-  const { isAuthenticated, role } = useAuth()
+  const { isAuthenticated, navGroup } = useAuth()
   const { error } = useToast()
 
   const requiresAuth = to.path.startsWith('/admin') ||
@@ -373,27 +373,30 @@ router.beforeEach((to: RouteLocationNormalized) => {
     }
   }
 
-  // Role-based access control (Strict Role Isolation)
-  // CMS-capstone only supports standard roles: Admin, Manager, Sales, Employee, Finance
-  const allowedRoles = ['Admin', 'Manager', 'Sales', 'Employee', 'Finance']
+  // Role-based access control (Strict Nav-Group Isolation)
+  // CMS routes by nav_group ("admin" | "manager" | "staff"), a field set per
+  // role in auth-module, instead of hardcoding literal role names. This lets
+  // new custom roles (e.g. "Regulatory Officer") become routable just by
+  // tagging a nav_group on them in auth-module — no CMS code change needed.
+  const allowedNavGroups = ['admin', 'manager', 'staff']
 
-  // If the user's role isn't recognized by CMS (e.g., IT Admin, Super Admin), block them entirely
-  if (!allowedRoles.includes(role.value || '')) {
+  // If the user's role has no recognized nav_group, block them entirely
+  if (!allowedNavGroups.includes(navGroup.value || '')) {
     return { name: 'not-found' }
   }
 
-  // Admin can ONLY access /admin
-  if (to.path.startsWith('/admin') && role.value !== 'Admin') {
+  // admin nav_group can ONLY access /admin
+  if (to.path.startsWith('/admin') && navGroup.value !== 'admin') {
     return { name: 'not-found' }
   }
 
-  // Manager can access /manager
-  if (to.path.startsWith('/manager') && role.value !== 'Manager') {
+  // manager nav_group can access /manager
+  if (to.path.startsWith('/manager') && navGroup.value !== 'manager') {
     return { name: 'not-found' }
   }
 
-  // Sales/Employee/Finance can access /sales
-  if (to.path.startsWith('/sales') && !['Sales', 'Employee', 'Finance'].includes(role.value || '')) {
+  // staff nav_group can access /sales
+  if (to.path.startsWith('/sales') && navGroup.value !== 'staff') {
     return { name: 'not-found' }
   }
 

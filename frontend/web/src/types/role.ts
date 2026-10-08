@@ -1,6 +1,10 @@
 import type { Component } from 'vue'
 
-export type RoleKey = 'Admin' | 'Manager' | 'Sales'
+// Widened from a closed union to a plain string: admins can create arbitrary
+// custom roles (e.g. "Regulatory Officer"), so this can no longer be a fixed
+// set of literal names. Role identity/behavior should be derived from role
+// data (permissions, nav_group) rather than from matching this string.
+export type RoleKey = string
 
 export interface Permission {
   key:   string
