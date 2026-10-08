@@ -59,6 +59,19 @@ return [
 
     'features' => [
         'high_risk_approval_gate_enabled' => env('HIGH_RISK_APPROVAL_GATE_ENABLED', false),
+
+        /*
+        | workflow_engine_enabled: Phase 5 of the dynamic approval workflow
+        | engine plan. Defaults to OFF — with the flag off, contract
+        | creation/approval behaves exactly as before (the legacy single
+        | manager-approval flow), and no ApprovalInstance/ApprovalTask rows
+        | are ever created. When ON, a contract whose category has an
+        | ACTIVE workflow (see Workflow::status) is routed through that
+        | chain instead of the legacy immediate Approved/Pending path.
+        | Categories with no active workflow always use the legacy flow
+        | regardless of this flag (decision #9's fallback behavior).
+        */
+        'workflow_engine_enabled' => env('WORKFLOW_ENGINE_ENABLED', false),
     ],
 
 ];

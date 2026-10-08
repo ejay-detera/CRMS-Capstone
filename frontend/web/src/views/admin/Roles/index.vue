@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Shield, Users, UserCheck, Save, Loader2, AlertCircle } from 'lucide-vue-next'
+import { Shield, Users, UserCheck, Save, Loader2, AlertCircle, KeyRound, Workflow as WorkflowIcon } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
 import { useRolePermissions, UI_CATEGORIES } from '@/composables/useRolePermissions'
 import RoleCards       from './RoleCards.vue'
 import PermissionsPanel from './PermissionsPanel.vue'
+import ApprovalWorkflowsTab from './ApprovalWorkflows/index.vue'
 import type { ApiRole, RoleMeta } from '@/types/role'
 
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
+
+// Two tabs coexist here per design decision: the existing permission
+// matrix stays exactly as-is, and the new Workflow Builder is added
+// alongside it, not in place of it.
+type AdminRolesTab = 'permissions' | 'workflows'
+const activeTab = ref<AdminRolesTab>('permissions')
 
 const { success, error: toastError } = useToast()
 
@@ -128,6 +135,7 @@ onMounted(async () => {
         <p class="text-sm text-black/40 mt-0.5">Configure access control for each role.</p>
       </div>
       <button
+        v-if="activeTab === 'permissions'"
         @click="saveChanges"
         :disabled="isSaving || isLocked || isLoading"
         class="flex items-center gap-2 bg-brand-navy hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
@@ -138,44 +146,68 @@ onMounted(async () => {
       </button>
     </div>
 
-    <!-- Loading skeleton -->
-    <template v-if="isLoading">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div v-for="i in 3" :key="i"
-          class="h-28 rounded-xl border border-black/8 bg-black/3 animate-pulse" />
-      </div>
-      <div class="h-64 rounded-xl border border-black/8 bg-black/3 animate-pulse" />
-    </template>
-
-    <!-- Error state -->
-    <div v-else-if="error"
-      class="flex items-center gap-3 p-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm">
-      <AlertCircle class="w-4 h-4 shrink-0" />
-      <span>{{ error }}</span>
-      <button @click="init" class="ml-auto font-semibold underline text-xs">Retry</button>
+    <!-- Tabs -->
+    <div class="flex items-center gap-1 bg-black/4 rounded-xl p-1 w-fit border border-black/5">
+      <button
+        @click="activeTab = 'permissions'"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all"
+        :class="activeTab === 'permissions' ? 'bg-white text-black shadow-xs' : 'text-black/50 hover:text-black'"
+      >
+        <KeyRound class="w-4 h-4 text-brand-navy" /> Permissions
+      </button>
+      <button
+        @click="activeTab = 'workflows'"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all"
+        :class="activeTab === 'workflows' ? 'bg-white text-black shadow-xs' : 'text-black/50 hover:text-black'"
+      >
+        <WorkflowIcon class="w-4 h-4 text-brand-blue" /> Approval Workflows
+      </button>
     </div>
 
-    <!-- Loaded state -->
-    <template v-else-if="roles.length">
-      <RoleCards
-        :roles="roles"
-        :role-meta-fn="roleMeta"
-        :enabled-counts="enabledCounts"
-        :active-role="activeRole"
-        @update:active-role="activeRole = $event"
-      />
+    <!-- Permissions tab -->
+    <template v-if="activeTab === 'permissions'">
+      <!-- Loading skeleton -->
+      <template v-if="isLoading">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div v-for="i in 3" :key="i"
+            class="h-28 rounded-xl border border-black/8 bg-black/3 animate-pulse" />
+        </div>
+        <div class="h-64 rounded-xl border border-black/8 bg-black/3 animate-pulse" />
+      </template>
 
-      <PermissionsPanel
-        v-if="activeRole && activeRoleMeta"
-        :active-role-name="activeRole.name"
-        :is-locked="isLocked"
-        :active-role-meta="activeRoleMeta"
-        :categories="UI_CATEGORIES"
-        :active-permissions="activePermSlugs"
-        @toggle-permission="handleTogglePermission"
-        @toggle-category="handleToggleCategory"
-      />
+      <!-- Error state -->
+      <div v-else-if="error"
+        class="flex items-center gap-3 p-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm">
+        <AlertCircle class="w-4 h-4 shrink-0" />
+        <span>{{ error }}</span>
+        <button @click="init" class="ml-auto font-semibold underline text-xs">Retry</button>
+      </div>
+
+      <!-- Loaded state -->
+      <template v-else-if="roles.length">
+        <RoleCards
+          :roles="roles"
+          :role-meta-fn="roleMeta"
+          :enabled-counts="enabledCounts"
+          :active-role="activeRole"
+          @update:active-role="activeRole = $event"
+        />
+
+        <PermissionsPanel
+          v-if="activeRole && activeRoleMeta"
+          :active-role-name="activeRole.name"
+          :is-locked="isLocked"
+          :active-role-meta="activeRoleMeta"
+          :categories="UI_CATEGORIES"
+          :active-permissions="activePermSlugs"
+          @toggle-permission="handleTogglePermission"
+          @toggle-category="handleToggleCategory"
+        />
+      </template>
     </template>
+
+    <!-- Approval Workflows tab -->
+    <ApprovalWorkflowsTab v-else />
 
     <ConfirmationDialog
       v-model:open="showSaveConfirm"

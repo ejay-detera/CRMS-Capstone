@@ -56,6 +56,27 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::patch('contract-amendments/{id}/status', [\App\Http\Controllers\ContractAmendmentController::class, 'updateStatus']);
     Route::get('contracts/{id}/versions', [\App\Http\Controllers\ContractAmendmentController::class, 'versionHistory']);
 
+    // Dynamic Approval Workflow Engine — Workflow Builder (Phase 4).
+    // Admin-only, matching the existing CMS Roles & Permissions admin page.
+    Route::middleware('role:Admin')->prefix('workflows')->group(function () {
+        Route::get('/contract-types',    [\App\Http\Controllers\WorkflowController::class, 'contractTypes']);
+        Route::get('/assignable-roles',  [\App\Http\Controllers\WorkflowController::class, 'assignableRoles']);
+        Route::get('/{id}',              [\App\Http\Controllers\WorkflowController::class, 'show']);
+        Route::post('/',                 [\App\Http\Controllers\WorkflowController::class, 'store']);
+        Route::put('/{id}',              [\App\Http\Controllers\WorkflowController::class, 'update']);
+        Route::post('/{id}/duplicate',   [\App\Http\Controllers\WorkflowController::class, 'duplicate']);
+        Route::delete('/{id}',           [\App\Http\Controllers\WorkflowController::class, 'destroy']);
+    });
+
+    // Dynamic Approval Workflow Engine — runtime (Phase 5). Any
+    // authenticated user may call these; eligibility to act on a given
+    // task is checked at the service layer (must currently hold the
+    // task's role), not via a blanket permission here.
+    Route::get('/contracts/{id}/approval-progress', [\App\Http\Controllers\ApprovalEngineController::class, 'progress'])
+        ->middleware('permission:cms.contracts.view');
+    Route::post('/contracts/{id}/approval-tasks/{taskId}/decision', [\App\Http\Controllers\ApprovalEngineController::class, 'decide'])
+        ->middleware('permission:cms.contracts.approve');
+
 });
 
 // Internal webhook for login/logout events from auth-service
