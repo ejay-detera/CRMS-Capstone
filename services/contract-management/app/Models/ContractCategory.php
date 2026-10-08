@@ -14,4 +14,14 @@ class ContractCategory extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function workflows()
+    {
+        return $this->hasMany(Workflow::class, 'contract_type_id', 'category_id');
+    }
+
+    public function activeWorkflow()
+    {
+        return $this->hasOne(Workflow::class, 'contract_type_id', 'category_id')->where('status', 'active');
+    }
 }

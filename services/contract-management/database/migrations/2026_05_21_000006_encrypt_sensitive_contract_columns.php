@@ -11,11 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        $hasBpNameIndex = \Illuminate\Support\Facades\DB::table('information_schema.statistics')
-            ->where('table_schema', \Illuminate\Support\Facades\DB::raw('DATABASE()'))
-            ->where('table_name', 'contracts')
-            ->where('index_name', 'contracts_bp_name_index')
-            ->exists();
+        // information_schema.statistics is MySQL-specific; the test
+        // environment runs this same migration against sqlite (see
+        // phpunit.xml), where that table doesn't exist and this query
+        // would throw before the migration could even run. Only probe for
+        // the index on drivers where this introspection table exists.
+        $hasBpNameIndex = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'mysql'
+            && \Illuminate\Support\Facades\DB::table('information_schema.statistics')
+                ->where('table_schema', \Illuminate\Support\Facades\DB::raw('DATABASE()'))
+                ->where('table_name', 'contracts')
+                ->where('index_name', 'contracts_bp_name_index')
+                ->exists();
 
         Schema::table('contracts', function (Blueprint $table) use ($hasBpNameIndex) {
             // Drop bp_name index since it cannot be searched effectively when encrypted
