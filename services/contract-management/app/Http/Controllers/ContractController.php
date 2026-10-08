@@ -8,6 +8,7 @@ use App\Models\ContractStatus;
 use App\Models\ContractApprovalStatus;
 use App\Models\ContractRegion;
 use App\Services\AuditLogService;
+use App\Services\ApprovalEngineService;
 use App\Jobs\SyncContractToMeilisearch;
 use App\Jobs\RemoveContractFromMeilisearch;
 use Illuminate\Http\Request;
@@ -19,11 +20,16 @@ class ContractController extends Controller
 {
     protected AuditLogService $auditLogService;
     protected \App\Services\AuthService $authService;
+    protected ApprovalEngineService $approvalEngine;
 
-    public function __construct(AuditLogService $auditLogService, \App\Services\AuthService $authService)
-    {
+    public function __construct(
+        AuditLogService $auditLogService,
+        \App\Services\AuthService $authService,
+        ApprovalEngineService $approvalEngine
+    ) {
         $this->auditLogService = $auditLogService;
         $this->authService = $authService;
+        $this->approvalEngine = $approvalEngine;
     }
 
     private function formatContract(Contract $contract): array
@@ -342,13 +348,25 @@ class ContractController extends Controller
         $role = $request->get('auth_role');
         $isManagerRole = in_array($role, ['Manager', 'Admin']);
 
+        // Dynamic Approval Workflow Engine (Phase 5): if this contract type
+        // has an active workflow, it must start out Pending regardless of
+        // who created it — the engine (not the creator's role) decides the
+        // outcome. Only applies when a chain actually exists; categories
+        // without one keep the legacy manager-auto-approve behavior.
+        // Resolved once here and reused below (store()) to avoid a second
+        // round-trip for the same lookup.
+        $activeWorkflow = $this->approvalEngine->isEnabled()
+            ? $this->approvalEngine->resolveActiveWorkflow((int) $cat->category_id)
+            : null;
+        $routedByEngine = $activeWorkflow !== null;
+
         // Resolve Approval Status and Workflow status
-        if ($isManagerRole) {
+        if ($isManagerRole && !$routedByEngine) {
             $approvalStatusName = 'Approved';
             $workflowStatusName = $incoming['status'] ?? 'SBSI Review';
         } else {
             $approvalStatusName = 'Pending';
-            $workflowStatusName = $incoming['status'] ?? null;
+            $workflowStatusName = $routedByEngine ? null : ($incoming['status'] ?? null);
         }
 
         $approvalStatus = ContractApprovalStatus::firstOrCreate(['status_name' => $approvalStatusName]);
@@ -409,6 +427,15 @@ class ContractController extends Controller
         );
 
         $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
+
+        // Dynamic Approval Workflow Engine (Phase 5) — additive only. If
+        // disabled, or the contract's category has no ACTIVE workflow,
+        // this is a no-op and the contract keeps the legacy
+        // Approved/Pending status set above (decision #9's fallback).
+        if ($activeWorkflow) {
+            $this->approvalEngine->startInstance($contract, $activeWorkflow);
+            $contract->refresh()->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
+        }
 
         SyncContractToMeilisearch::dispatch($this->formatContract($contract));
 
@@ -534,12 +561,23 @@ class ContractController extends Controller
         }
 
         // Reset approval status to pending if the contract was rejected and is being edited by the employee/sales owner
-        if (in_array($role, ['Sales', 'Employee']) && $contract->approvalStatus?->status_name === 'Rejected') {
+        $wasRejected = $contract->approvalStatus?->status_name === 'Rejected';
+        if (in_array($role, ['Sales', 'Employee']) && $wasRejected) {
             $pendingStatus = ContractApprovalStatus::firstOrCreate(['status_name' => 'Pending']);
             $updatePayload['approval_status_id'] = $pendingStatus->approval_status_id;
         }
 
         $contract->update($updatePayload);
+
+        // Dynamic Approval Workflow Engine (Phase 5): if this contract has
+        // a prior rejected run through the engine, resubmitting creates a
+        // new ApprovalInstance per the workflow's resubmit_mode (restart
+        // at step 1, or resume at the step that rejected). No-op for
+        // contracts never routed through the engine, or whose latest run
+        // isn't in revisions_required.
+        if ($wasRejected && $this->approvalEngine->isEnabled()) {
+            $this->approvalEngine->resubmit($contract->refresh());
+        }
 
         // Link MongoDB documents and delete removed ones
         $incomingDocIds = $incoming['document_ids'] ?? [];
@@ -809,6 +847,13 @@ class ContractController extends Controller
         $contract = Contract::where('contract_code', $id)
             ->orWhere('contract_id', $id)
             ->firstOrFail();
+
+        // Dynamic Approval Workflow Engine (Phase 5): this legacy endpoint
+        // is for the single-manager-approval flow only. A contract with an
+        // in-progress (or awaiting-resubmission) engine instance must be
+        // actioned via POST /contracts/{id}/approval-tasks/{taskId}/decision
+        // instead — throws a 409 pointing there.
+        $this->approvalEngine->guardLegacyStatusUpdate((int) $contract->contract_id);
 
         $request->validate([
             'approval_status' => 'required|string|in:Approved,Rejected',
