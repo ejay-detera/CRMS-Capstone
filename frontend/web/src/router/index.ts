@@ -329,15 +329,25 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
-    redirect: () => {
+    component: { render: () => null }, // never actually rendered; beforeEnter always redirects or cancels
+    // IMPORTANT: this used to be a `redirect` function. `redirect` must
+    // always return a valid route location — it cannot cancel navigation.
+    // The old fallback returned '/', which isn't a defined route, so
+    // Vue Router re-resolved this exact catch-all again, synchronously,
+    // forming an infinite loop inside the SPA (Chrome's "Throttling
+    // navigation" warning) while window.location.href never got a chance
+    // to take effect. A `beforeEnter` guard can legitimately return
+    // `false` to cancel the in-SPA navigation outright, leaving
+    // window.location.href as the only navigation that happens.
+    beforeEnter: () => {
       const { navGroup } = useAuth()
       if (navGroup.value === 'admin') return '/admin/dashboard'
       if (navGroup.value === 'manager') return '/manager/dashboard'
       if (navGroup.value === 'staff') return '/sales/dashboard'
 
-      // Fallback: escape CMS router entirely and go to auth-module login
+      // Fallback: escape CMS router entirely and go to auth-module login.
       window.location.href = '/'
-      return '/'
+      return false
     },
   },
 ]

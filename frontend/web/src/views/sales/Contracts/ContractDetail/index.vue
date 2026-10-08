@@ -19,6 +19,8 @@ import ContractDocumentsSection from './ContractDocumentsSection.vue'
 import ConfirmationDialog       from '@/components/shared/ConfirmationDialog.vue'
 import RejectionReasonModal     from './RejectionReasonModal.vue'
 import HighRiskApprovalModal    from '@/components/shared/HighRiskApprovalModal.vue'
+import ContractWorkflowTracker  from '@/components/shared/ContractWorkflowTracker/index.vue'
+import type { WorkflowProgress } from '@/types/contractWorkflow'
 import { AlertCircle } from 'lucide-vue-next'
 
 const route  = useRoute()
@@ -34,6 +36,87 @@ const id = route.params.id as string
 const contract        = ref<StoredContract | null>(null)
 const loadingContract = ref(true)
 const savingEdit      = ref(false)
+
+// ── Visual Contract Workflow Tracker — mock data (Phase 6) ────────────────
+// Local placeholder data only, per the project convention: no API calls,
+// no DB seeding. Will be swapped for a real fetch to
+// GET /contracts/{id}/approval-progress (contract-management, Phase 5) in
+// a follow-up once the component's visuals are confirmed. Scenario is
+// picked by `?workflowMock=` query param for easy manual testing of every
+// state (A = normal progress, the default).
+const workflowMockScenarios: Record<string, WorkflowProgress> = {
+  // Scenario A: normal progress — some completed, one active, rest pending.
+  A: {
+    contractId: 'CTR-1001', currentRun: 1,
+    runs: [{ runNumber: 1, groups: [
+      { id: 'g1', mode: 'sequential', nodes: [{ id: 'n1', title: 'Contract created', status: 'completed', actedAt: '2026-09-26T09:00:00Z', subText: 'Submitted by Procurement', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g2', mode: 'sequential', nodes: [{ id: 'n2', title: 'Regulatory', status: 'completed', actedAt: '2026-09-28T14:30:00Z', subText: 'Compliant with regional rules', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g3', mode: 'sequential', nodes: [{ id: 'n3', title: 'Sales', status: 'active', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g4', mode: 'sequential', nodes: [{ id: 'n4', title: 'Accounting', status: 'pending', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g5', mode: 'sequential', nodes: [{ id: 'n5', title: 'CEO (for review)', status: 'pending', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+    ] }],
+  },
+  // Scenario B: rejection — Sales rejects, downstream steps stay pending.
+  B: {
+    contractId: 'CTR-1002', currentRun: 1,
+    runs: [{ runNumber: 1, groups: [
+      { id: 'g1', mode: 'sequential', nodes: [{ id: 'n1', title: 'Contract created', status: 'completed', actedAt: '2026-09-26T09:00:00Z', subText: 'Submitted by Procurement', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g2', mode: 'sequential', nodes: [{ id: 'n2', title: 'Regulatory', status: 'completed', actedAt: '2026-09-28T14:30:00Z', subText: 'Compliant with regional rules', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g3', mode: 'sequential', nodes: [{ id: 'n3', title: 'Sales', status: 'rejected', actedAt: '2026-09-30T10:15:00Z', subText: 'Pricing terms need revision', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g4', mode: 'sequential', nodes: [{ id: 'n4', title: 'Accounting', status: 'pending', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g5', mode: 'sequential', nodes: [{ id: 'n5', title: 'CEO (for review)', status: 'pending', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+    ] }],
+  },
+  // Scenario C: parallel group + delegation on the final step, plus a
+  // renamed-role indicator on Regulatory to exercise decision #14.
+  C: {
+    contractId: 'CTR-1003', currentRun: 1,
+    runs: [{ runNumber: 1, groups: [
+      { id: 'g1', mode: 'sequential', nodes: [{ id: 'n1', title: 'Contract created', status: 'completed', actedAt: '2026-09-26T09:00:00Z', subText: 'Submitted by Procurement', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g2', mode: 'sequential', nodes: [{ id: 'n2', title: 'Regulatory Officer', status: 'completed', actedAt: '2026-09-28T14:30:00Z', subText: 'Compliant with regional rules', delegation: null, roleDeleted: false, roleRenamedFrom: 'Regulatory' }] },
+      { id: 'g3', mode: 'parallel', nodes: [
+        { id: 'n3a', title: 'Sales', status: 'completed', actedAt: '2026-09-29T11:00:00Z', subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null },
+        { id: 'n3b', title: 'Accounting', status: 'active', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null },
+      ] },
+      { id: 'g4', mode: 'sequential', nodes: [{ id: 'n4', title: 'CEO (for review)', status: 'completed', actedAt: '2026-10-01T08:00:00Z', subText: null, delegation: { delegateName: 'Alex Reyes', onBehalfOfRole: 'CEO' }, roleDeleted: false, roleRenamedFrom: null }] },
+    ] }],
+  },
+  // Scenario D: parallel rejection — Sales rejects, Accounting's sibling
+  // task is canceled (not rejected), per spec 5.4.
+  D: {
+    contractId: 'CTR-1004', currentRun: 1,
+    runs: [{ runNumber: 1, groups: [
+      { id: 'g1', mode: 'sequential', nodes: [{ id: 'n1', title: 'Contract created', status: 'completed', actedAt: '2026-09-26T09:00:00Z', subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g2', mode: 'sequential', nodes: [{ id: 'n2', title: 'Regulatory', status: 'completed', actedAt: '2026-09-28T14:30:00Z', subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g3', mode: 'parallel', nodes: [
+        { id: 'n3a', title: 'Sales', status: 'rejected', actedAt: '2026-09-30T10:15:00Z', subText: 'Pricing terms need revision', delegation: null, roleDeleted: false, roleRenamedFrom: null },
+        { id: 'n3b', title: 'Accounting', status: 'canceled', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null },
+      ] },
+      { id: 'g4', mode: 'sequential', nodes: [{ id: 'n4', title: 'CEO (for review)', status: 'pending', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+    ] }],
+  },
+  // Scenario E: restart — run 1 ended rejected (collapsed history), run 2
+  // in progress. Also exercises the deleted-role warning icon.
+  E: {
+    contractId: 'CTR-1005', currentRun: 2,
+    runs: [
+      { runNumber: 1, groups: [
+        { id: 'g1-r1', mode: 'sequential', nodes: [{ id: 'n1-r1', title: 'Contract created', status: 'completed', actedAt: '2026-08-01T09:00:00Z', subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+        { id: 'g2-r1', mode: 'sequential', nodes: [{ id: 'n2-r1', title: 'Regulatory', status: 'rejected', actedAt: '2026-08-05T10:00:00Z', subText: 'Missing permit documentation', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      ] },
+      { runNumber: 2, groups: [
+        { id: 'g1-r2', mode: 'sequential', nodes: [{ id: 'n1-r2', title: 'Contract created', status: 'completed', actedAt: '2026-09-26T09:00:00Z', subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+        { id: 'g2-r2', mode: 'sequential', nodes: [{ id: 'n2-r2', title: 'Compliance Reviewer', status: 'active', actedAt: null, subText: null, delegation: null, roleDeleted: true, roleRenamedFrom: null }] },
+      ] },
+    ],
+  },
+}
+
+const workflowTracker = computed<WorkflowProgress | null>(() => {
+  const scenario = (route.query.workflowMock as string) || 'A'
+  return workflowMockScenarios[scenario] ?? workflowMockScenarios.A
+})
+const workflowTrackerStatus = computed(() => (workflowTracker.value ? 'ready' as const : 'empty' as const))
 
 const amendmentStore = useAmendmentStore()
 const viewingSnapshotVersion = ref<number | null>(null)
@@ -741,6 +824,11 @@ const activeSnapForDiff = computed(() => {
         @toggle-reject="handleToggleReject"
         @confirm-reject="triggerReject"
         @open-risk-assessment="router.push(riskAssessmentPath)"
+      />
+
+      <ContractWorkflowTracker
+        :workflow="workflowTracker"
+        :status="workflowTrackerStatus"
       />
 
       <!-- Rejection input (manager rejecting) -->
