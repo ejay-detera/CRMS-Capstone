@@ -46,7 +46,117 @@ export interface WorkflowProgress {
   runs: WorkflowRun[] // at least one when status === 'ready'; latest last
 }
 
-// ── Derived display helpers (pure functions, no component state) ───────
+// ── Live-data API shapes (Phase 6 wiring, Phase 5 backend) ──────────────
+// Mirrors ApprovalEngineController::progress/formatRun/formatTask after the
+// Phase 6 enrichment (role_deleted / role_renamed_from / delegate_name /
+// is_current / current_step_id + contract_created_* for the synthetic node).
+
+export interface ApiApprovalTask {
+  id: number
+  step_id: number
+  auth_role_id: number
+  role_name: string | null
+  role_deleted: boolean
+  role_renamed_from: string | null
+  delegate_name: string | null
+  is_current: boolean
+  // Backend task statuses: pending/approved/rejected/canceled/on_hold.
+  // 'approved' maps to the tracker's 'completed' in mapProgressResponse.
+  status: NodeStatus | 'approved'
+  acted_by_user_id: number | null
+  acted_via_delegation: boolean
+  acted_at: string | null
+  comment: string | null
+}
+
+export interface ApiApprovalGroup {
+  step_id: number
+  mode: GroupMode
+  tasks: ApiApprovalTask[]
+}
+
+export interface ApiApprovalRun {
+  run_number: number
+  status: string
+  current_step_id: number | null
+  groups: ApiApprovalGroup[]
+}
+
+export interface ApprovalProgressResponse {
+  engine: boolean
+  contract_id?: string
+  contract_created_at?: string | null
+  contract_created_by?: string | null
+  runs: ApiApprovalRun[]
+}
+
+/**
+ * Map the backend approval-progress payload onto the presentational
+ * WorkflowProgress shape. Pure function (no fetch, no component state)
+ * so it stays unit-testable. Rules:
+ * - approved → completed; pending/on_hold flagged is_current → active,
+ *   otherwise pending; rejected/canceled/on_hold pass through.
+ * - comment → subText; role_name snapshot → title (fallback Role #id).
+ * - acted_via_delegation + delegate_name → delegation badge; the
+ *   on-behalf-of label is the step's role title.
+ * - A synthetic "Contract created" group is prepended from
+ *   contract_created_* so the track matches the Phase 6 mock rhythm.
+ */
+export function mapProgressResponse(contractId: string, json: ApprovalProgressResponse): WorkflowProgress {
+  const runs: WorkflowRun[] = json.runs.map((run) => {
+    const groups: WorkflowGroup[] = run.groups.map((g) => ({
+      id: `step-${g.step_id}`,
+      mode: g.mode,
+      nodes: g.tasks.map((t): WorkflowNode => {
+        // Backend 'approved' becomes the tracker's 'completed'.
+        let status: NodeStatus = t.status === 'approved' ? 'completed' : t.status
+        if (t.status === 'pending') {
+          // 'active' is the current pending step; future steps stay locked.
+          // on_hold keeps its own status so the amber empty-role badge
+          // (decision #12) still renders — index.vue treats it as current.
+          status = t.is_current ? 'active' : 'pending'
+        }
+        const title = t.role_name ?? `Role #${t.auth_role_id}`
+        return {
+          id: `task-${t.id}`,
+          title,
+          status,
+          actedAt: t.acted_at,
+          subText: t.comment,
+          delegation: t.acted_via_delegation && t.delegate_name
+            ? { delegateName: t.delegate_name, onBehalfOfRole: title }
+            : null,
+          roleDeleted: t.role_deleted,
+          roleRenamedFrom: t.role_deleted ? null : t.role_renamed_from,
+        }
+      }),
+    }))
+
+    // Synthetic creation node first (mirrors the mock scenarios' g1).
+    groups.unshift({
+      id: `created-run-${run.run_number}`,
+      mode: 'sequential',
+      nodes: [{
+        id: `created-run-${run.run_number}-node`,
+        title: 'Contract created',
+        status: 'completed',
+        actedAt: json.contract_created_at ?? null,
+        subText: json.contract_created_by ? `Submitted by ${json.contract_created_by}` : null,
+        delegation: null,
+        roleDeleted: false,
+        roleRenamedFrom: null,
+      }],
+    })
+
+    return { runNumber: run.run_number, groups }
+  })
+
+  return {
+    contractId,
+    currentRun: runs.length ? runs[runs.length - 1].runNumber : 0,
+    runs,
+  }
+}
 
 /**
  * Group status for connector styling (spec 5.3): rejected if any node is

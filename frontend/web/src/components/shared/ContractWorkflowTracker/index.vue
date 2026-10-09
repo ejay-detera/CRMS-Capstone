@@ -12,11 +12,16 @@ import RunHistoryToggle from './RunHistoryToggle.vue'
 // check permissions, and exposes no approve/reject actions — those stay
 // in ContractDetailHeader.vue / the rejection-input section already on
 // the contract detail page.
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   workflow: WorkflowProgress | null
   status: TrackerStatus
   onRetry?: () => void
-}>()
+  // When true, skips this component's own card chrome (border/shadow/
+  // padding) — used when it's already hosted inside another card-like
+  // container, e.g. WorkflowTrackerModal's drawer panel.
+  bare?: boolean
+  orientation?: 'horizontal' | 'vertical'
+}>(), { orientation: 'vertical' })
 
 const latestRun = computed(() => {
   if (!props.workflow || !props.workflow.runs.length) return null
@@ -30,11 +35,13 @@ const previousRuns = computed(() => {
 
 // The single node currently "on someone's desk" across the latest run —
 // used to apply the emphasized "Current" treatment (spec 5.1's distinction
-// between active and merely-pending).
+// between active and merely-pending). on_hold counts as current too: the
+// node keeps its amber empty-role badge (decision #12) via its own
+// status, while still getting the current-step emphasis here.
 const activeNodeId = computed<string | null>(() => {
   if (!latestRun.value) return null
   for (const group of latestRun.value.groups) {
-    const active = group.nodes.find(n => n.status === 'active')
+    const active = group.nodes.find(n => n.status === 'active' || n.status === 'on_hold')
     if (active) return active.id
   }
   return null
@@ -47,8 +54,8 @@ function nextGroupStatus(groups: WorkflowGroupType[], index: number) {
 </script>
 
 <template>
-  <div class="bg-white rounded-xl border border-black/[0.08] shadow-sm p-6 space-y-4">
-    <h2 class="text-xs font-semibold text-black/40 uppercase tracking-widest">Approval Progress</h2>
+  <div :class="bare ? 'space-y-4' : 'bg-white rounded-xl border border-black/[0.08] shadow-sm p-6 space-y-4'">
+    <h2 v-if="!bare" class="text-xs font-semibold text-black/40 uppercase tracking-widest">Approval Progress</h2>
 
     <!-- Loading skeleton -->
     <div v-if="status === 'loading'" class="space-y-4">
@@ -77,21 +84,40 @@ function nextGroupStatus(groups: WorkflowGroupType[], index: number) {
       </button>
     </div>
 
-    <!-- Ready state -->
+    <!-- Ready state: vertical mode is one continuous spine (same
+         principle as Version History) with cards attached to it;
+         horizontal only when explicitly requested. -->
     <template v-else-if="status === 'ready' && latestRun">
-      <RunHistoryToggle v-for="run in previousRuns" :key="run.runNumber" :run="run">
+      <RunHistoryToggle v-for="run in previousRuns" :key="run.runNumber" :run="run" :orientation="orientation">
         <template v-for="(group, i) in run.groups" :key="group.id">
-          <WorkflowGroup :group="group" :active-node-id="null" />
-          <WorkflowConnector v-if="i < run.groups.length - 1" :next-group-status="nextGroupStatus(run.groups, i)!" />
+          <WorkflowGroup :group="group" :active-node-id="null" :orientation="orientation" />
+          <WorkflowConnector v-if="orientation === 'horizontal' && i < run.groups.length - 1" :next-group-status="nextGroupStatus(run.groups, i)!" />
         </template>
       </RunHistoryToggle>
 
-      <ol class="space-y-0 list-none">
+      <ol v-if="orientation === 'vertical'" class="wf-timeline relative mx-auto w-full max-w-[360px] list-none space-y-6 pl-8">
+        <WorkflowGroup
+          v-for="group in latestRun.groups"
+          :key="group.id"
+          :group="group"
+          :active-node-id="activeNodeId"
+          orientation="vertical"
+        />
+        <!-- Spine rails LAST in DOM so the nth-child stagger indices
+             align with the steps. Absolute positioning keeps them
+             visually behind the cards. -->
+        <div class="absolute bottom-3 left-[6px] top-3 w-0.5 bg-black/[0.08]" aria-hidden="true" />
+        <div class="wf-spine-fill absolute bottom-3 left-[6px] top-3 w-0.5 origin-top bg-brand-blue" aria-hidden="true" />
+      </ol>
+
+      <ol v-else class="flex items-start overflow-x-auto pb-2 list-none">
         <template v-for="(group, i) in latestRun.groups" :key="group.id">
-          <WorkflowGroup :group="group" :active-node-id="activeNodeId" />
-          <WorkflowConnector v-if="i < latestRun.groups.length - 1" :next-group-status="nextGroupStatus(latestRun.groups, i)!" />
+          <WorkflowGroup :group="group" :active-node-id="activeNodeId" orientation="horizontal" />
+          <WorkflowConnector v-if="i < latestRun.groups.length - 1" :next-group-status="nextGroupStatus(latestRun.groups, i)!" orientation="horizontal" />
         </template>
       </ol>
     </template>
   </div>
 </template>
+
+<style scoped src="./vertical-timeline.css"></style>

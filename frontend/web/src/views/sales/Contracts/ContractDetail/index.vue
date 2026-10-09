@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { FileX, X, ChevronDown, Clock } from 'lucide-vue-next'
+import { FileX, Clock } from 'lucide-vue-next'
 import { useAmendmentStore } from '@/composables/useAmendmentStore'
 import { setBreadcrumbTitle } from '@/composables/useBreadcrumbs'
 import { Button } from '@/components/ui/button'
@@ -16,11 +16,13 @@ import type { StoredContract } from '@/composables/useContractStore'
 import ContractDetailHeader     from './ContractDetailHeader.vue'
 import ContractInfoSection      from './ContractInfoSection.vue'
 import ContractDocumentsSection from './ContractDocumentsSection.vue'
+import VersionHistoryDrawer     from './VersionHistoryDrawer.vue'
 import ConfirmationDialog       from '@/components/shared/ConfirmationDialog.vue'
 import RejectionReasonModal     from './RejectionReasonModal.vue'
 import HighRiskApprovalModal    from '@/components/shared/HighRiskApprovalModal.vue'
-import ContractWorkflowTracker  from '@/components/shared/ContractWorkflowTracker/index.vue'
+import WorkflowTrackerModal     from '@/components/shared/ContractWorkflowTracker/WorkflowTrackerModal.vue'
 import type { WorkflowProgress } from '@/types/contractWorkflow'
+import { useApprovalProgress } from '@/composables/useApprovalProgress'
 import { AlertCircle } from 'lucide-vue-next'
 
 const route  = useRoute()
@@ -37,13 +39,13 @@ const contract        = ref<StoredContract | null>(null)
 const loadingContract = ref(true)
 const savingEdit      = ref(false)
 
-// ── Visual Contract Workflow Tracker — mock data (Phase 6) ────────────────
-// Local placeholder data only, per the project convention: no API calls,
-// no DB seeding. Will be swapped for a real fetch to
-// GET /contracts/{id}/approval-progress (contract-management, Phase 5) in
-// a follow-up once the component's visuals are confirmed. Scenario is
-// picked by `?workflowMock=` query param for easy manual testing of every
-// state (A = normal progress, the default).
+// ── Visual Contract Workflow Tracker — live data (Phase 6) ────────────────
+// Primary source is GET /contracts/{id}/approval-progress via
+// useApprovalProgress (engine:false → empty status, decision #9). The
+// `?workflowMock=A..E` scenarios below are a dev-only override for
+// exercising every visual state without seeded engine data — they apply
+// only when the query param is explicitly present.
+const { workflow: liveWorkflow, status: liveTrackerStatus, fetchProgress: fetchWorkflowProgress, retry: retryWorkflow } = useApprovalProgress()
 const workflowMockScenarios: Record<string, WorkflowProgress> = {
   // Scenario A: normal progress — some completed, one active, rest pending.
   A: {
@@ -113,10 +115,18 @@ const workflowMockScenarios: Record<string, WorkflowProgress> = {
 }
 
 const workflowTracker = computed<WorkflowProgress | null>(() => {
-  const scenario = (route.query.workflowMock as string) || 'A'
-  return workflowMockScenarios[scenario] ?? workflowMockScenarios.A
+  const scenario = route.query.workflowMock as string | undefined
+  if (scenario) return workflowMockScenarios[scenario] ?? workflowMockScenarios.A
+  return liveWorkflow.value
 })
-const workflowTrackerStatus = computed(() => (workflowTracker.value ? 'ready' as const : 'empty' as const))
+const workflowTrackerStatus = computed(() => {
+  if (route.query.workflowMock) return (workflowTracker.value ? 'ready' as const : 'empty' as const)
+  return liveTrackerStatus.value
+})
+function handleWorkflowRetry() {
+  retryWorkflow(id)
+}
+const showWorkflowTracker = ref(false)
 
 const amendmentStore = useAmendmentStore()
 const viewingSnapshotVersion = ref<number | null>(null)
@@ -274,6 +284,9 @@ const aiRiskAssessmentVisible = computed(() => aiPreferences.value.aiRiskAssessm
 
 onMounted(async () => {
   await loadContract()
+  if (!route.query.workflowMock) {
+    await fetchWorkflowProgress(id)
+  }
   await fetchAiPreferences()
   if (contract.value) {
     await amendmentStore.fetchVersionHistory(contract.value.id, true)
@@ -824,11 +837,7 @@ const activeSnapForDiff = computed(() => {
         @toggle-reject="handleToggleReject"
         @confirm-reject="triggerReject"
         @open-risk-assessment="router.push(riskAssessmentPath)"
-      />
-
-      <ContractWorkflowTracker
-        :workflow="workflowTracker"
-        :status="workflowTrackerStatus"
+        @open-workflow-tracker="showWorkflowTracker = true"
       />
 
       <!-- Rejection input (manager rejecting) -->
@@ -887,6 +896,13 @@ const activeSnapForDiff = computed(() => {
       @confirm="confirmAction ? confirmAction() : undefined"
     />
 
+    <WorkflowTrackerModal
+      v-model:open="showWorkflowTracker"
+      :workflow="workflowTracker"
+      :status="workflowTrackerStatus"
+      :on-retry="handleWorkflowRetry"
+    />
+
     <RejectionReasonModal
       v-if="contract"
       v-model:open="showRejectionModal"
@@ -900,138 +916,17 @@ const activeSnapForDiff = computed(() => {
       @submit="handleHighRiskDecision"
     />
 
-    <!-- Version History Drawer Overlay -->
-    <div v-if="showHistoryDrawer" 
-      class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300"
-      @click="showHistoryDrawer = false">
-    </div>
-
-    <!-- Version History Drawer -->
-    <div 
-      class="fixed right-0 top-0 h-screen w-full sm:w-[480px] bg-white border-l border-black/10 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-out font-poppins"
-      :class="showHistoryDrawer ? 'translate-x-0' : 'translate-x-full'"
-    >
-      <!-- Drawer Header -->
-      <div class="p-6 border-b border-black/5 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <Clock class="w-5 h-5 text-brand-blue" />
-          <h3 class="text-base font-bold text-black">Version History</h3>
-        </div>
-        <button @click="showHistoryDrawer = false" class="p-1.5 hover:bg-black/5 rounded-lg text-black/40 hover:text-black transition-colors">
-          <X class="w-5 h-5" />
-        </button>
-      </div>
-
-      <!-- Drawer Content -->
-      <div class="flex-1 overflow-y-auto p-6 space-y-4">
-        <!-- Versions Timeline -->
-        <div class="relative pl-6 border-l border-black/[0.08] space-y-8 ml-2 mt-2">
-          <!-- Current Active Version -->
-          <div class="relative">
-            <!-- Timeline dot -->
-            <div class="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-brand-blue border-2 border-white ring-4 ring-brand-blue/15"></div>
-            
-            <div 
-              @click="toggleVersionExpand(activeVersion)"
-              class="group cursor-pointer hover:bg-black/[0.02] p-3 rounded-lg border border-black/[0.04] transition-all duration-200"
-              :class="expandedVersion === activeVersion ? 'bg-brand-blue/[0.02] border-brand-blue/30 shadow-sm' : ''"
-            >
-              <div class="flex items-center justify-between">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-brand-blue/8 text-brand-blue text-[10px] font-bold uppercase tracking-wider">
-                  Version {{ activeVersion }} (Current)
-                </span>
-                <span class="text-[10px] text-black/35 font-medium">Active</span>
-              </div>
-              <h4 class="text-xs font-semibold text-black mt-1.5">Latest approved state</h4>
-              <p class="text-[11px] text-black/40 mt-0.5">Active details shown on main contract page</p>
-
-              <!-- Expanded Diff Comparison for Current vs Last historical version -->
-              <div v-if="expandedVersion === activeVersion" class="mt-4 pt-4 border-t border-black/[0.05] space-y-3 cursor-default" @click.stop>
-                <h5 class="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">Changes in this version</h5>
-                
-                <div v-if="getDiffList(activeSnapForDiff).length === 0" class="text-xs text-black/35 text-center py-2">
-                  No detail changes (only documents updated).
-                </div>
-                <div v-else class="space-y-2.5">
-                  <div v-for="diff in getDiffList(activeSnapForDiff)" :key="diff.field" class="text-xs">
-                    <span class="font-semibold text-black/50 block capitalize text-[10px]">{{ diff.field }}</span>
-                    <div class="flex flex-col gap-1 mt-1 font-mono bg-black/[0.01] p-1.5 rounded border border-black/[0.03]">
-                      <span class="text-red-600 line-through whitespace-pre-wrap shrink-0 block">
-                        - {{ diff.old }}
-                      </span>
-                      <span class="text-emerald-600 font-semibold whitespace-pre-wrap shrink-0 block">
-                        + {{ diff.new }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Historical Versions -->
-          <div v-for="snap in historicalSnapshots" :key="snap.version" class="relative">
-            <!-- Timeline dot -->
-            <div class="absolute -left-[30px] top-1.5 w-2 h-2 rounded-full bg-black/20 border border-white"></div>
-            
-            <div 
-              @click="toggleVersionExpand(snap.version)"
-              class="group cursor-pointer hover:bg-black/[0.02] p-3 rounded-lg border border-black/[0.04] transition-all duration-200"
-              :class="expandedVersion === snap.version ? 'bg-black/[0.01] border-brand-blue/30 shadow-sm' : ''"
-            >
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-brand-navy uppercase tracking-wide">
-                  Version {{ snap.version }}
-                </span>
-                <span class="text-[10px] text-black/35 font-medium">{{ snap.approvedDate }}</span>
-              </div>
-              <p class="text-xs text-black/70 mt-1.5 line-clamp-2">{{ snap.reason }}</p>
-              
-              <div class="flex items-center justify-between mt-3 text-[10px] text-black/40">
-                <span>By: {{ snap.amendedBy }}</span>
-                <span class="flex items-center gap-1 font-semibold text-black/60">
-                  Approved: {{ snap.approvedBy }}
-                  <ChevronDown class="w-3.5 h-3.5 transition-transform duration-200" :class="expandedVersion === snap.version ? 'rotate-180' : ''" />
-                </span>
-              </div>
-
-              <!-- Expanded Diff Comparison -->
-              <div v-if="expandedVersion === snap.version" class="mt-4 pt-4 border-t border-black/[0.05] space-y-3 cursor-default" @click.stop>
-                <h5 class="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">Changes in this version</h5>
-                
-                <div v-if="getDiffList(snap).length === 0" class="text-xs text-black/35 text-center py-2">
-                  No detail changes (only documents updated).
-                </div>
-                <div v-else class="space-y-2.5">
-                  <div v-for="diff in getDiffList(snap)" :key="diff.field" class="text-xs">
-                    <span class="font-semibold text-black/50 block capitalize text-[10px]">{{ diff.field }}</span>
-                    <div class="flex flex-col gap-1 mt-1 font-mono bg-black/[0.01] p-1.5 rounded border border-black/[0.03]">
-                      <span class="text-red-600 line-through whitespace-pre-wrap shrink-0 block">
-                        - {{ diff.old }}
-                      </span>
-                      <span class="text-emerald-600 font-semibold whitespace-pre-wrap shrink-0 block">
-                        + {{ diff.new }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- View Snapshot button -->
-                <div class="pt-3 border-t border-black/[0.03] flex justify-end">
-                  <Button 
-                    @click="selectSnapshot(snap.version, snap.approvedDate)"
-                    variant="outline"
-                    class="h-8 text-xs font-semibold border-brand-blue text-brand-blue hover:bg-brand-blue/5 flex items-center gap-1.5 transition-colors"
-                  >
-                    <Clock class="w-3.5 h-3.5" />
-                    View Snapshot
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <VersionHistoryDrawer
+      :key="String(showHistoryDrawer)"
+      :open="showHistoryDrawer"
+      :snapshots="historicalSnapshots"
+      :active-version="activeVersion"
+      :active-snap-for-diff="activeSnapForDiff"
+      :expanded-version="expandedVersion"
+      :get-diff-list="getDiffList"
+      @close="showHistoryDrawer = false"
+      @toggle="toggleVersionExpand"
+      @view-snapshot="(ver, date) => selectSnapshot(ver, date)"
+    />
   </div>
 </template>

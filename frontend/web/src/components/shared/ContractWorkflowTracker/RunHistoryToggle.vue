@@ -5,6 +5,7 @@ import type { WorkflowRun } from '@/types/contractWorkflow'
 
 defineProps<{
   run: WorkflowRun
+  orientation?: 'horizontal' | 'vertical'
 }>()
 
 const expanded = ref(false)
@@ -21,8 +22,17 @@ const expanded = ref(false)
       <ChevronDown class="w-3.5 h-3.5 text-black/35 transition-transform" :class="expanded ? 'rotate-180' : ''" />
     </button>
 
-    <ol v-if="expanded" class="px-4 pb-4 pt-1 space-y-0 list-none">
+    <ol v-if="expanded && orientation === 'vertical'" class="wf-timeline relative list-none space-y-6 py-2 pl-8 pr-2">
+      <slot />
+      <!-- Spine rails LAST in DOM so stagger indices align with steps. -->
+      <div class="absolute bottom-4 left-[6px] top-4 w-0.5 bg-black/[0.08]" aria-hidden="true" />
+      <div class="wf-spine-fill absolute bottom-4 left-[6px] top-4 w-0.5 origin-top bg-brand-blue" aria-hidden="true" />
+    </ol>
+
+    <ol v-if="expanded && orientation !== 'vertical'" class="list-none px-4 pb-5 pt-2 flex items-start overflow-x-auto">
       <slot />
     </ol>
   </div>
 </template>
+
+<style scoped src="./vertical-timeline.css"></style>

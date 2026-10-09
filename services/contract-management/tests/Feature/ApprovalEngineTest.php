@@ -86,6 +86,40 @@ class ApprovalEngineTest extends TestCase
         return ContractCategory::create(['category_name' => $name, 'is_active' => true]);
     }
 
+    /**
+     * Fakes auth-module's role-describe endpoint for one or more roles.
+     * $roleIdToDescribe: [roleId => describe-array] in the Phase 1 shape
+     * (exists/deleted/current_name/was_renamed/name_history).
+     */
+    private function fakeRoleDescribe(array $roleIdToDescribe): void
+    {
+        foreach ($roleIdToDescribe as $roleId => $describe) {
+            $this->httpFakes["http://auth-service:8000/api/internal/roles/{$roleId}/describe"] = Http::response($describe, 200);
+        }
+
+        Http::fake($this->httpFakes);
+    }
+
+    /**
+     * Fakes auth-module's users-batch endpoint. $usersById: [userId => 'First Last'].
+     * Returns the full set regardless of the requested ids query — enough
+     * for progress-enrichment assertions.
+     */
+    private function fakeUsersBatch(array $usersById): void
+    {
+        $data = [];
+        foreach ($usersById as $uid => $name) {
+            $parts = array_pad(explode(' ', (string) $name, 2), 2, '');
+            $data[] = ['id' => $uid, 'email' => "user{$uid}@sbsi.com", 'first_name' => $parts[0], 'last_name' => $parts[1]];
+        }
+
+        // Wildcard: the client sends ?ids=.. on the query string, and
+        // Http::fake matches stub patterns against the full URL.
+        $this->httpFakes['http://auth-service:8000/api/internal/users-batch*'] = Http::response(['data' => $data], 200);
+
+        Http::fake($this->httpFakes);
+    }
+
     private function makeActiveWorkflow(ContractCategory $category, array $steps): Workflow
     {
         $workflow = Workflow::create([
@@ -577,5 +611,104 @@ class ApprovalEngineTest extends TestCase
             ->patchJson("/api/contracts/{$contractId}/status", ['approval_status' => 'Rejected', 'rejection_reason' => 'test']);
 
         $response->assertOk();
+    }
+
+    // ── Phase 6: approval-progress enrichment for the Visual Tracker ────
+
+    public function test_approval_progress_returns_enriched_tracker_fields()
+    {
+        config(['services.features.workflow_engine_enabled' => true]);
+        $this->fakeAuth(['role' => 'Sales', 'id' => 42, 'first_name' => 'Creator', 'last_name' => 'Person']);
+        $category = $this->makeCategory();
+        $this->makeActiveWorkflow($category, [
+            ['roles' => [350 => 'Regulatory']],
+            ['roles' => [351 => 'Sales']],
+        ]);
+        $this->fakeActiveHolders([350 => [42], 351 => [43]]);
+        $this->fakeRoleDescribe([
+            350 => ['exists' => true, 'deleted' => false, 'current_name' => 'Regulatory', 'was_renamed' => true, 'name_history' => [['old_name' => 'Regulator']]],
+            351 => ['exists' => true, 'deleted' => false, 'current_name' => 'Sales', 'was_renamed' => false, 'name_history' => []],
+        ]);
+        $this->fakeUsersBatch([42 => 'Creator Person']);
+
+        $createResp = $this->withHeaders(['Authorization' => 'Bearer token'])
+            ->postJson('/api/contracts', $this->createContractPayload());
+        $contractId = $createResp->json('data.contract_db_id');
+
+        $response = $this->withHeaders(['Authorization' => 'Bearer token'])
+            ->getJson("/api/contracts/{$contractId}/approval-progress");
+
+        $response->assertOk();
+        $response->assertJsonPath('data.engine', true);
+        $response->assertJsonPath('data.contract_created_by', 'Creator Person');
+        $this->assertNotNull($response->json('data.contract_created_at'));
+
+        $run = $response->json('data.runs.0');
+        $this->assertNotNull($run['current_step_id']);
+        $this->assertCount(2, $run['groups']);
+
+        $task = $run['groups'][0]['tasks'][0];
+        $this->assertEquals('pending', $task['status']);
+        $this->assertTrue($task['is_current']);
+        $this->assertFalse($task['role_deleted']);
+        $this->assertEquals('Regulator', $task['role_renamed_from']);
+        $this->assertNull($task['delegate_name']);
+        // Step 2 hasn't been entered yet — no tasks, and no current flag.
+        $this->assertCount(0, $run['groups'][1]['tasks']);
+    }
+
+    public function test_approval_progress_marks_deleted_role_and_resolves_delegate_name()
+    {
+        config(['services.features.workflow_engine_enabled' => true]);
+        $this->fakeAuth(['role' => 'Sales', 'id' => 10]);
+        $category = $this->makeCategory();
+        $this->makeActiveWorkflow($category, [
+            ['roles' => [350 => 'Regulatory']],
+        ]);
+        $this->fakeActiveHolders([350 => [10]]);
+
+        $createResp = $this->withHeaders(['Authorization' => 'Bearer token'])
+            ->postJson('/api/contracts', $this->createContractPayload());
+        $contractId = $createResp->json('data.contract_db_id');
+        $task = ApprovalTask::where('auth_role_id', 350)->first();
+
+        $this->withHeaders(['Authorization' => 'Bearer token'])
+            ->postJson("/api/contracts/{$contractId}/approval-tasks/{$task->id}/decision", ['decision' => 'approved'])
+            ->assertOk();
+
+        // Simulate a delegation-backed decision + a role deleted afterwards.
+        $task->refresh()->update(['acted_via_delegation' => true]);
+        $this->fakeRoleDescribe([
+            350 => ['exists' => false, 'deleted' => true, 'current_name' => null, 'was_renamed' => false, 'name_history' => []],
+        ]);
+        $this->fakeUsersBatch([10 => 'Alex Reyes']);
+
+        $response = $this->withHeaders(['Authorization' => 'Bearer token'])
+            ->getJson("/api/contracts/{$contractId}/approval-progress");
+
+        $response->assertOk();
+        $taskJson = $response->json('data.runs.0.groups.0.tasks.0');
+        $this->assertEquals('approved', $taskJson['status']);
+        $this->assertTrue($taskJson['role_deleted']);
+        $this->assertNull($taskJson['role_renamed_from']);
+        $this->assertEquals('Alex Reyes', $taskJson['delegate_name']);
+    }
+
+    public function test_approval_progress_reports_no_engine_for_legacy_contracts()
+    {
+        config(['services.features.workflow_engine_enabled' => true]);
+        $this->fakeAuth(['role' => 'Manager', 'id' => 99]);
+        $this->makeCategory(); // no active workflow attached
+
+        $createResp = $this->withHeaders(['Authorization' => 'Bearer token'])
+            ->postJson('/api/contracts', $this->createContractPayload());
+        $contractId = $createResp->json('data.contract_db_id');
+
+        $response = $this->withHeaders(['Authorization' => 'Bearer token'])
+            ->getJson("/api/contracts/{$contractId}/approval-progress");
+
+        $response->assertOk();
+        $response->assertJsonPath('data.engine', false);
+        $this->assertCount(0, $response->json('data.runs'));
     }
 }

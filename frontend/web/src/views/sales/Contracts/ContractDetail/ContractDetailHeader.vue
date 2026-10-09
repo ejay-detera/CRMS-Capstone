@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, FileText, FilePenLine, Clock, AlertTriangle, Loader2, CheckCircle, XCircle } from 'lucide-vue-next'
+import { ArrowLeft, FileText, FilePenLine, Clock, AlertTriangle, Loader2, CheckCircle, XCircle, Workflow } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { approvalStatusBadge, workflowStatusBadge } from '@/types/contract'
 import type { StoredContract } from '@/composables/useContractStore'
@@ -26,7 +26,7 @@ const props = defineProps<{
 
 defineEmits<{ 
   back: []; edit: []; save: []; cancel: []; notifyManager: [];
-  approve: []; toggleReject: []; confirmReject: []; openHistory: []; openRiskAssessment: []
+  approve: []; toggleReject: []; confirmReject: []; openHistory: []; openRiskAssessment: []; openWorkflowTracker: []
 }>()
 
 function daysDisplay(days: number) {
@@ -87,73 +87,90 @@ function daysDisplay(days: number) {
       </div>
     </div>
 
-    <!-- Action buttons -->
-    <div class="flex items-center gap-3 shrink-0">
+    <!-- Actions: two-row cluster. Top row = the primary decision
+         (visible at first glance, right-aligned with the title);
+         bottom row = quieter secondary tools. -->
+    <div class="flex flex-col items-end gap-2.5 shrink-0">
       <!-- Edit Mode (Save/Cancel) -->
       <template v-if="isEditing">
-        <button @click="$emit('cancel')" :disabled="actionInProgress"
-          class="px-6 py-2.5 bg-white border border-black/15 text-black/60 rounded-lg text-sm font-medium hover:text-black hover:bg-black/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-          Cancel
-        </button>
-        <button @click="$emit('save')" :disabled="saving || disabled || actionInProgress"
-          class="px-6 py-2.5 bg-brand-navy text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-brand-dark transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-          <Loader2 v-if="saving" class="w-4 h-4 animate-spin" />
-          {{ saving ? 'Saving…' : 'Save Changes' }}
-        </button>
+        <div class="flex flex-wrap items-center justify-end gap-3">
+          <button @click="$emit('cancel')" :disabled="actionInProgress"
+            class="px-6 py-2.5 bg-white border border-black/15 text-black/60 rounded-lg text-sm font-medium hover:text-black hover:bg-black/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            Cancel
+          </button>
+          <button @click="$emit('save')" :disabled="saving || disabled || actionInProgress"
+            class="px-6 py-2.5 bg-brand-navy text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-brand-dark transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+            <Loader2 v-if="saving" class="w-4 h-4 animate-spin" />
+            {{ saving ? 'Saving…' : 'Save Changes' }}
+          </button>
+        </div>
       </template>
 
       <!-- View Mode -->
       <template v-else>
-        <!-- Manager: Approve / Reject -->
-        <template v-if="isManager && contract.approvalStatus === 'Pending' && !isSnapshot">
-          <template v-if="!showRejectInput">
-            <Button @click="$emit('toggleReject')" :disabled="actionInProgress" variant="outline"
-              class="h-10 px-6 border-black/15 text-black/65 hover:text-red-600 hover:border-red-200 hover:bg-red-50 font-medium">
-              <XCircle class="w-4 h-4" /> Reject Contract
-            </Button>
-            <Button @click="$emit('approve')" :disabled="actionInProgress"
-              class="h-10 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm">
-              <CheckCircle class="w-4 h-4" /> Approve Contract
-            </Button>
+        <!-- Primary row: the approve/reject decision -->
+        <div class="flex flex-wrap items-center justify-end gap-3">
+          <!-- Manager: Approve / Reject -->
+          <template v-if="isManager && contract.approvalStatus === 'Pending' && !isSnapshot">
+            <template v-if="!showRejectInput">
+              <Button @click="$emit('toggleReject')" :disabled="actionInProgress" variant="outline"
+                class="h-11 px-6 border-black/15 text-black/65 hover:text-red-600 hover:border-red-200 hover:bg-red-50 font-semibold">
+                <XCircle class="w-4 h-4" /> Reject Contract
+              </Button>
+              <Button @click="$emit('approve')" :disabled="actionInProgress"
+                class="h-11 px-7 text-[15px] bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md">
+                <CheckCircle class="w-5 h-5" /> Approve Contract
+              </Button>
+            </template>
+            <template v-else>
+              <Button variant="outline" @click="$emit('toggleReject')" :disabled="actionInProgress"
+                class="h-11 px-6 border-black/15 text-black/60 hover:text-black hover:bg-black/5 font-semibold">
+                Cancel Reject
+              </Button>
+              <Button @click="$emit('confirmReject')" :disabled="!rejectReasonValid || actionInProgress"
+                class="h-11 px-7 text-[15px] bg-red-600 hover:bg-red-700 text-white font-semibold shadow-md">
+                Confirm Reject
+              </Button>
+            </template>
           </template>
-          <template v-else>
-            <Button variant="outline" @click="$emit('toggleReject')" :disabled="actionInProgress"
-              class="h-10 px-6 border-black/15 text-black/60 hover:text-black hover:bg-black/5 font-medium">
-              Cancel Reject
-            </Button>
-            <Button @click="$emit('confirmReject')" :disabled="!rejectReasonValid || actionInProgress"
-              class="h-10 px-6 bg-red-600 hover:bg-red-700 text-white font-medium shadow-sm">
-              Confirm Reject
-            </Button>
-          </template>
-        </template>
 
-        <!-- Notify Manager -->
-        <button v-if="!isManager && contract.approvalStatus === 'Pending' && !disabled && !isSnapshot" @click="$emit('notifyManager')"
-          class="px-6 py-2.5 bg-white border border-brand-navy text-brand-navy rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-brand-navy/5 transition-colors shadow-sm">
-          Notify Manager
-        </button>
-        
-        <!-- Version History Button -->
-        <button v-if="!showRejectInput" @click="$emit('openHistory')"
-          class="px-4 py-2.5 bg-white border border-black/15 text-black/65 hover:text-black hover:bg-black/5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm">
-          <Clock class="w-4 h-4 text-brand-blue" />
-          Version History
-        </button>
+          <!-- Notify Manager -->
+          <button v-if="!isManager && contract.approvalStatus === 'Pending' && !disabled && !isSnapshot" @click="$emit('notifyManager')"
+            class="px-6 py-2.5 bg-white border border-brand-navy text-brand-navy rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-brand-navy/5 transition-colors shadow-sm">
+            Notify Manager
+          </button>
 
-        <!-- AI Risk Assessment Button -->
-        <button v-if="!showRejectInput && !isSnapshot" @click="$emit('openRiskAssessment')"
-          class="px-4 py-2.5 bg-white border border-black/15 text-black/65 hover:text-black hover:bg-black/5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm">
-          <AlertTriangle class="w-4 h-4 text-brand-dark" />
-          Risk Assessment
-        </button>
+          <!-- Create Amendment Button — only for Approved contracts -->
+          <button v-if="!showRejectInput && !isSnapshot && contract.approvalStatus === 'Approved'" @click="$emit('edit')"
+            class="px-6 py-2.5 bg-brand-navy text-white rounded-lg text-sm font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm">
+            <FilePenLine class="w-4 h-4" />
+            Create Amendment
+          </button>
+        </div>
 
-        <!-- Create Amendment Button — only for Approved contracts -->
-        <button v-if="!showRejectInput && !isSnapshot && contract.approvalStatus === 'Approved'" @click="$emit('edit')"
-          class="px-6 py-2.5 bg-brand-navy text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm">
-          <FilePenLine class="w-4 h-4" />
-          Create Amendment
-        </button>
+        <!-- Secondary row: quieter timeline tools -->
+        <div v-if="!showRejectInput" class="flex flex-wrap items-center justify-end gap-2">
+          <!-- Version History Button -->
+          <button @click="$emit('openHistory')"
+            class="px-3.5 py-2 bg-white border border-black/10 text-black/55 hover:text-black hover:bg-black/5 rounded-lg text-[13px] font-medium flex items-center gap-1.5 transition-colors">
+            <Clock class="w-3.5 h-3.5 text-brand-blue" />
+            Version History
+          </button>
+
+          <!-- View Workflow Tracker Button -->
+          <button @click="$emit('openWorkflowTracker')"
+            class="px-3.5 py-2 bg-white border border-black/10 text-black/55 hover:text-black hover:bg-black/5 rounded-lg text-[13px] font-medium flex items-center gap-1.5 transition-colors">
+            <Workflow class="w-3.5 h-3.5 text-brand-navy" />
+            View Workflow Tracker
+          </button>
+
+          <!-- AI Risk Assessment Button -->
+          <button v-if="!isSnapshot" @click="$emit('openRiskAssessment')"
+            class="px-3.5 py-2 bg-white border border-black/10 text-black/55 hover:text-black hover:bg-black/5 rounded-lg text-[13px] font-medium flex items-center gap-1.5 transition-colors">
+            <AlertTriangle class="w-3.5 h-3.5 text-brand-dark" />
+            Risk Assessment
+          </button>
+        </div>
       </template>
     </div>
 
