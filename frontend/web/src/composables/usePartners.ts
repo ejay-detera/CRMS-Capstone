@@ -21,7 +21,8 @@ export function usePartners() {
     try {
       const apiBase = import.meta.env.VITE_VENDOR_API_URL || 'http://localhost:8001/api'
       const endpoint = type === 'partners' ? 'partners' : 'suppliers'
-      const url = new URL(`${apiBase}/${endpoint}`)
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
+      const url = new URL(`${apiBase}/${endpoint}`, origin)
       
       url.searchParams.append('page', String(page))
       url.searchParams.append('per_page', String(perPage))

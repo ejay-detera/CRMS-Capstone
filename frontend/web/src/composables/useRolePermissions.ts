@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import type { ApiRole, ApiPermission, Category } from '@/types/role'
+import type { ApiRole, ApiPermission, Category, SystemDefinition } from '@/types/role'
 
 const AUTH_API = import.meta.env.VITE_AUTH_API_URL as string
 
@@ -25,6 +25,15 @@ const SLUG_UI_MAP: Record<string, { category: string; label: string }> = {
   'cms.ai.vendor_suggestions': { category: 'ai_features', label: 'AI Vendor Suggestions' },
   'cms.ai.ocr':                { category: 'ai_features', label: 'OCR Autofill' },
 }
+
+// ── System definitions ───────────────────────────────────────────────
+// 'cms' is the only live system today; others are shown as placeholders.
+export const SYSTEMS: SystemDefinition[] = [
+  { key: 'cms', label: 'CMS',     description: 'Contract Management System', available: true  },
+  { key: 'prs', label: 'PRS',     description: 'Purchase Request System',    available: false },
+  { key: 'hrm', label: 'HRM',     description: 'Human Resource Management', available: false },
+  { key: 'fin', label: 'Finance', description: 'Financial Management',       available: false },
+]
 
 // The fixed UI category structure (labels stay exactly as designed)
 export const UI_CATEGORIES: Category[] = [
@@ -97,7 +106,9 @@ export function useRolePermissions() {
   const roles           = ref<ApiRole[]>([])
   const allPermissions  = ref<ApiPermission[]>([])
   // rolePermissionIds[roleId] = Set of permission IDs currently assigned
-  const rolePermissionIds = ref<Record<number, Set<number>>>({})
+  const rolePermissionIds  = ref<Record<number, Set<number>>>({})
+  // roleSystemAccess[roleId] = Set of system keys the role can visit ('cms', 'prs', …)
+  const roleSystemAccess   = ref<Record<number, Set<string>>>({})
   const isLoading       = ref(false)
   const error           = ref<string | null>(null)
 
@@ -155,6 +166,15 @@ export function useRolePermissions() {
     rolePermissionIds.value[roleId] = set
   }
 
+  /** Load system-access state for a single role from localStorage */
+  function loadSystemAccess(roleId: number) {
+    const roleName = roles.value.find(r => r.id === roleId)?.name
+    if (!roleName) return
+    const stored = localStorage.getItem(`cms_system_access_${roleName}`)
+    const keys: string[] = stored ? JSON.parse(stored) : []
+    roleSystemAccess.value = { ...roleSystemAccess.value, [roleId]: new Set(keys) }
+  }
+
   /** Initialise: load everything in parallel */
   async function init() {
     isLoading.value = true
@@ -162,6 +182,8 @@ export function useRolePermissions() {
     try {
       await Promise.all([fetchRoles(), fetchAllPermissions()])
       await Promise.all(roles.value.map(r => fetchRolePermissions(r.id)))
+      // Load system access for every role from localStorage
+      roles.value.forEach(r => loadSystemAccess(r.id))
     } catch (e: any) {
       error.value = e.message ?? 'Failed to load permissions'
     } finally {
@@ -179,6 +201,13 @@ export function useRolePermissions() {
       ...rolePermissionIds.value,
       [roleId]: new Set(set),
     }
+  }
+
+  /** Toggle system access for a role (local, optimistic) */
+  function toggleSystemAccess(roleId: number, systemKey: string) {
+    const current = new Set(roleSystemAccess.value[roleId] ?? [])
+    current.has(systemKey) ? current.delete(systemKey) : current.add(systemKey)
+    roleSystemAccess.value = { ...roleSystemAccess.value, [roleId]: current }
   }
 
   /** Toggle an entire category for a role (local, optimistic) */
@@ -200,14 +229,17 @@ export function useRolePermissions() {
   /** Persist current state for a role to the backend */
   async function saveRolePermissions(roleId: number): Promise<void> {
     const permIds = [...(rolePermissionIds.value[roleId] ?? new Set())]
-    
-    const backendIds = permIds.filter(id => id > 0)
+
+    const backendIds  = permIds.filter(id => id > 0)
     const frontendIds = permIds.filter(id => id < 0)
-    
-    // Save frontend-only permissions in localStorage
+
     const roleName = roles.value.find(r => r.id === roleId)?.name
     if (roleName) {
+      // Save frontend-only AI permissions
       localStorage.setItem(`cms_frontend_perms_${roleName}`, JSON.stringify(frontendIds))
+      // Save system-access selections
+      const systems = [...(roleSystemAccess.value[roleId] ?? new Set())]
+      localStorage.setItem(`cms_system_access_${roleName}`, JSON.stringify(systems))
     }
     
     await apiFetch(`/admin/roles/${roleId}/permissions`, {
@@ -233,8 +265,10 @@ export function useRolePermissions() {
     roles,
     allPermissions,
     rolePermissionIds,
+    roleSystemAccess,
     isLoading,
     error,
+    SYSTEMS,
     UI_CATEGORIES,
     init,
     fetchRoles,
@@ -242,6 +276,7 @@ export function useRolePermissions() {
     fetchRolePermissions,
     togglePermission,
     toggleCategory,
+    toggleSystemAccess,
     saveRolePermissions,
     getActivePermIds,
     permIdBySlug,

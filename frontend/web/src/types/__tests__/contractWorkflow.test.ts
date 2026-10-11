@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   groupStatus,
   mapProgressResponse,
+  nudgeLabelFor,
   type ApprovalProgressResponse,
   type WorkflowGroup,
 } from '@/types/contractWorkflow'
@@ -74,6 +75,20 @@ const baseResponse: ApprovalProgressResponse = {
     },
   ],
 }
+
+describe('nudgeLabelFor', () => {
+  it("returns 'Notify Manager' when there is no current step (legacy)", () => {
+    expect(nudgeLabelFor([])).toBe('Notify Manager')
+  })
+
+  it("returns 'Nudge {Role}' for a single-role step", () => {
+    expect(nudgeLabelFor(['Sales'])).toBe('Nudge Sales')
+  })
+
+  it("returns 'Nudge Current Step' for a parallel multi-role step", () => {
+    expect(nudgeLabelFor(['Sales', 'Accounting'])).toBe('Nudge Current Step')
+  })
+})
 
 describe('mapProgressResponse', () => {
   it('prepends the synthetic Contract created node', () => {

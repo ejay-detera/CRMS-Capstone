@@ -22,10 +22,15 @@ const props = defineProps<{
   riskFindingsCount?: number
   approvalLocked?: boolean
   isRiskLoading?: boolean
+  // Phase 7: generalized nudge label ("Notify Manager" legacy,
+  // "Nudge {Role}" / "Nudge Current Step" engine-routed) + whether the
+  // contract is engine-routed (relaxes the Pending-only visibility).
+  nudgeLabel?: string
+  isEngineRouted?: boolean
 }>()
 
 defineEmits<{ 
-  back: []; edit: []; save: []; cancel: []; notifyManager: [];
+  back: []; edit: []; save: []; cancel: []; notifyStep: [];
   approve: []; toggleReject: []; confirmReject: []; openHistory: []; openRiskAssessment: []; openWorkflowTracker: []
 }>()
 
@@ -134,10 +139,11 @@ function daysDisplay(days: number) {
             </template>
           </template>
 
-          <!-- Notify Manager -->
-          <button v-if="!isManager && contract.approvalStatus === 'Pending' && !disabled && !isSnapshot" @click="$emit('notifyManager')"
+          <!-- Notify responsible role (Phase 7: manager-targeted legacy,
+               role-aware "Nudge {Role}" for engine-routed contracts) -->
+          <button v-if="!isManager && !disabled && !isSnapshot && (contract.approvalStatus === 'Pending' || isEngineRouted)" @click="$emit('notifyStep')"
             class="px-6 py-2.5 bg-white border border-brand-navy text-brand-navy rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-brand-navy/5 transition-colors shadow-sm">
-            Notify Manager
+            {{ nudgeLabel ?? 'Notify Manager' }}
           </button>
 
           <!-- Create Amendment Button — only for Approved contracts -->

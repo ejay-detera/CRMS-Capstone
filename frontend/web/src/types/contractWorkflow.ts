@@ -159,6 +159,18 @@ export function mapProgressResponse(contractId: string, json: ApprovalProgressRe
 }
 
 /**
+ * Phase 7 (decision #13): nudge-button label from the progress response's
+ * `current_step_roles`. Pure function so it's unit-testable without
+ * mounting: empty (legacy) → "Notify Manager"; one role → "Nudge {Role}";
+ * parallel multi-role step → "Nudge Current Step".
+ */
+export function nudgeLabelFor(currentStepRoles: string[]): string {
+  if (currentStepRoles.length === 0) return 'Notify Manager'
+  if (currentStepRoles.length === 1) return `Nudge ${currentStepRoles[0]}`
+  return 'Nudge Current Step'
+}
+
+/**
  * Group status for connector styling (spec 5.3): rejected if any node is
  * rejected; else active if any node is active; else completed if all
  * nodes are completed; else pending. canceled nodes don't independently

@@ -203,6 +203,15 @@ class ApprovalEngineService
     {
         $instance->update(['current_step_id' => $step->id]);
 
+        // Phase 7 (decision #13): each new step gets a fresh nudge
+        // allowance — a user who nudged step 1 twice must still be able to
+        // nudge step 2's (different) role. Runs at creation/resubmission
+        // too, which is equally correct (fresh run = fresh allowance).
+        // NOTE: the column keeps its legacy `notify_manager_count` name;
+        // renaming it would churn 6+ references for zero behavior gain.
+        Contract::where('contract_id', $instance->contract_id)
+            ->update(['notify_manager_count' => 0]);
+
         foreach ($step->workflowStepRoles as $stepRole) {
             $holders = $this->roleProxy->activeHoldersOf($stepRole->auth_role_id);
 

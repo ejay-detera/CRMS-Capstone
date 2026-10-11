@@ -39,11 +39,21 @@ import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 
 const route  = useRoute();
 const router = useRouter();
-const { logout, hasPermission, refreshPermissions, user } = useAuth();
+const { logout, hasPermission, refreshPermissions, user, role } = useAuth();
 
 // Refresh permissions every time the layout mounts so sidebar items
 // always reflect the latest permissions saved by an admin.
-onMounted(() => refreshPermissions())
+onMounted(async () => {
+  await refreshPermissions()
+  // Gate: check if this role has been granted CMS system access.
+  if (role.value && !['Admin', 'Super Admin', 'CEO'].includes(role.value)) {
+    const stored = localStorage.getItem(`cms_system_access_${role.value}`)
+    const allowedSystems: string[] = stored ? JSON.parse(stored) : ['cms']
+    if (!allowedSystems.includes('cms')) {
+      router.replace('/')
+    }
+  }
+})
 
 const { notifications, unreadCount, fetchNotifications, markAllRead, markRead } = useNotifications();
 const recentNotifs = computed(() => notifications.value.filter(n => !n.isArchived).slice(0, 10));

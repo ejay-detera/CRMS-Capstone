@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
+import { AlertTriangle, AlertCircle } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
@@ -31,6 +32,13 @@ const form = reactive({
 
 const saving = ref(false)
 const saveError = ref<string | null>(null)
+
+// Pre-flight: warn if the chosen target already has a workflow
+const targetHasWorkflow = computed(() => {
+  if (!form.targetContractTypeId) return false
+  const ct = props.contractTypes.find(c => c.contract_type_id === form.targetContractTypeId)
+  return !!(ct && (ct.active_workflow || ct.draft_workflow))
+})
 
 const isValid = computed(() => !!form.targetContractTypeId && form.name.trim().length > 0)
 
@@ -79,9 +87,23 @@ async function doDuplicate() {
             class="h-9 rounded-lg border border-black/12 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/15 focus:border-brand-blue transition" />
         </div>
 
-        <p v-if="saveError" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-          {{ saveError }}
-        </p>
+        <!-- Pre-flight warning: target already has a workflow -->
+        <div
+          v-if="targetHasWorkflow"
+          class="flex items-start gap-2.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5"
+        >
+          <AlertTriangle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>This contract type already has a workflow. The duplicate will be created as a second draft — only one workflow can be active at a time.</span>
+        </div>
+
+        <!-- Save error -->
+        <div
+          v-if="saveError"
+          class="flex items-start gap-2.5 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5"
+        >
+          <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>{{ saveError }}</span>
+        </div>
       </div>
 
       <DialogFooter class="flex items-center justify-end gap-3 mt-2">

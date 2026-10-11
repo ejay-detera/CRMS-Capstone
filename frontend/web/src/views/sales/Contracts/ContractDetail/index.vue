@@ -22,6 +22,7 @@ import RejectionReasonModal     from './RejectionReasonModal.vue'
 import HighRiskApprovalModal    from '@/components/shared/HighRiskApprovalModal.vue'
 import WorkflowTrackerModal     from '@/components/shared/ContractWorkflowTracker/WorkflowTrackerModal.vue'
 import type { WorkflowProgress } from '@/types/contractWorkflow'
+import { nudgeLabelFor } from '@/types/contractWorkflow'
 import { useApprovalProgress } from '@/composables/useApprovalProgress'
 import { AlertCircle } from 'lucide-vue-next'
 
@@ -45,7 +46,7 @@ const savingEdit      = ref(false)
 // `?workflowMock=A..E` scenarios below are a dev-only override for
 // exercising every visual state without seeded engine data — they apply
 // only when the query param is explicitly present.
-const { workflow: liveWorkflow, status: liveTrackerStatus, fetchProgress: fetchWorkflowProgress, retry: retryWorkflow } = useApprovalProgress()
+const { workflow: liveWorkflow, status: liveTrackerStatus, currentStepRoles, fetchProgress: fetchWorkflowProgress, retry: retryWorkflow } = useApprovalProgress()
 const workflowMockScenarios: Record<string, WorkflowProgress> = {
   // Scenario A: normal progress — some completed, one active, rest pending.
   A: {
@@ -126,6 +127,14 @@ const workflowTrackerStatus = computed(() => {
 function handleWorkflowRetry() {
   retryWorkflow(id)
 }
+
+// ── Phase 7: generalized nudge (decision #13) ────────────────────────────
+// Engine-routed contracts nudge the current step's role(s) via
+// POST /notify-step; legacy contracts (empty currentStepRoles) fall back
+// to the historic manager-targeted endpoint. The button label derives
+// from the progress response, not the tracker nodes.
+const nudgeLabel = computed(() => nudgeLabelFor(currentStepRoles.value))
+const isEngineRouted = computed(() => currentStepRoles.value.length > 0)
 const showWorkflowTracker = ref(false)
 
 const amendmentStore = useAmendmentStore()
@@ -574,9 +583,10 @@ async function confirmSaveEdit() {
   }
 }
 
-async function handleNotifyManager() {
+async function handleNotifyStep() {
   try {
-    const res = await fetch(`${apiBase}/contracts/${id}/notify-manager`, {
+    const endpoint = isEngineRouted.value ? 'notify-step' : 'notify-manager'
+    const res = await fetch(`${apiBase}/contracts/${id}/${endpoint}`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -586,13 +596,14 @@ async function handleNotifyManager() {
     const data = await res.json()
     if (!res.ok) {
       if (res.status === 429) {
-        error('Action limited', 'The manager is already notified, please wait.')
+        error('Action limited', data.message ?? 'Already notified, please wait.')
       } else {
         error('Failed to notify', data.message ?? 'Something went wrong.')
       }
       return
     }
-    success('Success', data.message ?? 'Manager has been notified.')
+    const targetDesc = data.targetRoles ?? 'Manager'
+    success('Notified', data.message ?? `${targetDesc} has been notified.`)
   } catch {
     error('Network error', 'Could not reach the server.')
   }
@@ -827,12 +838,14 @@ const activeSnapForDiff = computed(() => {
         :risk-level="aiRiskAssessmentVisible ? (gateState?.riskLevel ?? null) : null"
         :is-risk-loading="aiRiskAssessmentVisible && loadingHighRiskGate"
         :approval-locked="false"
+        :nudge-label="nudgeLabel"
+        :is-engine-routed="isEngineRouted"
         @back="router.push(backPath)"
         @edit="handleEditClick"
         @open-history="showHistoryDrawer = true"
         @save="triggerSaveEdit"
         @cancel="cancelEdit"
-        @notify-manager="handleNotifyManager"
+        @notify-step="handleNotifyStep"
         @approve="triggerApprove"
         @toggle-reject="handleToggleReject"
         @confirm-reject="triggerReject"

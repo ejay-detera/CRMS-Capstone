@@ -16,6 +16,10 @@ export function useApprovalProgress() {
   const workflow = ref<WorkflowProgress | null>(null)
   const status = ref<TrackerStatus>('loading')
   const error = ref<string | null>(null)
+  // Phase 7: role names owning the latest run's current step (top-level
+  // `current_step_roles` from the progress response). Empty for legacy
+  // contracts — the nudge button falls back to "Notify Manager".
+  const currentStepRoles = ref<string[]>([])
   let aborter: AbortController | null = null
 
   function apiBase(): string {
@@ -43,15 +47,18 @@ export function useApprovalProgress() {
       if (!data.engine || !data.runs?.length) {
         workflow.value = null
         status.value = 'empty'
+        currentStepRoles.value = []
         return
       }
 
       workflow.value = mapProgressResponse(String(contractId), data)
       status.value = 'ready'
+      currentStepRoles.value = Array.isArray(data.current_step_roles) ? data.current_step_roles : []
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return
       error.value = err instanceof Error ? err.message : 'Failed to load approval progress.'
       status.value = 'error'
+      currentStepRoles.value = []
     }
   }
 
@@ -61,5 +68,5 @@ export function useApprovalProgress() {
 
   onUnmounted(() => aborter?.abort())
 
-  return { workflow, status, error, fetchProgress, retry }
+  return { workflow, status, error, currentStepRoles, fetchProgress, retry }
 }

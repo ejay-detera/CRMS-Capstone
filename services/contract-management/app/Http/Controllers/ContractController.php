@@ -7,6 +7,8 @@ use App\Models\ContractCategory;
 use App\Models\ContractStatus;
 use App\Models\ContractApprovalStatus;
 use App\Models\ContractRegion;
+use App\Models\ApprovalInstance;
+use App\Models\WorkflowStepRole;
 use App\Services\AuditLogService;
 use App\Services\ApprovalEngineService;
 use App\Jobs\SyncContractToMeilisearch;
@@ -978,7 +980,19 @@ class ContractController extends Controller
         );
     }
 
-    public function notifyManager(Request $request, $id)
+    /**
+     * Phase 7 (decision #13): generalized nudge — notifies the role(s)
+     * currently responsible for the contract. Engine-routed contracts
+     * target every role at the instance's current step (type
+     * `approval_step_nudge`); legacy contracts keep the exact historic
+     * manager-targeted behavior (`manager_approval_request` → Manager,Admin).
+     * Rate limiting reuses the legacy per-contract `notify_manager_count`
+     * counter (max 2 → 429); the engine resets it on every step advance
+     * in ApprovalEngineService::enterStep(), so each step gets a fresh
+     * allowance. Both /notify-step (canonical) and /notify-manager (alias)
+     * routes point here.
+     */
+    public function notifyResponsibleRole(Request $request, $id)
     {
         $contract = Contract::where('contract_code', $id)
             ->orWhere('contract_id', $id)
@@ -996,20 +1010,78 @@ class ContractController extends Controller
             $userName = $authUser['username'] ?? 'An Employee';
         }
 
-        $message = "Employee {$userName} asked for approval on Contract {$contract->bp_name} ({$contract->item_code}).";
+        $instance = ApprovalInstance::where('contract_id', $contract->contract_id)
+            ->whereIn('status', ['in_progress', 'revisions_required'])
+            ->orderByDesc('run_number')
+            ->first();
+
+        $targetRoles = [];
+        if ($instance && $instance->current_step_id) {
+            $targetRoles = WorkflowStepRole::where('step_id', $instance->current_step_id)
+                ->get()
+                ->map(fn ($sr) => $this->resolveLiveRoleName($sr))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        if (!empty($targetRoles)) {
+            $targetRolesStr = implode(',', $targetRoles);
+            $type = 'approval_step_nudge';
+            $message = "Employee {$userName} is requesting approval on Contract {$contract->bp_name} ({$contract->item_code}) — awaiting {$targetRolesStr}.";
+            $successMessage = 'Responsible role notified successfully.';
+        } else {
+            $targetRolesStr = 'Manager,Admin';
+            $type = 'manager_approval_request';
+            $message = "Employee {$userName} asked for approval on Contract {$contract->bp_name} ({$contract->item_code}).";
+            $successMessage = 'Manager notified successfully.';
+        }
 
         try {
             app(\App\Services\NotificationService::class)->push(
                 (int) $contract->contract_id,
-                'manager_approval_request',
+                $type,
                 $message,
-                'Manager,Admin'
+                $targetRolesStr
             );
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Failed to push notify manager notification: " . $e->getMessage());
-            return response()->json(['message' => 'Failed to notify manager.'], 500);
+            \Illuminate\Support\Facades\Log::error("Failed to push notify responsible-role notification: " . $e->getMessage());
+            return response()->json(['message' => 'Failed to notify responsible role.'], 500);
         }
 
-        return response()->json(['message' => 'Manager notified successfully.', 'count' => $contract->notify_manager_count]);
+        return response()->json(['message' => $successMessage, 'count' => $contract->notify_manager_count, 'targetRoles' => $targetRolesStr]);
+    }
+
+    /**
+     * Resolve a step role's LIVE current name for notification targeting
+     * (the notification service matches target_roles by exact current
+     * role name — a renamed role's stale snapshot would reach nobody).
+     * Falls back to the snapshot when auth-module is unreachable.
+     */
+    private function resolveLiveRoleName(WorkflowStepRole $stepRole): ?string
+    {
+        try {
+            $describe = app(\App\Services\RoleProxyService::class)->describeRole((int) $stepRole->auth_role_id);
+            if (!empty($describe['current_name'])) {
+                return $describe['current_name'];
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Role name resolution failed, using snapshot', [
+                'role_id' => $stepRole->auth_role_id,
+            ]);
+        }
+
+        return $stepRole->role_name_snapshot;
+    }
+
+    /**
+     * Legacy alias: /notify-manager behaves identically to /notify-step
+     * (same method, same rate limit). Kept so cached frontends and the
+     * existing NotifyManagerTest keep working untouched.
+     */
+    public function notifyManager(Request $request, $id)
+    {
+        return $this->notifyResponsibleRole($request, $id);
     }
 }

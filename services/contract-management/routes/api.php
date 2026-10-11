@@ -27,6 +27,11 @@ Route::middleware(['auth.internal'])->group(function () {
         ->middleware('permission:cms.contracts.approve');
     Route::post('/contracts/{id}/notify-manager', [ContractController::class, 'notifyManager'])
         ->middleware('permission:cms.contracts.edit');
+    // Phase 7 (decision #13): canonical generalized nudge — notifies the
+    // role(s) currently responsible. /notify-manager above stays as an
+    // alias to the same behavior so cached callers don't break.
+    Route::post('/contracts/{id}/notify-step', [ContractController::class, 'notifyResponsibleRole'])
+        ->middleware('permission:cms.contracts.edit');
 
     // US-023: High-Risk Contract Approval Gate
     Route::get('/contracts/{id}/high-risk-approval', [\App\Http\Controllers\ContractApprovalController::class, 'show'])

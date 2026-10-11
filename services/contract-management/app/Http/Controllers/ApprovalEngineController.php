@@ -91,6 +91,10 @@ class ApprovalEngineController extends Controller
                 'contract_id' => $contract->contract_code ?? (string) $contract->contract_id,
                 'contract_created_at' => $contract->created_at?->toIso8601String(),
                 'contract_created_by' => $creatorName,
+                // Phase 7: the roles owning the latest run's current step,
+                // so the frontend can label the nudge button without
+                // deriving it from tracker nodes. [] when no run is active.
+                'current_step_roles' => $this->resolveCurrentStepRoleNames($instances->last(), $roleMeta),
                 'runs' => $instances->map(fn ($instance) => $this->formatRun($instance, $roleMeta, $userNames))->values(),
             ],
         ]);
@@ -122,6 +126,35 @@ class ApprovalEngineController extends Controller
         $task = $this->engine->decide($task, $actingUserId, $request->input('decision'), $request->input('comment'));
 
         return response()->json(['data' => $this->formatTask($task)]);
+    }
+
+    /**
+     * Phase 7 (decision #13): role names owning the latest run's current
+     * step, for the frontend nudge-button label. Prefers the LIVE current
+     * name from the already-fetched describe data (a renamed role's stale
+     * snapshot would target nobody — the notification service matches
+     * target_roles by exact current role name), falling back to the
+     * snapshot. Reads the eager-loaded step collection; no extra query.
+     */
+    private function resolveCurrentStepRoleNames($instance, array $roleMeta): array
+    {
+        if (!$instance || !in_array($instance->status, ['in_progress', 'revisions_required'], true)) {
+            return [];
+        }
+        if (!$instance->current_step_id) {
+            return [];
+        }
+        $step = $instance->workflow->steps->firstWhere('id', (int) $instance->current_step_id);
+        if (!$step) {
+            return [];
+        }
+
+        return $step->workflowStepRoles
+            ->map(fn ($sr) => $roleMeta[$sr->auth_role_id]['current_name'] ?? $sr->role_name_snapshot)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function formatRun($instance, array $roleMeta = [], array $userNames = []): array
