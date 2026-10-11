@@ -51,8 +51,11 @@ onUnmounted(() => unlockScroll())
 
 <template>
   <Teleport to="body">
-    <!-- Overlay: full-viewport coverage, anchored to body so no ancestor
-         transform/filter can offset it and leave a gap. -->
+    <!-- Single static wrapper: two transition roots directly inside a
+         Teleport confuse Vue's anchor bookkeeping on unmount (e.g.
+         navigating away mid-animation throws "Cannot read properties of
+         null (reading 'parentNode')"). One wrapper = one anchor. -->
+    <div>
     <Transition name="tracker-overlay">
       <div
         v-if="open"
@@ -107,6 +110,7 @@ onUnmounted(() => unlockScroll())
         </div>
       </aside>
     </Transition>
+    </div>
   </Teleport>
 </template>
 

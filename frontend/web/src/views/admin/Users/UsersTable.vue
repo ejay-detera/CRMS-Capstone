@@ -10,10 +10,10 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import TablePagination from '@/components/shared/TablePagination.vue'
-import { getInitials, avatarColor, roleBadge } from '@/types/user'
-import type { User } from '@/types/user'
+import { getInitials, avatarColor, roleBadgeFor } from '@/types/user'
+import type { User, RoleTab } from '@/types/user'
 
-type TabValue = 'all' | 'Admin' | 'Manager' | 'Employee'
+type TabValue = string
 
 const props = defineProps<{
   paginatedUsers:  User[]
@@ -24,6 +24,8 @@ const props = defineProps<{
   itemsPerPage:    number
   activeTab:       TabValue
   searchQuery:     string
+  // Dynamic role tabs (built by the parent from auth role systems).
+  tabs:            RoleTab[]
 }>()
 
 const emit = defineEmits<{
@@ -36,13 +38,6 @@ const emit = defineEmits<{
   'update:activeTab':   [tab: TabValue]
   'update:searchQuery': [q: string]
 }>()
-
-const tabs: { label: string; value: TabValue }[] = [
-  { label: 'View all', value: 'all'     },
-  { label: 'Admin',    value: 'Admin'   },
-  { label: 'Manager',  value: 'Manager' },
-  { label: 'Employee', value: 'Employee'},
-]
 </script>
 
 <template>
@@ -56,7 +51,7 @@ const tabs: { label: string; value: TabValue }[] = [
 
     <div class="flex items-center justify-between px-6 py-3 border-b border-black/5">
       <div class="flex items-center gap-0.5 bg-black/4 rounded-md p-1">
-        <button v-for="tab in tabs" :key="tab.value"
+        <button v-for="tab in props.tabs" :key="tab.value"
           @click="emit('update:activeTab', tab.value)"
           class="px-4 py-1.5 text-sm rounded transition-all font-medium"
           :class="activeTab === tab.value ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'">
@@ -101,7 +96,7 @@ const tabs: { label: string; value: TabValue }[] = [
           </TableCell>
 
           <TableCell class="py-4">
-            <Badge variant="outline" class="text-xs font-medium rounded-full px-2.5 py-0.5" :class="roleBadge[user.role]">
+            <Badge variant="outline" class="text-xs font-medium rounded-full px-2.5 py-0.5" :class="roleBadgeFor(user.role)">
               {{ user.role }}
             </Badge>
           </TableCell>

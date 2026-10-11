@@ -185,7 +185,7 @@ export function usePartners() {
     }
   }
 
-  const deletePartner = async (type: TabKey, dbId: number) => {
+  const deletePartner = async (type: TabKey, dbId: number | string) => {
     loading.value = true
     try {
       const apiBase = import.meta.env.VITE_VENDOR_API_URL || 'http://localhost:8001/api'

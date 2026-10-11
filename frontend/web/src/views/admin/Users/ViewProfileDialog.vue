@@ -2,7 +2,7 @@
 import { Pencil, Mail, Building2, CalendarDays } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { getInitials, avatarColor, roleBadge } from '@/types/user'
+import { getInitials, avatarColor, roleBadgeFor } from '@/types/user'
 import type { User } from '@/types/user'
 
 const props = defineProps<{ open: boolean; user: User | null; avatarIndex: number }>()
@@ -25,7 +25,7 @@ const emit  = defineEmits<{ 'update:open': [v: boolean]; edit: [u: User] }>()
               <DialogTitle class="text-sm font-bold text-black leading-snug">{{ user.name }}</DialogTitle>
               <div class="flex items-center gap-2 mt-1.5">
                 <span class="text-[10px] font-mono text-black/30 bg-black/4 px-1.5 py-0.5 rounded">{{ user.id }}</span>
-                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" :class="roleBadge[user.role]">
+                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" :class="roleBadgeFor(user.role)">
                   {{ user.role }}
                 </span>
                 <span class="flex items-center gap-1 text-[11px] font-medium"

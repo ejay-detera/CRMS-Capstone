@@ -379,4 +379,84 @@ class WorkflowBuilderTest extends TestCase
         $response->assertOk();
         $this->assertDatabaseMissing('workflows', ['id' => $workflow->id]);
     }
+
+    // ── Step-replacement guard (run immutability) ────────────────────────
+    // Replacing steps cascade-deletes tasks and orphans live runs — blocked
+    // with 409 when any approval run references the workflow. Duplicate
+    // the workflow to evolve the chain instead.
+
+    private function makeUsedWorkflow(): array
+    {
+        $category = $this->makeCategory();
+        $workflow = Workflow::create(['contract_type_id' => $category->category_id, 'name' => 'Live chain', 'status' => 'active']);
+        $step = WorkflowStep::create(['workflow_id' => $workflow->id, 'order_index' => 1, 'mode' => 'sequential']);
+        WorkflowStepRole::create(['step_id' => $step->id, 'auth_role_id' => 350, 'role_name_snapshot' => 'Manager']);
+
+        $contract = Contract::create([
+            'category_id' => $category->category_id,
+            'approval_status_id' => ContractApprovalStatus::where('status_name', 'Pending')->first()->approval_status_id,
+            'bp_name' => 'Vendor', 'item_code' => 'ITM-1', 'description' => 'd',
+            'serial_number' => 'SN-1', 'sbu_number' => 'SBU-1',
+            'region_id' => DB::table('contract_regions')->first()->region_id,
+            'start_date' => '2026-01-01', 'end_date' => '2026-12-31', 'created_by' => 1,
+        ]);
+
+        ApprovalInstance::create([
+            'contract_id' => $contract->contract_id,
+            'workflow_id' => $workflow->id,
+            'run_number' => 1,
+            'status' => 'in_progress',
+        ]);
+
+        return [$category, $workflow, $step];
+    }
+
+    public function test_cannot_replace_steps_of_workflow_with_live_runs()
+    {
+        $this->fakeAdminAuth();
+        [$category, $workflow, $step] = $this->makeUsedWorkflow();
+
+        $response = $this->withHeaders(['Authorization' => 'Bearer admin-token'])
+            ->putJson("/api/workflows/{$workflow->id}", [
+                'contract_type_id' => $category->category_id,
+                'name' => 'Live chain',
+                'status' => 'draft',
+                'steps' => [
+                    ['order_index' => 1, 'mode' => 'sequential', 'roles' => [
+                        ['auth_role_id' => 350, 'role_name' => 'Manager'],
+                    ]],
+                    ['order_index' => 2, 'mode' => 'sequential', 'roles' => [
+                        ['auth_role_id' => 351, 'role_name' => 'CEO'],
+                    ]],
+                ],
+            ]);
+
+        $response->assertStatus(409);
+        // Original step row untouched — live task references intact.
+        $this->assertDatabaseHas('workflow_steps', ['id' => $step->id]);
+        $this->assertDatabaseCount('workflow_steps', 1);
+    }
+
+    public function test_metadata_only_save_allowed_on_workflow_with_runs()
+    {
+        $this->fakeAdminAuth();
+        [$category, $workflow, $step] = $this->makeUsedWorkflow();
+
+        $response = $this->withHeaders(['Authorization' => 'Bearer admin-token'])
+            ->putJson("/api/workflows/{$workflow->id}", [
+                'contract_type_id' => $category->category_id,
+                'name' => 'Live chain (renamed)',
+                'status' => 'draft',
+                'resubmit_mode' => 'restart',
+                'steps' => [
+                    ['order_index' => 1, 'mode' => 'sequential', 'roles' => [
+                        ['auth_role_id' => 350, 'role_name' => 'Manager'],
+                    ]],
+                ],
+            ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('workflows', ['id' => $workflow->id, 'name' => 'Live chain (renamed)']);
+        $this->assertDatabaseHas('workflow_steps', ['id' => $step->id]);
+    }
 }

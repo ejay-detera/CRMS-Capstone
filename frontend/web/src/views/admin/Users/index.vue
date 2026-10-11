@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { useLoader } from '@/composables/useLoader'
+import { useRoleSystems } from '@/composables/useRoleSystems'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import UsersTable       from './UsersTable.vue'
 import ViewProfileDialog from './ViewProfileDialog.vue'
@@ -13,6 +14,7 @@ import AddUserDialog    from './AddUserDialog.vue'
 import EditUserDialog   from './EditUserDialog.vue'
 import DeleteUserDialog from './DeleteUserDialog.vue'
 import type { User, Role, Status } from '@/types/user'
+import { buildRoleTabs, pluralRoleName } from '@/types/user'
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
 const { success, error } = useToast()
@@ -27,6 +29,12 @@ const resultMessage = ref('')
 const isFetching = ref(false)
 
 const users = ref<User[]>([])
+
+// Dynamic role tabs: one per role holding CMS access in auth (IT Admin
+// governs via Role Builder). Granting a role (e.g. CEO) any cms
+// permission adds its tab here with no CMS change.
+const { cmsRoleNames, fetchRoleSystems } = useRoleSystems()
+const roleTabs = computed(() => buildRoleTabs(cmsRoleNames.value))
 
 const rolesOptions = ref<{ id: number; name: string }[]>([])
 const departmentsOptions = ref<{ id: number; name: string }[]>([])
@@ -112,16 +120,28 @@ async function fetchUsers() {
 onMounted(() => {
   fetchUsers()
   fetchOptions()
+  fetchRoleSystems()
 })
 
+// Stat cards stay in sync with the dynamic tabs: All users plus one per
+// CMS-accessible role. Known roles keep their historic delta pills;
+// newly granted roles show a neutral "new" pill.
+const KNOWN_CARD_DELTAS: Record<string, { change: string; positive: boolean }> = {
+  Admin:    { change: '+2.1%', positive: true  },
+  Manager:  { change: '-0.3%', positive: false },
+  Employee: { change: '+5.2%', positive: true  },
+}
+
 const statCards = computed(() => [
-  { label: 'All users', value: users.value.length,                                   change: '+4.0%', positive: true  },
-  { label: 'Admins',    value: users.value.filter(u => u.role === 'Admin').length,    change: '+2.1%', positive: true  },
-  { label: 'Managers',  value: users.value.filter(u => u.role === 'Manager').length,  change: '-0.3%', positive: false },
-  { label: 'Employees', value: users.value.filter(u => u.role === 'Employee').length, change: '+5.2%', positive: true  },
+  { label: 'All users', value: users.value.length, change: '+4.0%', positive: true },
+  ...cmsRoleNames.value.map(name => ({
+    label: pluralRoleName(name),
+    value: users.value.filter(u => u.role === name).length,
+    ...(KNOWN_CARD_DELTAS[name] ?? { change: 'new', positive: true }),
+  })),
 ])
 
-type TabValue = 'all' | Role
+type TabValue = string
 const activeTab   = ref<TabValue>('all')
 const searchQuery = ref('')
 
@@ -353,7 +373,7 @@ async function executeExport() {
     </div>
 
     <!-- Stat cards: skeleton while loading, real values after -->
-    <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-5 gap-4">
       <template v-if="isFetching">
         <div v-for="i in 4" :key="i" class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm animate-pulse">
           <div class="h-2.5 w-20 bg-black/8 rounded mb-4"></div>
@@ -382,6 +402,7 @@ async function executeExport() {
       :current-page="currentPage"
       :items-per-page="itemsPerPage"
       :active-tab="activeTab"
+      :tabs="roleTabs"
       :search-query="searchQuery"
       @open-view-profile="openViewProfile"
       @open-edit-user="openEditUser"

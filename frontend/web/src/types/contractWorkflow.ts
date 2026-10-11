@@ -69,9 +69,17 @@ export interface ApiApprovalTask {
   comment: string | null
 }
 
+export interface ApiStepRole {
+  auth_role_id: number
+  role_name: string | null
+  role_deleted: boolean
+  role_renamed_from: string | null
+}
+
 export interface ApiApprovalGroup {
   step_id: number
   mode: GroupMode
+  roles: ApiStepRole[]
   tasks: ApiApprovalTask[]
 }
 
@@ -96,6 +104,8 @@ export interface ApprovalProgressResponse {
  * so it stays unit-testable. Rules:
  * - approved → completed; pending/on_hold flagged is_current → active,
  *   otherwise pending; rejected/canceled/on_hold pass through.
+ * - Steps with no tasks yet render as pending from the step definitions
+ *   (tasks materialize only when reached); groups with neither are dropped.
  * - comment → subText; role_name snapshot → title (fallback Role #id).
  * - acted_via_delegation + delegate_name → delegation badge; the
  *   on-behalf-of label is the step's role title.
@@ -104,10 +114,16 @@ export interface ApprovalProgressResponse {
  */
 export function mapProgressResponse(contractId: string, json: ApprovalProgressResponse): WorkflowProgress {
   const runs: WorkflowRun[] = json.runs.map((run) => {
-    const groups: WorkflowGroup[] = run.groups.map((g) => ({
+    // Groups render from materialized tasks; steps with no tasks yet
+    // (future steps — tasks are created only when the run reaches them)
+    // render as pending/locked from the step definitions. A group with
+    // neither is wreckage with nothing to show and is dropped.
+    const groups: WorkflowGroup[] = run.groups
+      .map((g) => ({
       id: `step-${g.step_id}`,
       mode: g.mode,
-      nodes: g.tasks.map((t): WorkflowNode => {
+      nodes: g.tasks.length > 0
+        ? g.tasks.map((t): WorkflowNode => {
         // Backend 'approved' becomes the tracker's 'completed'.
         let status: NodeStatus = t.status === 'approved' ? 'completed' : t.status
         if (t.status === 'pending') {
@@ -129,8 +145,22 @@ export function mapProgressResponse(contractId: string, json: ApprovalProgressRe
           roleDeleted: t.role_deleted,
           roleRenamedFrom: t.role_deleted ? null : t.role_renamed_from,
         }
-      }),
+      })
+        : (g.roles ?? []).map((r): WorkflowNode => {
+          const title = r.role_name ?? `Role #${r.auth_role_id}`
+          return {
+            id: `future-${g.step_id}-${r.auth_role_id}`,
+            title,
+            status: 'pending',
+            actedAt: null,
+            subText: null,
+            delegation: null,
+            roleDeleted: r.role_deleted,
+            roleRenamedFrom: r.role_deleted ? null : r.role_renamed_from,
+          }
+        }),
     }))
+    .filter((g) => g.nodes.length > 0)
 
     // Synthetic creation node first (mirrors the mock scenarios' g1).
     groups.unshift({

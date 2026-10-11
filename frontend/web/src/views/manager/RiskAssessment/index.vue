@@ -14,7 +14,7 @@ import RiskExportButton  from './RiskExportButton.vue'
 // contract detail header's risk flag badge and the manager approval queue.
 const route  = useRoute()
 const router = useRouter()
-const { error: showError, success } = useToast()
+const { error: showError } = useToast()
 const { summary, loading, scanning, exporting, fetchSummary, triggerScan, exportPdf } = useRiskAssessment()
 
 const contractId = route.params.id as string

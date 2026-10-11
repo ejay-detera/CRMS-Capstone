@@ -27,16 +27,6 @@ export interface RoleMeta {
   locked:      boolean
 }
 
-// ── System access ─────────────────────────────────────────────────────
-// Describes an external system that a role can be granted access to visit.
-// `available: false` renders as a "Coming soon" placeholder.
-export interface SystemDefinition {
-  key:         string   // 'cms' | 'prs' | 'hrm' | 'fin'
-  label:       string   // display name, e.g. 'CMS'
-  description: string   // short subtitle shown in the card
-  available:   boolean  // false = disabled Coming-soon placeholder
-}
-
 // ── API-shaped types (from auth-service) ─────────────────────────────
 export interface ApiRole {
   id:          number

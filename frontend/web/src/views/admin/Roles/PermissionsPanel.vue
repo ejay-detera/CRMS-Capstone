@@ -22,19 +22,8 @@ function isCategoryAllChecked(cat: Category): boolean {
 <template>
   <div class="space-y-5">
 
-    <!-- CMS section (Active System Card) -->
-    <div class="bg-white rounded-2xl border border-brand-navy/20 shadow-sm overflow-hidden ring-1 ring-brand-navy/10">
-
-      <!-- System label header strip -->
-      <div class="px-6 py-3.5 border-b border-brand-navy/10 flex items-center justify-between bg-brand-navy/[0.04]">
-        <div class="flex items-center gap-2.5">
-          <span class="text-xs font-bold px-2.5 py-0.5 rounded-md bg-brand-navy text-white shadow-xs">CMS</span>
-          <span class="text-xs font-semibold text-brand-navy">Contract Management System</span>
-        </div>
-        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-navy/10 text-brand-navy">
-          Configured System
-        </span>
-      </div>
+    <!-- Permissions card (this page is CMS-only: no system label needed) -->
+    <div class="bg-white rounded-2xl border border-black/8 shadow-sm overflow-hidden">
 
       <!-- Panel header -->
       <div class="px-6 py-4 border-b border-black/5 flex items-center gap-3 bg-white">
@@ -113,26 +102,6 @@ function isCategoryAllChecked(cat: Category): boolean {
           </div>
 
         </div>
-      </div>
-    </div>
-
-    <!-- Segregated placeholder cards for other systems -->
-    <div
-      v-for="sys in [
-        { key: 'prs', label: 'PRS', description: 'Productivity Report System' },
-        { key: 'hrm', label: 'HRM', description: 'Human Resource Management' },
-        { key: 'fin', label: 'Finance', description: 'Financial Management' },
-      ]"
-      :key="sys.key"
-      class="bg-white rounded-2xl border border-black/8 overflow-hidden opacity-60 shadow-xs"
-    >
-      <div class="px-6 py-3.5 border-b border-black/5 flex items-center gap-2.5 bg-black/[0.02]">
-        <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-black/6 text-black/40 border border-black/10">{{ sys.label }}</span>
-        <span class="text-xs text-black/40 font-medium">{{ sys.description }}</span>
-        <span class="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/5 text-black/35 border border-black/8">Coming soon</span>
-      </div>
-      <div class="px-6 py-5">
-        <p class="text-xs text-black/40 italic">No permissions configured yet for this system. Access will be configurable in a future release.</p>
       </div>
     </div>
 

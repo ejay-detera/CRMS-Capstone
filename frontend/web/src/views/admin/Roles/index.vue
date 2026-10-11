@@ -2,10 +2,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { Shield, Users, UserCheck, Save, Loader2, AlertCircle, KeyRound, Workflow as WorkflowIcon } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
-import { useRolePermissions, UI_CATEGORIES, SYSTEMS } from '@/composables/useRolePermissions'
+import { useRolePermissions, UI_CATEGORIES } from '@/composables/useRolePermissions'
 import RoleCards          from './RoleCards.vue'
 import PermissionsPanel   from './PermissionsPanel.vue'
-import SystemAccessCard   from './SystemAccessCard.vue'
 import ApprovalWorkflowsTab from './ApprovalWorkflows/index.vue'
 import type { ApiRole, RoleMeta } from '@/types/role'
 
@@ -23,13 +22,11 @@ const {
   roles,
   allPermissions,
   rolePermissionIds,
-  roleSystemAccess,
   isLoading,
   error,
   init,
   togglePermission,
   toggleCategory,
-  toggleSystemAccess,
   saveRolePermissions,
   getActivePermIds,
 } = useRolePermissions()
@@ -120,17 +117,6 @@ const activePermSlugs = computed(() => {
     .map(p => p.slug)
 })
 
-// ── Active system keys for the current role ───────────────────────────
-const activeSystemKeys = computed(() => {
-  if (!activeRole.value) return []
-  return [...(roleSystemAccess.value[activeRole.value.id] ?? new Set<string>())]
-})
-
-function handleToggleSystem(systemKey: string) {
-  if (!activeRole.value || isLocked.value) return
-  toggleSystemAccess(activeRole.value.id, systemKey)
-}
-
 // ── Initialise ────────────────────────────────────────────────────────
 onMounted(async () => {
   await init()
@@ -205,14 +191,6 @@ onMounted(async () => {
           :enabled-counts="enabledCounts"
           :active-role="activeRole"
           @update:active-role="activeRole = $event"
-        />
-
-        <SystemAccessCard
-          v-if="activeRole"
-          :systems="SYSTEMS"
-          :active-system-keys="activeSystemKeys"
-          :is-locked="isLocked"
-          @toggle-system="handleToggleSystem"
         />
 
         <PermissionsPanel

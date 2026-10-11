@@ -18,6 +18,59 @@ export interface SystemCfg {
   contractExpiryAlerts: boolean
   approvalAlerts: boolean
   renewalReminders: boolean
+  // Extended admin settings (bound by the SystemConfig tabs below).
+  // NOTE: only the five notification fields above persist — the backend
+  // PUT /system-config accepts just those, so the rest are local UI
+  // state until the notification service grows matching columns. They
+  // are defaulted here so the tabs render deterministically instead of
+  // binding undefined.
+  autoRenew: boolean
+  dualApproval: boolean
+  allowDraftSubmit: boolean
+  requireNotarization: boolean
+  maxContractDays: number
+  expiryWarningDays: number
+  systemName: string
+  supportEmail: string
+  timezone: string
+  dateFormat: string
+  auditLogging: boolean
+  autoBackups: boolean
+  backupFrequency: string
+  dataRetentionDays: number
+  allowSelfReg: boolean
+  requireEmailVerify: boolean
+  sessionTimeout: number
+  maxLoginAttempts: number
+  minPasswordLength: number
+  requireStrongPass: boolean
+  twoFactorAdmins: boolean
+  twoFactorAll: boolean
+}
+
+const EXTENDED_DEFAULTS = {
+  autoRenew: false,
+  dualApproval: false,
+  allowDraftSubmit: true,
+  requireNotarization: false,
+  maxContractDays: 365,
+  expiryWarningDays: 30,
+  systemName: 'SBSI CMS',
+  supportEmail: '',
+  timezone: 'Asia/Manila',
+  dateFormat: 'MM/DD/YYYY',
+  auditLogging: true,
+  autoBackups: false,
+  backupFrequency: 'daily',
+  dataRetentionDays: 365,
+  allowSelfReg: false,
+  requireEmailVerify: true,
+  sessionTimeout: 30,
+  maxLoginAttempts: 5,
+  minPasswordLength: 8,
+  requireStrongPass: false,
+  twoFactorAdmins: false,
+  twoFactorAll: false,
 }
 
 export function useSystemConfig() {
@@ -27,6 +80,7 @@ export function useSystemConfig() {
     contractExpiryAlerts: true,
     approvalAlerts: true,
     renewalReminders: true,
+    ...EXTENDED_DEFAULTS,
   })
   const loading = ref(false)
 

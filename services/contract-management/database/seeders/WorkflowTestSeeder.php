@@ -36,7 +36,9 @@ class WorkflowTestSeeder extends Seeder
 {
     public function run(): void
     {
-        $roleId = (int) env('SEED_WORKFLOW_ROLE_ID', 559);
+        // Auth role IDs are re-issued on a fresh auth DB seed — confirm the
+        // current Manager ID (auth roles table) if the default mismatches.
+        $roleId = (int) env('SEED_WORKFLOW_ROLE_ID', 132);
         $roleName = (string) env('SEED_WORKFLOW_ROLE_NAME', 'Manager');
 
         if ($roleId <= 0) {

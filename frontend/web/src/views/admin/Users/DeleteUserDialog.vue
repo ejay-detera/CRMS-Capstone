@@ -3,7 +3,7 @@ import { AlertTriangle } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { getInitials, avatarColor, roleBadge } from '@/types/user'
+import { getInitials, avatarColor, roleBadgeFor } from '@/types/user'
 import type { User } from '@/types/user'
 
 defineProps<{ open: boolean; user: User | null; avatarIndex: number }>()
@@ -37,7 +37,7 @@ defineEmits<{ 'update:open': [v: boolean]; confirm: [] }>()
               <p class="text-xs text-black/40 truncate">{{ user.email }}</p>
             </div>
             <Badge variant="outline" class="text-xs font-semibold rounded-full px-2 py-0.5 shrink-0"
-              :class="roleBadge[user.role]">{{ user.role }}</Badge>
+              :class="roleBadgeFor(user.role)">{{ user.role }}</Badge>
           </div>
 
           <div class="flex gap-3 mt-5">

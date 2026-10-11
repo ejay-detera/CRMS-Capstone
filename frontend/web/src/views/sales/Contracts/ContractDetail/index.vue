@@ -113,6 +113,17 @@ const workflowMockScenarios: Record<string, WorkflowProgress> = {
       ] },
     ],
   },
+  // Scenario F: on-hold step — the Accounting role currently has no
+  // active holders (decision #12): amber badge, current-step emphasis.
+  F: {
+    contractId: 'CTR-1006', currentRun: 1,
+    runs: [{ runNumber: 1, groups: [
+      { id: 'g1', mode: 'sequential', nodes: [{ id: 'n1', title: 'Contract created', status: 'completed', actedAt: '2026-09-26T09:00:00Z', subText: 'Submitted by Procurement', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g2', mode: 'sequential', nodes: [{ id: 'n2', title: 'Regulatory', status: 'completed', actedAt: '2026-09-28T14:30:00Z', subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g3', mode: 'sequential', nodes: [{ id: 'n3', title: 'Accounting', status: 'on_hold', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g4', mode: 'sequential', nodes: [{ id: 'n4', title: 'CEO (for review)', status: 'pending', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+    ] }],
+  },
 }
 
 const workflowTracker = computed<WorkflowProgress | null>(() => {

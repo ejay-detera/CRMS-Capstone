@@ -2,7 +2,6 @@
 import { reactive, watch, computed, ref } from 'vue'
 import { UserRound } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
 const props = defineProps<{

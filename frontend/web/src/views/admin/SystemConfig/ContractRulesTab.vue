@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
 import { inject } from 'vue'
 import { FileText, ShieldCheck } from 'lucide-vue-next'
-import type { SystemCfg } from './index.vue'
+import type { SystemCfg } from '@/composables/useSystemConfig'
 import SettingCard from '@/components/shared/SettingCard.vue'
 import ToggleRow   from '@/components/shared/ToggleRow.vue'
 

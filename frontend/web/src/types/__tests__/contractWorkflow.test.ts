@@ -59,6 +59,9 @@ const baseResponse: ApprovalProgressResponse = {
         {
           step_id: 10,
           mode: 'sequential',
+          roles: [
+            { auth_role_id: 3, role_name: 'Regulatory', role_deleted: false, role_renamed_from: 'OldReg' },
+          ],
           tasks: [
             { id: 1, step_id: 10, auth_role_id: 3, role_name: 'Regulatory', role_deleted: false, role_renamed_from: 'OldReg', delegate_name: null, is_current: false, status: 'approved', acted_by_user_id: 5, acted_via_delegation: false, acted_at: '2026-09-28T14:30:00Z', comment: 'Compliant' },
           ],
@@ -66,10 +69,22 @@ const baseResponse: ApprovalProgressResponse = {
         {
           step_id: 20,
           mode: 'parallel',
+          roles: [
+            { auth_role_id: 4, role_name: 'Sales', role_deleted: false, role_renamed_from: null },
+            { auth_role_id: 5, role_name: null, role_deleted: true, role_renamed_from: null },
+          ],
           tasks: [
             { id: 2, step_id: 20, auth_role_id: 4, role_name: 'Sales', role_deleted: false, role_renamed_from: null, delegate_name: null, is_current: true, status: 'pending', acted_by_user_id: null, acted_via_delegation: false, acted_at: null, comment: null },
             { id: 3, step_id: 20, auth_role_id: 5, role_name: null, role_deleted: true, role_renamed_from: null, delegate_name: null, is_current: true, status: 'on_hold', acted_by_user_id: null, acted_via_delegation: false, acted_at: null, comment: null },
           ],
+        },
+        {
+          step_id: 30,
+          mode: 'sequential',
+          roles: [
+            { auth_role_id: 6, role_name: 'CEO', role_deleted: false, role_renamed_from: null },
+          ],
+          tasks: [],
         },
       ],
     },
@@ -134,6 +149,9 @@ describe('mapProgressResponse', () => {
         groups: [{
           step_id: 10,
           mode: 'sequential',
+          roles: [
+            { auth_role_id: 7, role_name: 'CEO', role_deleted: false, role_renamed_from: null },
+          ],
           tasks: [{
             id: 9, step_id: 10, auth_role_id: 7, role_name: 'CEO', role_deleted: false,
             role_renamed_from: null, delegate_name: 'Alex Reyes', is_current: false,
@@ -148,6 +166,17 @@ describe('mapProgressResponse', () => {
     expect(node.delegation).toEqual({ delegateName: 'Alex Reyes', onBehalfOfRole: 'CEO' })
   })
 
+  it('renders future steps with no tasks as pending from the step definitions', () => {
+    const out = mapProgressResponse('CTR-1', baseResponse)
+    // groups[0] is the synthetic created node; step 30 (no tasks) lands last.
+    const future = out.runs[0].groups[out.runs[0].groups.length - 1]
+    expect(future.id).toBe('step-30')
+    expect(future.nodes).toHaveLength(1)
+    expect(future.nodes[0].title).toBe('CEO')
+    expect(future.nodes[0].status).toBe('pending')
+    expect(future.nodes[0].actedAt).toBeNull()
+  })
+
   it('suppresses the renamed-from label when the role is deleted', () => {
     const resp: ApprovalProgressResponse = {
       ...baseResponse,
@@ -158,6 +187,9 @@ describe('mapProgressResponse', () => {
         groups: [{
           step_id: 10,
           mode: 'sequential',
+          roles: [
+            { auth_role_id: 8, role_name: 'Old', role_deleted: true, role_renamed_from: null },
+          ],
           tasks: [{
             id: 4, step_id: 10, auth_role_id: 8, role_name: 'Old', role_deleted: true,
             role_renamed_from: 'Older', delegate_name: null, is_current: false,

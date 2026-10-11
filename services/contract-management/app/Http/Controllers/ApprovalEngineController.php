@@ -171,10 +171,42 @@ class ApprovalEngineController extends Controller
                 return [
                     'step_id' => $step->id,
                     'mode'    => $step->mode,
+                    // Step definitions (not just materialized tasks) so the
+                    // tracker can render not-yet-reached future steps as
+                    // pending/locked. Already eager-loaded — no extra query.
+                    'roles'   => $step->workflowStepRoles->map(function ($sr) use ($roleMeta) {
+                        [$deleted, $renamedFrom] = $this->roleDisplay((int) $sr->auth_role_id, $roleMeta);
+                        return [
+                            'auth_role_id' => $sr->auth_role_id,
+                            'role_name' => $sr->role_name_snapshot,
+                            'role_deleted' => $deleted,
+                            'role_renamed_from' => $renamedFrom,
+                        ];
+                    })->values(),
                     'tasks'   => $tasks->map(fn ($t) => $this->formatTask($t, $roleMeta, $userNames, $instance))->values(),
                 ];
             })->values(),
         ];
+    }
+
+    /**
+     * Decision #14 display state for one role: [deleted, renamedFrom].
+     * Deleted takes precedence; describe failures degrade to
+     * snapshot-only (not deleted, no rename).
+     */
+    private function roleDisplay(int $authRoleId, array $roleMeta): array
+    {
+        $describe = $roleMeta[$authRoleId] ?? null;
+        $deleted = (bool) ($describe['deleted'] ?? false);
+        $renamedFrom = null;
+        if (!$deleted && ($describe['was_renamed'] ?? false)) {
+            $history = $describe['name_history'] ?? [];
+            $last = end($history);
+            $renamedFrom = is_array($last)
+                ? ($last['old_name'] ?? $last['name'] ?? null)
+                : (is_string($last) ? $last : null);
+        }
+        return [$deleted, $renamedFrom];
     }
 
     private function formatTask(ApprovalTask $task, array $roleMeta = [], array $userNames = [], $instance = null): array
@@ -186,18 +218,9 @@ class ApprovalEngineController extends Controller
         // Decision #14 display state, resolved server-side (Phase 6).
         // describeRole() shape (Phase 1): exists/deleted/current_name/
         // was_renamed/name_history. Deleted takes precedence over renamed.
-        $describe = $roleMeta[$task->auth_role_id] ?? null;
-        $deleted = (bool) ($describe['deleted'] ?? false);
-        if (!$describe) {
-            $deleted = $stepRole === null;
-        }
-        $renamedFrom = null;
-        if (!$deleted && ($describe['was_renamed'] ?? false)) {
-            $history = $describe['name_history'] ?? [];
-            $last = end($history);
-            $renamedFrom = is_array($last)
-                ? ($last['old_name'] ?? $last['name'] ?? null)
-                : (is_string($last) ? $last : null);
+        [$deleted, $renamedFrom] = $this->roleDisplay((int) $task->auth_role_id, $roleMeta);
+        if ($stepRole === null && empty($roleMeta)) {
+            $deleted = true;
         }
 
         $delegateName = null;

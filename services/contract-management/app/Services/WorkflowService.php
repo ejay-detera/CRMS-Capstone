@@ -83,8 +83,18 @@ class WorkflowService
                     'status'           => $status,
                     'resubmit_mode'    => $payload['resubmit_mode'] ?? $workflow->resubmit_mode,
                 ]);
+                $newSteps = $payload['steps'] ?? [];
+                if ($this->stepSignature($workflow) === $this->payloadSignature($newSteps)) {
+                    // Metadata-only save (name/mode flags unchanged in
+                    // substance): keep the existing step rows so live and
+                    // historical approval-task references stay intact.
+                    return $workflow->load(['steps.workflowStepRoles']);
+                }
                 // Full replace of steps/roles — simplest correct model for
                 // a builder UI that always submits the complete step list.
+                // Guarded: replacing steps cascade-deletes tasks and
+                // orphans live runs (tasks gone, current_step NULL).
+                $this->assertStepsEditable($workflow);
                 $workflow->steps()->delete(); // cascades to workflow_step_roles
             } else {
                 $workflow = Workflow::create([
@@ -114,6 +124,62 @@ class WorkflowService
 
             return $workflow->load(['steps.workflowStepRoles']);
         });
+    }
+
+    /**
+     * Blocks step replacement on a workflow that already has approval
+     * runs: deleting steps cascade-deletes their tasks (live AND history)
+     * and nulls instances' current_step, orphaning in-progress runs with
+     * an empty tracker. Mirrors deleteWorkflow()'s 409 philosophy —
+     * duplicate the workflow to evolve the chain instead.
+     */
+    private function assertStepsEditable(Workflow $workflow): void
+    {
+        if ($workflow->instances()->exists()) {
+            throw new HttpResponseException(
+                response()->json([
+                    'message' => 'This workflow already has contracts that have gone through it, so its steps can no longer be changed. Duplicate it to evolve the chain instead.',
+                ], 409)
+            );
+        }
+    }
+
+    /**
+     * Canonical signature of a workflow's persisted steps for
+     * metadata-only-save detection: ordered modes + sorted role pairs.
+     */
+    private function stepSignature(Workflow $workflow): array
+    {
+        $workflow->loadMissing(['steps.workflowStepRoles']);
+
+        return $workflow->steps->sortBy('order_index')->values()->map(fn ($step) => [
+            'mode' => $step->mode,
+            'roles' => $step->workflowStepRoles
+                ->map(fn ($r) => [(int) $r->auth_role_id, (string) $r->role_name_snapshot])
+                ->sort()
+                ->values()
+                ->all(),
+        ])->all();
+    }
+
+    /**
+     * Same canonical shape for the builder-submitted payload.
+     */
+    private function payloadSignature(array $steps): array
+    {
+        $norm = array_map(fn ($stepData) => [
+            'order' => $stepData['order_index'] ?? 0,
+            'mode' => $stepData['mode'] ?? 'sequential',
+            'roles' => collect($stepData['roles'] ?? [])
+                ->map(fn ($roleData) => [(int) ($roleData['auth_role_id'] ?? 0), (string) ($roleData['role_name'] ?? '')])
+                ->sort()
+                ->values()
+                ->all(),
+        ], $steps);
+
+        usort($norm, fn ($a, $b) => $a['order'] <=> $b['order']);
+
+        return array_map(fn ($entry) => ['mode' => $entry['mode'], 'roles' => $entry['roles']], $norm);
     }
 
     /**

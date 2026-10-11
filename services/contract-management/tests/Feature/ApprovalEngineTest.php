@@ -654,7 +654,14 @@ class ApprovalEngineTest extends TestCase
         $this->assertEquals('Regulator', $task['role_renamed_from']);
         $this->assertNull($task['delegate_name']);
         // Step 2 hasn't been entered yet — no tasks, and no current flag.
+        // Its step definitions are still exposed so the tracker can render
+        // the future step as pending/locked.
         $this->assertCount(0, $run['groups'][1]['tasks']);
+        $futureRoles = $run['groups'][1]['roles'];
+        $this->assertCount(1, $futureRoles);
+        $this->assertEquals(351, $futureRoles[0]['auth_role_id']);
+        $this->assertEquals('Sales', $futureRoles[0]['role_name']);
+        $this->assertFalse($futureRoles[0]['role_deleted']);
     }
 
     public function test_approval_progress_marks_deleted_role_and_resolves_delegate_name()
