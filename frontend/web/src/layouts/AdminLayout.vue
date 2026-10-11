@@ -149,7 +149,7 @@ const user = computed(() => {
           class="mb-1 p-0"
         >
           <SidebarGroupLabel
-            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"
+            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden font-secondary"
           >
             {{ group.label }}
           </SidebarGroupLabel>
@@ -243,13 +243,13 @@ const user = computed(() => {
                   @click="openNotification(n)">
                   <span class="mt-0.5 w-1.5 h-1.5 rounded-full shrink-0"
                     :class="n.isRead ? 'bg-transparent' : 'bg-brand-blue'" />
-                  <p class="text-xs leading-relaxed line-clamp-2"
+                  <p class="text-xs leading-relaxed line-clamp-2 font-secondary"
                     :class="n.isRead ? 'text-black/45' : 'text-black font-medium'">{{ n.message }}</p>
                 </li>
               </ul>
               <div class="px-4 py-2.5 border-t border-black/6">
                 <button @click="router.push('/admin/notifications')"
-                  class="w-full text-xs text-center text-brand-blue hover:text-brand-navy font-medium transition-colors">
+                  class="w-full text-xs text-center text-brand-blue hover:text-brand-navy font-medium transition-colors font-secondary">
                   View all notifications
                 </button>
               </div>
@@ -268,7 +268,7 @@ const user = computed(() => {
                   <p class="text-sm font-semibold text-black leading-tight">
                     {{ user.name }}
                   </p>
-                  <p class="text-xs text-black/50">{{ user.role }}</p>
+                  <p class="text-xs text-black/50 font-secondary">{{ user.role }}</p>
                 </div>
               </div>
             </PopoverTrigger>
@@ -276,7 +276,7 @@ const user = computed(() => {
               <div class="space-y-1">
                 <div class="px-2 py-1.5 border-b border-black/5">
                   <p class="text-sm font-semibold text-black">{{ user.name }}</p>
-                  <p class="text-xs text-black/50">{{ user.email }}</p>
+                  <p class="text-xs text-black/50 font-secondary">{{ user.email }}</p>
                 </div>
                 <button @click="router.push('/admin/profile')"
                   class="w-full flex items-center gap-3 px-2 py-2 text-sm text-black hover:bg-black/5 rounded-lg transition-colors text-left">

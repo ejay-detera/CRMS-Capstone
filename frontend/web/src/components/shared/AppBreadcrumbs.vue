@@ -8,7 +8,7 @@ const { breadcrumbs } = useBreadcrumbs()
   <nav
     v-if="breadcrumbs.length > 0"
     aria-label="Breadcrumb"
-    class="flex items-center min-w-0 text-xs sm:text-sm select-none"
+    class="flex items-center min-w-0 text-xs sm:text-sm select-none font-secondary"
   >
     <ol class="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
       <li

@@ -174,7 +174,7 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
         <!-- Contracts group -->
         <SidebarGroup v-if="hasPermission('cms.contracts.view') || hasPermission('cms.contracts.create')" class="mb-1 p-0">
           <SidebarGroupLabel
-            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"
+            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden font-secondary"
           >Contracts</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu class="gap-0.5">
@@ -231,7 +231,7 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
         <!-- Vendor Management (Partners) group — shown only when permitted -->
         <SidebarGroup v-if="hasPermission('cms.partners.view')" class="mb-1 p-0">
           <SidebarGroupLabel
-            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"
+            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden font-secondary"
           >Vendor Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu class="gap-0.5">
@@ -266,7 +266,7 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
         <!-- General group -->
         <SidebarGroup class="mb-1 p-0">
           <SidebarGroupLabel
-            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"
+            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden font-secondary"
           >General</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu class="gap-0.5">
@@ -346,13 +346,13 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
                   @click="openNotification(n)">
                   <span class="mt-0.5 w-1.5 h-1.5 rounded-full shrink-0"
                     :class="n.isRead ? 'bg-transparent' : 'bg-brand-blue'" />
-                  <p class="text-xs leading-relaxed line-clamp-2"
+                  <p class="text-xs leading-relaxed line-clamp-2 font-secondary"
                     :class="n.isRead ? 'text-black/45' : 'text-black font-medium'">{{ n.message }}</p>
                 </li>
               </ul>
               <div class="px-4 py-2.5 border-t border-black/6">
                 <button @click="router.push('/manager/notifications')"
-                  class="w-full text-xs text-center text-brand-blue hover:text-brand-navy font-medium transition-colors">
+                  class="w-full text-xs text-center text-brand-blue hover:text-brand-navy font-medium transition-colors font-secondary">
                   View all notifications
                 </button>
               </div>
@@ -369,7 +369,7 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
                 </Avatar>
                 <div class="hidden sm:block text-left">
                   <p class="text-sm font-semibold text-black leading-tight">{{ displayUser.name }}</p>
-                  <p class="text-xs text-black/50">{{ displayUser.role }}</p>
+                  <p class="text-xs text-black/50 font-secondary">{{ displayUser.role }}</p>
                 </div>
               </div>
             </PopoverTrigger>
@@ -377,7 +377,7 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
               <div class="space-y-1">
                 <div class="px-2 py-1.5 border-b border-black/5">
                   <p class="text-sm font-semibold text-black">{{ displayUser.name }}</p>
-                  <p class="text-xs text-black/50">{{ displayUser.email }}</p>
+                  <p class="text-xs text-black/50 font-secondary">{{ displayUser.email }}</p>
                 </div>
                 <button @click="router.push('/manager/profile')"
                   class="w-full flex items-center gap-3 px-2 py-2 text-sm text-black hover:bg-black/5 rounded-lg transition-colors text-left">
