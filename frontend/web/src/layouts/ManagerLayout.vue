@@ -34,7 +34,6 @@ import { ref, watch, computed, onMounted, onUnmounted } from "vue";
 import { useAuth } from "@/composables/useAuth";
 import { useNotifications } from "@/composables/useNotifications";
 import type { Notification } from "@/types/notification";
-import logoUrl from "@/assets/sbsi logo.png";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 
 const route  = useRoute();
@@ -124,18 +123,17 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
       }"
     >
       <!-- Logo -->
-      <SidebarHeader class="border-b border-white/10 px-4 py-5">
-        <div class="relative mx-auto h-12 w-44 overflow-hidden transition-all duration-300 ease-in-out group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">
-          <img
-            :src="logoUrl"
-            alt="SBSI logo"
-            class="absolute inset-0 m-auto h-12 max-w-44 object-contain transition-opacity duration-300 ease-in-out group-data-[collapsible=icon]:opacity-0"
-          />
+      <SidebarHeader class="h-16 justify-center border-b border-white/10 px-4">
+        <div class="flex items-center justify-center gap-2.5 w-full transition-all duration-200">
           <img
             src="/sbsi-logo.png"
-            alt="SBSI logo"
-            class="absolute inset-0 m-auto h-10 w-10 object-contain opacity-0 transition-opacity duration-300 ease-in-out group-data-[collapsible=icon]:opacity-100"
+            alt="SBSI Logo"
+            class="h-10 w-10 shrink-0 object-contain rounded"
           />
+          <div class="min-w-0 flex flex-col font-secondary text-white select-none group-data-[collapsible=icon]:hidden">
+            <span class="text-xs font-semibold leading-tight text-white tracking-tight">Contract Management</span>
+            <span class="text-xs font-semibold leading-tight text-white/90 tracking-tight">System</span>
+          </div>
         </div>
       </SidebarHeader>
 
