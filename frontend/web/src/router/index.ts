@@ -238,6 +238,12 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/sales/Contracts/CreateContract.vue'),
       },
       {
+        path: 'contracts/editor',
+        name: 'sales-contracts-editor',
+        component: () => import('@/views/shared/ContractEditor/index.vue'),
+        meta: { requiresPermission: 'cms.ai.contract_generator' },
+      },
+      {
         path: 'contracts/:id',
         name: 'sales-contracts-detail',
         component: () => import('@/views/sales/Contracts/ContractDetail/index.vue'),

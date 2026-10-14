@@ -4,6 +4,7 @@ use App\Http\Controllers\Internal\ContractRiskLevelController;
 use App\Http\Controllers\RiskAssessmentController;
 use App\Http\Controllers\VendorSuggestionController;
 use App\Http\Controllers\OcrExtractionController;
+use App\Http\Controllers\ContractGenerationController;
 use Illuminate\Support\Facades\Route;
 
 // Internal service-to-service reads — authenticated by X-Internal-Secret header.
@@ -23,6 +24,9 @@ Route::middleware(['auth.internal'])->group(function () {
     
     // OCR Service - US-OCR
     Route::post('/ocr/extract', [OcrExtractionController::class, 'extract']);
+
+    // AI Contract Generator
+    Route::post('/contracts/generate', [ContractGenerationController::class, 'generate']);
 });
 
 // Feature 3: Vendor AI Suggestions — user-facing, bearer-token authenticated.

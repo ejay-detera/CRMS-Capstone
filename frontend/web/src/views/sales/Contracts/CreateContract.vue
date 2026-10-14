@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, computed, ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowLeft, ScanLine } from 'lucide-vue-next'
+import { ArrowLeft, ScanLine, Sparkles } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
@@ -29,6 +29,7 @@ const { contractTypes, fetchContractTypes } = useContractTypes()
 
 const canUseOcr = computed(() => hasPermission('cms.ai.ocr'))
 const canUseRiskAssessment = computed(() => hasPermission('cms.ai.risk_assessment'))
+const canUseContractGenerator = computed(() => hasPermission('cms.ai.contract_generator'))
 
 const ocrOpen = ref(false)
 const { detectType: detectOcrDocType, validate: validateOcrDoc, uploadFile: uploadOcrDoc } = useDocumentUpload()
@@ -246,6 +247,16 @@ function getApiErrorMessage(data: any) {
   }
 
   return data?.message ?? 'Something went wrong.'
+}
+
+function handleGenerateContract() {
+  touchAll()
+  if (!isValid()) {
+    error('Missing Required Information', 'Please complete all required fields with valid values before generating a contract.')
+    return
+  }
+  saveDraft(form, contractDocs.value, 'sales')
+  router.push('/sales/contracts/editor')
 }
 
 function handleSubmit() {
@@ -535,6 +546,12 @@ onClickOutside(prsContainer, () => {
         class="h-9 px-4 text-sm border-black/15 text-brand-navy hover:text-brand-dark hover:bg-black/2 flex items-center gap-2">
         <ScanLine class="w-4 h-4 text-brand-navy" />
         Fill with OCR
+      </Button>
+
+      <Button v-if="canUseContractGenerator" @click="handleGenerateContract" variant="outline"
+        class="h-9 px-4 text-sm border-brand-navy/30 text-brand-navy hover:text-brand-dark hover:bg-brand-navy/5 flex items-center gap-2 font-medium shadow-xs">
+        <Sparkles class="w-4 h-4 text-brand-navy" />
+        Generate Contract
       </Button>
     </div>
 

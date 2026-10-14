@@ -24,6 +24,7 @@ const SLUG_UI_MAP: Record<string, { category: string; label: string }> = {
   'cms.ai.risk_assessment':    { category: 'ai_features', label: 'AI Risk Assessment' },
   'cms.ai.vendor_suggestions': { category: 'ai_features', label: 'AI Vendor Suggestions' },
   'cms.ai.ocr':                { category: 'ai_features', label: 'OCR Autofill' },
+  'cms.ai.contract_generator': { category: 'ai_features', label: 'AI Contract Generator' },
 }
 
 // The fixed UI category structure (labels stay exactly as designed)
@@ -56,6 +57,7 @@ export const UI_CATEGORIES: Category[] = [
       { key: 'cms.ai.risk_assessment',    label: 'AI Risk Assessment' },
       { key: 'cms.ai.vendor_suggestions', label: 'AI Vendor Suggestions' },
       { key: 'cms.ai.ocr',                label: 'OCR Autofill' },
+      { key: 'cms.ai.contract_generator', label: 'AI Contract Generator' },
     ],
   },
 ]
@@ -124,6 +126,7 @@ export function useRolePermissions() {
       { id: -1, name: 'AI Risk Assessment', slug: 'cms.ai.risk_assessment', system: 'cms' },
       { id: -2, name: 'AI Vendor Suggestions', slug: 'cms.ai.vendor_suggestions', system: 'cms' },
       { id: -3, name: 'OCR Autofill', slug: 'cms.ai.ocr', system: 'cms' },
+      { id: -4, name: 'AI Contract Generator', slug: 'cms.ai.contract_generator', system: 'cms' },
     ]
     
     allPermissions.value = [...dbPerms, ...virtualPerms]
@@ -149,6 +152,11 @@ export function useRolePermissions() {
             set.add(id)
           }
         })
+      } else {
+        if (roleName === 'Sales') {
+          set.add(-3) // OCR Autofill
+          set.add(-4) // AI Contract Generator
+        }
       }
     }
     
