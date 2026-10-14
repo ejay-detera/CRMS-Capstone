@@ -16,8 +16,11 @@ import {
   Highlighter,
   Baseline,
   ChevronDown,
+  Table as TableIcon,
+  FileText,
+  RotateCw,
 } from 'lucide-vue-next'
-import type { EditorToolbarState } from '@/composables/useLexicalEditor'
+import type { EditorToolbarState, PaperSize, PageOrientation } from '@/composables/useLexicalEditor'
 
 const props = defineProps<{
   state: EditorToolbarState
@@ -28,6 +31,9 @@ const emit = defineEmits<{
   'format-align': [align: 'left' | 'center' | 'right' | 'justify']
   'format-block': [type: 'paragraph' | 'h1' | 'h2' | 'h3']
   'format-list': [type: 'bullet' | 'number']
+  'insert-table': [rows: number, cols: number]
+  'set-paper-size': [size: PaperSize]
+  'set-orientation': [orientation: PageOrientation]
   'set-font-family': [family: string]
   'set-font-size': [size: string]
   'set-font-color': [color: string]
@@ -38,6 +44,9 @@ const emit = defineEmits<{
 
 const showColorPicker = ref(false)
 const showHighlightPicker = ref(false)
+const showTablePicker = ref(false)
+const tableRows = ref(3)
+const tableCols = ref(3)
 
 const fontFamilies = [
   { name: 'Poppins', label: 'Poppins (Brand)' },
@@ -74,6 +83,11 @@ function stepFontSize(delta: number) {
   if (nextIdx < 0) nextIdx = 0
   if (nextIdx >= fontSizes.length) nextIdx = fontSizes.length - 1
   emit('set-font-size', fontSizes[nextIdx])
+}
+
+function handleInsertTable(r: number, c: number) {
+  emit('insert-table', r, c)
+  showTablePicker.value = false
 }
 </script>
 
@@ -211,7 +225,7 @@ function stepFontSize(delta: number) {
         <button
           type="button"
           title="Text color"
-          @click="showColorPicker = !showColorPicker; showHighlightPicker = false"
+          @click="showColorPicker = !showColorPicker; showHighlightPicker = false; showTablePicker = false"
           class="h-7 px-1.5 flex items-center gap-1 rounded hover:bg-black/5 text-black/70 transition"
         >
           <Baseline class="w-4 h-4" />
@@ -239,7 +253,7 @@ function stepFontSize(delta: number) {
         <button
           type="button"
           title="Highlight color"
-          @click="showHighlightPicker = !showHighlightPicker; showColorPicker = false"
+          @click="showHighlightPicker = !showHighlightPicker; showColorPicker = false; showTablePicker = false"
           class="h-7 px-1.5 flex items-center gap-1 rounded hover:bg-black/5 text-black/70 transition"
         >
           <Highlighter class="w-4 h-4" />
@@ -335,6 +349,103 @@ function stepFontSize(delta: number) {
         class="w-7 h-7 flex items-center justify-center rounded transition"
       >
         <ListOrdered class="w-4 h-4" />
+      </button>
+    </div>
+
+    <div class="h-4 w-px bg-black/10 mx-1" />
+
+    <!-- Insert Table Popover -->
+    <div class="relative">
+      <button
+        type="button"
+        title="Insert Table"
+        @click="showTablePicker = !showTablePicker; showColorPicker = false; showHighlightPicker = false"
+        class="h-7 px-2 flex items-center gap-1.5 rounded hover:bg-black/5 text-xs font-medium text-black/70 transition"
+      >
+        <TableIcon class="w-3.5 h-3.5" />
+        <span>Table</span>
+        <ChevronDown class="w-3 h-3 text-black/40" />
+      </button>
+
+      <div
+        v-if="showTablePicker"
+        class="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-xl border border-black/10 p-3 z-50 w-52 flex flex-col gap-2.5 font-poppins text-xs"
+      >
+        <div class="font-semibold text-black/70">Insert Table</div>
+        <div class="grid grid-cols-2 gap-1.5">
+          <button
+            type="button"
+            @click="handleInsertTable(2, 2)"
+            class="px-2 py-1.5 border border-black/10 rounded hover:bg-brand-blue/10 hover:border-brand-blue text-left transition font-medium"
+          >
+            2 × 2 Grid
+          </button>
+          <button
+            type="button"
+            @click="handleInsertTable(3, 3)"
+            class="px-2 py-1.5 border border-black/10 rounded hover:bg-brand-blue/10 hover:border-brand-blue text-left transition font-medium"
+          >
+            3 × 3 Grid
+          </button>
+          <button
+            type="button"
+            @click="handleInsertTable(4, 3)"
+            class="px-2 py-1.5 border border-black/10 rounded hover:bg-brand-blue/10 hover:border-brand-blue text-left transition font-medium"
+          >
+            4 × 3 Table
+          </button>
+          <button
+            type="button"
+            @click="handleInsertTable(2, 4)"
+            class="px-2 py-1.5 border border-black/10 rounded hover:bg-brand-blue/10 hover:border-brand-blue text-left transition font-medium"
+          >
+            2 × 4 Table
+          </button>
+        </div>
+
+        <div class="border-t border-black/8 pt-2 flex items-center justify-between gap-1">
+          <div class="flex items-center gap-1 text-[11px] text-black/60">
+            <input v-model.number="tableRows" type="number" min="1" max="10" class="w-10 h-6 border rounded px-1 text-center" />
+            <span>×</span>
+            <input v-model.number="tableCols" type="number" min="1" max="10" class="w-10 h-6 border rounded px-1 text-center" />
+          </div>
+          <button
+            type="button"
+            @click="handleInsertTable(tableRows || 3, tableCols || 3)"
+            class="px-2 py-1 bg-brand-navy hover:bg-brand-dark text-white rounded font-medium text-[11px]"
+          >
+            Insert
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="h-4 w-px bg-black/10 mx-1" />
+
+    <!-- Paper Size & Orientation Selector -->
+    <div class="flex items-center gap-1.5 ml-auto">
+      <div class="relative flex items-center">
+        <FileText class="w-3.5 h-3.5 text-black/40 mr-1" />
+        <select
+          :value="props.state.paperSize"
+          @change="(e) => emit('set-paper-size', (e.target as HTMLSelectElement).value as any)"
+          class="h-7 pl-1 pr-5 text-xs font-medium rounded border border-transparent hover:border-black/10 hover:bg-black/[0.03] bg-transparent text-black/80 focus:outline-none cursor-pointer appearance-none"
+        >
+          <option value="letter">Letter (8.5" × 11")</option>
+          <option value="a4">A4 (8.3" × 11.7")</option>
+          <option value="legal">Legal (8.5" × 14")</option>
+        </select>
+        <ChevronDown class="w-3 h-3 text-black/40 pointer-events-none absolute right-1 top-2" />
+      </div>
+
+      <button
+        type="button"
+        :title="props.state.orientation === 'portrait' ? 'Switch to Landscape' : 'Switch to Portrait'"
+        @click="emit('set-orientation', props.state.orientation === 'portrait' ? 'landscape' : 'portrait')"
+        class="h-7 px-2 flex items-center gap-1 text-xs font-medium rounded hover:bg-black/5 text-black/70 border border-transparent hover:border-black/10 transition"
+      >
+        <RotateCw class="w-3 h-3 text-black/50" />
+        <span class="capitalize">{{ props.state.orientation }}</span>
       </button>
     </div>
   </div>

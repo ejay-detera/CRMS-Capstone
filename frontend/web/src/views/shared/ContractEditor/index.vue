@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   ArrowLeft,
   Sparkles,
-  Check,
   Printer,
   Download,
   Loader2,
@@ -15,15 +14,16 @@ import { useToast } from '@/composables/useToast'
 import { useCreateContractDraft } from '@/composables/useCreateContractDraft'
 import { useLexicalEditor } from '@/composables/useLexicalEditor'
 import { useContractGenerator } from '@/composables/useContractGenerator'
+import { useDocumentUpload } from '@/composables/useDocumentUpload'
 import type { UploadedDoc } from '@/types/contract'
 import EditorToolbar from './EditorToolbar.vue'
 import LexicalCanvas from './LexicalCanvas.vue'
-import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
 const router = useRouter()
 const { success, error: toastError } = useToast()
 const { draft, setGeneratedDoc, attachDoc } = useCreateContractDraft()
 const { isGenerating, generate } = useContractGenerator()
+const { uploadFile } = useDocumentUpload()
 const {
   state: toolbarState,
   mount: mountEditor,
@@ -32,6 +32,9 @@ const {
   formatAlign,
   formatBlock,
   formatList,
+  insertTable,
+  setPaperSize,
+  setOrientation,
   setFontFamily,
   setFontSize,
   setFontColor,
@@ -43,9 +46,8 @@ const {
 } = useLexicalEditor()
 
 const docTitle = ref('Contract Agreement')
-const isEdited = ref(false)
-const showExitConfirm = ref(false)
 const zoomLevel = ref(1)
+const isAttaching = ref(false)
 
 const generationSource = ref<'gemini' | 'template_engine' | 'client_fallback' | null>(null)
 
@@ -96,12 +98,14 @@ function handleEditorUnmount() {
   unmountEditor()
 }
 
-function handleAttachToContract() {
+async function handleAttachToContract() {
   const html = getHtml()
   if (!html.trim()) {
     toastError('Empty Document', 'Cannot attach an empty document.')
     return
   }
+
+  isAttaching.value = true
 
   const safeName = (docTitle.value || 'Contract_Agreement')
     .replace(/[^a-zA-Z0-9_\-\s]/g, '')
@@ -118,17 +122,30 @@ function handleAttachToContract() {
     size: blob.size,
     type: 'docx',
     previewUrl: URL.createObjectURL(blob),
-    uploadStatus: 'success',
+    uploadStatus: 'uploading',
   }
 
-  attachDoc(newDoc)
-  setGeneratedDoc({
-    title: docTitle.value,
-    html,
-  })
+  try {
+    // Upload document to backend service to acquire a real document_id
+    await uploadFile(newDoc, (patch) => {
+      Object.assign(newDoc, patch)
+    })
 
-  success('Contract Attached', `Generated document "${fileName}" added to contract draft.`)
-  router.push('/sales/contracts/create')
+    attachDoc(newDoc)
+    setGeneratedDoc({
+      title: docTitle.value,
+      html,
+    })
+
+    success('Contract Attached', `Generated document "${fileName}" uploaded and attached to contract draft.`)
+    router.push('/sales/contracts/create')
+  } catch (err) {
+    console.warn('Backend document upload skipped, attaching locally:', err)
+    attachDoc(newDoc)
+    router.push('/sales/contracts/create')
+  } finally {
+    isAttaching.value = false
+  }
 }
 
 function handlePrint() {
@@ -182,7 +199,7 @@ function handleBack() {
               {{ generationSource === 'gemini' ? 'Gemini AI' : 'AI Contract Generator' }}
             </span>
           </div>
-          <span class="text-[11px] text-black/40 px-1.5">Google Docs-style rich text editor</span>
+          <span class="text-[11px] text-black/40 px-1.5">Google Docs-style paginated rich text editor</span>
         </div>
       </div>
 
@@ -210,15 +227,16 @@ function handleBack() {
           Export HTML
         </Button>
 
-        <!-- Attach to Contract -->
+        <!-- Attach & Save Contract -->
         <Button
           size="sm"
           @click="handleAttachToContract"
-          :disabled="isGenerating"
-          class="h-8 px-4 text-xs font-semibold bg-brand-navy hover:bg-brand-dark text-white gap-1.5 shadow-sm transition"
+          :disabled="isGenerating || isAttaching"
+          class="h-8 px-4 text-xs font-semibold bg-brand-navy hover:bg-brand-dark text-white gap-1.5 shadow-sm transition disabled:opacity-50"
         >
-          <FileCheck2 class="w-3.5 h-3.5" />
-          Attach to Contract
+          <Loader2 v-if="isAttaching" class="w-3.5 h-3.5 animate-spin" />
+          <FileCheck2 v-else class="w-3.5 h-3.5" />
+          {{ isAttaching ? 'Attaching & Saving...' : 'Attach & Save Contract' }}
         </Button>
       </div>
     </header>
@@ -230,6 +248,9 @@ function handleBack() {
       @format-align="formatAlign"
       @format-block="formatBlock"
       @format-list="formatList"
+      @insert-table="insertTable"
+      @set-paper-size="setPaperSize"
+      @set-orientation="setOrientation"
       @set-font-family="setFontFamily"
       @set-font-size="setFontSize"
       @set-font-color="setFontColor"
@@ -258,6 +279,8 @@ function handleBack() {
 
       <LexicalCanvas
         :zoom="zoomLevel"
+        :paper-size="toolbarState.paperSize"
+        :orientation="toolbarState.orientation"
         @editor-mount="handleEditorMount"
         @editor-unmount="handleEditorUnmount"
       />

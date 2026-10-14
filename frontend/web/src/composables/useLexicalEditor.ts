@@ -48,6 +48,15 @@ import {
   $generateHtmlFromNodes,
   $generateNodesFromDOM,
 } from '@lexical/html'
+import {
+  TableNode,
+  TableRowNode,
+  TableCellNode,
+  INSERT_TABLE_COMMAND,
+} from '@lexical/table'
+
+export type PaperSize = 'letter' | 'a4' | 'legal'
+export type PageOrientation = 'portrait' | 'landscape'
 
 export interface EditorToolbarState {
   isBold: boolean
@@ -62,6 +71,8 @@ export interface EditorToolbarState {
   highlightColor: string
   blockType: 'paragraph' | 'h1' | 'h2' | 'h3' | 'bullet' | 'number'
   align: ElementFormatType
+  paperSize: PaperSize
+  orientation: PageOrientation
 }
 
 export function useLexicalEditor() {
@@ -81,6 +92,8 @@ export function useLexicalEditor() {
     highlightColor: 'transparent',
     blockType: 'paragraph',
     align: 'left',
+    paperSize: 'letter',
+    orientation: 'portrait',
   })
 
   let cleanups: (() => void)[] = []
@@ -100,6 +113,10 @@ export function useLexicalEditor() {
           ol: 'editor-ol list-decimal list-inside mb-4 pl-4 space-y-1 text-[14px] text-black/90',
           listitem: 'editor-li leading-relaxed',
         },
+        table: 'editor-table w-full border-collapse border border-black/20 my-4 text-xs',
+        tableRow: 'editor-table-row border-b border-black/15',
+        tableCell: 'editor-table-cell border border-black/15 p-2 align-top text-black/80',
+        tableCellHeader: 'editor-table-cell-header font-semibold bg-black/[0.03] text-black',
         quote: 'editor-quote border-l-4 border-brand-blue pl-4 py-1 italic my-3 text-black/75 bg-blue-50/30 rounded-r',
         text: {
           bold: 'font-bold',
@@ -114,6 +131,9 @@ export function useLexicalEditor() {
         QuoteNode,
         ListNode,
         ListItemNode,
+        TableNode,
+        TableRowNode,
+        TableCellNode,
       ],
       onError: (err) => console.error('Lexical Error:', err),
     })
@@ -376,6 +396,22 @@ export function useLexicalEditor() {
     })
   }
 
+  function insertTable(rows: number = 3, cols: number = 3) {
+    editorRef.value?.dispatchCommand(INSERT_TABLE_COMMAND, {
+      columns: String(cols),
+      rows: String(rows),
+      includeHeaders: true,
+    })
+  }
+
+  function setPaperSize(size: PaperSize) {
+    state.paperSize = size
+  }
+
+  function setOrientation(orientation: PageOrientation) {
+    state.orientation = orientation
+  }
+
   return {
     editor: editorRef,
     isReady,
@@ -386,6 +422,9 @@ export function useLexicalEditor() {
     formatAlign,
     formatBlock,
     formatList,
+    insertTable,
+    setPaperSize,
+    setOrientation,
     setFontFamily,
     setFontSize,
     setFontColor,
