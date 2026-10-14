@@ -551,7 +551,7 @@ onClickOutside(prsContainer, () => {
       <Button v-if="canUseContractGenerator" @click="handleGenerateContract" variant="outline"
         class="h-9 px-4 text-sm border-brand-navy/30 text-brand-navy hover:text-brand-dark hover:bg-brand-navy/5 flex items-center gap-2 font-medium shadow-xs">
         <Sparkles class="w-4 h-4 text-brand-navy" />
-        Generate Contract
+        {{ draft.generatedDoc ? 'Edit Generated Contract' : 'Generate Contract' }}
       </Button>
     </div>
 

@@ -28,6 +28,7 @@
     "clsx": "^2.1.1",
     "dompurify": "^3.4.15",
     "exceljs": "^4.4.0",
+    "jspdf": "^4.2.1",
     "lexical": "^0.52.0",
     "lucide-vue-next": "^1.0.0",
     "mammoth": "^1.12.0",

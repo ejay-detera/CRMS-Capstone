@@ -19,11 +19,15 @@ import {
   Table as TableIcon,
   FileText,
   RotateCw,
+  PanelTop,
+  SeparatorHorizontal,
 } from 'lucide-vue-next'
 import type { EditorToolbarState, PaperSize, PageOrientation } from '@/composables/useLexicalEditor'
+import type { HeaderFooterConfig } from '@/composables/useCreateContractDraft'
 
 const props = defineProps<{
   state: EditorToolbarState
+  headerFooter: HeaderFooterConfig
 }>()
 
 const emit = defineEmits<{
@@ -40,11 +44,14 @@ const emit = defineEmits<{
   'set-highlight': [color: string]
   'undo': []
   'redo': []
+  'update:headerFooter': [config: HeaderFooterConfig]
+  'insert-page-break': []
 }>()
 
 const showColorPicker = ref(false)
 const showHighlightPicker = ref(false)
 const showTablePicker = ref(false)
+const showHeaderFooterModal = ref(false)
 const tableRows = ref(3)
 const tableCols = ref(3)
 
@@ -92,7 +99,7 @@ function handleInsertTable(r: number, c: number) {
 </script>
 
 <template>
-  <div class="h-11 bg-white border-b border-black/8 px-4 flex items-center gap-1.5 overflow-x-auto select-none font-poppins shrink-0">
+  <div class="min-h-10 bg-white border-b border-black/8 px-2 sm:px-3 py-1 flex flex-wrap items-center gap-1 select-none font-poppins shrink-0">
     <!-- Undo / Redo -->
     <div class="flex items-center">
       <button
@@ -100,36 +107,36 @@ function handleInsertTable(r: number, c: number) {
         title="Undo (Ctrl+Z)"
         :disabled="!props.state.canUndo"
         @click="emit('undo')"
-        class="w-7 h-7 flex items-center justify-center rounded hover:bg-black/5 disabled:opacity-30 disabled:hover:bg-transparent text-black/70 transition"
+        class="w-6.5 h-6.5 flex items-center justify-center rounded hover:bg-black/5 disabled:opacity-30 disabled:hover:bg-transparent text-black/70 transition"
       >
-        <Undo2 class="w-4 h-4" />
+        <Undo2 class="w-3.5 h-3.5" />
       </button>
       <button
         type="button"
         title="Redo (Ctrl+Y)"
         :disabled="!props.state.canRedo"
         @click="emit('redo')"
-        class="w-7 h-7 flex items-center justify-center rounded hover:bg-black/5 disabled:opacity-30 disabled:hover:bg-transparent text-black/70 transition"
+        class="w-6.5 h-6.5 flex items-center justify-center rounded hover:bg-black/5 disabled:opacity-30 disabled:hover:bg-transparent text-black/70 transition"
       >
-        <Redo2 class="w-4 h-4" />
+        <Redo2 class="w-3.5 h-3.5" />
       </button>
     </div>
 
-    <div class="h-4 w-px bg-black/10 mx-1" />
+    <div class="h-4 w-px bg-black/10 mx-0.5" />
 
     <!-- Style / Heading Dropdown -->
     <div class="relative">
       <select
         :value="props.state.blockType"
         @change="(e) => emit('format-block', (e.target as HTMLSelectElement).value as any)"
-        class="h-7 pl-2 pr-6 text-xs font-medium rounded border border-transparent hover:border-black/10 hover:bg-black/[0.03] bg-transparent text-black/80 focus:outline-none cursor-pointer appearance-none"
+        class="h-6.5 pl-1.5 pr-5 text-xs font-medium rounded border border-transparent hover:border-black/10 hover:bg-black/[0.03] bg-transparent text-black/80 focus:outline-none cursor-pointer appearance-none max-w-[95px] truncate"
       >
-        <option value="paragraph">Normal text</option>
-        <option value="h1">Title / Heading 1</option>
+        <option value="paragraph">Normal</option>
+        <option value="h1">Heading 1</option>
         <option value="h2">Heading 2</option>
         <option value="h3">Heading 3</option>
       </select>
-      <ChevronDown class="w-3 h-3 text-black/40 pointer-events-none absolute right-1.5 top-2" />
+      <ChevronDown class="w-3 h-3 text-black/40 pointer-events-none absolute right-1 top-2" />
     </div>
 
     <!-- Font Family Dropdown -->
@@ -137,16 +144,16 @@ function handleInsertTable(r: number, c: number) {
       <select
         :value="props.state.fontFamily"
         @change="(e) => emit('set-font-family', (e.target as HTMLSelectElement).value)"
-        class="h-7 pl-2 pr-6 text-xs font-medium rounded border border-transparent hover:border-black/10 hover:bg-black/[0.03] bg-transparent text-black/80 focus:outline-none cursor-pointer appearance-none max-w-[130px] truncate"
+        class="h-6.5 pl-1.5 pr-5 text-xs font-medium rounded border border-transparent hover:border-black/10 hover:bg-black/[0.03] bg-transparent text-black/80 focus:outline-none cursor-pointer appearance-none max-w-[105px] truncate"
       >
         <option v-for="font in fontFamilies" :key="font.name" :value="font.name">
-          {{ font.label }}
+          {{ font.name }}
         </option>
       </select>
-      <ChevronDown class="w-3 h-3 text-black/40 pointer-events-none absolute right-1.5 top-2" />
+      <ChevronDown class="w-3 h-3 text-black/40 pointer-events-none absolute right-1 top-2" />
     </div>
 
-    <div class="h-4 w-px bg-black/10 mx-1" />
+    <div class="h-4 w-px bg-black/10 mx-0.5" />
 
     <!-- Font Size Controls -->
     <div class="flex items-center gap-0.5">
@@ -154,24 +161,24 @@ function handleInsertTable(r: number, c: number) {
         type="button"
         title="Decrease font size"
         @click="stepFontSize(-1)"
-        class="w-6 h-7 flex items-center justify-center rounded hover:bg-black/5 text-xs font-bold text-black/70"
+        class="w-5.5 h-6.5 flex items-center justify-center rounded hover:bg-black/5 text-xs font-bold text-black/70"
       >
         -
       </button>
-      <span class="w-9 text-center text-xs font-medium text-black/80 select-none">
+      <span class="w-7 text-center text-xs font-medium text-black/80 select-none">
         {{ props.state.fontSize.replace('pt', '') }}
       </span>
       <button
         type="button"
         title="Increase font size"
         @click="stepFontSize(1)"
-        class="w-6 h-7 flex items-center justify-center rounded hover:bg-black/5 text-xs font-bold text-black/70"
+        class="w-5.5 h-6.5 flex items-center justify-center rounded hover:bg-black/5 text-xs font-bold text-black/70"
       >
         +
       </button>
     </div>
 
-    <div class="h-4 w-px bg-black/10 mx-1" />
+    <div class="h-4 w-px bg-black/10 mx-0.5" />
 
     <!-- Inline text formats -->
     <div class="flex items-center gap-0.5">
@@ -180,9 +187,9 @@ function handleInsertTable(r: number, c: number) {
         title="Bold (Ctrl+B)"
         :class="props.state.isBold ? 'bg-brand-blue/15 text-brand-navy font-bold' : 'hover:bg-black/5 text-black/70'"
         @click="emit('format-text', 'bold')"
-        class="w-7 h-7 flex items-center justify-center rounded transition"
+        class="w-6.5 h-6.5 flex items-center justify-center rounded transition"
       >
-        <Bold class="w-4 h-4" />
+        <Bold class="w-3.5 h-3.5" />
       </button>
 
       <button
@@ -190,9 +197,9 @@ function handleInsertTable(r: number, c: number) {
         title="Italic (Ctrl+I)"
         :class="props.state.isItalic ? 'bg-brand-blue/15 text-brand-navy' : 'hover:bg-black/5 text-black/70'"
         @click="emit('format-text', 'italic')"
-        class="w-7 h-7 flex items-center justify-center rounded transition"
+        class="w-6.5 h-6.5 flex items-center justify-center rounded transition"
       >
-        <Italic class="w-4 h-4" />
+        <Italic class="w-3.5 h-3.5" />
       </button>
 
       <button
@@ -200,9 +207,9 @@ function handleInsertTable(r: number, c: number) {
         title="Underline (Ctrl+U)"
         :class="props.state.isUnderline ? 'bg-brand-blue/15 text-brand-navy' : 'hover:bg-black/5 text-black/70'"
         @click="emit('format-text', 'underline')"
-        class="w-7 h-7 flex items-center justify-center rounded transition"
+        class="w-6.5 h-6.5 flex items-center justify-center rounded transition"
       >
-        <Underline class="w-4 h-4" />
+        <Underline class="w-3.5 h-3.5" />
       </button>
 
       <button
@@ -210,26 +217,26 @@ function handleInsertTable(r: number, c: number) {
         title="Strikethrough"
         :class="props.state.isStrikethrough ? 'bg-brand-blue/15 text-brand-navy' : 'hover:bg-black/5 text-black/70'"
         @click="emit('format-text', 'strikethrough')"
-        class="w-7 h-7 flex items-center justify-center rounded transition"
+        class="w-6.5 h-6.5 flex items-center justify-center rounded transition"
       >
-        <Strikethrough class="w-4 h-4" />
+        <Strikethrough class="w-3.5 h-3.5" />
       </button>
     </div>
 
-    <div class="h-4 w-px bg-black/10 mx-1" />
+    <div class="h-4 w-px bg-black/10 mx-0.5" />
 
     <!-- Text Color & Highlight -->
-    <div class="flex items-center gap-1 relative">
+    <div class="flex items-center gap-0.5 relative">
       <!-- Text Color Button -->
       <div class="relative">
         <button
           type="button"
           title="Text color"
           @click="showColorPicker = !showColorPicker; showHighlightPicker = false; showTablePicker = false"
-          class="h-7 px-1.5 flex items-center gap-1 rounded hover:bg-black/5 text-black/70 transition"
+          class="h-6.5 px-1.5 flex items-center gap-1 rounded hover:bg-black/5 text-black/70 transition"
         >
-          <Baseline class="w-4 h-4" />
-          <span class="w-3.5 h-1 rounded-sm" :style="{ backgroundColor: props.state.fontColor || '#000000' }"></span>
+          <Baseline class="w-3.5 h-3.5" />
+          <span class="w-3 h-1 rounded-sm" :style="{ backgroundColor: props.state.fontColor || '#000000' }"></span>
         </button>
 
         <div
@@ -254,11 +261,11 @@ function handleInsertTable(r: number, c: number) {
           type="button"
           title="Highlight color"
           @click="showHighlightPicker = !showHighlightPicker; showColorPicker = false; showTablePicker = false"
-          class="h-7 px-1.5 flex items-center gap-1 rounded hover:bg-black/5 text-black/70 transition"
+          class="h-6.5 px-1.5 flex items-center gap-1 rounded hover:bg-black/5 text-black/70 transition"
         >
-          <Highlighter class="w-4 h-4" />
+          <Highlighter class="w-3.5 h-3.5" />
           <span
-            class="w-3.5 h-1 rounded-sm border border-black/10"
+            class="w-3 h-1 rounded-sm border border-black/10"
             :style="{ backgroundColor: props.state.highlightColor !== 'transparent' ? props.state.highlightColor : '#FEF08A' }"
           ></span>
         </button>
@@ -282,7 +289,7 @@ function handleInsertTable(r: number, c: number) {
       </div>
     </div>
 
-    <div class="h-4 w-px bg-black/10 mx-1" />
+    <div class="h-4 w-px bg-black/10 mx-0.5" />
 
     <!-- Alignments -->
     <div class="flex items-center gap-0.5">
@@ -291,9 +298,9 @@ function handleInsertTable(r: number, c: number) {
         title="Align left"
         :class="props.state.align === 'left' ? 'bg-brand-blue/15 text-brand-navy' : 'hover:bg-black/5 text-black/70'"
         @click="emit('format-align', 'left')"
-        class="w-7 h-7 flex items-center justify-center rounded transition"
+        class="w-6.5 h-6.5 flex items-center justify-center rounded transition"
       >
-        <AlignLeft class="w-4 h-4" />
+        <AlignLeft class="w-3.5 h-3.5" />
       </button>
 
       <button
@@ -301,9 +308,9 @@ function handleInsertTable(r: number, c: number) {
         title="Align center"
         :class="props.state.align === 'center' ? 'bg-brand-blue/15 text-brand-navy' : 'hover:bg-black/5 text-black/70'"
         @click="emit('format-align', 'center')"
-        class="w-7 h-7 flex items-center justify-center rounded transition"
+        class="w-6.5 h-6.5 flex items-center justify-center rounded transition"
       >
-        <AlignCenter class="w-4 h-4" />
+        <AlignCenter class="w-3.5 h-3.5" />
       </button>
 
       <button
@@ -311,9 +318,9 @@ function handleInsertTable(r: number, c: number) {
         title="Align right"
         :class="props.state.align === 'right' ? 'bg-brand-blue/15 text-brand-navy' : 'hover:bg-black/5 text-black/70'"
         @click="emit('format-align', 'right')"
-        class="w-7 h-7 flex items-center justify-center rounded transition"
+        class="w-6.5 h-6.5 flex items-center justify-center rounded transition"
       >
-        <AlignRight class="w-4 h-4" />
+        <AlignRight class="w-3.5 h-3.5" />
       </button>
 
       <button
@@ -321,13 +328,13 @@ function handleInsertTable(r: number, c: number) {
         title="Justify"
         :class="props.state.align === 'justify' ? 'bg-brand-blue/15 text-brand-navy' : 'hover:bg-black/5 text-black/70'"
         @click="emit('format-align', 'justify')"
-        class="w-7 h-7 flex items-center justify-center rounded transition"
+        class="w-6.5 h-6.5 flex items-center justify-center rounded transition"
       >
-        <AlignJustify class="w-4 h-4" />
+        <AlignJustify class="w-3.5 h-3.5" />
       </button>
     </div>
 
-    <div class="h-4 w-px bg-black/10 mx-1" />
+    <div class="h-4 w-px bg-black/10 mx-0.5" />
 
     <!-- Lists -->
     <div class="flex items-center gap-0.5">
@@ -336,9 +343,9 @@ function handleInsertTable(r: number, c: number) {
         title="Bulleted list"
         :class="props.state.blockType === 'bullet' ? 'bg-brand-blue/15 text-brand-navy' : 'hover:bg-black/5 text-black/70'"
         @click="emit('format-list', 'bullet')"
-        class="w-7 h-7 flex items-center justify-center rounded transition"
+        class="w-6.5 h-6.5 flex items-center justify-center rounded transition"
       >
-        <List class="w-4 h-4" />
+        <List class="w-3.5 h-3.5" />
       </button>
 
       <button
@@ -346,13 +353,13 @@ function handleInsertTable(r: number, c: number) {
         title="Numbered list"
         :class="props.state.blockType === 'number' ? 'bg-brand-blue/15 text-brand-navy' : 'hover:bg-black/5 text-black/70'"
         @click="emit('format-list', 'number')"
-        class="w-7 h-7 flex items-center justify-center rounded transition"
+        class="w-6.5 h-6.5 flex items-center justify-center rounded transition"
       >
-        <ListOrdered class="w-4 h-4" />
+        <ListOrdered class="w-3.5 h-3.5" />
       </button>
     </div>
 
-    <div class="h-4 w-px bg-black/10 mx-1" />
+    <div class="h-4 w-px bg-black/10 mx-0.5" />
 
     <!-- Insert Table Popover -->
     <div class="relative">
@@ -360,7 +367,7 @@ function handleInsertTable(r: number, c: number) {
         type="button"
         title="Insert Table"
         @click="showTablePicker = !showTablePicker; showColorPicker = false; showHighlightPicker = false"
-        class="h-7 px-2 flex items-center gap-1.5 rounded hover:bg-black/5 text-xs font-medium text-black/70 transition"
+        class="h-6.5 px-1.5 flex items-center gap-1 rounded hover:bg-black/5 text-xs font-medium text-black/70 transition"
       >
         <TableIcon class="w-3.5 h-3.5" />
         <span>Table</span>
@@ -420,32 +427,130 @@ function handleInsertTable(r: number, c: number) {
       </div>
     </div>
 
-    <div class="h-4 w-px bg-black/10 mx-1" />
+    <div class="h-4 w-px bg-black/10 mx-0.5" />
+
+    <!-- Insert Page Break -->
+    <button
+      type="button"
+      title="Insert Page Break (Ctrl+Enter)"
+      @click="emit('insert-page-break')"
+      class="h-6.5 px-1.5 flex items-center gap-1 rounded hover:bg-black/5 text-xs font-medium text-black/70 transition"
+    >
+      <SeparatorHorizontal class="w-3.5 h-3.5 text-black/60" />
+      <span>Page Break</span>
+    </button>
+
+    <div class="h-4 w-px bg-black/10 mx-0.5" />
+
+    <!-- Header & Footer Settings Popover -->
+    <div class="relative">
+      <button
+        type="button"
+        title="Customize Header & Footer across all pages"
+        @click="showHeaderFooterModal = !showHeaderFooterModal; showTablePicker = false; showColorPicker = false; showHighlightPicker = false"
+        class="h-6.5 px-1.5 flex items-center gap-1 rounded hover:bg-black/5 text-xs font-medium text-black/70 transition border border-transparent"
+        :class="{ 'bg-brand-blue/15 text-brand-navy border-brand-blue/30': showHeaderFooterModal }"
+      >
+        <PanelTop class="w-3.5 h-3.5 text-brand-navy" />
+        <span>Header &amp; Footer</span>
+      </button>
+
+      <!-- Dropdown Panel -->
+      <div
+        v-if="showHeaderFooterModal"
+        class="absolute right-0 sm:left-0 top-full mt-1 bg-white rounded-xl shadow-2xl border border-black/10 p-3.5 z-50 w-72 flex flex-col gap-2.5 font-poppins text-xs"
+      >
+        <div class="flex items-center justify-between pb-1.5 border-b border-black/8 font-semibold text-black/80">
+          <div class="flex items-center gap-1.5">
+            <PanelTop class="w-4 h-4 text-brand-navy" />
+            <span>Page Header &amp; Footer</span>
+          </div>
+          <button @click="showHeaderFooterModal = false" class="text-black/40 hover:text-black text-xs font-bold">✕</button>
+        </div>
+
+        <div class="space-y-2">
+          <div>
+            <label class="block text-[11px] font-semibold text-black/60 mb-0.5">Header Left (Top)</label>
+            <input
+              :value="props.headerFooter.headerLeft"
+              @input="(e) => emit('update:headerFooter', { ...props.headerFooter, headerLeft: (e.target as HTMLInputElement).value })"
+              type="text"
+              placeholder="e.g. Confidential Agreement"
+              class="w-full h-6.5 px-2 border rounded text-xs focus:outline-none focus:ring-1 focus:ring-brand-blue"
+            />
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-black/60 mb-0.5">Header Right (Top)</label>
+            <input
+              :value="props.headerFooter.headerRight"
+              @input="(e) => emit('update:headerFooter', { ...props.headerFooter, headerRight: (e.target as HTMLInputElement).value })"
+              type="text"
+              placeholder="e.g. SBSI CRMS"
+              class="w-full h-6.5 px-2 border rounded text-xs focus:outline-none focus:ring-1 focus:ring-brand-blue"
+            />
+          </div>
+
+          <div class="pt-1 border-t border-black/6">
+            <label class="block text-[11px] font-semibold text-black/60 mb-0.5">Footer Left (Bottom)</label>
+            <input
+              :value="props.headerFooter.footerLeft"
+              @input="(e) => emit('update:headerFooter', { ...props.headerFooter, footerLeft: (e.target as HTMLInputElement).value })"
+              type="text"
+              placeholder="e.g. Authorized Legal Draft"
+              class="w-full h-6.5 px-2 border rounded text-xs focus:outline-none focus:ring-1 focus:ring-brand-blue"
+            />
+          </div>
+
+          <div class="flex items-center justify-between pt-1">
+            <label class="text-[11px] font-semibold text-black/60">Show Page Numbers</label>
+            <input
+              type="checkbox"
+              :checked="props.headerFooter.showPageNumber"
+              @change="(e) => emit('update:headerFooter', { ...props.headerFooter, showPageNumber: (e.target as HTMLInputElement).checked })"
+              class="rounded text-brand-navy focus:ring-brand-blue w-3.5 h-3.5 cursor-pointer"
+            />
+          </div>
+
+          <div class="pt-1.5 flex justify-end">
+            <button
+              type="button"
+              @click="showHeaderFooterModal = false"
+              class="px-2.5 py-1 bg-brand-navy hover:bg-brand-dark text-white rounded font-medium text-[11px] transition"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="h-4 w-px bg-black/10 mx-0.5" />
 
     <!-- Paper Size & Orientation Selector -->
-    <div class="flex items-center gap-1.5 ml-auto">
+    <div class="flex items-center gap-1">
       <div class="relative flex items-center">
         <FileText class="w-3.5 h-3.5 text-black/40 mr-1" />
         <select
           :value="props.state.paperSize"
           @change="(e) => emit('set-paper-size', (e.target as HTMLSelectElement).value as any)"
-          class="h-7 pl-1 pr-5 text-xs font-medium rounded border border-transparent hover:border-black/10 hover:bg-black/[0.03] bg-transparent text-black/80 focus:outline-none cursor-pointer appearance-none"
+          class="h-6.5 pl-1 pr-4 text-xs font-medium rounded border border-transparent hover:border-black/10 hover:bg-black/[0.03] bg-transparent text-black/80 focus:outline-none cursor-pointer appearance-none"
         >
-          <option value="letter">Letter (8.5" × 11")</option>
-          <option value="a4">A4 (8.3" × 11.7")</option>
-          <option value="legal">Legal (8.5" × 14")</option>
+          <option value="letter">Letter</option>
+          <option value="a4">A4</option>
+          <option value="legal">Legal</option>
         </select>
-        <ChevronDown class="w-3 h-3 text-black/40 pointer-events-none absolute right-1 top-2" />
+        <ChevronDown class="w-3 h-3 text-black/40 pointer-events-none absolute right-0.5 top-2" />
       </div>
 
       <button
         type="button"
         :title="props.state.orientation === 'portrait' ? 'Switch to Landscape' : 'Switch to Portrait'"
         @click="emit('set-orientation', props.state.orientation === 'portrait' ? 'landscape' : 'portrait')"
-        class="h-7 px-2 flex items-center gap-1 text-xs font-medium rounded hover:bg-black/5 text-black/70 border border-transparent hover:border-black/10 transition"
+        class="h-6.5 px-1.5 flex items-center gap-1 text-xs font-medium rounded hover:bg-black/5 text-black/70 border border-transparent hover:border-black/10 transition"
       >
         <RotateCw class="w-3 h-3 text-black/50" />
-        <span class="capitalize">{{ props.state.orientation }}</span>
+        <span class="capitalize text-[11px]">{{ props.state.orientation }}</span>
       </button>
     </div>
   </div>

@@ -114,6 +114,8 @@ export function useContractGenerator() {
 <h2><strong>3. CONTRACT DURATION &amp; TERM</strong></h2>
 <p>This Agreement takes effect on <strong>${params.startDate}</strong> and remains effective until <strong>${params.endDate}</strong>, unless terminated earlier in accordance with Section 6.</p>
 
+<div class="crms-page-break" data-page="2"></div>
+
 <h2><strong>4. PERFORMANCE STANDARDS &amp; WARRANTIES</strong></h2>
 <ol>
     <li>The Second Party guarantees that all services under Item Code <strong>${params.itemCode}</strong> meet commercial standards of excellence.</li>
@@ -129,7 +131,8 @@ export function useContractGenerator() {
 <h2><strong>7. GOVERNING LAW &amp; VENUE</strong></h2>
 <p>This Agreement is governed by Philippine law. Any dispute shall be submitted to the competent courts of Metro Manila, Philippines.</p>
 
-<br />
+<div class="crms-page-break" data-page="3"></div>
+
 <h2><strong>8. EXECUTION &amp; SIGNATURES</strong></h2>
 <p>IN WITNESS WHEREOF, the Parties hereto have caused this Agreement to be executed by their duly authorized representatives as of the date first above written.</p>
 

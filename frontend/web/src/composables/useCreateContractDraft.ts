@@ -19,12 +19,20 @@ export interface GeneratedDocument {
   html: string
 }
 
+export interface HeaderFooterConfig {
+  headerLeft: string
+  headerRight: string
+  footerLeft: string
+  showPageNumber: boolean
+}
+
 export interface Draft {
   active: boolean
   form:   DraftForm
   docs:   UploadedDoc[]
   role:   'sales' | 'manager' | 'admin' | ''
   generatedDoc?: GeneratedDocument | null
+  headerFooter?: HeaderFooterConfig | null
 }
 
 // Module-level singleton
@@ -44,7 +52,13 @@ const draft = reactive<Draft>({
   },
   docs: [],
   role: '',
-  generatedDoc: null
+  generatedDoc: null,
+  headerFooter: {
+    headerLeft: 'CONFIDENTIAL CONTRACT AGREEMENT',
+    headerRight: 'SBSI CRMS',
+    footerLeft: 'Authorized Legal Draft',
+    showPageNumber: true,
+  }
 })
 
 export function useCreateContractDraft() {

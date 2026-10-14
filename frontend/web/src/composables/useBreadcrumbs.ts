@@ -45,10 +45,16 @@ export function useBreadcrumbs() {
 
       if (sub === 'create') {
         items.push({ label: 'Create Contract' })
+      } else if (sub === 'editor') {
+        items.push({ label: 'Create Contract', to: `${contractsRoot}/create` })
+        items.push({ label: 'AI Contract Generator' })
+      } else if (sub === 'preview' && deep === 'documents' && leaf) {
+        items.push({ label: 'Create Contract', to: `${contractsRoot}/create` })
+        items.push({ label: 'Document Preview' })
       } else if (sub) {
         // sub is contract ID (:id)
         const cachedContract = cacheState.contracts?.find(c => c.id === sub)
-        const contractLabel = dynamicTitle.value || cachedContract?.businessPartner || cachedContract?.itemCode || `Contract #${sub}`
+        const contractLabel = dynamicTitle.value || cachedContract?.businessPartner || cachedContract?.itemCode || (cachedContract?.serialNo ? `Contract ${cachedContract.serialNo}` : `Contract (${sub})`)
         const contractDetailUrl = `${contractsRoot}/${sub}`
 
         if (deep === 'amend') {
@@ -76,7 +82,7 @@ export function useBreadcrumbs() {
         items.push({ label: 'Create Request' })
       } else if (sub) {
         const cachedReq = cacheState.requests?.find(r => r.id === sub)
-        const reqLabel = dynamicTitle.value || cachedReq?.businessPartner || `Request #${sub}`
+        const reqLabel = dynamicTitle.value || cachedReq?.businessPartner || (cachedReq?.serialNo ? `Request ${cachedReq.serialNo}` : `Request (${sub})`)
         items.push({ label: reqLabel })
       }
       return items
@@ -92,7 +98,7 @@ export function useBreadcrumbs() {
       if (sub === 'create') {
         items.push({ label: 'Create Amendment' })
       } else if (sub) {
-        const amendLabel = dynamicTitle.value || (isAmendReq ? `Request #${sub}` : `Amendment #${sub}`)
+        const amendLabel = dynamicTitle.value || (isAmendReq ? `Request (${sub})` : `Amendment (${sub})`)
         items.push({ label: amendLabel })
       }
       return items

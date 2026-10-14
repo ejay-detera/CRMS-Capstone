@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import type { PaperSize, PageOrientation } from '@/composables/useLexicalEditor'
+import type { HeaderFooterConfig } from '@/composables/useCreateContractDraft'
 
 const props = withDefaults(
   defineProps<{
     zoom?: number
     paperSize?: PaperSize
     orientation?: PageOrientation
+    headerFooter: HeaderFooterConfig
   }>(),
   {
     zoom: 1,
@@ -18,6 +20,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   'editor-mount': [element: HTMLElement]
   'editor-unmount': []
+  'update:headerFooter': [config: HeaderFooterConfig]
 }>()
 
 const editorContentRef = ref<HTMLDivElement | null>(null)
@@ -45,12 +48,13 @@ const dimensions = computed(() => {
   }
 })
 
-// Calculate number of pages based on actual scroll/content height
+// Calculate number of pages based on explicit page breaks and scroll height
 function recalculatePages() {
   if (!editorContentRef.value) return
-  const scrollH = editorContentRef.value.scrollHeight
+  const pageBreaks = editorContentRef.value.querySelectorAll('.crms-page-break, [data-page]').length
+  const scrollH = editorContentRef.value.scrollHeight + 140
   const pageH = dimensions.value.height
-  const calculated = Math.max(1, Math.ceil(scrollH / (pageH - 40)))
+  const calculated = Math.max(pageBreaks + 1, Math.ceil(scrollH / pageH))
   pageCount.value = calculated
 }
 
@@ -82,46 +86,47 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="w-full flex-1 overflow-y-auto bg-[#ECEEF1] py-10 px-4 flex flex-col items-center select-text">
+  <div class="w-full flex-1 overflow-y-auto bg-[#ECEEF1] py-8 px-4 flex flex-col items-center select-text">
     <!-- Outer Scalable Container -->
     <div
-      class="relative flex flex-col items-center transition-all origin-top"
+      class="relative flex flex-col items-center transition-all origin-top mb-12"
       :style="{
         width: `${dimensions.width}px`,
         transform: props.zoom ? `scale(${props.zoom})` : 'none',
       }"
     >
-      <!-- Page Sheets Wrapper -->
-      <div class="relative w-full">
-        <!-- Visual Multi-Page Sheets Background -->
-        <div class="absolute inset-0 pointer-events-none flex flex-col gap-6 z-0">
-          <div
-            v-for="pageIndex in pageCount"
-            :key="pageIndex"
-            class="w-full bg-white rounded-[2px] shadow-[0_1px_3px_rgba(0,0,0,0.1),0_4px_16px_rgba(0,0,0,0.06)] border border-black/[0.08] relative"
-            :style="{ height: `${dimensions.height}px` }"
-          >
-            <!-- Page Header (Top Margin) -->
-            <div class="absolute top-4 left-14 right-14 flex justify-between text-[10px] text-black/25 font-poppins uppercase tracking-wider select-none">
-              <span>Confidential Agreement</span>
-              <span>SBSI CRMS</span>
-            </div>
+      <!-- Continuous Solid Paper Sheet with Visual Page Separation -->
+      <div
+        class="w-full bg-white rounded-[2px] shadow-[0_2px_8px_rgba(0,0,0,0.08),0_12px_24px_rgba(0,0,0,0.04)] border border-black/[0.08] flex flex-col transition-all duration-200"
+        :style="{
+          minHeight: `${dimensions.height}px`,
+        }"
+      >
+        <!-- Page Header (Top Margin) - Editable & Repeated across pages -->
+        <div class="group relative px-12 sm:px-16 pt-7 pb-4 border-b border-black/[0.08] flex justify-between items-center text-[11px] text-black/50 font-poppins tracking-wider select-none bg-slate-50/50 hover:bg-slate-100/70 transition-colors rounded-t-[2px]">
+          <input
+            :value="props.headerFooter.headerLeft"
+            @input="(e) => emit('update:headerFooter', { ...props.headerFooter, headerLeft: (e.target as HTMLInputElement).value })"
+            placeholder="Header Left (e.g. Confidential Agreement)"
+            class="bg-transparent border border-transparent hover:border-black/15 focus:border-brand-blue rounded px-1.5 py-0.5 text-[11px] font-medium text-black/70 focus:text-black focus:bg-white outline-none transition max-w-[42%]"
+            title="Click to edit header left (repeated on all pages)"
+          />
 
-            <!-- Page Number (Bottom Footer) -->
-            <div class="absolute bottom-4 left-14 right-14 flex justify-between text-[11px] text-black/35 font-poppins select-none">
-              <span>Authorized Draft</span>
-              <span>Page {{ pageIndex }} of {{ pageCount }}</span>
-            </div>
-          </div>
+          <span class="text-[9px] uppercase tracking-widest text-brand-navy/60 font-semibold px-2 py-0.5 rounded bg-brand-blue/10 opacity-0 group-hover:opacity-100 transition-opacity">
+            Repeatable Header
+          </span>
+
+          <input
+            :value="props.headerFooter.headerRight"
+            @input="(e) => emit('update:headerFooter', { ...props.headerFooter, headerRight: (e.target as HTMLInputElement).value })"
+            placeholder="Header Right (e.g. SBSI CRMS)"
+            class="bg-transparent border border-transparent hover:border-black/15 focus:border-brand-blue rounded px-1.5 py-0.5 text-[11px] font-medium text-black/70 focus:text-black focus:bg-white outline-none transition max-w-[42%] text-right"
+            title="Click to edit header right (repeated on all pages)"
+          />
         </div>
 
-        <!-- Single ContentEditable Lexical Container with dynamic page breaks overlay -->
-        <div
-          class="relative z-10 p-14 md:p-16 text-black/90 font-poppins outline-none focus:outline-none"
-          :style="{
-            minHeight: `${dimensions.height * pageCount + (pageCount - 1) * 24}px`,
-          }"
-        >
+        <!-- Editable Lexical Canvas -->
+        <div class="px-12 sm:px-16 py-8 text-black/90 font-poppins outline-none focus:outline-none flex-1">
           <div
             ref="editorContentRef"
             contenteditable="true"
@@ -130,6 +135,25 @@ onUnmounted(() => {
             @input="recalculatePages"
             @keyup="recalculatePages"
           />
+        </div>
+
+        <!-- Page Footer (Bottom Margin) - Editable & Repeated across pages -->
+        <div class="group relative px-12 sm:px-16 py-5 border-t border-black/[0.08] flex justify-between items-center text-[11px] text-black/50 font-poppins select-none bg-slate-50/50 hover:bg-slate-100/70 transition-colors rounded-b-[2px]">
+          <input
+            :value="props.headerFooter.footerLeft"
+            @input="(e) => emit('update:headerFooter', { ...props.headerFooter, footerLeft: (e.target as HTMLInputElement).value })"
+            placeholder="Footer Left (e.g. Authorized Draft)"
+            class="bg-transparent border border-transparent hover:border-black/15 focus:border-brand-blue rounded px-1.5 py-0.5 text-[11px] font-medium text-black/70 focus:text-black focus:bg-white outline-none transition max-w-[45%]"
+            title="Click to edit footer left (repeated on all pages)"
+          />
+
+          <span class="text-[9px] uppercase tracking-widest text-brand-navy/60 font-semibold px-2 py-0.5 rounded bg-brand-blue/10 opacity-0 group-hover:opacity-100 transition-opacity">
+            Repeatable Footer
+          </span>
+
+          <div v-if="props.headerFooter.showPageNumber" class="text-[11px] font-medium text-black/60 px-1.5 py-0.5 select-none">
+            Page {{ pageCount }} of {{ pageCount }} ({{ props.paperSize?.toUpperCase() || 'LETTER' }})
+          </div>
         </div>
       </div>
     </div>
@@ -220,5 +244,71 @@ onUnmounted(() => {
   color: #0f172a;
   border: 1px solid #cbd5e1;
   padding: 0.5rem 0.75rem;
+}
+
+/* ── Clear Visual Page Break Divider ── */
+.crms-page-break,
+div[data-page] {
+  display: block;
+  position: relative;
+  /* Break out horizontally so the gray canvas gap cuts all the way across */
+  margin-top: 4rem;
+  margin-bottom: 4rem;
+  margin-left: -3rem;
+  margin-right: -3rem;
+  padding: 0;
+  cursor: default;
+  user-select: none;
+}
+
+@media (min-width: 640px) {
+  .crms-page-break,
+  div[data-page] {
+    margin-left: -4rem;
+    margin-right: -4rem;
+  }
+}
+
+.crms-page-break::before,
+div[data-page]::before {
+  content: '';
+  display: block;
+  height: 28px;
+  background-color: #ECEEF1;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05), inset 0 -2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.crms-page-break::after,
+div[data-page]::after {
+  content: 'PAGE BREAK';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #ffffff;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 3px 14px;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  text-transform: uppercase;
+  font-family: 'Poppins', sans-serif;
+}
+
+@media print {
+  .crms-page-break,
+  div[data-page] {
+    page-break-before: always !important;
+    break-before: page !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    visibility: hidden !important;
+  }
 }
 </style>
