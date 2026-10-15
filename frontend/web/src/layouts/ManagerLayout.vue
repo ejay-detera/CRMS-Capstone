@@ -130,9 +130,9 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
             alt="SBSI Logo"
             class="h-10 w-10 shrink-0 object-contain rounded"
           />
-          <div class="min-w-0 flex flex-col font-secondary text-white select-none group-data-[collapsible=icon]:hidden">
-            <span class="text-xs font-semibold leading-tight text-white tracking-tight">Contract Management</span>
-            <span class="text-xs font-semibold leading-tight text-white/90 tracking-tight">System</span>
+          <div class="min-w-0 flex flex-col font-poppins text-white select-none group-data-[collapsible=icon]:hidden">
+            <span class="text-xs font-bold leading-tight text-white tracking-wide uppercase">CONTRACT</span>
+            <span class="text-[10px] font-normal leading-tight text-white/80 tracking-tight">MANAGEMENT SYSTEM</span>
           </div>
         </div>
       </SidebarHeader>
