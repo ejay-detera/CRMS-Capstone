@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   Sparkles,
   Printer,
-  Download,
   Loader2,
   FileCheck2,
   RefreshCw,
@@ -49,7 +48,6 @@ const {
 const docTitle = ref('Contract Agreement')
 const zoomLevel = ref(1)
 const isAttaching = ref(false)
-const isExportingPdf = ref(false)
 const isEditingHeaderFooter = ref(false)
 
 const margins = reactive<PageMargins>({
@@ -116,45 +114,85 @@ async function runContractGeneration(force = false) {
     docTitle.value = 'Commercial Services Agreement'
     setCombinedHtml(`
       <h1 style="text-align: center;"><strong>COMMERCIAL SERVICES AGREEMENT</strong></h1>
-      <p style="text-align: center;"><strong>CONTRACT NO. SBSI-2026-001</strong></p>
+      <p style="text-align: center; color: #555555;"><strong>CONTRACT NO. SBSI-2026-001</strong></p>
       <hr />
-      <p>This Commercial Services Agreement (the "Agreement") is entered into by and between <strong>SBSI Corporation</strong> ("Client") and the undersigned Service Provider ("Contractor").</p>
+      <p>This Commercial Services Agreement (the &ldquo;Agreement&rdquo;) is entered into and made effective as of <strong>October 16, 2026</strong>, by and between <strong>SBSI Corporation</strong> (&ldquo;First Party / Client&rdquo;) and <strong>Nexus Tech Solutions Inc.</strong> (&ldquo;Second Party / Contractor&rdquo;).</p>
+
       <h2><strong>1. RECITALS &amp; APPOINTMENT</strong></h2>
-      <p>WHEREAS, Client requires technical engineering and deployment services; and Contractor possesses the requisite professional qualifications, equipment, and personnel to execute such services.</p>
-      <h2><strong>2. SCOPE OF DELIVERABLES</strong></h2>
-      <p>The Contractor shall provide system engineering, deployment, integration verification, and ongoing technical support in accordance with Schedule A.</p>
-      <p>All work products must satisfy the highest commercial quality standards and technical guidelines established by the Client.</p>
+      <p>WHEREAS, the Client requires technical engineering, server installation, and enterprise deployment services; and the Contractor represents that it possesses the requisite professional qualifications, equipment, and certified personnel to execute such services in accordance with corporate standards.</p>
+      <p>NOW, THEREFORE, in consideration of the mutual covenants contained herein, the Parties agree to the terms set forth below:</p>
 
-      <div class="crms-page-break" data-page="2"></div>
-
-      <h2><strong>3. PERFORMANCE STANDARDS &amp; WARRANTIES</strong></h2>
-      <p>Contractor represents and warrants that all deliverables furnished hereunder will perform without material defect, comply with specifications, and operate with standard high-availability reliability.</p>
-      <p>In the event of any service outage or technical non-compliance, Contractor guarantees immediate remedial response within twenty-four (24) business hours.</p>
-      <h2><strong>4. DATA PRIVACY &amp; CONFIDENTIALITY</strong></h2>
-      <p>Both parties agree to comply with the Philippine Data Privacy Act of 2012 (Republic Act No. 10173) and its implementing rules and regulations.</p>
-      <p>Confidential Information shall strictly not be disclosed, duplicated, or transferred to any third party without express prior written consent of the Client.</p>
-      <p>This duty of confidentiality survives the termination or expiration of this Agreement for a period of five (5) consecutive years.</p>
-
-      <div class="crms-page-break" data-page="3"></div>
-
-      <h2><strong>5. SIGNATURES &amp; APPROVALS</strong></h2>
-      <p>IN WITNESS WHEREOF, the parties hereto have executed and delivered this Commercial Services Agreement as of the date first above written.</p>
-      <br />
-      <table class="crms-quill-table" style="width: 100%; border: 1px solid #cbd5e1; margin-top: 1.5rem;">
+      <h2><strong>2. SCOPE OF DELIVERABLES &amp; SPECIFICATIONS</strong></h2>
+      <p>The Contractor shall provide system engineering, deployment, integration verification, and ongoing technical support in accordance with the following specifications:</p>
+      <table class="crms-quill-table" style="width: 100%; border-collapse: collapse; margin-top: 0.5rem; margin-bottom: 0.75rem;">
         <tbody>
           <tr>
-            <th style="padding: 10px; border: 1px solid #cbd5e1; background: #f8fafc; text-align: left;">FOR SBSI CORPORATION</th>
-            <th style="padding: 10px; border: 1px solid #cbd5e1; background: #f8fafc; text-align: left;">FOR CONTRACTOR</th>
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-weight: bold; width: 35%;">Deliverable Description</td>
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1;">Enterprise Server Infrastructure Deployment</td>
           </tr>
           <tr>
-            <td style="padding: 30px 10px 10px; border: 1px solid #cbd5e1; vertical-align: bottom;">
-              _____________________________________<br />
-              <strong>Authorized Representative</strong><br />
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-weight: bold;">Designated Item Code</td>
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1;">SRV-NEX-001</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-weight: bold;">Assigned Strategic Unit</td>
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1;">SBU 101 - Core Infrastructure</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1; background: #f8fafc; font-weight: bold;">Operational Region</td>
+            <td style="padding: 6px 10px; border: 1px solid #cbd5e1;">National Capital Region, Philippines</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2><strong>3. CONTRACT DURATION &amp; TERM</strong></h2>
+      <p>This Agreement shall commence on October 16, 2026 and remain in full force and effect until October 15, 2027, unless earlier terminated in accordance with Section 7.</p>
+
+      <div class="crms-page-break"></div>
+
+      <h2><strong>4. PERFORMANCE STANDARDS &amp; WARRANTIES</strong></h2>
+      <ol>
+        <li>The Contractor warrants that all deliverables furnished hereunder will perform without material defect and operate with standard high-availability reliability (99.9% uptime).</li>
+        <li>In the event of any service discrepancy or technical outage, Contractor guarantees immediate remedial response within twenty-four (24) business hours upon written notice.</li>
+      </ol>
+
+      <h2><strong>5. COMPENSATION &amp; BILLING TERMS</strong></h2>
+      <p>Client shall compensate the Contractor upon formal inspection, acceptance, and approval of milestones. All billings shall be subject to standard withholding taxes applicable under the Philippine National Internal Revenue Code.</p>
+
+      <h2><strong>6. DATA PRIVACY &amp; CONFIDENTIALITY</strong></h2>
+      <p>Both parties agree to comply with the Philippine Data Privacy Act of 2012 (Republic Act No. 10173). Confidential information shall strictly not be disclosed, duplicated, or transferred to any third party without express prior written consent of the Client.</p>
+
+      <h2><strong>7. TERMINATION &amp; DEFAULT</strong></h2>
+      <p>Either party may terminate this Agreement upon thirty (30) days prior written notice in the event of default or uncured breach.</p>
+
+      <div class="crms-page-break"></div>
+
+      <h2><strong>8. GOVERNING LAW &amp; DISPUTE RESOLUTION</strong></h2>
+      <p>This Agreement shall be governed by and construed in accordance with Philippine law. Any legal dispute shall be submitted to the competent courts of Metro Manila, Philippines, to the exclusion of all other courts.</p>
+
+      <h2><strong>9. GENERAL PROVISIONS</strong></h2>
+      <p>This Agreement constitutes the entire agreement between the parties with respect to the subject matter hereof and supersedes all prior representations, negotiations, or agreements.</p>
+
+      <h2><strong>10. EXECUTION &amp; FORMAL SIGNATURES</strong></h2>
+      <p>IN WITNESS WHEREOF, the parties hereto have caused this Agreement to be executed by their duly authorized representatives as of the date first above written.</p>
+
+      <table class="crms-quill-table" style="width: 100%; border: 1px solid #cbd5e1; margin-top: 1.5rem; border-collapse: collapse;">
+        <tbody>
+          <tr>
+            <th style="padding: 10px; border: 1px solid #cbd5e1; background: #f8fafc; text-align: left; width: 50%;">FOR SBSI CORPORATION (CLIENT)</th>
+            <th style="padding: 10px; border: 1px solid #cbd5e1; background: #f8fafc; text-align: left; width: 50%;">FOR CONTRACTOR</th>
+          </tr>
+          <tr>
+            <td style="padding: 36px 12px 14px; border: 1px solid #cbd5e1; vertical-align: bottom;">
+              ____________________________________________<br />
+              <strong>AUTHORIZED REPRESENTATIVE</strong><br />
+              SBSI Corporation<br />
               Date: ________________________
             </td>
-            <td style="padding: 30px 10px 10px; border: 1px solid #cbd5e1; vertical-align: bottom;">
-              _____________________________________<br />
-              <strong>Contractor Signatory</strong><br />
+            <td style="padding: 36px 12px 14px; border: 1px solid #cbd5e1; vertical-align: bottom;">
+              ____________________________________________<br />
+              <strong>AUTHORIZED REPRESENTATIVE</strong><br />
+              Nexus Tech Solutions Inc.<br />
               Date: ________________________
             </td>
           </tr>
@@ -362,36 +400,6 @@ function handlePrint() {
   window.print()
 }
 
-async function handleDownloadPdf() {
-  isExportingPdf.value = true
-  try {
-    const blob = await createPdfBlob()
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${docTitle.value.replace(/\s+/g, '_')}.pdf`
-    a.click()
-    URL.revokeObjectURL(url)
-    success('PDF Exported', 'Clean PDF document downloaded successfully.')
-  } catch (err: any) {
-    console.error('Error generating PDF:', err)
-    toastError('Export Error', err?.message || 'Failed to generate PDF document.')
-  } finally {
-    isExportingPdf.value = false
-  }
-}
-
-function handleDownloadHtml() {
-  const html = getCombinedHtml()
-  const blob = new Blob([html], { type: 'text/html' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${docTitle.value.replace(/\s+/g, '_')}.html`
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
 function handleBack() {
   document.body.style.pointerEvents = 'auto'
   document.body.style.overflow = ''
@@ -459,35 +467,11 @@ onMounted(() => {
           variant="outline"
           size="sm"
           @click="handlePrint"
-          class="h-8 text-xs border-black/12 text-black/70 hover:text-black hover:bg-black/3 gap-1.5 hidden sm:inline-flex"
+          class="h-8 text-xs border-black/12 text-black/70 hover:text-black hover:bg-black/3 gap-1.5 hidden sm:inline-flex cursor-pointer"
+          title="Print physical contract or save via browser PDF"
         >
           <Printer class="w-3.5 h-3.5" />
           Print / PDF
-        </Button>
-
-        <!-- Direct PDF Download -->
-        <Button
-          variant="outline"
-          size="sm"
-          @click="handleDownloadPdf"
-          :disabled="isExportingPdf"
-          class="h-8 text-xs border-black/12 text-black/70 hover:text-black hover:bg-black/3 gap-1.5 hidden sm:inline-flex"
-          title="Download PDF directly"
-        >
-          <Loader2 v-if="isExportingPdf" class="w-3.5 h-3.5 animate-spin" />
-          <Download v-else class="w-3.5 h-3.5" />
-          Export PDF
-        </Button>
-
-        <!-- Download HTML -->
-        <Button
-          variant="outline"
-          size="sm"
-          @click="handleDownloadHtml"
-          class="h-8 text-xs border-black/12 text-black/70 hover:text-black hover:bg-black/3 gap-1.5 hidden sm:inline-flex"
-        >
-          <Download class="w-3.5 h-3.5" />
-          Export HTML
         </Button>
 
         <!-- Attach & Save Contract -->
@@ -562,6 +546,111 @@ onMounted(() => {
 </template>
 
 <style>
+/* Standard Contract Document Typography */
+.quill-printable-body .ql-editor {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 13.5px !important;
+  line-height: 1.65 !important;
+  color: #1e293b !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+.quill-printable-body .ql-editor h1 {
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  color: #0f172a !important;
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.35rem !important;
+  line-height: 1.35 !important;
+}
+
+.quill-printable-body .ql-editor h2 {
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  color: #1e293b !important;
+  margin-top: 1rem !important;
+  margin-bottom: 0.35rem !important;
+  line-height: 1.4 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding-bottom: 2px !important;
+}
+
+.quill-printable-body .ql-editor h3 {
+  font-size: 0.825rem !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.quill-printable-body .ql-editor p {
+  font-size: 13.5px !important;
+  line-height: 1.65 !important;
+  margin-bottom: 0.65rem !important;
+  color: #1e293b !important;
+}
+
+.quill-printable-body .ql-editor hr {
+  border: 0 !important;
+  border-top: 1px solid #cbd5e1 !important;
+  margin: 0.75rem 0 !important;
+}
+
+.quill-printable-body .ql-editor ul,
+.quill-printable-body .ql-editor ol {
+  padding-left: 1.4rem !important;
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.65rem !important;
+}
+
+.quill-printable-body .ql-editor li {
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+  margin-bottom: 0.2rem !important;
+}
+
+.quill-printable-body .ql-editor table.crms-quill-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  margin: 0.75rem 0 !important;
+  font-size: 12.5px !important;
+}
+
+.quill-printable-body .ql-editor table.crms-quill-table th,
+.quill-printable-body .ql-editor table.crms-quill-table td {
+  border: 1px solid #cbd5e1 !important;
+  padding: 8px 12px !important;
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+}
+
+/* On Screen Page Break Indicator */
+.crms-page-break {
+  display: block;
+  border-top: 1px dashed #cbd5e1;
+  margin: 1.5rem 0;
+  position: relative;
+}
+.crms-page-break::after {
+  content: 'Page Break';
+  position: absolute;
+  top: -9px;
+  right: 12px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
 @media print {
   /* 1. Hide all application shell elements, navigation, breadcrumbs, user avatars, bells, and toolbars */
   aside,
@@ -570,14 +659,20 @@ onMounted(() => {
   [data-sidebar="sidebar"],
   header,
   .app-breadcrumbs,
+  .editor-toolbar-wrapper,
   .editor-toolbar,
   #quill-toolbar-container,
   .ql-toolbar,
+  .contract-page-controls,
   button,
   .print\:hidden,
   .group\/gap,
-  .header-footer-floating-pill {
+  .header-footer-floating-pill,
+  .sheet-margin-guides,
+  .crms-page-break,
+  .crms-page-break::after {
     display: none !important;
+    visibility: hidden !important;
   }
 
   /* 2. Reset layout containers so only the printable document flows naturally */
@@ -586,6 +681,7 @@ onMounted(() => {
   #app,
   main,
   .sidebar-provider,
+  .flex-1.overflow-auto,
   .w-full.flex-1.overflow-y-auto {
     background: #ffffff !important;
     padding: 0 !important;
@@ -595,6 +691,7 @@ onMounted(() => {
     -ms-overflow-style: none !important;
     height: auto !important;
     min-height: 0 !important;
+    width: 100% !important;
   }
 
   html::-webkit-scrollbar,
@@ -606,15 +703,19 @@ onMounted(() => {
   }
 
   /* 3. Each physical paper sheet becomes a true printed page */
+  .group\/sheet-wrap,
   .quill-page-sheet {
     box-shadow: none !important;
     border: none !important;
     outline: none !important;
     border-radius: 0 !important;
+    --tw-ring-shadow: none !important;
+    ring: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
     min-height: 0 !important;
     margin: 0 !important;
+    padding: 0 !important;
     page-break-after: always !important;
     break-after: page !important;
     page-break-inside: avoid !important;
@@ -639,12 +740,8 @@ onMounted(() => {
     border-width: 1px 0 0 0 !important;
   }
 
-  .sheet-margin-guides {
-    display: none !important;
-  }
-
   @page {
-    margin: 10mm 12mm;
+    margin: 0;
     size: auto;
   }
 }

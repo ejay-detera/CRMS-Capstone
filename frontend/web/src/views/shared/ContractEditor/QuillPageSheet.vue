@@ -46,7 +46,7 @@ onUnmounted(() => {
 <template>
   <div
     class="quill-page-sheet relative bg-white flex flex-col cursor-text select-text rounded-[2px]"
-    :class="isActive ? 'ring-2 ring-brand-blue/70 shadow-xl' : 'hover:shadow-lg shadow-md ring-1 ring-black/10'"
+    :class="isActive ? 'ring-2 ring-brand-blue/70 shadow-xl print:ring-0 print:shadow-none' : 'hover:shadow-lg shadow-md ring-1 ring-black/10 print:ring-0 print:shadow-none'"
     :style="{ width: `${dimensions.width}px`, minHeight: `${dimensions.height}px` }"
     @click="emit('activate', page.id)"
   >
@@ -122,7 +122,7 @@ onUnmounted(() => {
 
       <div v-if="headerFooter.showPageNumber" class="text-[11px] font-medium text-black/60 shrink-0 flex items-center gap-1.5">
         <FileText class="w-3.5 h-3.5 text-brand-navy/50" />
-        <span>Page {{ pageIndex + 1 }} of {{ totalPages }} ({{ paperSize?.toUpperCase() || 'LETTER' }} · {{ orientation?.toUpperCase() || 'PORTRAIT' }})</span>
+        <span>Page {{ pageIndex + 1 }} of {{ totalPages }}</span>
       </div>
     </div>
   </div>

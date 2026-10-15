@@ -113,11 +113,55 @@ final class ContractGenerationControllerTest extends TestCase
                 'status' => 'success',
                 'source' => 'template_engine',
             ])
-            ->assertJsonPath('data.title', 'Service Agreement - Acme Technologies');
+            ->assertJsonPath('data.title', 'COMMERCIAL SERVICES AGREEMENT - Acme Technologies');
 
         $content = $response->json('data.html_content');
         $this->assertStringContainsString('Acme Technologies', $content);
         $this->assertStringContainsString('ITM-0041', $content);
         $this->assertStringContainsString('SN-2026-0041', $content);
+        $this->assertStringContainsString('SERVICE LEVEL AGREEMENT (SLA)', $content);
+    }
+
+    public function test_generates_category_specific_contracts_with_tailored_blueprints(): void
+    {
+        $this->fakeAuth();
+
+        $categories = [
+            'Supply Contract'       => ['COMMERCIAL SUPPLY CONTRACT', 'PURCHASER', 'INSPECTION, ACCEPTANCE'],
+            'Equipment Lease'       => ['EQUIPMENT LEASE AGREEMENT', 'LESSEE', 'RENTAL CHARGES, SECURITY DEPOSIT'],
+            'Equipment Maintenance' => ['EQUIPMENT MAINTENANCE & SERVICING AGREEMENT', 'MAINTENANCE PROVIDER', 'PREVENTIVE MAINTENANCE SCHEDULE'],
+            'Partnership Agreement' => ['STRATEGIC PARTNERSHIP & COLLABORATION AGREEMENT', 'FIRST PARTNER', 'JOINT GOVERNANCE'],
+        ];
+
+        $geminiMock = Mockery::mock(GeminiClient::class);
+        $geminiMock->shouldReceive('generateJson')->andReturn(null);
+        $this->app->instance(GeminiClient::class, $geminiMock);
+
+        foreach ($categories as $category => [$expectedTitlePrefix, $expectedRole, $expectedClause]) {
+
+            $payload = [
+                'business_partner' => 'Partner Corp',
+                'category'         => $category,
+                'item_code'        => 'CODE-100',
+                'description'      => 'Industrial Machinery Item',
+                'serial_number'    => 'SER-999',
+                'sbu_number'       => 'SBU-002',
+                'region'           => 'Visayas',
+                'start_date'       => '2026-02-01',
+                'end_date'         => '2027-02-01',
+            ];
+
+            $response = $this->withHeader('Authorization', 'Bearer valid-token')
+                ->postJson('/api/contracts/generate', $payload);
+
+            $response->assertStatus(200);
+            $this->assertStringStartsWith($expectedTitlePrefix, $response->json('data.title'));
+
+            $html = $response->json('data.html_content');
+            $this->assertStringContainsString($expectedRole, $html);
+            $this->assertStringContainsString($expectedClause, $html);
+            $this->assertStringContainsString('crms-page-break', $html);
+            $this->assertStringContainsString('crms-quill-table', $html);
+        }
     }
 }

@@ -88,7 +88,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleGlobalKeydown))
     @dblclick="(e) => { if (!(e.target as HTMLElement).closest('.header-footer-zone') && isEditing) isEditing = false }"
   >
     <div
-      class="relative flex flex-col items-center transition-all origin-top mb-16 print:mb-0 print:transform-none"
+      class="relative flex flex-col items-center transition-all origin-top mb-16 print:mb-0 print:transform-none print:!w-full"
       :style="{ width: `${dimensions.width}px`, transform: props.zoom && props.zoom !== 1 ? `scale(${props.zoom})` : 'none' }"
     >
       <!-- Floating Header & Footer Edit Pill -->
@@ -101,7 +101,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleGlobalKeydown))
 
       <!-- Discrete Physical Paper Sheets Loop -->
       <template v-for="(page, pageIndex) in props.pages" :key="page.id">
-        <div class="relative group/sheet-wrap" :style="{ width: `${dimensions.width}px` }">
+        <div class="relative group/sheet-wrap print:!w-full" :style="{ width: `${dimensions.width}px` }">
           <!-- Interactive Draggable Margin Handles (Shown for active page) -->
           <SheetMarginGuides
             v-if="props.activePageId === page.id"

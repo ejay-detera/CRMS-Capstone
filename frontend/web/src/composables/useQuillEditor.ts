@@ -53,15 +53,12 @@ function registerQuillExtensions() {
     const SizeStyle = Quill.import('attributors/style/size') as any
     if (SizeStyle) {
       SizeStyle.whitelist = [
-        '9pt',
         '10pt',
         '11pt',
         '12pt',
         '14pt',
         '16pt',
         '18pt',
-        '24pt',
-        '30pt',
       ]
       Quill.register(SizeStyle, true)
     }
@@ -415,26 +412,56 @@ export function useQuillEditor() {
     return true
   }
 
+  // ── HTML Normalizer: Strips arbitrary font sizes and families from AI or paste ──
+  function normalizeContractHtml(rawHtml: string): string {
+    if (!rawHtml || !rawHtml.trim()) return ''
+
+    // 1. Strip rogue inline font-size, font-family, and line-height styles
+    let cleaned = rawHtml
+      .replace(/font-size\s*:\s*[^;"]+;?/gi, '')
+      .replace(/font-family\s*:\s*[^;"]+;?/gi, '')
+      .replace(/line-height\s*:\s*[^;"]+;?/gi, '')
+      .replace(/background-color\s*:\s*transparent;?/gi, '')
+      .replace(/style="\s*"/gi, '')
+      .replace(/style='\s*'/gi, '')
+
+    // 2. Standardize page break markers
+    cleaned = cleaned.replace(
+      /<div[^>]*class="[^"]*crms-page-break[^"]*"[^>]*><\/div>|<div[^>]*data-page-break="true"[^>]*><\/div>/gi,
+      '<div class="crms-page-break" data-page-break="true"></div>'
+    )
+
+    return cleaned
+  }
+
   // ── Splitter: Parses incoming HTML into discrete page chunks ──
   function splitHtmlIntoPages(html: string): string[] {
-    if (!html.trim()) {
+    const sanitized = normalizeContractHtml(html)
+    if (!sanitized.trim()) {
       return ['']
     }
 
     // 1. If explicit page break markers exist in the HTML, split by them first!
-    const breakRegex = /<div[^>]*class="[^"]*crms-page-break[^"]*"[^>]*><\/div>|<div[^>]*data-page-break="true"[^>]*><\/div>|<div class="crms-page-break"[^>]*><\/div>/gi
-    if (breakRegex.test(html)) {
-      const parts = html.split(breakRegex).map((p) => p.trim()).filter((p) => p.length > 0)
+    const breakMarker = '<div class="crms-page-break" data-page-break="true"></div>'
+    if (sanitized.includes(breakMarker)) {
+      const parts = sanitized.split(breakMarker).map((p) => p.trim()).filter((p) => p.length > 0)
       if (parts.length > 0) return parts
     }
 
-    // 2. Parse blocks with DOMParser and chunk into pages (~6-8 paragraphs or headers per page)
+    // Fallback: Check regex for variant page break markers
+    const breakRegex = /<div[^>]*class="[^"]*crms-page-break[^"]*"[^>]*><\/div>|<div[^>]*data-page-break="true"[^>]*><\/div>/gi
+    if (breakRegex.test(sanitized)) {
+      const parts = sanitized.split(breakRegex).map((p) => p.trim()).filter((p) => p.length > 0)
+      if (parts.length > 0) return parts
+    }
+
+    // 2. Parse blocks with DOMParser and chunk into pages intelligently
     const parser = new DOMParser()
-    const doc = parser.parseFromString(html, 'text/html')
+    const doc = parser.parseFromString(sanitized, 'text/html')
     const blocks = Array.from(doc.body.children)
 
     if (blocks.length === 0) {
-      return [html]
+      return [sanitized]
     }
 
     const pageChunks: string[] = []
@@ -474,11 +501,12 @@ export function useQuillEditor() {
       pageChunks.push(currentChunkHtml)
     }
 
-    return pageChunks.length > 0 ? pageChunks : [html]
+    return pageChunks.length > 0 ? pageChunks : [sanitized]
   }
 
   function setCombinedHtml(html: string) {
-    const chunks = splitHtmlIntoPages(html)
+    const sanitized = normalizeContractHtml(html)
+    const chunks = splitHtmlIntoPages(sanitized)
     pages.value = chunks.map((chunkHtml, index) => ({
       id: `page-${index + 1}-${Date.now()}`,
       html: chunkHtml,
