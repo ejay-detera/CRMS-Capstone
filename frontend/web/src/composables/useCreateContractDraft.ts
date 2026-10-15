@@ -20,9 +20,12 @@ export interface GeneratedDocument {
 }
 
 export interface HeaderFooterConfig {
-  headerLeft: string
-  headerRight: string
-  footerLeft: string
+  headerLeft?: string
+  headerRight?: string
+  footerLeft?: string
+  headerHtml?: string
+  footerHtml?: string
+  headerLogoUrl?: string
   showPageNumber: boolean
 }
 
@@ -57,6 +60,9 @@ const draft = reactive<Draft>({
     headerLeft: 'CONFIDENTIAL CONTRACT AGREEMENT',
     headerRight: 'SBSI CRMS',
     footerLeft: 'Authorized Legal Draft',
+    headerHtml: '',
+    footerHtml: '',
+    headerLogoUrl: '',
     showPageNumber: true,
   }
 })

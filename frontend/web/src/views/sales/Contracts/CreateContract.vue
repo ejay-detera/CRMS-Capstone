@@ -375,6 +375,9 @@ async function fetchPartnerNames() {
 const prefilledFromPrs = ref(false)
 
 onMounted(() => {
+  document.body.style.pointerEvents = 'auto'
+  document.body.style.overflow = ''
+
   fetchPartnerNames()
   fetchPrsActivities()
   fetchContractTypes()
@@ -383,15 +386,15 @@ onMounted(() => {
   }
 
   // 1. Restore draft if active
-  if (draft.active && draft.role === 'sales') {
+  if (draft.active && (draft.role === 'sales' || !draft.role)) {
     const saved = restoreDraft()
     if (saved) {
       Object.assign(form, saved.form)
       contractDocs.value = [...saved.docs]
       if (saved.form.prsActivityId) prefilledFromPrs.value = true
     }
-    clearDraft()
-    return
+    // Deactivate active draft state but preserve draft.generatedDoc for re-editing
+    draft.active = false
   }
 
   // 2. Otherwise auto-populate fields from PRS integration query params

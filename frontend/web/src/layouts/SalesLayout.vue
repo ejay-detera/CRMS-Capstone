@@ -106,11 +106,11 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
 </script>
 
 <template>
-  <SidebarProvider class="flex h-screen">
+  <SidebarProvider class="flex h-screen print:block print:h-auto">
     <!-- ── Sidebar ── -->
     <Sidebar
       collapsible="icon"
-      class="border-r border-brand-dark bg-brand-navy text-white shadow-sm"
+      class="border-r border-brand-dark bg-brand-navy text-white shadow-sm print:hidden"
       :style="{
         '--sidebar': 'var(--brand-navy)',
         '--sidebar-foreground': '#FFFFFF',
@@ -300,9 +300,9 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
     </Sidebar>
 
     <!-- ── Main Content ── -->
-    <main class="flex-1 flex flex-col min-w-0 bg-[#F5F6FA] min-h-screen">
+    <main class="flex-1 flex flex-col min-w-0 bg-[#F5F6FA] min-h-screen print:min-h-0 print:bg-white print:p-0 print:overflow-visible">
       <!-- Top Header -->
-      <header class="h-16 flex items-center justify-between px-6 bg-white border-b border-black/10 shrink-0">
+      <header class="h-16 flex items-center justify-between px-6 bg-white border-b border-black/10 shrink-0 print:hidden">
         <div class="flex items-center gap-3.5 flex-1 min-w-0 mr-4">
           <SidebarTrigger class="text-black/60 shrink-0" />
           <div class="h-4 w-px bg-black/10 shrink-0 hidden sm:block"></div>
