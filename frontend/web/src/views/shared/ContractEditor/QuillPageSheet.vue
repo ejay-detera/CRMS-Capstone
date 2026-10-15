@@ -127,3 +127,19 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+:deep(.ql-container.ql-snow) {
+  border: none !important;
+}
+
+:deep(.ql-editor) {
+  border: none !important;
+  outline: none !important;
+  padding: 0 !important;
+}
+
+:deep(.ql-editor:focus) {
+  outline: none !important;
+}
+</style>

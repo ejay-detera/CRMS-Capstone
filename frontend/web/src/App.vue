@@ -29,6 +29,8 @@ watch(isAuthenticated, (newVal) => {
 })
 
 onMounted(() => {
+  document.body.style.overflow = ''
+  document.body.style.pointerEvents = 'auto'
   window.addEventListener('mousemove', resetIdleTimer)
   window.addEventListener('keydown', resetIdleTimer)
   window.addEventListener('click', resetIdleTimer)

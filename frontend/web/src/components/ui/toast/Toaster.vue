@@ -34,9 +34,9 @@ const config = {
 
 <template>
   <Teleport to="body">
-    <!-- Canonical Top-Right Viewport Positioning per DESIGN.md Section VI.8 (top: 24px, right: 24px, z-index: 1200) -->
+    <!-- Viewport Positioning: Bottom-Right (bottom: 24px, right: 24px, z-index: 1200) -->
     <div
-      class="fixed top-6 right-6 z-[1200] flex flex-col gap-2.5 pointer-events-none select-none max-w-sm w-full"
+      class="fixed bottom-6 right-6 z-[1200] flex flex-col gap-2.5 pointer-events-none select-none max-w-sm w-full"
       aria-live="polite"
     >
       <TransitionGroup

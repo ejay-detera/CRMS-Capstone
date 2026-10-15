@@ -428,23 +428,15 @@ router.beforeEach((to: RouteLocationNormalized) => {
   return true
 })
 
-let isInitialNavigation = true
-
 router.afterEach(() => {
   setBreadcrumbTitle(null)
-  if (isInitialNavigation) {
-    const { hideLoader } = useLoader()
-    hideLoader()
-    isInitialNavigation = false
-  }
+  const { hideLoader } = useLoader()
+  hideLoader()
 })
 
 router.onError(() => {
-  if (isInitialNavigation) {
-    const { hideLoader } = useLoader()
-    hideLoader()
-    isInitialNavigation = false
-  }
+  const { hideLoader } = useLoader()
+  hideLoader()
 })
 
 export default router
