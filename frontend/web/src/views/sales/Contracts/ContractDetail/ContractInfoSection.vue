@@ -5,6 +5,7 @@ import type { ContractRegion, ContractWorkflowStatus } from '@/types/contract'
 import type { StoredContract } from '@/composables/useContractStore'
 import { CalendarCheck, CalendarX } from 'lucide-vue-next'
 import { ref, computed } from 'vue'
+import FormSelect from '@/components/shared/FormSelect.vue'
 import { initialBusinessPartners, initialSuppliersData } from '@/views/admin/Partners/mockPartners'
 import { onClickOutside } from '@vueuse/core'
 
@@ -132,17 +133,14 @@ onClickOutside(suggestionsContainer, () => {
           </label>
           <p v-if="!isEditing" class="text-[15px] font-medium text-black mt-0.5">{{ contract.category }}</p>
           <template v-else>
-            <select
+            <FormSelect
               v-model="editForm.category"
+              :options="categories"
+              placeholder="Select category"
+              :error="!!(touched.category && !editForm.category)"
+              class="mt-1"
               @blur="touched.category = true"
-              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition mt-1"
-              :class="[
-                !editForm.category ? 'text-black/30' : 'text-black',
-                fieldCls('category', !editForm.category)
-              ]">
-              <option value="" disabled>Select category</option>
-              <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
-            </select>
+            />
             <p v-if="touched.category && !editForm.category" class="text-xs text-red-500">Category is required.</p>
           </template>
         </div>
@@ -294,19 +292,14 @@ onClickOutside(suggestionsContainer, () => {
           </label>
           <p v-if="!isEditing" class="text-[15px] font-medium text-black mt-0.5">{{ contract.region }}</p>
           <template v-else>
-            <select
+            <FormSelect
               v-model="editForm.region"
+              :options="['Luzon', 'Visayas', 'Mindanao']"
+              placeholder="Select region"
+              :error="!!(touched.region && !editForm.region)"
+              class="mt-1"
               @blur="touched.region = true"
-              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition mt-1"
-              :class="[
-                !editForm.region ? 'text-black/30' : 'text-black',
-                fieldCls('region', !editForm.region)
-              ]">
-              <option value="" disabled>Select region</option>
-              <option value="Luzon">Luzon</option>
-              <option value="Visayas">Visayas</option>
-              <option value="Mindanao">Mindanao</option>
-            </select>
+            />
             <p v-if="touched.region && !editForm.region" class="text-xs text-red-500">Region is required.</p>
           </template>
         </div>

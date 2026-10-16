@@ -13,6 +13,7 @@ import { useCreateContractDraft } from '@/composables/useCreateContractDraft'
 import OcrImportDialog from '@/views/admin/Contracts/OcrImportDialog.vue'
 import type { OcrExtractedData } from '@/types/ocr'
 import PrefixedNumberInput from '@/components/shared/PrefixedNumberInput.vue'
+import FormSelect from '@/components/shared/FormSelect.vue'
 import { useDocumentUpload } from '@/composables/useDocumentUpload'
 import { useContractTypes } from '@/composables/useContractTypes'
 
@@ -621,19 +622,13 @@ onClickOutside(prsContainer, () => {
           <!-- Category -->
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-black/55">Category <span class="text-red-500">*</span></label>
-            <select
+            <FormSelect
               v-model="form.category"
+              :options="categories"
+              placeholder="Select category"
+              :error="!!errors.category"
               @blur="touched.category = true"
-              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition"
-              :class="[
-                !form.category ? 'text-black/30' : 'text-black',
-                errors.category
-                  ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                  : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'
-              ]">
-              <option value="" disabled>Select category</option>
-              <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
-            </select>
+            />
             <p v-if="errors.category" class="text-xs text-red-500">{{ errors.category }}</p>
           </div>
 
@@ -762,19 +757,13 @@ onClickOutside(prsContainer, () => {
           <!-- Region -->
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-semibold text-black/55">Region <span class="text-red-500">*</span></label>
-            <select
+            <FormSelect
               v-model="form.region"
+              :options="regions"
+              placeholder="Select region"
+              :error="!!errors.region"
               @blur="touched.region = true"
-              class="h-9 rounded-lg border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition"
-              :class="[
-                !form.region ? 'text-black/30' : 'text-black',
-                errors.region
-                  ? 'border-red-400 focus:border-red-400 focus:ring-red-200/50'
-                  : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'
-              ]">
-              <option value="" disabled>Select region</option>
-              <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
-            </select>
+            />
             <p v-if="errors.region" class="text-xs text-red-500">{{ errors.region }}</p>
           </div>
 
