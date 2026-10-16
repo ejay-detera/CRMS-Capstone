@@ -256,6 +256,25 @@ async function confirmSubmit() {
   loading.value = true
   showConfirm.value = false
   try {
+    // Ensure all attached documents are uploaded to backend before creating the contract
+    for (const doc of contractDocs.value) {
+      const isMongoId = doc.id && /^[0-9a-fA-F]{24}$/.test(doc.id)
+      if (!isMongoId && doc.file) {
+        await uploadOcrDoc(doc, (patch) => {
+          Object.assign(doc, patch)
+        })
+        if (doc.uploadStatus === 'error' || !doc.id) {
+          error('Document upload failed', doc.errorMessage || `Could not upload document "${doc.name}".`)
+          loading.value = false
+          return
+        }
+      }
+    }
+
+    const validDocIds = contractDocs.value
+      .filter(d => d.id && /^[0-9a-fA-F]{24}$/.test(d.id))
+      .map(d => d.id as string)
+
     const payload = {
       bp_name:       form.businessPartner,
       category:      form.category,
@@ -266,7 +285,7 @@ async function confirmSubmit() {
       region:        form.region,
       start_date:    form.startDate,
       end_date:      form.endDate,
-      document_ids:  contractDocs.value.filter(d => d.id).map(d => d.id),
+      document_ids:  validDocIds,
     }
 
     const res = await fetch(`${import.meta.env.VITE_CONTRACT_API_URL}/contracts`, {

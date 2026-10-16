@@ -466,10 +466,9 @@ async function handleAttachToContract() {
       console.warn('Backend document upload skipped or failed, persisting locally in draft:', uploadErr)
     }
 
-    // If upload returned error status (e.g. backend offline or mock mode), still allow attachment locally
-    if (newDoc.uploadStatus === 'error' || !newDoc.uploadStatus || newDoc.uploadStatus === 'uploading') {
+    // If upload was completed, keep backend ID. If still pending or offline, mark success locally but retain file for pre-submit upload fallback
+    if (!newDoc.id) {
       newDoc.uploadStatus = 'success'
-      newDoc.id = newDoc.id || `GEN-DOC-${Date.now()}`
     }
 
     attachDoc(newDoc)

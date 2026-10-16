@@ -24,7 +24,9 @@ final class ScanUploadedDocument implements ShouldQueue
     public function __construct(
         private readonly string $documentId,
         private readonly string $storagePath,
-    ) {}
+    ) {
+        $this->onQueue('contract_queue');
+    }
 
     public function handle(MalwareScannerService $scanner): void
     {

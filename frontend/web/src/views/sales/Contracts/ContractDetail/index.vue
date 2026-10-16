@@ -244,7 +244,11 @@ function mapApiToContract(data: any): StoredContract {
 }
 
 function loadLocalContract() {
-  const c = (cacheState.contracts || []).find(item => item.id === id || item.contractCode === id)
+  const c = (cacheState.contracts || []).find(item => 
+    item.id === id || 
+    item.contractCode === id || 
+    (item.contractDbId !== undefined && String(item.contractDbId) === String(id))
+  )
   if (c) {
     contract.value = c as StoredContract
   }
@@ -265,7 +269,8 @@ async function loadContract() {
     await fetchContracts(userId)
     loadLocalContract()
 
-    if (!contract.value) {
+    // If contract not found or docs are empty, fetch from direct backend endpoint with documents relation
+    if (!contract.value || (contract.value.docs && contract.value.docs.length === 0)) {
       const res = await fetch(`${apiBase}/contracts/${id}`, {
         headers: {
           'Accept': 'application/json',
@@ -901,7 +906,6 @@ const activeSnapForDiff = computed(() => {
         :is-approved="contract.approvalStatus === 'Approved'"
       />
       <ContractDocumentsSection
-        v-slot:default
         v-if="displayedContract"
         :docs="isEditing ? contractDocs : displayedContract.docs"
         :is-editing="isEditing"
