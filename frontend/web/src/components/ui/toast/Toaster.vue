@@ -1,32 +1,32 @@
 <script setup lang="ts">
-import { CheckCircle2, XCircle, Info, AlertTriangle, X } from 'lucide-vue-next'
+import { Check, X as XIcon, Info, AlertTriangle } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
 
 const { toasts, remove, pause, resume } = useToast()
 
 const config = {
   success: {
-    icon: CheckCircle2,
-    iconColor: 'text-emerald-500',
-    badgeBg: 'bg-emerald-50',
+    icon: Check,
+    iconColor: 'text-[#10B981]',
+    badgeBg: 'bg-[#ECFDF5]',
     borderClass: 'border-l-4 border-l-[#10B981]',
   },
   error: {
-    icon: XCircle,
-    iconColor: 'text-red-500',
-    badgeBg: 'bg-red-50',
+    icon: XIcon,
+    iconColor: 'text-[#EF4444]',
+    badgeBg: 'bg-[#FEF2F2]',
     borderClass: 'border-l-4 border-l-[#EF4444]',
   },
   warning: {
     icon: AlertTriangle,
-    iconColor: 'text-amber-500',
-    badgeBg: 'bg-amber-50',
+    iconColor: 'text-[#F59E0B]',
+    badgeBg: 'bg-[#FFFBEB]',
     borderClass: 'border-l-4 border-l-[#F59E0B]',
   },
   info: {
     icon: Info,
-    iconColor: 'text-brand-blue',
-    badgeBg: 'bg-blue-50',
+    iconColor: 'text-[#2E85D8]',
+    badgeBg: 'bg-[#EFF6FF]',
     borderClass: 'border-l-4 border-l-[#2E85D8]',
   },
 }
@@ -50,43 +50,44 @@ const config = {
         <div
           v-for="toast in toasts"
           :key="toast.id"
-          class="pointer-events-auto flex items-start gap-3 w-full bg-white border border-slate-200/80 rounded-xl shadow-lg px-4 py-3.5 transition-all font-poppins"
+          class="pointer-events-auto flex items-center gap-3 w-full bg-white border border-slate-200/90 rounded-xl shadow-lg px-4 py-3 transition-all font-poppins"
           :class="config[toast.type].borderClass"
           @mouseenter="pause(toast.id)"
           @mouseleave="resume(toast.id)"
         >
           <!-- Status Icon Badge with soft circular wash -->
           <div
-            class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+            class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
             :class="config[toast.type].badgeBg"
           >
             <component
               :is="config[toast.type].icon"
-              class="w-4 h-4 shrink-0"
+              class="w-5 h-5 shrink-0 stroke-[2.5]"
               :class="config[toast.type].iconColor"
             />
           </div>
 
-          <div class="flex-1 min-w-0 pr-1">
+          <!-- Text Block: Vertically Centered -->
+          <div class="flex-1 min-w-0 pr-1 flex flex-col justify-center">
             <p class="text-xs font-bold text-slate-800 leading-snug tracking-wide uppercase">
               {{ toast.title }}
             </p>
             <p
               v-if="toast.description"
-              class="text-xs text-slate-500 mt-0.5 leading-relaxed font-normal"
+              class="text-xs text-slate-500 mt-0.5 leading-tight font-normal"
             >
               {{ toast.description }}
             </p>
           </div>
 
-          <!-- Close Button -->
+          <!-- Close Button: Vertically Centered -->
           <button
             type="button"
             @click="remove(toast.id)"
-            class="text-slate-400 hover:text-slate-700 transition-colors shrink-0 p-0.5 rounded hover:bg-slate-100 cursor-pointer"
+            class="text-slate-400 hover:text-slate-700 transition-colors shrink-0 p-1 rounded hover:bg-slate-100 cursor-pointer self-center"
             title="Dismiss notification"
           >
-            <X class="w-3.5 h-3.5" />
+            <XIcon class="w-4 h-4" />
           </button>
         </div>
       </TransitionGroup>

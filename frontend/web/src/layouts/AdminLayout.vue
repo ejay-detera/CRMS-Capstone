@@ -128,9 +128,9 @@ const user = computed(() => {
       <SidebarHeader class="h-16 justify-center border-b border-white/10 px-4">
         <div class="flex items-center justify-center gap-2.5 w-full transition-all duration-200">
           <img
-            src="/sbsi-logo.png"
+            src="/sbsi-logo1.png"
             alt="SBSI Logo"
-            class="h-10 w-10 shrink-0 object-contain rounded"
+            class="h-10 w-10 shrink-0 object-contain rounded-none"
           />
           <div class="min-w-0 flex flex-col font-poppins text-white select-none group-data-[collapsible=icon]:hidden">
             <span class="text-xs font-bold leading-tight text-white tracking-wide uppercase">CONTRACT</span>

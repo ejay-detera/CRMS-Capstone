@@ -477,7 +477,7 @@ async function handleAttachToContract() {
       html,
     })
 
-    success('Contract Attached', `Generated document "${fileName}" has been attached to your contract draft.`)
+    success('Contract Attached', 'Document attached to contract draft.')
 
     document.body.style.pointerEvents = 'auto'
     document.body.style.overflow = ''

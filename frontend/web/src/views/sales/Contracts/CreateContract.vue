@@ -345,7 +345,7 @@ async function confirmSubmit() {
     clearDraft()
     invalidateContracts()
     invalidateRequests()
-    success('Contract created', `${form.businessPartner}'s contract has been saved.`)
+    success('Contract Created', 'Contract has been saved successfully.')
     router.push(`/sales/contracts/${newContractId}`)
   } catch {
     error('Network error', 'Could not reach the server. Please try again.')
