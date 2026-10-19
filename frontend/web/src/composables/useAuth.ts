@@ -41,7 +41,15 @@ export function useAuth() {
   // just by tagging a nav_group — no CMS code change required.
   const navGroup = computed<string | undefined>(() => {
     if (!state.user) return undefined
-    return (state.user as any).profile?.role?.nav_group ?? undefined
+    const explicitGroup = (state.user as any).profile?.role?.nav_group
+    if (explicitGroup) return explicitGroup
+
+    // Fallback based on role name for safety before refreshPermissions finishes
+    const roleName = role.value || ''
+    if (['Admin', 'Super Admin', 'CEO', 'IT Admin'].includes(roleName)) return 'admin'
+    if (['Manager', 'Finance Manager', 'Supervisor'].includes(roleName)) return 'manager'
+    if (['Sales', 'Employee', 'Finance', 'Finance Employee', 'Accountant', 'Engineer'].includes(roleName)) return 'staff'
+    return undefined
   })
   
   // Robustly extract and normalize permissions from state.user
@@ -190,7 +198,7 @@ export function useAuth() {
   }
 
   const hasFrontendPermission = (slug: string): boolean => {
-    if (role.value === 'Admin') return true
+    if (role.value === 'Admin' || role.value === 'Super Admin') return true
     const roleName = role.value
     if (!roleName) return false
     const FRONTEND_PERM_IDS: Record<string, number> = {
@@ -213,7 +221,7 @@ export function useAuth() {
   }
 
   const hasPermission = (permission: string) => {
-    if (role.value === 'Admin') return true
+    if (role.value === 'Admin' || role.value === 'Super Admin') return true
 
     if (permission.startsWith('cms.ai.')) {
       return hasFrontendPermission(permission)

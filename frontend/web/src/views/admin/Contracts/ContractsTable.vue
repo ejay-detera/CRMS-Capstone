@@ -17,13 +17,13 @@ import {
 } from '@/components/ui/select'
 import TablePagination from '@/components/shared/TablePagination.vue'
 import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus, formatRemainingTime } from '@/types/contract'
-import type { Contract, FilterTab, StatusFilter } from '@/types/contract'
+import type { ContractWithDays, FilterTab, StatusFilter } from '@/types/contract'
+import { contractGroup, CONTRACT_GROUPS, groupCounts } from '@/utils/contractSort'
+import type { ContractGroupKey } from '@/utils/contractSort'
 import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
 import { useRiskAssessment } from '@/composables/useRiskAssessment'
 import type { RiskLevel } from '@/types/riskAssessment'
 import { severityIconColor, severityLabel } from '@/types/riskAssessment'
-
-type ContractWithDays = Contract & { days: number }
 
 const { fetchBulkLevels } = useRiskAssessment()
 const { hasPermission } = useAuth()
@@ -78,6 +78,25 @@ watch(() => props.paginated, async (list) => {
   }
   loadingRisk.value = false
 }, { immediate: true })
+
+// ── Grouped sections (contract list ordering) ──────────────────────────
+const groupMetaByKey = computed(() =>
+  Object.fromEntries(CONTRACT_GROUPS.map(g => [g.key, g])) as Record<ContractGroupKey, typeof CONTRACT_GROUPS[number]>
+)
+const counts = computed(() => groupCounts(props.filtered))
+// Only show section headers when the current view actually spans >1 section,
+// so single-lifecycle tabs stay clean.
+const showGroupHeaders = computed(() => CONTRACT_GROUPS.filter(g => counts.value[g.key] > 0).length > 1)
+
+function rowGroup(c: ContractWithDays): ContractGroupKey {
+  return contractGroup(c)
+}
+
+// Headers repeat at the top of every page so context is never lost when paging.
+function isGroupStart(index: number): boolean {
+  if (index === 0) return true
+  return contractGroup(props.paginated[index - 1]) !== contractGroup(props.paginated[index])
+}
 
 const showFilterPopover = ref(false)
 
@@ -396,9 +415,24 @@ function avatarColor(name: string) {
           </TableRow>
         </template>
         <template v-else>
-          <TableRow v-for="c in paginated" :key="c.id"
-            class="border-b border-black/4 last:border-0 transition-colors hover:bg-black/1.2 cursor-pointer"
-            @click="emit('openDetail', c)">
+          <template v-for="(c, i) in paginated" :key="c.id">
+            <TableRow v-if="showGroupHeaders && isGroupStart(i)"
+              class="border-b border-black/4 bg-black/[0.02] hover:bg-black/[0.02]">
+              <TableCell :colspan="9" class="py-2 pl-6">
+                <div class="flex items-center gap-2">
+                  <span class="w-1 h-3.5 rounded-full" :style="{ backgroundColor: groupMetaByKey[rowGroup(c)].hex }" />
+                  <span class="text-[11px] font-semibold uppercase tracking-wider text-black/45">
+                    {{ groupMetaByKey[rowGroup(c)].label }}
+                  </span>
+                  <span class="text-[10px] font-semibold text-black/35 bg-black/5 rounded px-1.5 py-0.5">
+                    {{ counts[rowGroup(c)] }}
+                  </span>
+                </div>
+              </TableCell>
+            </TableRow>
+            <TableRow
+              class="border-b border-black/4 last:border-0 transition-colors hover:bg-black/1.2 cursor-pointer"
+              @click="emit('openDetail', c)">
 
             <!-- Contract ID + Partner -->
             <TableCell class="py-4 pl-6">
@@ -476,10 +510,10 @@ function avatarColor(name: string) {
                   <DropdownMenuItem @click="emit('openDetail', c)" class="gap-2.5 text-sm cursor-pointer">
                     <Eye class="w-3.5 h-3.5 text-black/40" /> View details
                   </DropdownMenuItem>
-                  <DropdownMenuItem @click="emit('openEdit', c)" class="gap-2.5 text-sm cursor-pointer">
+                  <DropdownMenuItem v-if="hasPermission('cms.contracts.edit')" @click="emit('openEdit', c)" class="gap-2.5 text-sm cursor-pointer">
                     <Pencil class="w-3.5 h-3.5 text-black/40" /> Edit contract
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator v-if="hasPermission('cms.contracts.delete')" />
                   <DropdownMenuItem v-if="hasPermission('cms.contracts.delete')" @click="emit('delete', c.id)"
                     class="gap-2.5 text-sm cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
                     <Trash2 class="w-3.5 h-3.5" /> Delete
@@ -488,6 +522,7 @@ function avatarColor(name: string) {
               </DropdownMenu>
             </TableCell>
           </TableRow>
+          </template>
 
           <TableRow v-if="paginated.length === 0">
             <TableCell colspan="9" class="text-center py-16">

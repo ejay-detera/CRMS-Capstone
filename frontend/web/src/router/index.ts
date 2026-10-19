@@ -21,66 +21,99 @@ const routes: Array<RouteRecordRaw> = [
         path: 'contracts',
         name: 'admin-contracts',
         component: () => import('@/views/admin/Contracts/index.vue'),
+        meta: { requiresPermission: 'cms.contracts.view' },
       },
       {
         path: 'contracts/create',
         name: 'admin-contracts-create',
         component: () => import('@/views/admin/Contracts/CreateContract.vue'),
+        meta: { requiresPermission: 'cms.contracts.create' },
+      },
+      {
+        path: 'contracts/editor',
+        name: 'admin-contracts-editor',
+        component: () => import('@/views/shared/ContractEditor/index.vue'),
+        meta: { requiresPermission: 'cms.ai.contract_generator' },
       },
       {
         path: 'contracts/:id',
         name: 'admin-contracts-detail',
         component: () => import('@/views/sales/Contracts/ContractDetail/index.vue'),
+        meta: { requiresPermission: 'cms.contracts.view' },
       },
       {
         path: 'contracts/:id/documents/:docId',
         name: 'admin-contracts-document-view',
         component: () => import('@/views/sales/Contracts/DocumentViewer.vue'),
+        meta: { requiresPermission: 'cms.contracts.view' },
       },
       {
         path: 'contracts/:id/risk-assessment',
         name: 'admin-contracts-risk-assessment',
         component: () => import('@/views/manager/RiskAssessment/index.vue'),
+        meta: { requiresPermission: 'cms.ai.risk_assessment' },
       },
       {
         path: 'users',
         name: 'admin-users',
         component: () => import('@/views/admin/Users/index.vue'),
+        beforeEnter: (_to, _from, next) => {
+          const { role } = useAuth()
+          if (['Admin', 'Super Admin'].includes(role.value || '')) {
+            next()
+          } else {
+            next('/admin/dashboard')
+          }
+        },
       },
       {
         path: 'roles',
         name: 'admin-roles',
         component: () => import('@/views/admin/Roles/index.vue'),
+        beforeEnter: (_to, _from, next) => {
+          const { role } = useAuth()
+          if (['Admin', 'Super Admin'].includes(role.value || '')) {
+            next()
+          } else {
+            next('/admin/dashboard')
+          }
+        },
       },
       {
         path: 'partners',
         name: 'admin-partners',
         component: () => import('@/views/admin/Partners/index.vue'),
+        meta: { requiresPermission: 'cms.partners.view' },
       },
       {
         path: 'partners/create',
         name: 'admin-partners-create',
         component: () => import('@/views/admin/Partners/AddPartnerPage.vue'),
+        meta: { requiresPermission: 'cms.partners.create' },
       },
       {
         path: 'vendor-suggestions',
         name: 'admin-vendor-suggestions',
         component: () => import('@/views/admin/VendorSuggestions/index.vue'),
+        meta: { requiresPermission: 'cms.ai.vendor_suggestions' },
       },
       {
         path: 'vendor-suggestions/review',
         name: 'admin-vendor-suggestions-review',
         component: () => import('@/views/admin/VendorSuggestions/ReviewSuggestions.vue'),
+        meta: { requiresPermission: 'cms.ai.vendor_suggestions' },
       },
       {
         path: 'partners/:code/edit',
         name: 'admin-partners-edit',
         component: () => import('@/views/admin/Partners/EditPartnerPage.vue'),
+        meta: { requiresPermission: 'cms.partners.edit' },
       },
       {
         path: 'partners/:code',
         name: 'admin-partners-detail',
         component: () => import('@/views/admin/Partners/PartnerDetail/index.vue'),
+        meta: { requiresPermission: 'cms.partners.view' },
       },
       {
         path: 'notifications',
@@ -91,11 +124,27 @@ const routes: Array<RouteRecordRaw> = [
         path: 'audit-log',
         name: 'admin-audit-log',
         component: () => import('@/views/admin/AuditLog/index.vue'),
+        beforeEnter: (_to, _from, next) => {
+          const { role, hasPermission } = useAuth()
+          if (['Admin', 'Super Admin'].includes(role.value || '') || hasPermission('cms.audit.view') || hasPermission('view-audit-logs')) {
+            next()
+          } else {
+            next('/admin/dashboard')
+          }
+        },
       },
       {
         path: 'system-config',
         name: 'admin-system-config',
         component: () => import('@/views/admin/SystemConfig/index.vue'),
+        beforeEnter: (_to, _from, next) => {
+          const { role } = useAuth()
+          if (['Admin', 'Super Admin'].includes(role.value || '')) {
+            next()
+          } else {
+            next('/admin/dashboard')
+          }
+        },
       },
       {
         path: 'profile',
@@ -126,6 +175,12 @@ const routes: Array<RouteRecordRaw> = [
         path: 'contracts/create',
         name: 'manager-contracts-create',
         component: () => import('@/views/manager/Contracts/CreateContract.vue'),
+      },
+      {
+        path: 'contracts/editor',
+        name: 'manager-contracts-editor',
+        component: () => import('@/views/shared/ContractEditor/index.vue'),
+        meta: { requiresPermission: 'cms.ai.contract_generator' },
       },
       {
         path: 'contracts/:id',
@@ -346,8 +401,8 @@ const routes: Array<RouteRecordRaw> = [
     // `false` to cancel the in-SPA navigation outright, leaving
     // window.location.href as the only navigation that happens.
     beforeEnter: () => {
-      const { navGroup } = useAuth()
-      if (navGroup.value === 'admin') return '/admin/dashboard'
+      const { navGroup, role } = useAuth()
+      if (navGroup.value === 'admin' || role.value === 'Admin' || role.value === 'Super Admin' || role.value === 'CEO') return '/admin/dashboard'
       if (navGroup.value === 'manager') return '/manager/dashboard'
       if (navGroup.value === 'staff') return '/sales/dashboard'
 
@@ -420,7 +475,9 @@ router.beforeEach((to: RouteLocationNormalized) => {
   if (to.meta?.requiresPermission) {
     const { hasPermission } = useAuth()
     if (!hasPermission(to.meta.requiresPermission as string)) {
-      const dashName = to.path.startsWith('/manager') ? 'manager-dashboard' : 'sales-dashboard'
+      const dashName = to.path.startsWith('/admin')
+        ? 'admin-dashboard'
+        : (to.path.startsWith('/manager') ? 'manager-dashboard' : 'sales-dashboard')
       return { name: dashName }
     }
   }

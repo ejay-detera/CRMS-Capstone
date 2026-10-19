@@ -9,7 +9,8 @@ import { useAuth } from '@/composables/useAuth'
 import { useApiCache } from '@/composables/useApiCache'
 import ManagerContractsTable from './ManagerContractsTable.vue'
 import { remainingDays } from '@/types/contract'
-import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
+import type { ContractWithDays, StatusFilter, FilterTab } from '@/types/contract'
+import { sortContractsForAll } from '@/utils/contractSort'
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
 const router = useRouter()
@@ -155,20 +156,7 @@ const filtered = computed(() => {
     return bySearch && byTab && byCategory && byRegion && byStatus && byStartDate && byEndDate
   })
 
-  return list.slice().sort((a, b) => {
-    // Priority 1: Rejected approval status always at bottom
-    const aRej = a.approvalStatus === 'Rejected' ? 2 : 0
-    const bRej = b.approvalStatus === 'Rejected' ? 2 : 0
-    if (aRej !== bRej) return aRej - bRej
-
-    // Priority 2: Expired contracts (days < 0) after active/expiring
-    const aExp = a.days < 0 ? 1 : 0
-    const bExp = b.days < 0 ? 1 : 0
-    if (aExp !== bExp) return aExp - bExp
-
-    // Priority 3: Among non-expired, sort by urgency (fewest days remaining first)
-    return a.days - b.days
-  })
+  return sortContractsForAll(list)
 })
 
 const totalItems = computed(() => filtered.value.length)
@@ -195,7 +183,7 @@ watch([activeFilter, statusFilter, categoryFilter, regionFilter, startDateFilter
   currentPage.value = 1
 })
 
-function openDetail(c: Contract & { days: number }) {
+function openDetail(c: ContractWithDays) {
   router.push(`/manager/contracts/${c.id}`)
 }
 

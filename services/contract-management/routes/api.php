@@ -44,7 +44,7 @@ Route::middleware(['auth.internal'])->group(function () {
 
     // Aggregated Audit Logs Route
     Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])
-        ->middleware('permission:cms.users.view');
+        ->middleware('permission:cms.audit.view|cms.users.view');
 
     // Document Upload Route
     Route::post('/documents/upload', \App\Http\Controllers\Api\V1\Documents\UploadController::class)

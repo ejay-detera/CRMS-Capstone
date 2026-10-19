@@ -247,7 +247,7 @@ export function useQuillEditor() {
       editor.clipboard.dangerouslyPasteHTML(0, initialHtml, 'silent')
     }
 
-    editor.on('selection-change', (range) => {
+    editor.on('selection-change', (range: any) => {
       if (range) {
         activePageId.value = pageId
         if (sharedToolbar) {

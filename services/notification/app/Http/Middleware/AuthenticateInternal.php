@@ -37,11 +37,14 @@ class AuthenticateInternal
             'auth_permissions' => $authData['user']['permissions'] ?? [],
         ]);
 
-        // CMS-capstone Strict Role Isolation
+        // CMS-capstone Dynamic Role & Permission Authorization
         $role = $authData['user']['role'] ?? '';
-        $allowedRoles = ['Admin', 'Manager', 'Sales', 'Employee', 'Finance', 'Super Admin', 'IT Admin'];
+        $permissions = $authData['user']['permissions'] ?? [];
+        $isSuperAdmin = in_array($role, ['Admin', 'Super Admin', 'CEO'], true);
+        $hasCmsPermission = !empty(preg_grep('/^cms\./', $permissions));
+        $allowedFallbackRoles = ['Admin', 'Manager', 'Sales', 'Employee', 'Finance', 'Finance Manager', 'Finance Employee', 'Super Admin', 'IT Admin', 'CEO'];
 
-        if (!in_array($role, $allowedRoles)) {
+        if (!$isSuperAdmin && !$hasCmsPermission && !in_array($role, $allowedFallbackRoles, true)) {
             return response()->json([
                 'message' => 'Forbidden. Your role is not authorized to access this system.'
             ], 403);

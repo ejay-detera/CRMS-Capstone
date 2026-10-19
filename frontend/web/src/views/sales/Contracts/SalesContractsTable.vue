@@ -18,12 +18,12 @@ import {
 import TablePagination from '@/components/shared/TablePagination.vue'
 import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus, formatRemainingTime } from '@/types/contract'
 import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
-import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
+import type { ContractWithDays, StatusFilter, FilterTab } from '@/types/contract'
+import { contractGroup, CONTRACT_GROUPS, groupCounts } from '@/utils/contractSort'
+import type { ContractGroupKey } from '@/utils/contractSort'
 import { useRiskAssessment } from '@/composables/useRiskAssessment'
 import type { RiskLevel } from '@/types/riskAssessment'
 import { severityIconColor, severityLabel } from '@/types/riskAssessment'
-
-type ContractWithDays = Contract & { days: number }
 
 const router = useRouter()
 const { hasPermission } = useAuth()
@@ -63,6 +63,23 @@ watch(() => props.paginated, async (list) => {
   }
   loadingRisk.value = false
 }, { immediate: true })
+
+// ── Grouped sections (contract list ordering) ──────────────────────────
+const groupMetaByKey = computed(() =>
+  Object.fromEntries(CONTRACT_GROUPS.map(g => [g.key, g])) as Record<ContractGroupKey, typeof CONTRACT_GROUPS[number]>
+)
+const counts = computed(() => groupCounts(props.filtered))
+const showGroupHeaders = computed(() => CONTRACT_GROUPS.filter(g => counts.value[g.key] > 0).length > 1)
+
+function rowGroup(c: ContractWithDays): ContractGroupKey {
+  return contractGroup(c)
+}
+
+// Headers repeat at the top of every page so context is never lost when paging.
+function isGroupStart(index: number): boolean {
+  if (index === 0) return true
+  return contractGroup(props.paginated[index - 1]) !== contractGroup(props.paginated[index])
+}
 
 const emit = defineEmits<{
   openDetail: [c: ContractWithDays]
@@ -365,9 +382,24 @@ const categories = [
           </TableRow>
         </template>
         <template v-else>
-          <TableRow v-for="c in paginated" :key="c.id"
-            class="border-b border-black/4 last:border-0 transition-colors hover:bg-black/1.2 cursor-pointer"
-            @click="emit('openDetail', c)">
+          <template v-for="(c, i) in paginated" :key="c.id">
+            <TableRow v-if="showGroupHeaders && isGroupStart(i)"
+              class="border-b border-black/4 bg-black/[0.02] hover:bg-black/[0.02]">
+              <TableCell :colspan="8" class="py-2 pl-6">
+                <div class="flex items-center gap-2">
+                  <span class="w-1 h-3.5 rounded-full" :style="{ backgroundColor: groupMetaByKey[rowGroup(c)].hex }" />
+                  <span class="text-[11px] font-semibold uppercase tracking-wider text-black/45">
+                    {{ groupMetaByKey[rowGroup(c)].label }}
+                  </span>
+                  <span class="text-[10px] font-semibold text-black/35 bg-black/5 rounded px-1.5 py-0.5">
+                    {{ counts[rowGroup(c)] }}
+                  </span>
+                </div>
+              </TableCell>
+            </TableRow>
+            <TableRow
+              class="border-b border-black/4 last:border-0 transition-colors hover:bg-black/1.2 cursor-pointer"
+              @click="emit('openDetail', c)">
 
             <!-- Contract ID + Partner -->
             <TableCell class="py-4 pl-6">
@@ -452,6 +484,7 @@ const categories = [
               </DropdownMenu>
             </TableCell>
           </TableRow>
+          </template>
 
           <TableRow v-if="paginated.length === 0">
             <TableCell colspan="8" class="text-center py-16">

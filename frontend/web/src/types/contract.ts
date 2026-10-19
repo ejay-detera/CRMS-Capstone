@@ -38,6 +38,9 @@ export interface Contract {
   prsActivityId?:  number
 }
 
+/** A contract decorated with its computed remaining days (shared by the contract lists). */
+export type ContractWithDays = Contract & { days: number }
+
 export const approvalStatusBadge: Record<ContractApprovalStatus, string> = {
   'Pending':  'bg-black/5 text-black/50 border-black/10',
   'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200',

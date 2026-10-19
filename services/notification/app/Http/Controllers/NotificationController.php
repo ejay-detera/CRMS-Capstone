@@ -126,7 +126,9 @@ class NotificationController extends Controller
             ->filter(function (Notification $n) use ($userRole, $userId) {
                 if (!$n->target_roles) return false;
                 $roles = array_map('trim', explode(',', $n->target_roles));
-                if (!in_array($userRole, $roles, true)) return false;
+                $isAdminRole = in_array($userRole, ['Admin', 'Super Admin', 'CEO'], true);
+                $matchesRole = in_array($userRole, $roles, true) || ($isAdminRole && in_array('Admin', $roles, true));
+                if (!$matchesRole) return false;
                 if ($n->target_user_id !== null && (int) $n->target_user_id !== (int) $userId) return false;
                 return true;
             })

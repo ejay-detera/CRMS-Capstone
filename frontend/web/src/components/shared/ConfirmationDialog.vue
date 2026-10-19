@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Trash2, Check, FileText, AlertTriangle, AlertCircle, Loader2 } from 'lucide-vue-next'
+import { Trash2, Check, FileText, AlertTriangle, Loader2 } from 'lucide-vue-next'
 
 const props = withDefaults(defineProps<{
   open: boolean

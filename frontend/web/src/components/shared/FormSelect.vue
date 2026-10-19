@@ -52,7 +52,7 @@ const stringValue = computed<string>(() => {
   return String(props.modelValue)
 })
 
-function handleValueChange(val: string) {
+function handleValueChange(val: any) {
   emit('update:modelValue', val)
   emit('change', val)
 }

@@ -41,7 +41,7 @@ import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 
 const route  = useRoute();
 const router = useRouter();
-const { user: authUser, logout } = useAuth();
+const { user: authUser, role, hasPermission, refreshPermissions, logout } = useAuth();
 
 const { notifications, unreadCount, fetchNotifications, markAllRead, markRead } = useNotifications();
 
@@ -58,7 +58,8 @@ function openNotification(n: Notification) {
 }
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
-onMounted(() => {
+onMounted(async () => {
+  await refreshPermissions();
   fetchNotifications();
   pollTimer = setInterval(fetchNotifications, 5000);
 });
@@ -71,42 +72,56 @@ watch(() => route.path, path => {
   if (contractPaths.some(p => path.startsWith(p))) contractsOpen.value = true;
 });
 
-// ── Nav groups ──────────────────────────────────────────────────────
-const navGroups = [
-  {
-    label: "Main",
-    items: [
-      { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
-      { title: "Contracts", url: "/admin/contracts", icon: FileText },
-    ],
-  },
-  {
-    label: "Management",
-    items: [
-      { title: "User Management",    url: "/admin/users",    icon: Users     },
-      { title: "Roles & Permission", url: "/admin/roles",    icon: Shield    },
-      { title: "Business & Suppliers", url: "/admin/partners", icon: Handshake },
-    ],
-  },
-  {
-    label: "System",
-    items: [
-      { title: "Notifications",      url: "/admin/notifications", icon: Bell         },
-      { title: "Audit Log",          url: "/admin/audit-log",     icon: ClipboardList },
-      { title: "System Configuration", url: "/admin/system-config", icon: Settings2  },
-    ],
-  },
-];
+// ── Strict Admin isolation flag ─────────────────────────────────────
+const isAdmin = computed(() =>
+  ['Admin', 'Super Admin'].includes(role.value || (authUser.value as any)?.role || '')
+);
+
+// ── Nav groups (Permission & Role Gated) ─────────────────────────────
+const navGroups = computed(() => {
+  const groups = [
+    {
+      label: "Main",
+      items: [
+        { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard, show: true },
+        { title: "Contracts", url: "/admin/contracts", icon: FileText, show: hasPermission('cms.contracts.view') },
+      ],
+    },
+    {
+      label: "Management",
+      items: [
+        { title: "User Management",    url: "/admin/users",    icon: Users,     show: isAdmin.value },
+        { title: "Roles & Permission", url: "/admin/roles",    icon: Shield,    show: isAdmin.value },
+        { title: "Business & Suppliers", url: "/admin/partners", icon: Handshake, show: hasPermission('cms.partners.view') },
+      ],
+    },
+    {
+      label: "System",
+      items: [
+        { title: "Notifications",      url: "/admin/notifications", icon: Bell,         show: true },
+        { title: "Audit Log",          url: "/admin/audit-log",     icon: ClipboardList, show: isAdmin.value || hasPermission('cms.audit.view') || hasPermission('view-audit-logs') },
+        { title: "System Configuration", url: "/admin/system-config", icon: Settings2,  show: isAdmin.value },
+      ],
+    },
+  ];
+
+  return groups
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => item.show),
+    }))
+    .filter(group => group.items.length > 0);
+});
 
 const user = computed(() => {
-  const u = authUser.value;
-  const firstName = u?.first_name ?? "Admin";
-  const lastName = u?.last_name ?? "User";
+  const u = authUser.value as any;
+  const firstName = u?.first_name ?? u?.profile?.first_name ?? "Admin";
+  const lastName = u?.last_name ?? u?.profile?.last_name ?? "User";
   const name = `${firstName} ${lastName}`.trim();
-  const role = u?.role ?? "Admin";
+  const currentRole = role.value ?? u?.role ?? "Admin";
   const email = u?.email ?? "";
   const initials = `${firstName[0] ?? "A"}${lastName[0] ?? "U"}`.toUpperCase();
-  return { name, role, email, initials };
+  return { name, role: currentRole, email, initials };
 });
 
 // ── Calendar in Header ──

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Upload } from 'lucide-vue-next'
+import { Upload, Plus } from 'lucide-vue-next'
 import { exportToExcel } from '@/utils/excelExport'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
@@ -10,11 +10,12 @@ import { useApiCache } from '@/composables/useApiCache'
 import ContractsTable       from './ContractsTable.vue'
 import ConfirmationDialog   from '@/components/shared/ConfirmationDialog.vue'
 import { remainingDays } from '@/types/contract'
-import type { Contract, FilterTab, StatusFilter } from '@/types/contract'
+import type { ContractWithDays, FilterTab, StatusFilter } from '@/types/contract'
+import { sortContractsForAll } from '@/utils/contractSort'
 
 const router = useRouter()
 const { success, error } = useToast()
-const { state: authState } = useAuth()
+const { state: authState, hasPermission } = useAuth()
 const { state: cacheState, fetchContracts: fetchContractsCached } = useApiCache()
 
 const contracts = computed(() => cacheState.contracts || [])
@@ -94,20 +95,7 @@ const filtered = computed(() => {
     return bySearch && byTab && byCategory && byRegion && byStatus && byStartDate && byEndDate
   })
 
-  return list.slice().sort((a, b) => {
-    // Priority 1: Rejected approval status always at bottom
-    const aRej = a.approvalStatus === 'Rejected' ? 2 : 0
-    const bRej = b.approvalStatus === 'Rejected' ? 2 : 0
-    if (aRej !== bRej) return aRej - bRej
-
-    // Priority 2: Expired contracts (days < 0) after active/expiring
-    const aExp = a.days < 0 ? 1 : 0
-    const bExp = b.days < 0 ? 1 : 0
-    if (aExp !== bExp) return aExp - bExp
-
-    // Priority 3: Among non-expired, sort by urgency (fewest days remaining first)
-    return a.days - b.days
-  })
+  return sortContractsForAll(list)
 })
 
 const totalItems = computed(() => filtered.value.length)
@@ -134,11 +122,11 @@ watch([activeFilter, categoryFilter, regionFilter, statusFilter, startDateFilter
   currentPage.value = 1
 })
 
-function openDetail(c: Contract & { days: number }) {
+function openDetail(c: ContractWithDays) {
   router.push(`/admin/contracts/${c.id}`)
 }
 
-function openEdit(c: Contract & { days: number }) {
+function openEdit(c: ContractWithDays) {
   router.push(`/admin/contracts/${c.id}?edit=1`)
 }
 
@@ -215,6 +203,9 @@ async function executeExport() {
       <div class="flex items-center gap-2">
         <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
+        </Button>
+        <Button v-if="hasPermission('cms.contracts.create')" @click="router.push('/admin/contracts/create')" class="group h-9 w-9 p-0 bg-brand-navy hover:bg-brand-dark text-white rounded-lg shadow-sm transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center">
+          <Plus class="w-5 h-5 transition-transform duration-300 group-hover:rotate-90" />
         </Button>
       </div>
     </div>
