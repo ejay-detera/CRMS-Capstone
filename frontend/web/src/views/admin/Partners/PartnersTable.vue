@@ -69,7 +69,7 @@ function statusClass(status: string) {
       <TableHeader class="bg-black/1.8">
         <TableRow class="border-b border-black/4 hover:bg-transparent">
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3 pl-6">Name</TableHead>
-          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Industry</TableHead>
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3 w-40">Industry</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Region</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Contact</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
@@ -114,12 +114,14 @@ function statusClass(status: string) {
                 <component :is="activeTab === 'partners' ? Building2 : Truck" class="w-4 h-4" />
               </div>
               <div>
-                <p class="text-sm font-medium text-black leading-snug">{{ partner.name }}</p>
+                <p class="text-sm font-medium text-black leading-snug truncate max-w-[220px]"
+                   :title="partner.name">{{ partner.name }}</p>
                 <p class="text-xs font-mono text-black/40 mt-0.5">{{ displayId(partner) }}</p>
               </div>
             </div>
           </TableCell>
-          <TableCell class="py-4 text-sm text-black/60">{{ partner.industry || '—' }}</TableCell>
+          <TableCell class="py-4 text-sm text-black/60 max-w-[160px] truncate"
+                     :title="partner.industry || undefined">{{ partner.industry || '—' }}</TableCell>
           <TableCell class="py-4 text-sm text-black/60">{{ partner.region ?? '—' }}</TableCell>
           <TableCell class="py-4">
             <div class="text-sm text-black/70">{{ partner.contactPerson || '—' }}</div>

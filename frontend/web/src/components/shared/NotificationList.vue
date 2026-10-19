@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { Bell, Search, Trash2, Check, Minus } from 'lucide-vue-next'
+import { Bell, Search, Trash2, Check, Minus, ArchiveRestore } from 'lucide-vue-next'
 import NotificationItem from './NotificationItem.vue'
 import ConfirmationDialog from './ConfirmationDialog.vue'
 import TablePagination from './TablePagination.vue'
@@ -25,6 +25,8 @@ const emit = defineEmits<{
   'toggle-favorite':    [id: string]
   'delete':             [id: string]
   'delete-selected':    [ids: string[]]
+  'restore':            [id: string]
+  'restore-selected':   [ids: string[]]
 }>()
 
 const displayed = computed(() => props.paginated ?? props.filtered)
@@ -67,6 +69,11 @@ function confirmDeleteAll() {
   emit('delete-selected', Array.from(selectedIds.value))
   selectedIds.value.clear()
   showDeleteAllConfirm.value = false
+}
+
+function restoreSelected() {
+  emit('restore-selected', Array.from(selectedIds.value))
+  selectedIds.value.clear()
 }
 </script>
 
@@ -114,11 +121,18 @@ function confirmDeleteAll() {
             Select All
           </span>
         </button>
-        <button v-if="selectedIds.size > 0 && activeTab !== 'email_logs'" @click="showDeleteAllConfirm = true"
-          class="flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-700 transition-colors">
-          <Trash2 class="w-3.5 h-3.5" />
-          Delete Selected ({{ selectedIds.size }})
-        </button>
+        <template v-if="selectedIds.size > 0 && activeTab !== 'email_logs'">
+          <button v-if="activeTab === 'archive'" @click="restoreSelected"
+            class="flex items-center gap-1.5 text-xs font-semibold text-brand-blue hover:text-brand-navy transition-colors">
+            <ArchiveRestore class="w-3.5 h-3.5" />
+            Restore Selected ({{ selectedIds.size }})
+          </button>
+          <button @click="showDeleteAllConfirm = true"
+            class="flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-700 transition-colors">
+            <Trash2 class="w-3.5 h-3.5" />
+            {{ activeTab === 'archive' ? 'Permanently Delete' : 'Archive' }} Selected ({{ selectedIds.size }})
+          </button>
+        </template>
         <p class="text-xs text-black/35">{{ filtered.length }} notification{{ filtered.length !== 1 ? 's' : '' }}</p>
       </div>
     </div>
@@ -139,10 +153,12 @@ function confirmDeleteAll() {
           :key="notif.id"
           :notif="notif"
           :selected="selectedIds.has(notif.id)"
+          :is-archived="activeTab === 'archive'"
           @update:selected="$event ? selectedIds.add(notif.id) : selectedIds.delete(notif.id)"
           @toggle-read="emit('toggle-read', $event)"
           @toggle-favorite="emit('toggle-favorite', $event)"
           @delete="triggerDelete"
+          @restore="emit('restore', $event)"
         />
       </template>
     </div>
@@ -160,18 +176,22 @@ function confirmDeleteAll() {
 
     <ConfirmationDialog
       v-model:open="showDeleteConfirm"
-      title="Delete Notification"
-      description="Are you sure you want to delete this notification? This action will archive and remove it from your notifications list."
-      confirm-label="Delete"
+      :title="activeTab === 'archive' ? 'Permanently Delete Notification' : 'Archive Notification'"
+      :description="activeTab === 'archive'
+        ? 'Are you sure you want to permanently delete this notification? This action cannot be undone.'
+        : 'Are you sure you want to delete this notification? It will be moved to your Archive tab.'"
+      :confirm-label="activeTab === 'archive' ? 'Permanently Delete' : 'Archive'"
       variant="destructive"
       @confirm="confirmDelete"
     />
 
     <ConfirmationDialog
       v-model:open="showDeleteAllConfirm"
-      title="Delete Selected Notifications"
-      :description="`Are you sure you want to delete the ${selectedIds.size} selected notification(s)? This action will archive them.`"
-      confirm-label="Delete Selected"
+      :title="activeTab === 'archive' ? 'Permanently Delete Selected Notifications' : 'Archive Selected Notifications'"
+      :description="activeTab === 'archive'
+        ? `Are you sure you want to permanently delete the ${selectedIds.size} selected notification(s)? This action cannot be undone.`
+        : `Are you sure you want to archive the ${selectedIds.size} selected notification(s)? They will be moved to your Archive tab.`"
+      :confirm-label="activeTab === 'archive' ? 'Permanently Delete' : 'Archive Selected'"
       variant="destructive"
       @confirm="confirmDeleteAll"
     />

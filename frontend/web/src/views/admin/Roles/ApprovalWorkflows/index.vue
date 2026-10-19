@@ -20,6 +20,7 @@ const {
   fetchAssignableRoles,
   fetchWorkflow,
   deleteWorkflow,
+  saveWorkflow,
 } = useWorkflowBuilder()
 
 // ── Editor state ───────────────────────────────────────────────────────
@@ -97,6 +98,44 @@ async function executeDelete() {
   }
 }
 
+// ── Deactivate ────────────────────────────────────────────────────────
+const showDeactivateConfirm = ref(false)
+const deactivateTargetId = ref<number | null>(null)
+const isDeactivating = ref(false)
+
+function confirmDeactivate(workflowId: number) {
+  deactivateTargetId.value = workflowId
+  showDeactivateConfirm.value = true
+}
+
+async function executeDeactivate() {
+  if (!deactivateTargetId.value) return
+  isDeactivating.value = true
+  try {
+    const existing = await fetchWorkflow(deactivateTargetId.value)
+    if (!existing) {
+      throw new Error('Workflow not found.')
+    }
+    await saveWorkflow(
+      {
+        contract_type_id: existing.contract_type_id,
+        name: existing.name,
+        status: 'draft',
+        resubmit_mode: existing.resubmit_mode,
+        steps: existing.steps,
+      },
+      deactivateTargetId.value
+    )
+    success('Workflow deactivated', 'The workflow has been set back to draft.')
+    showDeactivateConfirm.value = false
+    await refresh()
+  } catch (e: any) {
+    toastError('Could not deactivate workflow', e.message ?? 'Something went wrong.')
+  } finally {
+    isDeactivating.value = false
+  }
+}
+
 // ── Load ──────────────────────────────────────────────────────────────
 async function refresh() {
   await Promise.all([fetchContractTypesWithWorkflows(), fetchAssignableRoles()])
@@ -138,6 +177,7 @@ onMounted(refresh)
         @edit="(workflowId: number) => openEdit(ct, workflowId)"
         @duplicate="(workflowId: number, name: string) => openDuplicate(workflowId, name)"
         @delete="confirmDelete"
+        @deactivate="confirmDeactivate"
       />
     </div>
 
@@ -169,6 +209,16 @@ onMounted(refresh)
       variant="destructive"
       :loading="isDeleting"
       @confirm="executeDelete"
+    />
+
+    <ConfirmationDialog
+      v-model:open="showDeactivateConfirm"
+      title="Deactivate Workflow"
+      description="Are you sure you want to deactivate this workflow? Contracts of this type will revert to the default manager approval flow. You can re-activate the workflow at any time."
+      confirm-label="Deactivate"
+      variant="destructive"
+      :loading="isDeactivating"
+      @confirm="executeDeactivate"
     />
   </div>
 </template>

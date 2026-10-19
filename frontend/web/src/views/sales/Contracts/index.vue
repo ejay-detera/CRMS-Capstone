@@ -94,9 +94,18 @@ const filtered = computed(() => {
   })
 
   return list.slice().sort((a, b) => {
-    const aRej = a.approvalStatus === 'Rejected' ? 1 : 0
-    const bRej = b.approvalStatus === 'Rejected' ? 1 : 0
-    return aRej - bRej
+    // Priority 1: Rejected approval status always at bottom
+    const aRej = a.approvalStatus === 'Rejected' ? 2 : 0
+    const bRej = b.approvalStatus === 'Rejected' ? 2 : 0
+    if (aRej !== bRej) return aRej - bRej
+
+    // Priority 2: Expired contracts (days < 0) after active/expiring
+    const aExp = a.days < 0 ? 1 : 0
+    const bExp = b.days < 0 ? 1 : 0
+    if (aExp !== bExp) return aExp - bExp
+
+    // Priority 3: Among non-expired, sort by urgency (fewest days remaining first)
+    return a.days - b.days
   })
 })
 

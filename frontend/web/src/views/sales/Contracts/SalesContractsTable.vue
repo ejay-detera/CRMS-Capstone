@@ -372,7 +372,8 @@ const categories = [
             <!-- Contract ID + Partner -->
             <TableCell class="py-4 pl-6">
               <div class="flex items-center gap-2">
-                <p class="text-sm font-medium text-black leading-snug">{{ c.businessPartner }}</p>
+                <p class="text-sm font-medium text-black leading-snug truncate max-w-[220px]"
+                  :title="c.businessPartner">{{ c.businessPartner }}</p>
                 <Flag
                   v-if="aiRiskAssessmentVisible && riskLevels[c.id]?.status === 'completed' && riskLevels[c.id]?.riskLevel"
                   class="w-3.5 h-3.5 shrink-0 fill-current"

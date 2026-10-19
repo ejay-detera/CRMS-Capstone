@@ -161,7 +161,9 @@ async function executeExport() {
     <div class="flex items-start justify-between">
       <div>
         <h1 class="text-xl font-semibold text-black">Audit Log</h1>
-        <p class="text-sm text-black/40 mt-0.5">Monitor all system activity and user actions across SBSI.</p>
+        <p class="text-sm text-black/40 mt-0.5">
+          Monitor all system activity and user actions across SBSI. Records are automatically retained for 90 days in accordance with data retention policy.
+        </p>
       </div>
       <Button @click="exportXLSX" variant="outline"
         class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">

@@ -54,9 +54,11 @@ onMounted(async () => {
 
 const { notifications, unreadCount, fetchNotifications, markAllRead, markRead } = useNotifications();
 const recentNotifs = computed(() => notifications.value.filter(n => !n.isArchived).slice(0, 10));
+const isNotifOpen = ref(false);
 
 function openNotification(n: Notification) {
   if (!n.isRead) markRead(n.id);
+  isNotifOpen.value = false;
   router.push('/sales/notifications');
 }
 
@@ -310,7 +312,7 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
         </div>
 
         <div class="flex items-center gap-3">
-          <Popover>
+          <Popover v-model:open="isNotifOpen">
             <PopoverTrigger as-child>
               <button class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors text-black/60 relative">
                 <Bell class="w-4.5 h-4.5" />
@@ -334,20 +336,20 @@ function txt(active: boolean) { return active ? "text-white" : "text-white/45"; 
               </div>
               <ul v-else class="divide-y divide-black/4 max-h-72 overflow-y-auto">
                 <li v-for="n in recentNotifs" :key="n.id"
-                  class="flex items-start gap-3 px-4 py-3 hover:bg-black/2 transition-colors cursor-pointer"
+                  class="flex items-start gap-3 px-4 py-3 hover:bg-black/2 transition-colors cursor-pointer min-w-0"
                   :class="{ 'bg-brand-blue/[0.06]': !n.isRead }"
                   @click="openNotification(n)">
                   <span class="mt-0.5 w-1.5 h-1.5 rounded-full shrink-0"
                     :class="n.isRead ? 'bg-transparent' : 'bg-brand-blue'" />
-                  <p class="text-xs leading-relaxed line-clamp-2 font-secondary"
+                  <p class="text-xs leading-relaxed line-clamp-2 font-secondary min-w-0 break-words"
                     :class="n.isRead ? 'text-black/45' : 'text-black font-medium'">{{ n.message }}</p>
                 </li>
               </ul>
               <div class="px-4 py-2.5 border-t border-black/6">
-                <button @click="router.push('/sales/notifications')"
-                  class="w-full text-xs text-center text-brand-blue hover:text-brand-navy font-medium transition-colors font-secondary">
+                <router-link to="/sales/notifications" @click="isNotifOpen = false"
+                  class="block w-full text-xs text-center text-brand-blue hover:text-brand-navy font-medium transition-colors font-secondary">
                   View all notifications
-                </button>
+                </router-link>
               </div>
             </PopoverContent>
           </Popover>

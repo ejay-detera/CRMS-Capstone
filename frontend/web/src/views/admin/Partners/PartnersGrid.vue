@@ -91,8 +91,10 @@ function statusClass(status: string) {
           </DropdownMenu>
         </div>
       </div>
-      <p class="text-sm font-semibold text-black leading-snug group-hover:text-brand-navy transition-colors">{{ partner.name }}</p>
-      <p class="text-xs text-black/40 mt-0.5 mb-4">{{ partner.industry || '—' }}</p>
+      <p class="text-sm font-semibold text-black leading-snug group-hover:text-brand-navy transition-colors truncate"
+         :title="partner.name">{{ partner.name }}</p>
+      <p class="text-xs text-black/40 mt-0.5 mb-4 truncate"
+         :title="partner.industry || undefined">{{ partner.industry || '—' }}</p>
       <div class="space-y-1.5 border-t border-black/5 pt-3">
         <div class="flex items-center justify-between text-xs">
           <span class="text-black/40">Region</span>

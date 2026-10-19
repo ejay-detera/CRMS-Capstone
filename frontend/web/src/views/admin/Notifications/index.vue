@@ -8,7 +8,7 @@ import { useEmailLogs } from '@/composables/useEmailLogs'
 import { useToast } from '@/composables/useToast'
 import type { TabKey } from '@/types/notification'
 
-const { notifications, unreadCount, fetchNotifications, markRead, markAllRead, updateState } = useNotifications()
+const { notifications, unreadCount, fetchNotifications, markRead, markAllRead, updateState, deletePermanent, deletePermanentBatch } = useNotifications()
 const { logs, loading: logsLoading, currentPage, lastPage, totalLogs, fetchLogs } = useEmailLogs()
 const { success } = useToast()
 
@@ -51,15 +51,40 @@ const paginatedNotifs = computed(() =>
 
 function toggleRead(id: string)     { markRead(id) }
 function toggleFavorite(id: string) { const n = notifications.value.find(x => x.id === id); if (n) updateState(id, { isFavorite: !n.isFavorite }) }
-function deleteNotif(id: string) {
-  updateState(id, { isArchived: true })
-  success('Notification removed', 'The notification has been deleted.')
+async function deleteNotif(id: string) {
+  if (activeTab.value === 'archive') {
+    await deletePermanent(id)
+    success('Notification deleted', 'The notification has been permanently removed.')
+  } else {
+    await updateState(id, { isArchived: true })
+    success('Notification archived', 'The notification has been moved to Archive.')
+  }
 }
 
-function deleteSelected(ids: string[]) {
+async function deleteSelected(ids: string[]) {
   if (ids.length === 0) return
-  ids.forEach(id => updateState(id, { isArchived: true }))
-  success('Notifications removed', `${ids.length} selected notification(s) have been deleted.`)
+  if (activeTab.value === 'archive') {
+    await deletePermanentBatch(ids)
+    success('Notifications deleted', `${ids.length} selected notification(s) have been permanently removed.`)
+  } else {
+    for (const id of ids) {
+      await updateState(id, { isArchived: true })
+    }
+    success('Notifications archived', `${ids.length} selected notification(s) have been moved to Archive.`)
+  }
+}
+
+async function restoreNotif(id: string) {
+  await updateState(id, { isArchived: false })
+  success('Notification restored', 'The notification has been restored to your inbox.')
+}
+
+async function restoreSelected(ids: string[]) {
+  if (ids.length === 0) return
+  for (const id of ids) {
+    await updateState(id, { isArchived: false })
+  }
+  success('Notifications restored', `${ids.length} selected notification(s) have been restored to your inbox.`)
 }
 
 watch(activeTab, (newTab) => {
@@ -102,6 +127,8 @@ onMounted(async () => {
       @toggle-favorite="toggleFavorite"
       @delete="deleteNotif"
       @delete-selected="deleteSelected"
+      @restore="restoreNotif"
+      @restore-selected="restoreSelected"
     >
       <template #email-logs>
         <EmailLogTable

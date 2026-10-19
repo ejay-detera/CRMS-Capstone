@@ -132,6 +132,34 @@ export function useNotifications() {
     }
   }
 
+  async function deletePermanent(id: string): Promise<void> {
+    notifications.value = notifications.value.filter(n => n.id !== id)
+    try {
+      await fetch(`${BASE_URL}/notifications/${id}`, {
+        method:      'DELETE',
+        headers:     makeHeaders(),
+        credentials: 'same-origin',
+      })
+    } catch (e) {
+      console.error('Failed to permanently delete notification', e)
+    }
+  }
+
+  async function deletePermanentBatch(ids: string[]): Promise<void> {
+    const idSet = new Set(ids)
+    notifications.value = notifications.value.filter(n => !idSet.has(n.id))
+    try {
+      await fetch(`${BASE_URL}/notifications/batch-delete`, {
+        method:      'POST',
+        headers:     makeHeaders(),
+        credentials: 'same-origin',
+        body:        JSON.stringify({ ids }),
+      })
+    } catch (e) {
+      console.error('Failed to permanently delete notifications', e)
+    }
+  }
+
   return {
     notifications,
     loading,
@@ -140,5 +168,7 @@ export function useNotifications() {
     markRead,
     markAllRead,
     updateState,
+    deletePermanent,
+    deletePermanentBatch,
   }
 }

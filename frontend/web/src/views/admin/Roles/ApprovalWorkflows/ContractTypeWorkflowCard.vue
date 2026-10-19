@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Plus, Pencil, Copy, Trash2, FileText } from 'lucide-vue-next'
+import { Plus, Pencil, Copy, Trash2, FileText, PowerOff } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import type { ContractTypeWithWorkflow } from '@/types/workflow'
 
@@ -12,6 +12,7 @@ const emit = defineEmits<{
   edit: [workflowId: number]
   duplicate: [workflowId: number, name: string]
   delete: [workflowId: number]
+  deactivate: [workflowId: number]
 }>()
 </script>
 
@@ -54,6 +55,10 @@ const emit = defineEmits<{
         <Button variant="outline" size="sm" @click="emit('duplicate', contractType.active_workflow!.id, contractType.active_workflow!.name)"
           class="h-7 px-2.5 text-xs border-black/15 text-black/60 hover:text-black">
           <Copy class="w-3 h-3" /> Duplicate
+        </Button>
+        <Button variant="outline" size="sm" @click="emit('deactivate', contractType.active_workflow!.id)"
+          class="h-7 px-2.5 text-xs border-red-200 text-red-600 hover:bg-red-50 ml-auto">
+          <PowerOff class="w-3 h-3" /> Deactivate
         </Button>
       </div>
     </div>

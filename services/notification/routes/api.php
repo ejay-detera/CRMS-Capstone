@@ -18,6 +18,8 @@ Route::middleware(['auth.internal'])->group(function () {
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
     Route::patch('/notifications/{id}/state', [NotificationController::class, 'updateState']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+    Route::post('/notifications/batch-delete', [NotificationController::class, 'batchDestroy']);
     
     // Email Preferences & Logs
     Route::get('/email-preferences', App\Http\Controllers\Api\V1\EmailPreferences\ShowController::class);

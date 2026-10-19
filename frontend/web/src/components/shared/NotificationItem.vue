@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { Star, Trash2, FileText, UserPlus, Handshake, ShieldCheck, AlertCircle, Check } from 'lucide-vue-next'
+import { Star, Trash2, FileText, UserPlus, Handshake, ShieldCheck, AlertCircle, Check, ArchiveRestore } from 'lucide-vue-next'
 import { typeColor } from '@/types/notification'
 import type { Notification, NotifType } from '@/types/notification'
 import type { Component } from 'vue'
 
-defineProps<{ notif: Notification; selected?: boolean }>()
+defineProps<{ notif: Notification; selected?: boolean; isArchived?: boolean }>()
 defineEmits<{ 
   'toggle-read': [id: string]; 
   'toggle-favorite': [id: string]; 
   'delete': [id: string];
+  'restore': [id: string];
   'update:selected': [val: boolean];
 }>()
 
@@ -46,17 +47,27 @@ const typeIcon: Record<NotifType, Component> = {
       <component :is="typeIcon[notif.type]" class="w-4 h-4" />
     </div>
 
-    <p class="flex-1 text-sm leading-snug cursor-pointer select-none"
+    <p class="flex-1 min-w-0 text-sm leading-snug cursor-pointer select-none line-clamp-2 break-words"
       :class="!notif.isRead ? 'text-black font-medium' : 'text-black/55'"
+      :title="notif.message"
       @click="$emit('toggle-read', notif.id)">
       {{ notif.message }}
     </p>
 
     <span class="text-xs text-black/35 shrink-0 whitespace-nowrap">{{ notif.timestamp }}</span>
 
-    <button @click="$emit('delete', notif.id)"
-      class="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-all text-black/30 hover:text-red-500 hover:bg-red-50">
-      <Trash2 class="w-3.5 h-3.5" />
-    </button>
+    <div class="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+      <button v-if="isArchived" @click="$emit('restore', notif.id)"
+        title="Restore to inbox"
+        class="w-7 h-7 flex items-center justify-center rounded-lg transition-colors text-black/30 hover:text-brand-blue hover:bg-brand-blue/10">
+        <ArchiveRestore class="w-3.5 h-3.5" />
+      </button>
+
+      <button @click="$emit('delete', notif.id)"
+        :title="isArchived ? 'Delete permanently' : 'Archive notification'"
+        class="w-7 h-7 flex items-center justify-center rounded-lg transition-colors text-black/30 hover:text-red-500 hover:bg-red-50">
+        <Trash2 class="w-3.5 h-3.5" />
+      </button>
+    </div>
   </div>
 </template>
