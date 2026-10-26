@@ -231,7 +231,7 @@ const statusClass = computed(() => {
           </div>
           <div class="flex-1 min-w-0">
             <h1 class="text-xl font-bold text-black leading-snug truncate">{{ partner.name }}</h1>
-            <p class="text-sm text-black/45 mt-0.5">{{ partner.industry || '—' }}</p>
+            <p class="text-sm text-black/45 mt-0.5 truncate" :title="partner.industry || '—'">{{ partner.industry || '—' }}</p>
             <div class="flex items-center gap-2 mt-2">
               <span class="text-xs font-mono text-black/30 bg-black/4 px-2 py-0.5 rounded">{{ displayId }}</span>
             </div>
@@ -247,21 +247,21 @@ const statusClass = computed(() => {
         <h2 class="text-xs font-bold text-black/35 uppercase tracking-widest mb-5">Business Details</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-5">
 
-          <div class="space-y-1">
+          <div class="space-y-1 min-w-0">
             <div class="flex items-center gap-1.5 text-[10px] font-semibold text-black/35 uppercase tracking-wider">
               <Briefcase class="w-3 h-3" /> Industry
             </div>
-            <p class="text-sm font-medium text-black">{{ partner.industry || '—' }}</p>
+            <p class="text-sm font-medium text-black truncate" :title="partner.industry || '—'">{{ partner.industry || '—' }}</p>
           </div>
 
-          <div class="space-y-1">
+          <div class="space-y-1 min-w-0">
             <div class="flex items-center gap-1.5 text-[10px] font-semibold text-black/35 uppercase tracking-wider">
               <Globe class="w-3 h-3" /> Region
             </div>
-            <p class="text-sm font-medium text-black">{{ partner.region ?? '—' }}</p>
+            <p class="text-sm font-medium text-black truncate" :title="partner.region ?? '—'">{{ partner.region ?? '—' }}</p>
           </div>
 
-          <div class="space-y-1">
+          <div class="space-y-1 min-w-0">
             <div class="flex items-center gap-1.5 text-[10px] font-semibold text-black/35 uppercase tracking-wider">
               <Hash class="w-3 h-3" /> Status
             </div>
@@ -270,12 +270,12 @@ const statusClass = computed(() => {
             </span>
           </div>
 
-          <div class="space-y-1">
+          <div class="space-y-1 min-w-0">
             <div class="flex items-center gap-1.5 text-[10px] font-semibold text-black/35 uppercase tracking-wider">
               <FileText class="w-3 h-3" />
               {{ type === 'bp' ? 'BP Code' : 'TIN Number' }}
             </div>
-            <p class="text-sm font-mono text-black/70">
+            <p class="text-sm font-mono text-black/70 break-all" :title="type === 'bp' ? (partner.bpCode ?? '—') : (partner.tinNumber ?? '—')">
               {{ type === 'bp' ? (partner.bpCode ?? '—') : (partner.tinNumber ?? '—') }}
             </p>
           </div>
@@ -288,23 +288,23 @@ const statusClass = computed(() => {
         <h2 class="text-xs font-bold text-black/35 uppercase tracking-widest mb-5">Contact Information</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-0 divide-y divide-black/4">
 
-          <div class="flex items-start gap-3 py-3.5">
+          <div class="flex items-start gap-3 py-3.5 min-w-0">
             <User class="w-4 h-4 text-black/25 shrink-0 mt-0.5" />
             <div class="flex-1 min-w-0">
               <p class="text-[10px] font-semibold text-black/35 uppercase tracking-wider mb-0.5">Contact Person</p>
-              <p class="text-sm font-medium text-black">{{ partner.contactPerson || '—' }}</p>
+              <p class="text-sm font-medium text-black break-words [overflow-wrap:anywhere]">{{ partner.contactPerson || '—' }}</p>
             </div>
           </div>
 
-          <div class="flex items-start gap-3 py-3.5">
+          <div class="flex items-start gap-3 py-3.5 min-w-0">
             <Phone class="w-4 h-4 text-black/25 shrink-0 mt-0.5" />
             <div class="flex-1 min-w-0">
               <p class="text-[10px] font-semibold text-black/35 uppercase tracking-wider mb-0.5">Phone</p>
-              <p class="text-sm font-medium text-black tabular-nums">{{ partner.phone || '—' }}</p>
+              <p class="text-sm font-medium text-black tabular-nums break-words [overflow-wrap:anywhere]">{{ partner.phone || '—' }}</p>
             </div>
           </div>
 
-          <div class="flex items-start gap-3 py-3.5">
+          <div class="flex items-start gap-3 py-3.5 min-w-0">
             <Mail class="w-4 h-4 text-black/25 shrink-0 mt-0.5" />
             <div class="flex-1 min-w-0">
               <p class="text-[10px] font-semibold text-black/35 uppercase tracking-wider mb-0.5">Email</p>
@@ -312,11 +312,11 @@ const statusClass = computed(() => {
             </div>
           </div>
 
-          <div class="flex items-start gap-3 py-3.5">
+          <div class="flex items-start gap-3 py-3.5 min-w-0">
             <MapPin class="w-4 h-4 text-black/25 shrink-0 mt-0.5" />
             <div class="flex-1 min-w-0">
               <p class="text-[10px] font-semibold text-black/35 uppercase tracking-wider mb-0.5">Address</p>
-              <p class="text-sm font-medium text-black leading-snug">{{ partner.address || '—' }}</p>
+              <p class="text-sm font-medium text-black leading-snug break-words [overflow-wrap:anywhere]">{{ partner.address || '—' }}</p>
             </div>
           </div>
 

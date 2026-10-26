@@ -132,13 +132,20 @@ const KNOWN_CARD_DELTAS: Record<string, { change: string; positive: boolean }> =
   Employee: { change: '+5.2%', positive: true  },
 }
 
+// Canonical role display order to match the Role Cards hierarchy.
+const ROLE_SORT_ORDER: Record<string, number> = {
+  Admin: 0, Manager: 1, Sales: 2, Employee: 3,
+}
+
 const statCards = computed(() => [
   { label: 'All users', value: users.value.length, change: '+4.0%', positive: true },
-  ...cmsRoleNames.value.map(name => ({
-    label: pluralRoleName(name),
-    value: users.value.filter(u => u.role === name).length,
-    ...(KNOWN_CARD_DELTAS[name] ?? { change: 'new', positive: true }),
-  })),
+  ...[...cmsRoleNames.value]
+    .sort((a, b) => (ROLE_SORT_ORDER[a] ?? 99) - (ROLE_SORT_ORDER[b] ?? 99))
+    .map(name => ({
+      label: pluralRoleName(name),
+      value: users.value.filter(u => u.role === name).length,
+      ...(KNOWN_CARD_DELTAS[name] ?? { change: 'new', positive: true }),
+    })),
 ])
 
 type TabValue = string

@@ -69,7 +69,7 @@ const config = {
 
           <!-- Text Block: Vertically Centered -->
           <div class="flex-1 min-w-0 pr-1 flex flex-col justify-center">
-            <p class="text-xs font-bold text-slate-800 leading-snug tracking-wide uppercase">
+            <p class="text-xs font-bold text-slate-800 leading-snug tracking-wide">
               {{ toast.title }}
             </p>
             <p
