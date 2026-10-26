@@ -23,6 +23,12 @@ if (rawCode && rawCode !== code) {
 const type = code.startsWith('SP') ? 'sp' : 'bp'
 const activeTab = computed<TabKey>(() => type === 'bp' ? 'partners' : 'suppliers')
 
+const basePath = computed(() => {
+  if (route.path.startsWith('/manager')) return '/manager/partners'
+  if (route.path.startsWith('/sales')) return '/sales/partners'
+  return '/admin/partners'
+})
+
 const loading = ref(true)
 const isSaving = ref(false)
 const showSaveConfirm = ref(false)
@@ -66,11 +72,11 @@ onMounted(async () => {
       form.tinNumber = partner.tinNumber ?? ''
     } else {
       error('Not Found', 'The requested record could not be found.')
-      router.push('/admin/partners')
+      router.push(basePath.value)
     }
   } catch (err: any) {
     error('Error', 'Failed to load details.')
-    router.push('/admin/partners')
+    router.push(basePath.value)
   } finally {
     loading.value = false
   }
@@ -119,7 +125,7 @@ async function confirmSubmit() {
       success('Supplier updated', `${updated.name} has been updated successfully.`)
       if (warnings.length) warning('Duplicate warning', warnings[0].message)
     }
-    router.push(`/admin/partners/${code}`)
+    router.push(`${basePath.value}/${code}`)
   } catch (err: any) {
     const msg = err?.message ?? 'An error occurred. Please try again.'
     error('Save failed', msg)
@@ -163,7 +169,7 @@ async function confirmSubmit() {
     <template v-else>
       <!-- Header -->
       <div class="flex items-center gap-4">
-        <button @click="router.push(`/admin/partners/${code}`)"
+        <button @click="router.push(`${basePath}/${code}`)"
           class="flex items-center justify-center w-9 h-9 rounded-lg border border-black/10 bg-white hover:bg-black/4 text-black/50 hover:text-black transition shrink-0">
           <ArrowLeft class="w-4 h-4" />
         </button>
@@ -295,7 +301,7 @@ async function confirmSubmit() {
         <!-- Footer -->
         <div class="px-6 py-4 flex items-center justify-end gap-3 bg-black/[0.015]">
           <Button type="button" variant="outline" class="h-9 px-4 text-sm border-black/15 text-black/60 hover:text-black"
-            @click="router.push(`/admin/partners/${code}`)">Cancel</Button>
+            @click="router.push(`${basePath}/${code}`)">Cancel</Button>
           <Button @click="handleSubmit" :disabled="isSaving" class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
             {{ isSaving ? 'Saving...' : 'Save Changes' }}
           </Button>

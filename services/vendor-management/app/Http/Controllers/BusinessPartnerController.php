@@ -88,6 +88,14 @@ class BusinessPartnerController extends Controller
         }
 
         $data = $validator->validated();
+
+        // Normalise the industry so " Healthcare " cannot create a duplicate
+        // entry in the Industry filter.
+        if (array_key_exists('industry', $data)) {
+            $industry = trim((string) $data['industry']);
+            $data['industry'] = $industry === '' ? null : $industry;
+        }
+
         $data['created_by'] = $request->get('auth_id');
 
         // Run duplicate detection
@@ -191,6 +199,13 @@ class BusinessPartnerController extends Controller
         }
 
         $data = $validator->validated();
+
+        // Normalise the industry so " Healthcare " cannot create a duplicate
+        // entry in the Industry filter.
+        if (array_key_exists('industry', $data)) {
+            $industry = trim((string) $data['industry']);
+            $data['industry'] = $industry === '' ? null : $industry;
+        }
 
         // Run duplicate detection (excluding self)
         $detection = $this->duplicateDetectionService->detect(

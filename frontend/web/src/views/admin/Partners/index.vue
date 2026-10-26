@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { Building2, Truck, Search, LayoutGrid, List, Plus, Upload, Sparkles } from 'lucide-vue-next'
 import { exportToExcel } from '@/utils/excelExport'
@@ -47,17 +47,23 @@ const suppliersCount = ref(0)
 
 const industryOptions = ref<string[]>([])
 
+// The dropdown must list every industry in the database, regardless of the
+// region/status/search currently applied — never derive it from `partners`
+// alone (those rows are already filtered server-side). The values from the
+// loaded page are only merged in as an additive safety net.
 const industries = computed(() => {
-  if (industryOptions.value.length) return ['All', ...industryOptions.value]
-  // Fallback while the industries request is in flight (or if it fails):
-  // derive the options from the rows currently loaded.
-  const vals = partners.value.map(p => p.industry).filter(Boolean)
-  return ['All', ...[...new Set(vals)].sort()]
+  const pageValues = partners.value.map(p => p.industry).filter(Boolean)
+  return ['All', ...[...new Set([...industryOptions.value, ...pageValues])].sort()]
 })
 
 async function loadIndustries(tab: TabKey) {
   const values = await fetchIndustries(tab)
+  // Ignore responses for a tab the user has already switched away from.
+  if (tab !== activeTab.value) return
   industryOptions.value = values
+  if (industryFilter.value !== 'All' && !values.includes(industryFilter.value)) {
+    industryFilter.value = 'All'
+  }
 }
 
 // Status, industry and region are filtered by the API so they apply to the
@@ -103,6 +109,14 @@ onMounted(async () => {
     console.error(err)
   }
 })
+
+// A partner/supplier created in another tab (or just before returning to this
+// page) must appear in the Industry filter without a full reload.
+function refreshIndustries() {
+  void loadIndustries(activeTab.value)
+}
+onMounted(() => window.addEventListener('focus', refreshIndustries))
+onBeforeUnmount(() => window.removeEventListener('focus', refreshIndustries))
 
 const selectedIds     = ref<(string | number)[]>([])
 const allPageSelected = computed(() =>
@@ -153,6 +167,7 @@ async function confirmDelete() {
         statusFilter.value,
         industryFilter.value
       )
+      await loadIndustries(activeTab.value)
     }
     selectedIds.value = selectedIds.value.filter(id => id !== target.id)
     success('Entry deleted', `${target.name} has been removed.`)

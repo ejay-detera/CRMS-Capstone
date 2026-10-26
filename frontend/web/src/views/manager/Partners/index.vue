@@ -18,7 +18,7 @@ const router = useRouter()
 const { success, error } = useToast()
 const { hasPermission } = useAuth()
 const { fetchPartners, fetchSuppliers } = useVendorService()
-const { deletePartner } = usePartners()
+const { deletePartner, fetchIndustries } = usePartners()
 
 const showAiSuggestionButton = computed(() => hasPermission('cms.ai.vendor_suggestions'))
 
@@ -55,10 +55,23 @@ const suppliersCount = computed(() => suppliersData.value.length)
 
 const source = computed(() => activeTab.value === 'partners' ? businessPartners.value : suppliersData.value)
 
+const industryOptions = ref<string[]>([])
+
+// Full industry list comes from the API (not from whatever pages happened to
+// load), so a new industry is never hidden by the current region filter.
 const industries = computed(() => {
   const vals = source.value.map(p => p.industry).filter(Boolean)
-  return ['All', ...[...new Set(vals)].sort()]
+  return ['All', ...[...new Set([...industryOptions.value, ...vals])].sort()]
 })
+
+async function loadIndustries(tab: TabKey) {
+  const values = await fetchIndustries(tab)
+  if (tab !== activeTab.value) return
+  industryOptions.value = values
+  if (industryFilter.value !== 'All' && !values.includes(industryFilter.value)) {
+    industryFilter.value = 'All'
+  }
+}
 
 const filtered = computed(() =>
   source.value.filter(p => {
@@ -81,7 +94,9 @@ watch(activeTab, () => {
   statusFilter.value   = 'All'
   industryFilter.value = 'All'
   currentPage.value    = 1
+  void loadIndustries(activeTab.value)
 })
+onMounted(() => void loadIndustries(activeTab.value))
 const paginated = computed(() => filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage))
 
 const selectedIds     = ref<(string | number)[]>([])

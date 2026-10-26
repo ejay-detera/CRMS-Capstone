@@ -13,7 +13,11 @@ const { success, error, warning } = useToast()
 const { createPartner, createSupplier, fetchPartners, fetchSuppliers } = useVendorService()
 
 const activeTab = computed<TabKey>(() => route.query.type === 'suppliers' ? 'suppliers' : 'partners')
-const basePath = computed(() => route.path.startsWith('/manager') ? '/manager/partners' : '/admin/partners')
+const basePath = computed(() => {
+  if (route.path.startsWith('/manager')) return '/manager/partners'
+  if (route.path.startsWith('/sales')) return '/sales/partners'
+  return '/admin/partners'
+})
 
 const form = reactive<AddPartnerForm>({
   name: '', industry: '', region: '', status: 'Active',
@@ -110,7 +114,7 @@ async function handleSubmit() {
 
     <!-- Header -->
     <div class="flex items-center gap-4">
-      <button @click="router.push('/admin/partners')"
+      <button @click="router.push(basePath)"
         class="flex items-center justify-center w-9 h-9 rounded-lg border border-black/10 bg-white hover:bg-black/4 text-black/50 hover:text-black transition shrink-0">
         <ArrowLeft class="w-4 h-4" />
       </button>
