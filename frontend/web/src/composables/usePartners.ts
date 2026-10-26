@@ -15,7 +15,9 @@ export function usePartners() {
     page = 1,
     perPage = 8,
     search = '',
-    region = 'All'
+    region = 'All',
+    status = 'All',
+    industry = 'All'
   ) => {
     loading.value = true
     try {
@@ -31,6 +33,12 @@ export function usePartners() {
       }
       if (region && region !== 'All') {
         url.searchParams.append('region', region)
+      }
+      if (status && status !== 'All') {
+        url.searchParams.append('status', status)
+      }
+      if (industry && industry !== 'All') {
+        url.searchParams.append('industry', industry)
       }
 
       const res = await fetch(url.toString(), {
@@ -272,12 +280,31 @@ export function usePartners() {
     }
   }
 
+  const fetchIndustries = async (type: TabKey): Promise<string[]> => {
+    try {
+      const apiBase = import.meta.env.VITE_VENDOR_API_URL || 'http://localhost:8001/api'
+      const endpoint = type === 'partners' ? 'partners' : 'suppliers'
+      const res = await fetch(`${apiBase}/${endpoint}/industries`, {
+        headers: {
+          'Authorization': `Bearer ${authState.token || ''}`,
+          'Accept': 'application/json'
+        }
+      })
+      if (!res.ok) return []
+      const json = await res.json()
+      return (json.data || []) as string[]
+    } catch {
+      return []
+    }
+  }
+
   return {
     loading,
     partners,
     totalItems,
     lastPage,
     fetchPartners,
+    fetchIndustries,
     fetchVendorContracts,
     fetchLinkedContractIds,
     addPartner,

@@ -37,13 +37,33 @@ class BusinessPartnerController extends Controller
             $query->where('partner_name', 'like', $request->partner_name . '%');
         }
 
-        if ($request->has('status')) {
+        if ($request->filled('industry') && $request->industry !== 'All') {
+            $query->where('industry', $request->industry);
+        }
+
+        if ($request->filled('status') && $request->status !== 'All') {
             $query->where('status', $request->status);
         }
 
         $perPage = min((int) $request->input('per_page', 15), 100);
 
-        return response()->json($query->paginate($perPage));
+        // Newest first so a freshly created partner always lands on page 1.
+        return response()->json($query->orderByDesc('partner_id')->paginate($perPage));
+    }
+
+    /**
+     * Distinct industry values, used to populate the Industry filter.
+     */
+    public function industries()
+    {
+        $industries = BusinessPartner::query()
+            ->whereNotNull('industry')
+            ->where('industry', '!=', '')
+            ->distinct()
+            ->orderBy('industry')
+            ->pluck('industry');
+
+        return response()->json(['data' => $industries]);
     }
 
     /**

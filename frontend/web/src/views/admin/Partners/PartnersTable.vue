@@ -20,6 +20,7 @@ const props = defineProps<{
   allPageSelected: boolean
   currentPage:     number
   itemsPerPage:    number
+  totalItems?:     number
   canEdit?:        boolean
   canDelete?:      boolean
   loading?:        boolean
@@ -61,7 +62,7 @@ function statusClass(status: string) {
     <div class="px-6 pt-5 pb-4 border-b border-black/5">
       <h2 class="text-sm font-semibold text-black">
         {{ activeTab === 'partners' ? 'Business Partners' : 'Suppliers' }}
-        <span class="text-black/30 font-normal">({{ filtered.length }})</span>
+        <span class="text-black/30 font-normal">({{ totalItems ?? filtered.length }})</span>
       </h2>
     </div>
 
@@ -172,7 +173,7 @@ function statusClass(status: string) {
     </Table>
 
     <div class="flex justify-center px-6 py-4 border-t border-black/5">
-      <TablePagination :current-page="currentPage" :total-items="filtered.length"
+      <TablePagination :current-page="currentPage" :total-items="totalItems ?? filtered.length"
         :items-per-page="itemsPerPage" :current-page-items-count="paginated.length" @update:current-page="emit('update:currentPage', $event)" />
     </div>
   </div>

@@ -29,6 +29,8 @@ Route::middleware(['auth.internal'])->group(function () {
     // Suppliers Routes
     Route::get('/suppliers/search', [\App\Http\Controllers\SupplierController::class, 'search'])
         ->middleware('permission:cms.partners.view');
+    Route::get('/suppliers/industries', [\App\Http\Controllers\SupplierController::class, 'industries'])
+        ->middleware('permission:cms.partners.view');
     Route::get('/suppliers', [\App\Http\Controllers\SupplierController::class, 'index'])
         ->middleware('permission:cms.partners.view');
     Route::get('/suppliers/{id}', [\App\Http\Controllers\SupplierController::class, 'show'])
@@ -42,6 +44,8 @@ Route::middleware(['auth.internal'])->group(function () {
 
     // Business Partners Routes
     Route::get('/partners/search', [\App\Http\Controllers\BusinessPartnerController::class, 'search'])
+        ->middleware('permission:cms.partners.view');
+    Route::get('/partners/industries', [\App\Http\Controllers\BusinessPartnerController::class, 'industries'])
         ->middleware('permission:cms.partners.view');
     Route::get('/partners', [\App\Http\Controllers\BusinessPartnerController::class, 'index'])
         ->middleware('permission:cms.partners.view');

@@ -10,6 +10,7 @@ import { usePartners } from '@/composables/usePartners'
 import PartnersGrid       from './PartnersGrid.vue'
 import PartnersTable      from './PartnersTable.vue'
 import DeleteConfirmDialog from './DeleteConfirmDialog.vue'
+import TablePagination     from '@/components/shared/TablePagination.vue'
 import type { Partner, TabKey } from '@/types/partner'
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
@@ -24,6 +25,7 @@ const {
   loading,
   totalItems,
   fetchPartners,
+  fetchIndustries,
   deletePartner
 } = usePartners()
 
@@ -43,19 +45,24 @@ const suppliersCount = ref(0)
 
 
 
+const industryOptions = ref<string[]>([])
+
 const industries = computed(() => {
+  if (industryOptions.value.length) return ['All', ...industryOptions.value]
+  // Fallback while the industries request is in flight (or if it fails):
+  // derive the options from the rows currently loaded.
   const vals = partners.value.map(p => p.industry).filter(Boolean)
   return ['All', ...[...new Set(vals)].sort()]
 })
 
-const filtered = computed(() =>
-  partners.value.filter(p => {
-    return (
-      (statusFilter.value === 'All' || p.status === statusFilter.value) &&
-      (industryFilter.value === 'All' || p.industry === industryFilter.value)
-    )
-  })
-)
+async function loadIndustries(tab: TabKey) {
+  const values = await fetchIndustries(tab)
+  industryOptions.value = values
+}
+
+// Status, industry and region are filtered by the API so they apply to the
+// whole dataset, not just the rows of the current page.
+const filtered = computed(() => partners.value)
 
 const currentPage  = ref(1)
 const itemsPerPage = 15
@@ -67,12 +74,13 @@ watch(activeTab, () => {
   statusFilter.value   = 'All'
   industryFilter.value = 'All'
   currentPage.value    = 1
+  loadIndustries(activeTab.value)
 })
 
 watch(
-  [activeTab, currentPage, search, regionFilter],
-  async ([tab, page, q, region]) => {
-    await fetchPartners(tab, page, itemsPerPage, q, region)
+  [activeTab, currentPage, search, regionFilter, statusFilter, industryFilter],
+  async ([tab, page, q, region, status, industry]) => {
+    await fetchPartners(tab, page, itemsPerPage, q, region, status, industry)
   }
 )
 
@@ -90,6 +98,7 @@ onMounted(async () => {
     suppliersCount.value = totalItems.value
     await fetchPartners('partners', 1, itemsPerPage)
     partnersCount.value = totalItems.value
+    await loadIndustries('partners')
   } catch (err) {
     console.error(err)
   }
@@ -135,7 +144,15 @@ async function confirmDelete() {
   try {
     if (target.db_id) {
       await deletePartner(activeTab.value, target.db_id)
-      await fetchPartners(activeTab.value, currentPage.value, itemsPerPage, search.value, regionFilter.value)
+      await fetchPartners(
+        activeTab.value,
+        currentPage.value,
+        itemsPerPage,
+        search.value,
+        regionFilter.value,
+        statusFilter.value,
+        industryFilter.value
+      )
     }
     selectedIds.value = selectedIds.value.filter(id => id !== target.id)
     success('Entry deleted', `${target.name} has been removed.`)
@@ -247,11 +264,20 @@ async function executeExport() {
       </select>
     </div>
 
-    <PartnersGrid v-if="viewMode === 'card'" :partners="filtered" :active-tab="activeTab" :loading="loading"
-      :can-delete="hasPermission('cms.partners.delete')"
-      @open-detail="openDetail" @open-delete="openDelete" />
+    <template v-if="viewMode === 'card'">
+      <PartnersGrid :partners="filtered" :active-tab="activeTab" :loading="loading"
+        :can-delete="hasPermission('cms.partners.delete')"
+        @open-detail="openDetail" @open-delete="openDelete" />
+
+      <div v-if="!loading && totalItems > 0" class="flex justify-center pt-1">
+        <TablePagination :current-page="currentPage" :total-items="totalItems"
+          :items-per-page="itemsPerPage" :current-page-items-count="partners.length"
+          @update:current-page="currentPage = $event" />
+      </div>
+    </template>
     <PartnersTable v-else
       :paginated="filtered" :filtered="filtered" :active-tab="activeTab"
+      :total-items="totalItems"
       :selected-ids="selectedIds" :all-page-selected="allPageSelected"
       :current-page="currentPage" :items-per-page="itemsPerPage"
       :can-edit="hasPermission('cms.partners.edit')" :can-delete="hasPermission('cms.partners.delete')" :loading="loading"
