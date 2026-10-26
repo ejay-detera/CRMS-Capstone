@@ -137,6 +137,22 @@
   * {
     @apply border-border outline-ring/50;
   }
+
+  /* Interactive affordance — Tailwind v4's preflight no longer applies
+     `cursor: pointer` to <button>, so raw buttons (notification actions,
+     filter pills, tabs, pager, etc.) read as non-clickable. */
+  button:not(:disabled),
+  select:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled,
+  [role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
   html,
   body {
     @apply bg-background text-foreground;
