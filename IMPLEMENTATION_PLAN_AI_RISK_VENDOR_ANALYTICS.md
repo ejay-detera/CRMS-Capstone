@@ -133,7 +133,7 @@ frontend/web/src/views/manager/RiskAssessment/
 ```
 - Entry point added next to the existing approve/reject controls in `ContractDetailHeader.vue` (`sales/Contracts/ContractDetail/`) and inside the manager approval queue (`manager/ContractRequests/index.vue`) — same location as the new flag icon above, so both link to the same place.
 - Shared types + RAG color/icon maps in `src/types/riskAssessment.ts`, following the `approvalStatusBadge` pattern already in `src/types/contract.ts` (e.g. a `severityBadge: Record<Severity, string>` and `severityIconColor: Record<Severity, string>` lookup).
-- Dummy data first (`ref<RiskFinding[]>([...])`), per `AGENTS.md`'s Dummy Data rule.
+- API-backed: fetch via a composable in `src/composables/` (e.g. `useRiskAssessment`); demo rows come from `services/ai-service/database/seeders/`, not from hardcoded arrays in the view.
 
 ---
 

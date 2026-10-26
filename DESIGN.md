@@ -30,6 +30,7 @@ All AI agents and subagents (specifically `@ui-designer`, `@frontend-developer`,
 2. **Framework & Package Pinning**:
    - `web-interface` is built with **Vue 3 SPA**, **shadcn-vue** (Radix Vue primitives), and **Tailwind CSS 3.4**.
    - **DO NOT bump `web-interface` to Tailwind v4.** Do not introduce Tailwind v4 syntax into `web-interface`.
+   - *Scope note:* this pin applies to the external Auth-module `web-interface` project only. The CMS frontend (`frontend/web`) is intentionally on **Tailwind CSS v4** — keep it on v4 and do not downgrade it.
 3. **Component Primitive Standard**: All interactive components (Modals, Dialogs, Selects, Dropdowns, Tooltips, Accordions) must be sourced from **shadcn-vue** headless primitives styled with Tailwind CSS. Never install or use third-party pre-styled widget libraries (e.g. Vuetify, Bootstrap, Element Plus, PrimeVue).
 4. **Icon Standard**: Glyph assets must strictly and exclusively be sourced from **Lucide Icons** (`lucide-vue-next`). Do not import or mix FontAwesome, Material Icons, or raw unvetted SVGs.
 5. **Strict 8px Spacing Hierarchy**: Every margin and padding must adhere to the 8px grid (`8px`, `16px`, `24px`, `32px`, `48px`). Arbitrary whitespace is strictly prohibited.
@@ -518,7 +519,7 @@ When organizing multi-agent teams for frontend, UI, or design work, invoke the p
 | :--- | :--- | :--- |
 | **`@agent-organizer`** | Team assembly, workflow design, dependency mapping, task decomposition. | When initiating complex frontend epics, organizing multi-agent handoffs, and managing cross-subsystem dependencies. |
 | **`@ui-designer`** | Visual design, design systems, tokens, Figma MCP queries, component aesthetics, accessibility. | When defining component specifications, extracting Figma node properties, designing visual states, auditing contrast. |
-| **`@frontend-developer`** | Vue 3, TypeScript, Vite, Tailwind 3.4, shadcn-vue, component architecture, state management. | When writing `.vue` components, implementing layouts, wiring router and stores, building views according to `DESIGN.md`. |
+| **`@frontend-developer`** | Vue 3, TypeScript, Vite, Tailwind v4 (`frontend/web`) / Tailwind 3.4 (`web-interface`), shadcn-vue, component architecture, composable state. | When writing `.vue` components, implementing layouts, wiring router and composables, building views according to `DESIGN.md`. |
 | **`@architect-reviewer`** | High-level system architecture, cross-subsystem contracts, security boundaries. | When reviewing frontend-to-backend API contracts, auth token handoffs, and shared gateway routing. |
 | **`@code-reviewer`** | Code quality, PSR-12/ESLint, design system compliance audit, PR review. | Prior to submitting pull requests, ensuring all UI code strictly adheres to `DESIGN.md`. |
 | **`@qa-expert`** | Test strategy, Cypress/Playwright E2E, Vitest component testing, UI validation. | Writing test suites for UI workflows, form validations, modal confirmations, and responsive viewports. |
@@ -537,5 +538,5 @@ Before completing any frontend or UI task, the responsible subagent must execute
 - [ ] **Elevations**: Do shadows match Level 1 (`shadow-sm`) through Level 4 (`shadow-2xl`)?
 - [ ] **Status Badges**: Are badge labels in Title Case? Is a single emphasis tier used per table column?
 - [ ] **Toasts**: Do toast notifications appear in the Top-Right (`top: 24px; right: 24px; z-index: 1200;`) with 4px left accent bar and 4-second hover-paused timer?
-- [ ] **Tailwind 3.4**: Did the agent preserve Tailwind 3.4 compatibility without using Tailwind 4 features in `web-interface`?
+- [ ] **Tailwind version**: Did the agent keep `web-interface` on Tailwind 3.4 (no v4 syntax) and `frontend/web` on Tailwind v4 (no downgrade)?
 - [ ] **Figma Reference**: Was Figma MCP (`https://www.figma.com/design/ciWpnQzNBU3Zopv97v29nN/PRS?node-id=79-1078&t=vMI8xDhUbfkm564o-1`) consulted for any ambiguous component specs?
