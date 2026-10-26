@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, computed, ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ArrowLeft, ScanLine, Sparkles } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, ScanLine, Sparkles } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
@@ -672,8 +672,9 @@ onClickOutside(suggestionsContainer, () => {
           Cancel
         </Button>
         <Button @click="handleSubmit" :disabled="loading || isUploadingOrScanFailed"
-          class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-          {{ loading ? 'Saving…' : 'Create Contract' }}
+          class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed gap-2">
+          <Loader2 v-if="loading" class="w-4 h-4 animate-spin" />
+          {{ loading ? 'Creating…' : 'Create Contract' }}
         </Button>
       </div>
 

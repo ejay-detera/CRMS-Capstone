@@ -48,6 +48,7 @@ const {
 const docTitle = ref('Contract Agreement')
 const zoomLevel = ref(1)
 const isAttaching = ref(false)
+const isPreparing = ref(true)
 const isEditingHeaderFooter = ref(false)
 
 const margins = reactive<PageMargins>({
@@ -106,6 +107,7 @@ async function runContractGeneration(force = false) {
   if (!force && draft.generatedDoc?.html) {
     docTitle.value = draft.generatedDoc.title || docTitle.value
     setCombinedHtml(draft.generatedDoc.html)
+    isPreparing.value = false
     return
   }
 
@@ -199,6 +201,7 @@ async function runContractGeneration(force = false) {
         </tbody>
       </table>
     `)
+    isPreparing.value = false
     return
   }
 
@@ -218,6 +221,8 @@ async function runContractGeneration(force = false) {
     }
   } catch (err) {
     toastError('Generation Note', 'Applied standard corporate legal template.')
+  } finally {
+    isPreparing.value = false
   }
 }
 
@@ -791,7 +796,23 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full w-full flex-1 flex flex-col min-h-0 bg-white overflow-hidden font-poppins select-none print:bg-white print:overflow-visible">
+  <div class="relative h-full w-full flex-1 flex flex-col min-h-0 bg-white overflow-hidden font-poppins select-none print:bg-white print:overflow-visible">
+    <!-- Full-editor loading overlay while the AI composes the contract -->
+    <div
+      v-if="isGenerating || isPreparing"
+      class="absolute inset-0 z-40 bg-white/85 backdrop-blur-xs flex flex-col items-center justify-center gap-3 animate-in fade-in duration-200 print:hidden"
+    >
+      <div class="w-12 h-12 rounded-2xl bg-brand-navy/10 flex items-center justify-center">
+        <Loader2 class="w-6 h-6 text-brand-navy animate-spin" />
+      </div>
+      <div class="text-center">
+        <h3 class="text-sm font-semibold text-black">Generating Contract Agreement</h3>
+        <p class="text-xs text-black/50 mt-1 max-w-sm">
+          AI is assembling formal clauses, scopes, dates, and Philippine legal provisions...
+        </p>
+      </div>
+    </div>
+
     <!-- Top App Bar (Hidden on print) -->
     <header class="h-14 border-b border-black/8 px-4 flex items-center justify-between bg-white shrink-0 z-20 print:hidden">
       <div class="flex items-center gap-3">
@@ -884,22 +905,6 @@ onMounted(() => {
 
     <!-- Editor Multi-Page Canvas Sheet -->
     <div class="relative flex-1 flex flex-col overflow-hidden print:overflow-visible">
-      <!-- Loading Overlay when AI is generating -->
-      <div
-        v-if="isGenerating"
-        class="absolute inset-0 bg-white/80 backdrop-blur-xs z-30 flex flex-col items-center justify-center gap-3 animate-in fade-in duration-200 print:hidden"
-      >
-        <div class="w-12 h-12 rounded-2xl bg-brand-navy/10 flex items-center justify-center">
-          <Loader2 class="w-6 h-6 text-brand-navy animate-spin" />
-        </div>
-        <div class="text-center">
-          <h3 class="text-sm font-semibold text-black">Generating Contract Agreement</h3>
-          <p class="text-xs text-black/50 mt-1 max-w-sm">
-            AI is assembling formal clauses, scopes, dates, and Philippine legal provisions...
-          </p>
-        </div>
-      </div>
-
       <QuillCanvas
         :zoom="zoomLevel"
         :paper-size="toolbarState.paperSize"

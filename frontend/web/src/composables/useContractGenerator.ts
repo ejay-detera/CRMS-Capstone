@@ -66,19 +66,19 @@ export function useContractGenerator() {
           html_content: json.data.html_content || '',
           source: json.source || 'gemini',
         }
+        isGenerating.value = false
         return result.value
       }
 
       console.warn('Backend contract generation returned error, using client fallback:', json.message)
     } catch (err) {
       console.warn('Network issue reaching AI service, using client fallback generator:', err)
-    } finally {
-      isGenerating.value = false
     }
 
     // Client fallback to ensure user is never blocked
     const fallback = generateClientFallback(params)
     result.value = fallback
+    isGenerating.value = false
     return fallback
   }
 
