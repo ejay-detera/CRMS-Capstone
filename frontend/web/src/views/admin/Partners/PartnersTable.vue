@@ -20,6 +20,7 @@ const props = defineProps<{
   allPageSelected: boolean
   currentPage:     number
   itemsPerPage:    number
+  totalItems?:     number
   canEdit?:        boolean
   canDelete?:      boolean
   loading?:        boolean
@@ -35,8 +36,14 @@ const emit = defineEmits<{
 }>()
 
 function displayId(p: Partner) {
-  const prefix = props.activeTab === 'partners' ? 'BP' : 'SP'
-  return `${prefix}-${String(p.id).padStart(4, '0')}`
+  if (props.activeTab === 'partners') {
+    const raw = p.bpCode || String(p.id)
+    if (raw.startsWith('BP-')) return raw.replace(/^(BP-)+/i, 'BP-')
+    return `BP-${String(p.db_id || p.id).padStart(4, '0')}`
+  }
+  const raw = String(p.id)
+  if (raw.startsWith('SP-')) return raw.replace(/^(SP-)+/i, 'SP-')
+  return `SP-${String(p.db_id || p.id).padStart(4, '0')}`
 }
 
 function statusClass(status: string) {
@@ -55,7 +62,7 @@ function statusClass(status: string) {
     <div class="px-6 pt-5 pb-4 border-b border-black/5">
       <h2 class="text-sm font-semibold text-black">
         {{ activeTab === 'partners' ? 'Business Partners' : 'Suppliers' }}
-        <span class="text-black/30 font-normal">({{ filtered.length }})</span>
+        <span class="text-black/30 font-normal">({{ totalItems ?? filtered.length }})</span>
       </h2>
     </div>
 
@@ -63,7 +70,7 @@ function statusClass(status: string) {
       <TableHeader class="bg-black/1.8">
         <TableRow class="border-b border-black/4 hover:bg-transparent">
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3 pl-6">Name</TableHead>
-          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Industry</TableHead>
+          <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3 w-40">Industry</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Region</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Contact</TableHead>
           <TableHead class="text-[11px] font-semibold text-black/40 uppercase tracking-wider py-3">Status</TableHead>
@@ -104,15 +111,18 @@ function statusClass(status: string) {
         >
           <TableCell class="py-4 pl-6">
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-[#252578]/8 text-[#252578]">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-brand-navy/8 text-brand-navy">
                 <component :is="activeTab === 'partners' ? Building2 : Truck" class="w-4 h-4" />
               </div>
               <div>
-                <p class="text-sm font-medium text-black leading-snug">{{ partner.name }}</p>
+                <p class="text-sm font-medium text-black leading-snug truncate max-w-[220px]"
+                   :title="partner.name">{{ partner.name }}</p>
+                <p class="text-xs font-mono text-black/40 mt-0.5">{{ displayId(partner) }}</p>
               </div>
             </div>
           </TableCell>
-          <TableCell class="py-4 text-sm text-black/60">{{ partner.industry || '—' }}</TableCell>
+          <TableCell class="py-4 text-sm text-black/60 max-w-[160px] truncate"
+                     :title="partner.industry || undefined">{{ partner.industry || '—' }}</TableCell>
           <TableCell class="py-4 text-sm text-black/60">{{ partner.region ?? '—' }}</TableCell>
           <TableCell class="py-4">
             <div class="text-sm text-black/70">{{ partner.contactPerson || '—' }}</div>
@@ -163,7 +173,7 @@ function statusClass(status: string) {
     </Table>
 
     <div class="flex justify-center px-6 py-4 border-t border-black/5">
-      <TablePagination :current-page="currentPage" :total-items="filtered.length"
+      <TablePagination :current-page="currentPage" :total-items="totalItems ?? filtered.length"
         :items-per-page="itemsPerPage" :current-page-items-count="paginated.length" @update:current-page="emit('update:currentPage', $event)" />
     </div>
   </div>

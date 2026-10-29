@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_PALETTE } from '@/constants/theme'
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -22,7 +23,7 @@ const emit  = defineEmits<{
   setReviewing:  [id: string]
 }>()
 
-const palette = ['#252578', '#2E85D8', '#2F2F73']
+const palette = BRAND_PALETTE
 function initials(name: string) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
@@ -76,7 +77,7 @@ function confirmReview() {
         <!-- Header -->
         <div class="px-5 pt-5 pb-4 border-b border-black/6">
           <div class="flex items-start gap-3.5">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 bg-[#252578]">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 bg-brand-navy">
               <ClipboardList class="w-5 h-5" />
             </div>
             <div class="flex-1 min-w-0 pr-6">
@@ -194,7 +195,7 @@ function confirmReview() {
         <div v-if="showRejectInput" class="px-5 pb-3">
           <label class="text-xs font-semibold text-black/50 mb-1.5 block">Reason for rejection</label>
           <textarea v-model="rejectReason" rows="2" placeholder="Provide a reason..."
-            class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition resize-none" />
+            class="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm placeholder:text-black/25 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15 transition resize-none" />
         </div>
 
         <!-- Footer: contract link left, actions right -->
@@ -202,7 +203,7 @@ function confirmReview() {
 
           <!-- Contract link -->
           <a :href="safeHref(request.contractLink)" target="_blank" rel="noopener noreferrer"
-            class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2E85D8] hover:underline mb-3">
+            class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-blue hover:underline mb-3">
             <ExternalLink class="w-3.5 h-3.5" /> View Contract PDF
           </a>
 
@@ -214,7 +215,7 @@ function confirmReview() {
 
               <Button v-if="!showRejectInput" variant="outline"
                 @click="router.push(`/manager/contract-requests/${request.id}`); $emit('update:open', false)"
-                class="h-8 px-3.5 text-xs font-semibold border-[#252578]/25 text-[#252578] hover:bg-[#252578]/5 hover:border-[#252578]/40 gap-1.5">
+                class="h-8 px-3.5 text-xs font-semibold border-brand-navy/25 text-brand-navy hover:bg-brand-navy/5 hover:border-brand-navy/40 gap-1.5">
                 <FilePenLine class="w-3.5 h-3.5" /> Edit Request
               </Button>
 
@@ -238,12 +239,12 @@ function confirmReview() {
               <template v-if="!showRejectInput">
                 <Button v-if="request.status === 'Pending'" variant="outline"
                   @click="showReviewConfirm = true"
-                  class="h-8 px-3.5 text-xs font-semibold border-[#2E85D8]/30 text-[#2E85D8] hover:bg-[#2E85D8]/8 gap-1.5">
+                  class="h-8 px-3.5 text-xs font-semibold border-brand-blue/30 text-brand-blue hover:bg-brand-blue/8 gap-1.5">
                   <RefreshCw class="w-3.5 h-3.5" /> Set Reviewing
                 </Button>
                 <Button
                   @click="showApproveConfirm = true"
-                  class="h-8 px-3.5 text-xs font-semibold bg-[#252578] hover:bg-[#2F2F73] text-white gap-1.5">
+                  class="h-8 px-3.5 text-xs font-semibold bg-brand-navy hover:bg-brand-dark text-white gap-1.5">
                   <CheckCircle class="w-3.5 h-3.5" /> Approve
                 </Button>
               </template>

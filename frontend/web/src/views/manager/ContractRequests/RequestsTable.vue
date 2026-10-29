@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_PALETTE } from '@/constants/theme'
 import { Search, MoreHorizontal, Eye, CheckCircle, XCircle } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
@@ -38,7 +39,7 @@ const filterTabs: { label: string; value: RequestFilterTab }[] = [
   { label: 'Rejected', value: 'rejected' },
 ]
 
-const palette = ['#252578', '#2E85D8', '#2F2F73']
+const palette = BRAND_PALETTE
 function initials(name: string) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
@@ -76,7 +77,7 @@ function avatarColor(name: string) {
         <input :value="searchQuery"
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"
           type="text" placeholder="Search requests..."
-          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
+          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15 transition" />
       </div>
     </div>
 

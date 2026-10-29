@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_HEX } from '@/constants/theme'
 import { computed } from 'vue'
 import { VisXYContainer, VisGroupedBar, VisAxis } from '@unovis/vue'
 import type { Contract } from '@/types/contract'
@@ -12,9 +13,9 @@ type StageItem = { stage: string; days: number; color: string }
 const data = computed<StageItem[]>(() => {
   // We can calculate average or render standardized workflow stage limits
   return [
-    { stage: 'Drafting',      days: 4,  color: '#2E85D8' },
-    { stage: 'SBSI Review',   days: 7,  color: '#2F2F73' },
-    { stage: 'Client Review', days: 12, color: '#252578' },
+    { stage: 'Drafting',      days: 4,  color: BRAND_HEX.blue },
+    { stage: 'SBSI Review',   days: 7,  color: BRAND_HEX.dark },
+    { stage: 'Client Review', days: 12, color: BRAND_HEX.navy },
     { stage: 'Notarization',  days: 3,  color: 'rgba(0,0,0,0.3)' }
   ]
 })

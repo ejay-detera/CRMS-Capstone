@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw, type RouteLocation
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { useLoader } from '@/composables/useLoader'
+import { setBreadcrumbTitle } from '@/composables/useBreadcrumbs'
 
 const routes: Array<RouteRecordRaw> = [
   // Admin Route Group
@@ -20,51 +21,99 @@ const routes: Array<RouteRecordRaw> = [
         path: 'contracts',
         name: 'admin-contracts',
         component: () => import('@/views/admin/Contracts/index.vue'),
+        meta: { requiresPermission: 'cms.contracts.view' },
       },
       {
         path: 'contracts/create',
         name: 'admin-contracts-create',
         component: () => import('@/views/admin/Contracts/CreateContract.vue'),
+        meta: { requiresPermission: 'cms.contracts.create' },
+      },
+      {
+        path: 'contracts/editor',
+        name: 'admin-contracts-editor',
+        component: () => import('@/views/shared/ContractEditor/index.vue'),
+        meta: { requiresPermission: 'cms.ai.contract_generator' },
       },
       {
         path: 'contracts/:id',
         name: 'admin-contracts-detail',
         component: () => import('@/views/sales/Contracts/ContractDetail/index.vue'),
+        meta: { requiresPermission: 'cms.contracts.view' },
       },
       {
         path: 'contracts/:id/documents/:docId',
         name: 'admin-contracts-document-view',
         component: () => import('@/views/sales/Contracts/DocumentViewer.vue'),
+        meta: { requiresPermission: 'cms.contracts.view' },
+      },
+      {
+        path: 'contracts/:id/risk-assessment',
+        name: 'admin-contracts-risk-assessment',
+        component: () => import('@/views/manager/RiskAssessment/index.vue'),
+        meta: { requiresPermission: 'cms.ai.risk_assessment' },
       },
       {
         path: 'users',
         name: 'admin-users',
         component: () => import('@/views/admin/Users/index.vue'),
+        beforeEnter: (_to, _from, next) => {
+          const { role } = useAuth()
+          if (['Admin', 'Super Admin'].includes(role.value || '')) {
+            next()
+          } else {
+            next('/admin/dashboard')
+          }
+        },
       },
       {
         path: 'roles',
         name: 'admin-roles',
         component: () => import('@/views/admin/Roles/index.vue'),
+        beforeEnter: (_to, _from, next) => {
+          const { role } = useAuth()
+          if (['Admin', 'Super Admin'].includes(role.value || '')) {
+            next()
+          } else {
+            next('/admin/dashboard')
+          }
+        },
       },
       {
         path: 'partners',
         name: 'admin-partners',
         component: () => import('@/views/admin/Partners/index.vue'),
+        meta: { requiresPermission: 'cms.partners.view' },
       },
       {
         path: 'partners/create',
         name: 'admin-partners-create',
         component: () => import('@/views/admin/Partners/AddPartnerPage.vue'),
+        meta: { requiresPermission: 'cms.partners.create' },
+      },
+      {
+        path: 'vendor-suggestions',
+        name: 'admin-vendor-suggestions',
+        component: () => import('@/views/admin/VendorSuggestions/index.vue'),
+        meta: { requiresPermission: 'cms.ai.vendor_suggestions' },
+      },
+      {
+        path: 'vendor-suggestions/review',
+        name: 'admin-vendor-suggestions-review',
+        component: () => import('@/views/admin/VendorSuggestions/ReviewSuggestions.vue'),
+        meta: { requiresPermission: 'cms.ai.vendor_suggestions' },
       },
       {
         path: 'partners/:code/edit',
         name: 'admin-partners-edit',
         component: () => import('@/views/admin/Partners/EditPartnerPage.vue'),
+        meta: { requiresPermission: 'cms.partners.edit' },
       },
       {
         path: 'partners/:code',
         name: 'admin-partners-detail',
         component: () => import('@/views/admin/Partners/PartnerDetail/index.vue'),
+        meta: { requiresPermission: 'cms.partners.view' },
       },
       {
         path: 'notifications',
@@ -75,11 +124,27 @@ const routes: Array<RouteRecordRaw> = [
         path: 'audit-log',
         name: 'admin-audit-log',
         component: () => import('@/views/admin/AuditLog/index.vue'),
+        beforeEnter: (_to, _from, next) => {
+          const { role, hasPermission } = useAuth()
+          if (['Admin', 'Super Admin'].includes(role.value || '') || hasPermission('cms.audit.view') || hasPermission('view-audit-logs')) {
+            next()
+          } else {
+            next('/admin/dashboard')
+          }
+        },
       },
       {
         path: 'system-config',
         name: 'admin-system-config',
         component: () => import('@/views/admin/SystemConfig/index.vue'),
+        beforeEnter: (_to, _from, next) => {
+          const { role } = useAuth()
+          if (['Admin', 'Super Admin'].includes(role.value || '')) {
+            next()
+          } else {
+            next('/admin/dashboard')
+          }
+        },
       },
       {
         path: 'profile',
@@ -112,6 +177,12 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/manager/Contracts/CreateContract.vue'),
       },
       {
+        path: 'contracts/editor',
+        name: 'manager-contracts-editor',
+        component: () => import('@/views/shared/ContractEditor/index.vue'),
+        meta: { requiresPermission: 'cms.ai.contract_generator' },
+      },
+      {
         path: 'contracts/:id',
         name: 'manager-contracts-detail',
         component: () => import('@/views/sales/Contracts/ContractDetail/index.vue'),
@@ -125,6 +196,11 @@ const routes: Array<RouteRecordRaw> = [
         path: 'contracts/:id/documents/:docId',
         name: 'manager-contracts-document-view',
         component: () => import('@/views/sales/Contracts/DocumentViewer.vue'),
+      },
+      {
+        path: 'contracts/:id/risk-assessment',
+        name: 'manager-contracts-risk-assessment',
+        component: () => import('@/views/manager/RiskAssessment/index.vue'),
       },
 
       {
@@ -179,6 +255,18 @@ const routes: Array<RouteRecordRaw> = [
         name: 'manager-profile',
         component: () => import('@/views/manager/Profile/index.vue'),
       },
+      {
+        path: 'vendor-suggestions',
+        name: 'manager-vendor-suggestions',
+        component: () => import('@/views/admin/VendorSuggestions/index.vue'),
+        meta: { requiresPermission: 'cms.ai.vendor_suggestions' },
+      },
+      {
+        path: 'vendor-suggestions/review',
+        name: 'manager-vendor-suggestions-review',
+        component: () => import('@/views/admin/VendorSuggestions/ReviewSuggestions.vue'),
+        meta: { requiresPermission: 'cms.ai.vendor_suggestions' },
+      },
     ],
   },
 
@@ -205,6 +293,12 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/sales/Contracts/CreateContract.vue'),
       },
       {
+        path: 'contracts/editor',
+        name: 'sales-contracts-editor',
+        component: () => import('@/views/shared/ContractEditor/index.vue'),
+        meta: { requiresPermission: 'cms.ai.contract_generator' },
+      },
+      {
         path: 'contracts/:id',
         name: 'sales-contracts-detail',
         component: () => import('@/views/sales/Contracts/ContractDetail/index.vue'),
@@ -213,6 +307,11 @@ const routes: Array<RouteRecordRaw> = [
         path: 'contracts/:id/documents/:docId',
         name: 'sales-contracts-document-view',
         component: () => import('@/views/sales/Contracts/DocumentViewer.vue'),
+      },
+      {
+        path: 'contracts/:id/risk-assessment',
+        name: 'sales-contracts-risk-assessment',
+        component: () => import('@/views/manager/RiskAssessment/index.vue'),
       },
       {
         path: 'contract-requests',
@@ -273,6 +372,18 @@ const routes: Array<RouteRecordRaw> = [
         name: 'sales-profile',
         component: () => import('@/views/sales/Profile/index.vue'),
       },
+      {
+        path: 'vendor-suggestions',
+        name: 'sales-vendor-suggestions',
+        component: () => import('@/views/admin/VendorSuggestions/index.vue'),
+        meta: { requiresPermission: 'cms.ai.vendor_suggestions' },
+      },
+      {
+        path: 'vendor-suggestions/review',
+        name: 'sales-vendor-suggestions-review',
+        component: () => import('@/views/admin/VendorSuggestions/ReviewSuggestions.vue'),
+        meta: { requiresPermission: 'cms.ai.vendor_suggestions' },
+      },
     ],
   },
 
@@ -287,27 +398,25 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
-    redirect: (to) => {
-      // Intercept any mangled auth/callback URLs from the proxy
-      if (to.fullPath.includes('auth/callback')) {
-        console.log('%c[CMS Router] Caught mangled callback URL inside catch-all route!', 'color: #f59e0b; font-weight: bold;')
-        console.log('Router Full Path:', to.fullPath)
+    component: { render: () => null }, // never actually rendered; beforeEnter always redirects or cancels
+    // IMPORTANT: this used to be a `redirect` function. `redirect` must
+    // always return a valid route location — it cannot cancel navigation.
+    // The old fallback returned '/', which isn't a defined route, so
+    // Vue Router re-resolved this exact catch-all again, synchronously,
+    // forming an infinite loop inside the SPA (Chrome's "Throttling
+    // navigation" warning) while window.location.href never got a chance
+    // to take effect. A `beforeEnter` guard can legitimately return
+    // `false` to cancel the in-SPA navigation outright, leaving
+    // window.location.href as the only navigation that happens.
+    beforeEnter: () => {
+      const { navGroup, role } = useAuth()
+      if (navGroup.value === 'admin' || role.value === 'Admin' || role.value === 'Super Admin' || role.value === 'CEO') return '/admin/dashboard'
+      if (navGroup.value === 'manager') return '/manager/dashboard'
+      if (navGroup.value === 'staff') return '/sales/dashboard'
 
-        const match = to.fullPath.match(/state=([^&]+)/)
-        const target = match ? decodeURIComponent(match[1]) : '/admin/dashboard'
-        
-        console.log('Extracted Target from Vue Router:', target)
-        return target.replace(/^\/cms/, '') || '/admin/dashboard'
-      }
-
-      const { role } = useAuth()
-      if (role.value === 'Admin') return '/admin/dashboard'
-      if (role.value === 'Manager') return '/manager/dashboard'
-      if (['Sales', 'Employee', 'Finance'].includes(role.value || '')) return '/sales/dashboard'
-
-      // Fallback: escape CMS router entirely and go to auth-module login
+      // Fallback: escape CMS router entirely and go to auth-module login.
       window.location.href = '/'
-      return '/'
+      return false
     },
   },
 ]
@@ -318,7 +427,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to: RouteLocationNormalized) => {
-  const { isAuthenticated, role } = useAuth()
+  const { isAuthenticated, navGroup } = useAuth()
   const { error } = useToast()
 
   // Always allow the auth callback route through — it handles its own auth handshake
@@ -348,32 +457,30 @@ router.beforeEach((to: RouteLocationNormalized) => {
     }
   }
 
-  // Role-based access control (Strict Role Isolation)
-  // CMS-capstone only supports standard roles: Admin, Manager, Sales, Employee, Finance
-  const allowedRoles = ['Admin', 'Manager', 'Sales', 'Employee', 'Finance']
+  // Role-based access control (Strict Nav-Group Isolation)
+  // CMS routes by nav_group ("admin" | "manager" | "staff"), a field set per
+  // role in auth-module, instead of hardcoding literal role names. This lets
+  // new custom roles (e.g. "Regulatory Officer") become routable just by
+  // tagging a nav_group on them in auth-module — no CMS code change needed.
+  const allowedNavGroups = ['admin', 'manager', 'staff']
 
-  // Allow the auth callback route to bypass the role check
-  if (to.path.includes('auth/callback')) {
-    return true
-  }
-
-  // If the user's role isn't recognized by CMS (e.g., IT Admin, Super Admin), block them entirely
-  if (!allowedRoles.includes(role.value || '')) {
+  // If the user's role has no recognized nav_group, block them entirely
+  if (!allowedNavGroups.includes(navGroup.value || '')) {
     return { name: 'not-found' }
   }
 
-  // Admin can ONLY access /admin
-  if (to.path.startsWith('/admin') && role.value !== 'Admin') {
+  // admin nav_group can ONLY access /admin
+  if (to.path.startsWith('/admin') && navGroup.value !== 'admin') {
     return { name: 'not-found' }
   }
 
-  // Manager can access /manager
-  if (to.path.startsWith('/manager') && role.value !== 'Manager') {
+  // manager nav_group can access /manager
+  if (to.path.startsWith('/manager') && navGroup.value !== 'manager') {
     return { name: 'not-found' }
   }
 
-  // Sales/Employee/Finance can access /sales
-  if (to.path.startsWith('/sales') && !['Sales', 'Employee', 'Finance'].includes(role.value || '')) {
+  // staff nav_group can access /sales
+  if (to.path.startsWith('/sales') && navGroup.value !== 'staff') {
     return { name: 'not-found' }
   }
 
@@ -381,7 +488,9 @@ router.beforeEach((to: RouteLocationNormalized) => {
   if (to.meta?.requiresPermission) {
     const { hasPermission } = useAuth()
     if (!hasPermission(to.meta.requiresPermission as string)) {
-      const dashName = to.path.startsWith('/manager') ? 'manager-dashboard' : 'sales-dashboard'
+      const dashName = to.path.startsWith('/admin')
+        ? 'admin-dashboard'
+        : (to.path.startsWith('/manager') ? 'manager-dashboard' : 'sales-dashboard')
       return { name: dashName }
     }
   }
@@ -389,22 +498,15 @@ router.beforeEach((to: RouteLocationNormalized) => {
   return true
 })
 
-let isInitialNavigation = true
-
 router.afterEach(() => {
-  if (isInitialNavigation) {
-    const { hideLoader } = useLoader()
-    hideLoader()
-    isInitialNavigation = false
-  }
+  setBreadcrumbTitle(null)
+  const { hideLoader } = useLoader()
+  hideLoader()
 })
 
 router.onError(() => {
-  if (isInitialNavigation) {
-    const { hideLoader } = useLoader()
-    hideLoader()
-    isInitialNavigation = false
-  }
+  const { hideLoader } = useLoader()
+  hideLoader()
 })
 
 export default router

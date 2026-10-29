@@ -110,7 +110,7 @@ onMounted(async () => {
           v-model="searchQuery"
           type="text" 
           placeholder="Search requests..."
-          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" 
+          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15 transition" 
         />
       </div>
     </div>
@@ -119,7 +119,7 @@ onMounted(async () => {
     <div class="bg-white rounded-lg border border-black/8 shadow-sm overflow-hidden">
       <!-- Loading reference data -->
       <div v-if="loadingContracts" class="flex flex-col items-center justify-center py-16 gap-2">
-        <Loader2 class="w-8 h-8 animate-spin text-[#252578]" />
+        <Loader2 class="w-8 h-8 animate-spin text-brand-navy" />
         <span class="text-xs text-black/40 font-medium">Syncing contract list...</span>
       </div>
 
@@ -129,7 +129,7 @@ onMounted(async () => {
             <TableRow class="border-b border-black/[0.04] hover:bg-transparent">
               <TableHead class="text-[11px] font-bold text-black/40 uppercase tracking-wider py-3 pl-6 w-32">Request ID</TableHead>
               <TableHead class="text-[11px] font-bold text-black/40 uppercase tracking-wider py-3 w-32">Contract ID</TableHead>
-              <TableHead class="text-[11px] font-bold text-black/40 uppercase tracking-wider py-3">Business Partner</TableHead>
+              <TableHead class="text-[11px] font-bold text-black/40 uppercase tracking-wider py-3 w-48">Business Partner</TableHead>
               <TableHead class="text-[11px] font-bold text-black/40 uppercase tracking-wider py-3">Requested By</TableHead>
               <TableHead class="text-[11px] font-bold text-black/40 uppercase tracking-wider py-3 w-24 text-center">Version</TableHead>
               <TableHead class="text-[11px] font-bold text-black/40 uppercase tracking-wider py-3 w-36">Submitted Date</TableHead>
@@ -145,10 +145,11 @@ onMounted(async () => {
               
               <TableCell class="py-4 pl-6 text-sm font-semibold text-black">{{ a.id }}</TableCell>
               <TableCell class="py-4 text-sm font-medium text-black/60">{{ a.contractId }}</TableCell>
-              <TableCell class="py-4 text-sm font-semibold text-black leading-snug">{{ a.businessPartner }}</TableCell>
+              <TableCell class="py-4 text-sm font-semibold text-black leading-snug max-w-[200px] truncate"
+                         :title="a.businessPartner">{{ a.businessPartner }}</TableCell>
               <TableCell class="py-4 text-sm font-medium text-black/60">{{ a.createdBy }}</TableCell>
               <TableCell class="py-4 text-sm font-medium text-center">
-                <span class="inline-flex px-2 py-0.5 rounded-full bg-[#2E85D8]/8 text-[#2E85D8] text-xs font-bold border border-[#2E85D8]/15">
+                <span class="inline-flex px-2 py-0.5 rounded-full bg-brand-blue/8 text-brand-blue text-xs font-bold border border-brand-blue/15">
                   v{{ a.version }}
                 </span>
               </TableCell>

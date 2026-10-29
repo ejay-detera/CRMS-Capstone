@@ -8,19 +8,23 @@ import { useEmailLogs } from '@/composables/useEmailLogs'
 import { useToast } from '@/composables/useToast'
 import type { TabKey } from '@/types/notification'
 
-const { notifications, unreadCount, fetchNotifications, markRead, markAllRead, updateState } = useNotifications()
+const { notifications, unreadCount, fetchNotifications, markRead, markAllRead, updateState, deletePermanent, deletePermanentBatch } = useNotifications()
 const { logs, loading: logsLoading, currentPage, lastPage, totalLogs, fetchLogs } = useEmailLogs()
 const { success } = useToast()
 
 const activeTab   = ref<TabKey>('all')
 const searchQuery = ref('')
+const currentNotifPage = ref(1)
+const itemsPerPage = 15
 
-const allCount      = computed(() => notifications.value.filter(n => !n.isArchived).length)
+const allCount      = computed(() => notifications.value.filter(n => !n.isArchived && n.type !== 'system').length)
+const systemCount   = computed(() => notifications.value.filter(n => !n.isArchived && n.type === 'system').length)
 const archiveCount  = computed(() => notifications.value.filter(n => n.isArchived).length)
 const favoriteCount = computed(() => notifications.value.filter(n => n.isFavorite && !n.isArchived).length)
 
 const tabs = computed(() => [
   { key: 'all'      as TabKey, label: 'All',       count: allCount.value      },
+  { key: 'system'   as TabKey, label: 'System',    count: systemCount.value   },
   { key: 'archive'  as TabKey, label: 'Archive',   count: archiveCount.value  },
   { key: 'favorite' as TabKey, label: 'Favorite',  count: favoriteCount.value },
   { key: 'email_logs' as TabKey, label: 'Email Log', count: totalLogs.value     },
@@ -28,7 +32,8 @@ const tabs = computed(() => [
 
 const filtered = computed(() => {
   let list = notifications.value
-  if (activeTab.value === 'all')      list = list.filter(n => !n.isArchived)
+  if (activeTab.value === 'all')      list = list.filter(n => !n.isArchived && n.type !== 'system')
+  if (activeTab.value === 'system')   list = list.filter(n => !n.isArchived && n.type === 'system')
   if (activeTab.value === 'archive')  list = list.filter(n =>  n.isArchived)
   if (activeTab.value === 'favorite') list = list.filter(n =>  n.isFavorite && !n.isArchived)
   if (searchQuery.value.trim()) {
@@ -38,17 +43,48 @@ const filtered = computed(() => {
   return list
 })
 
+watch([activeTab, searchQuery], () => { currentNotifPage.value = 1 })
+
+const paginatedNotifs = computed(() =>
+  filtered.value.slice((currentNotifPage.value - 1) * itemsPerPage, currentNotifPage.value * itemsPerPage)
+)
+
 function toggleRead(id: string)     { markRead(id) }
 function toggleFavorite(id: string) { const n = notifications.value.find(x => x.id === id); if (n) updateState(id, { isFavorite: !n.isFavorite }) }
-function deleteNotif(id: string) {
-  updateState(id, { isArchived: true })
-  success('Notification removed', 'The notification has been deleted.')
+async function deleteNotif(id: string) {
+  if (activeTab.value === 'archive') {
+    await deletePermanent(id)
+    success('Notification deleted', 'The notification has been permanently removed.')
+  } else {
+    await updateState(id, { isArchived: true })
+    success('Notification archived', 'The notification has been moved to Archive.')
+  }
 }
 
-function deleteSelected(ids: string[]) {
+async function deleteSelected(ids: string[]) {
   if (ids.length === 0) return
-  ids.forEach(id => updateState(id, { isArchived: true }))
-  success('Notifications removed', `${ids.length} selected notification(s) have been deleted.`)
+  if (activeTab.value === 'archive') {
+    await deletePermanentBatch(ids)
+    success('Notifications deleted', `${ids.length} selected notification(s) have been permanently removed.`)
+  } else {
+    for (const id of ids) {
+      await updateState(id, { isArchived: true })
+    }
+    success('Notifications archived', `${ids.length} selected notification(s) have been moved to Archive.`)
+  }
+}
+
+async function restoreNotif(id: string) {
+  await updateState(id, { isArchived: false })
+  success('Notification restored', 'The notification has been restored to your inbox.')
+}
+
+async function restoreSelected(ids: string[]) {
+  if (ids.length === 0) return
+  for (const id of ids) {
+    await updateState(id, { isArchived: false })
+  }
+  success('Notifications restored', `${ids.length} selected notification(s) have been restored to your inbox.`)
 }
 
 watch(activeTab, (newTab) => {
@@ -72,7 +108,7 @@ onMounted(async () => {
         <p class="text-sm text-black/40 mt-0.5">View and manage all system notifications.</p>
       </div>
       <button v-if="unreadCount > 0 && activeTab !== 'email_logs'" @click="markAllRead"
-        class="flex items-center gap-2 text-sm font-medium text-[#2E85D8] hover:text-[#252578] transition-colors">
+        class="flex items-center gap-2 text-sm font-medium text-brand-blue hover:text-brand-navy transition-colors">
         <CheckCheck class="w-4 h-4" /> Mark all as read
       </button>
     </div>
@@ -80,13 +116,19 @@ onMounted(async () => {
     <NotificationList
       :tabs="tabs"
       :filtered="filtered"
+      :paginated="paginatedNotifs"
+      :current-page="currentNotifPage"
+      :items-per-page="itemsPerPage"
       :unread-count="unreadCount"
       v-model:active-tab="activeTab"
       v-model:search-query="searchQuery"
+      @update:current-page="currentNotifPage = $event"
       @toggle-read="toggleRead"
       @toggle-favorite="toggleFavorite"
       @delete="deleteNotif"
       @delete-selected="deleteSelected"
+      @restore="restoreNotif"
+      @restore-selected="restoreSelected"
     >
       <template #email-logs>
         <EmailLogTable

@@ -14,11 +14,13 @@ class NotificationRead extends Model
         'is_read',
         'is_archived',
         'is_favorite',
+        'is_deleted',
     ];
 
     protected $casts = [
         'is_read'     => 'boolean',
         'is_archived' => 'boolean',
         'is_favorite' => 'boolean',
+        'is_deleted'  => 'boolean',
     ];
 }

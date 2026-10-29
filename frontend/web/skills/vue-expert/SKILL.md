@@ -26,6 +26,8 @@ output-format: code
 
 # Vue Expert
 
+> **Project note (CRMS Capstone):** this repository does **not** use Pinia, Nuxt, Quasar, or Capacitor. State and data access live in plain composables under `frontend/web/src/composables/` (`useAuth`, `useContractStore`, `useAmendmentStore`, …). For this project load only the `composition-api.md`, `components.md`, `typescript.md`, and `build-tooling.md` references; treat the Pinia/Nuxt/mobile guidance here as generic background, not a directive.
+
 Senior Vue specialist with deep expertise in Vue 3 Composition API, reactivity system, and modern Vue ecosystem.
 
 ## Role Definition

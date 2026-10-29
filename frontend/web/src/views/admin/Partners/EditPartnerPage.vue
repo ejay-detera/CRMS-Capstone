@@ -5,6 +5,7 @@ import { ArrowLeft, Pencil } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { useVendorService } from '@/composables/useVendorService'
+import { setBreadcrumbTitle } from '@/composables/useBreadcrumbs'
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 import type { AddPartnerForm, TabKey } from '@/types/partner'
 
@@ -13,10 +14,20 @@ const route = useRoute()
 const { success, error, warning } = useToast()
 const { updatePartner, updateSupplier, fetchPartnerById, fetchSupplierById } = useVendorService()
 
-const code = route.params.code as string
-const type = code.startsWith('BP') ? 'bp' : 'sp'
-const id = parseInt(code.split('-')[1])
+const rawCode = route.params.code as string
+const code = rawCode ? rawCode.replace(/^(BP-)+/i, 'BP-').replace(/^(SP-)+/i, 'SP-') : ''
+if (rawCode && rawCode !== code) {
+  const currentPath = route.path.replace(`/${rawCode}`, `/${code}`)
+  router.replace(currentPath)
+}
+const type = code.startsWith('SP') ? 'sp' : 'bp'
 const activeTab = computed<TabKey>(() => type === 'bp' ? 'partners' : 'suppliers')
+
+const basePath = computed(() => {
+  if (route.path.startsWith('/manager')) return '/manager/partners'
+  if (route.path.startsWith('/sales')) return '/sales/partners'
+  return '/admin/partners'
+})
 
 const loading = ref(true)
 const isSaving = ref(false)
@@ -42,8 +53,11 @@ const tinValid = computed(() => /^\d{3}-\d{3}-\d{3}(-\d{3,5})?$/.test(form.tinNu
 onMounted(async () => {
   loading.value = true
   try {
-    const partner = type === 'bp' ? await fetchPartnerById(id) : await fetchSupplierById(id)
+    const partner = type === 'bp'
+      ? await fetchPartnerById(code)
+      : await fetchSupplierById(parseInt(code.replace(/\D/g, '')) || 0)
     if (partner) {
+      setBreadcrumbTitle(partner.name)
       targetDbId.value = partner.db_id ?? null
       originalBpCode.value = partner.bpCode ?? null
 
@@ -58,11 +72,11 @@ onMounted(async () => {
       form.tinNumber = partner.tinNumber ?? ''
     } else {
       error('Not Found', 'The requested record could not be found.')
-      router.push('/admin/partners')
+      router.push(basePath.value)
     }
   } catch (err: any) {
     error('Error', 'Failed to load details.')
-    router.push('/admin/partners')
+    router.push(basePath.value)
   } finally {
     loading.value = false
   }
@@ -85,7 +99,7 @@ function onPhoneInput(e: Event) {
 }
 
 function err(field: keyof typeof touched, extra = true) {
-  return touched[field] && extra ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
+  return touched[field] && extra ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'
 }
 
 function handleSubmit() {
@@ -111,7 +125,7 @@ async function confirmSubmit() {
       success('Supplier updated', `${updated.name} has been updated successfully.`)
       if (warnings.length) warning('Duplicate warning', warnings[0].message)
     }
-    router.push(`/admin/partners/${code}`)
+    router.push(`${basePath.value}/${code}`)
   } catch (err: any) {
     const msg = err?.message ?? 'An error occurred. Please try again.'
     error('Save failed', msg)
@@ -155,13 +169,13 @@ async function confirmSubmit() {
     <template v-else>
       <!-- Header -->
       <div class="flex items-center gap-4">
-        <button @click="router.push(`/admin/partners/${code}`)"
+        <button @click="router.push(`${basePath}/${code}`)"
           class="flex items-center justify-center w-9 h-9 rounded-lg border border-black/10 bg-white hover:bg-black/4 text-black/50 hover:text-black transition shrink-0">
           <ArrowLeft class="w-4 h-4" />
         </button>
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-[#252578]/8 flex items-center justify-center shrink-0">
-            <Pencil class="w-4.5 h-4.5 text-[#252578]" />
+          <div class="w-9 h-9 rounded-lg bg-brand-navy/8 flex items-center justify-center shrink-0">
+            <Pencil class="w-4.5 h-4.5 text-brand-navy" />
           </div>
           <div>
             <h1 class="text-xl font-semibold text-black">Edit {{ activeTab === 'partners' ? 'Business Partner' : 'Supplier' }}</h1>
@@ -182,7 +196,7 @@ async function confirmSubmit() {
               <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Name <span class="text-red-500">*</span></label>
               <input v-model="form.name" @blur="touched.name = true" type="text" placeholder="Organization name" maxlength="100"
                 class="w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition"
-                :class="(touched.name && (!form.name || form.name.trim().length < 2)) ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'" />
+                :class="(touched.name && (!form.name || form.name.trim().length < 2)) ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'" />
               <p v-if="touched.name && !form.name" class="text-xs text-red-500">Name is required.</p>
               <p v-else-if="touched.name && form.name.trim().length < 2" class="text-xs text-red-500">Name must be at least 2 characters.</p>
             </div>
@@ -207,7 +221,7 @@ async function confirmSubmit() {
               <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Region <span class="text-red-500">*</span></label>
               <select v-model="form.region" @blur="touched.region = true"
                 class="h-9 rounded-md border px-3 text-sm bg-white focus:outline-none focus:ring-2 transition"
-                :class="[!form.region ? 'text-black/30' : 'text-black', touched.region && !form.region ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']">
+                :class="[!form.region ? 'text-black/30' : 'text-black', touched.region && !form.region ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15']">
                 <option value="" disabled>Select region</option>
                 <option value="Luzon">Luzon</option>
                 <option value="Visayas">Visayas</option>
@@ -219,7 +233,7 @@ async function confirmSubmit() {
             <div class="flex flex-col gap-1.5">
               <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Status <span class="text-red-500">*</span></label>
               <select v-model="form.status"
-                class="h-9 rounded-md border border-black/12 bg-white px-3 text-sm text-black focus:outline-none focus:ring-2 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15 transition">
+                class="h-9 rounded-md border border-black/12 bg-white px-3 text-sm text-black focus:outline-none focus:ring-2 focus:border-brand-blue focus:ring-brand-blue/15 transition">
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
                 <option value="Suspended">Suspended</option>
@@ -287,8 +301,8 @@ async function confirmSubmit() {
         <!-- Footer -->
         <div class="px-6 py-4 flex items-center justify-end gap-3 bg-black/[0.015]">
           <Button type="button" variant="outline" class="h-9 px-4 text-sm border-black/15 text-black/60 hover:text-black"
-            @click="router.push(`/admin/partners/${code}`)">Cancel</Button>
-          <Button @click="handleSubmit" :disabled="isSaving" class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+            @click="router.push(`${basePath}/${code}`)">Cancel</Button>
+          <Button @click="handleSubmit" :disabled="isSaving" class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
             {{ isSaving ? 'Saving...' : 'Save Changes' }}
           </Button>
         </div>

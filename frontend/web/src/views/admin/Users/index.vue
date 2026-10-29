@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
 import { Plus, Upload, CheckCircle2, XCircle } from 'lucide-vue-next'
+import { exportToExcel } from '@/utils/excelExport'
 import { Button } from '@/components/ui/button'
-import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { useLoader } from '@/composables/useLoader'
+import { useRoleSystems } from '@/composables/useRoleSystems'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import UsersTable       from './UsersTable.vue'
 import ViewProfileDialog from './ViewProfileDialog.vue'
@@ -13,6 +14,7 @@ import AddUserDialog    from './AddUserDialog.vue'
 import EditUserDialog   from './EditUserDialog.vue'
 import DeleteUserDialog from './DeleteUserDialog.vue'
 import type { User, Role, Status } from '@/types/user'
+import { buildRoleTabs, pluralRoleName } from '@/types/user'
 import ConfirmationDialog from '@/components/shared/ConfirmationDialog.vue'
 
 const { success, error } = useToast()
@@ -27,6 +29,12 @@ const resultMessage = ref('')
 const isFetching = ref(false)
 
 const users = ref<User[]>([])
+
+// Dynamic role tabs: one per role holding CMS access in auth (IT Admin
+// governs via Role Builder). Granting a role (e.g. CEO) any cms
+// permission adds its tab here with no CMS change.
+const { cmsRoleNames, fetchRoleSystems } = useRoleSystems()
+const roleTabs = computed(() => buildRoleTabs(cmsRoleNames.value))
 
 const rolesOptions = ref<{ id: number; name: string }[]>([])
 const departmentsOptions = ref<{ id: number; name: string }[]>([])
@@ -112,16 +120,35 @@ async function fetchUsers() {
 onMounted(() => {
   fetchUsers()
   fetchOptions()
+  fetchRoleSystems()
 })
 
+// Stat cards stay in sync with the dynamic tabs: All users plus one per
+// CMS-accessible role. Known roles keep their historic delta pills;
+// newly granted roles show a neutral "new" pill.
+const KNOWN_CARD_DELTAS: Record<string, { change: string; positive: boolean }> = {
+  Admin:    { change: '+2.1%', positive: true  },
+  Manager:  { change: '-0.3%', positive: false },
+  Employee: { change: '+5.2%', positive: true  },
+}
+
+// Canonical role display order to match the Role Cards hierarchy.
+const ROLE_SORT_ORDER: Record<string, number> = {
+  Admin: 0, Manager: 1, Sales: 2, Employee: 3,
+}
+
 const statCards = computed(() => [
-  { label: 'All users', value: users.value.length,                                   change: '+4.0%', positive: true  },
-  { label: 'Admins',    value: users.value.filter(u => u.role === 'Admin').length,    change: '+2.1%', positive: true  },
-  { label: 'Managers',  value: users.value.filter(u => u.role === 'Manager').length,  change: '-0.3%', positive: false },
-  { label: 'Employees', value: users.value.filter(u => u.role === 'Employee').length, change: '+5.2%', positive: true  },
+  { label: 'All users', value: users.value.length, change: '+4.0%', positive: true },
+  ...[...cmsRoleNames.value]
+    .sort((a, b) => (ROLE_SORT_ORDER[a] ?? 99) - (ROLE_SORT_ORDER[b] ?? 99))
+    .map(name => ({
+      label: pluralRoleName(name),
+      value: users.value.filter(u => u.role === name).length,
+      ...(KNOWN_CARD_DELTAS[name] ?? { change: 'new', positive: true }),
+    })),
 ])
 
-type TabValue = 'all' | Role
+type TabValue = string
 const activeTab   = ref<TabValue>('all')
 const searchQuery = ref('')
 
@@ -319,7 +346,7 @@ function exportXLSX() {
   showExportConfirm.value = true
 }
 
-function executeExport() {
+async function executeExport() {
   showExportConfirm.value = false
   function splitName(full: string) {
     const parts = full.trim().split(/\s+/)
@@ -329,11 +356,7 @@ function executeExport() {
     const { firstName, middleName, lastName } = splitName(u.name)
     return { 'First Name': firstName, 'Last Name': lastName, 'Middle Name': middleName, 'Email': u.email, 'Role': u.role, 'Department': 'Sales Department', 'Status': u.status }
   })
-  const ws = XLSX.utils.json_to_sheet(rows)
-  ws['!cols'] = [{ wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 30 }, { wch: 12 }, { wch: 20 }, { wch: 10 }]
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Users')
-  XLSX.writeFile(wb, 'sbsi-users.xlsx')
+  await exportToExcel('sbsi-users.xlsx', 'Users', rows)
   success('Export complete', `${users.value.length} users exported to sbsi-users.xlsx`)
 }
 </script>
@@ -350,14 +373,14 @@ function executeExport() {
         <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
-        <Button @click="showAddUser = true" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+        <Button @click="showAddUser = true" class="h-9 w-9 p-0 bg-brand-navy hover:bg-brand-dark text-white rounded-lg shadow-sm">
           <Plus class="w-5 h-5" />
         </Button>
       </div>
     </div>
 
     <!-- Stat cards: skeleton while loading, real values after -->
-    <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-5 gap-4">
       <template v-if="isFetching">
         <div v-for="i in 4" :key="i" class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm animate-pulse">
           <div class="h-2.5 w-20 bg-black/8 rounded mb-4"></div>
@@ -386,6 +409,7 @@ function executeExport() {
       :current-page="currentPage"
       :items-per-page="itemsPerPage"
       :active-tab="activeTab"
+      :tabs="roleTabs"
       :search-query="searchQuery"
       @open-view-profile="openViewProfile"
       @open-edit-user="openEditUser"
@@ -428,7 +452,7 @@ function executeExport() {
       </DialogHeader>
       <DialogFooter class="flex items-center justify-end mt-2">
         <Button @click="showResultDialog = false"
-          class="h-9 px-4 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white shadow-sm font-medium">
+          class="h-9 px-4 text-sm bg-brand-navy hover:bg-brand-dark text-white shadow-sm font-medium">
           Close
         </Button>
       </DialogFooter>

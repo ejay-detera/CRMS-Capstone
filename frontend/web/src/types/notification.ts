@@ -1,5 +1,5 @@
 export type NotifType = 'contract' | 'user' | 'partner' | 'system' | 'reminder'
-export type TabKey    = 'all' | 'archive' | 'favorite' | 'email_logs'
+export type TabKey    = 'all' | 'system' | 'archive' | 'favorite' | 'email_logs'
 
 export interface Notification {
   id:           string
@@ -19,6 +19,8 @@ export interface EmailPreference {
   systemAlertsEnabled?: boolean
   smsNotificationsEnabled?: boolean
   loginAlertsEnabled?: boolean
+  aiRiskAssessmentEnabled?: boolean
+  aiVendorSuggestionsEnabled?: boolean
   timezone?: string
   language?: string
   dateFormat?: string
@@ -37,9 +39,9 @@ export interface EmailSendLog {
 }
 
 export const typeColor: Record<NotifType, string> = {
-  contract: 'text-[#2E85D8] bg-[#2E85D8]/8',
-  user:     'text-[#252578] bg-[#252578]/8',
-  partner:  'text-[#2F2F73] bg-[#2F2F73]/8',
+  contract: 'text-brand-blue bg-brand-blue/8',
+  user:     'text-brand-navy bg-brand-navy/8',
+  partner:  'text-brand-dark bg-brand-dark/8',
   system:   'text-amber-600 bg-amber-50',
   reminder: 'text-emerald-600 bg-emerald-50',
 }

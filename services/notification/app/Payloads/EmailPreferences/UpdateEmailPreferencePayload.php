@@ -11,6 +11,8 @@ final readonly class UpdateEmailPreferencePayload
         public bool $contractExpiryAlerts,
         public bool $systemAlertsEnabled,
         public bool $smsNotificationsEnabled,
-        public bool $loginAlertsEnabled
+        public bool $loginAlertsEnabled,
+        public bool $aiRiskAssessmentEnabled = true,
+        public bool $aiVendorSuggestionsEnabled = true,
     ) {}
 }

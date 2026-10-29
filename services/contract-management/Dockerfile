@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
 
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 RUN chmod +x /usr/local/bin/install-php-extensions && sync && \
-    install-php-extensions mongodb
+    install-php-extensions mongodb zip
 
 RUN echo "upload_max_filesize = 12M" > /usr/local/etc/php/conf.d/uploads-limit.ini \
     && echo "post_max_size = 15M" >> /usr/local/etc/php/conf.d/uploads-limit.ini

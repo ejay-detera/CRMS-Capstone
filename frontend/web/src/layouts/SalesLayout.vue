@@ -32,21 +32,33 @@ import { ref, watch, computed, onMounted, onUnmounted } from "vue";
 import { useAuth } from "@/composables/useAuth";
 import { useNotifications } from "@/composables/useNotifications";
 import type { Notification } from "@/types/notification";
-import logoUrl from "@/assets/sbsi logo.png";
+import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 
 const route  = useRoute();
 const router = useRouter();
-const { logout, hasPermission, refreshPermissions, user } = useAuth();
+const { logout, hasPermission, refreshPermissions, user, role } = useAuth();
 
 // Refresh permissions every time the layout mounts so sidebar items
 // always reflect the latest permissions saved by an admin.
-onMounted(() => refreshPermissions())
+onMounted(async () => {
+  await refreshPermissions()
+  // Gate: check if this role has been granted CMS system access.
+  if (role.value && !['Admin', 'Super Admin', 'CEO'].includes(role.value)) {
+    const stored = localStorage.getItem(`cms_system_access_${role.value}`)
+    const allowedSystems: string[] = stored ? JSON.parse(stored) : ['cms']
+    if (!allowedSystems.includes('cms')) {
+      router.replace('/')
+    }
+  }
+})
 
 const { notifications, unreadCount, fetchNotifications, markAllRead, markRead } = useNotifications();
 const recentNotifs = computed(() => notifications.value.filter(n => !n.isArchived).slice(0, 10));
+const isNotifOpen = ref(false);
 
 function openNotification(n: Notification) {
   if (!n.isRead) markRead(n.id);
+  isNotifOpen.value = false;
   router.push('/sales/notifications');
 }
 
@@ -88,7 +100,7 @@ const displayUser = computed(() => {
 
 function lnk(active: boolean) {
   return active
-    ? "bg-[#2F2F73] text-white"
+    ? "bg-brand-dark text-white"
     : "text-white/45 hover:text-white/80 hover:bg-white/10";
 }
 function ico(active: boolean) { return active ? "text-white" : "text-white/45"; }
@@ -98,32 +110,31 @@ const homeUrl = window.location.origin + '/';
 </script>
 
 <template>
-  <SidebarProvider class="flex h-screen">
+  <SidebarProvider class="flex h-screen print:block print:h-auto">
     <!-- ── Sidebar ── -->
     <Sidebar
       collapsible="icon"
-      class="border-r border-[#2F2F73] bg-[#252578] text-white shadow-sm"
+      class="border-r border-brand-dark bg-brand-navy text-white shadow-sm print:hidden"
       :style="{
-        '--sidebar': '#252578',
+        '--sidebar': 'var(--brand-navy)',
         '--sidebar-foreground': '#FFFFFF',
-        '--sidebar-accent': '#2F2F73',
+        '--sidebar-accent': 'var(--brand-dark)',
         '--sidebar-accent-foreground': '#FFFFFF',
-        '--sidebar-border': '#2F2F73',
+        '--sidebar-border': 'var(--brand-dark)',
       }"
     >
       <!-- Logo -->
-      <SidebarHeader class="border-b border-white/10 px-4 py-5">
-        <div class="relative mx-auto h-12 w-44 overflow-hidden transition-all duration-300 ease-in-out group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">
+      <SidebarHeader class="h-16 justify-center border-b border-white/10 px-4">
+        <div class="flex items-center justify-center gap-2.5 w-full transition-all duration-200">
           <img
-            :src="logoUrl"
-            alt="SBSI logo"
-            class="absolute inset-0 m-auto h-12 max-w-44 object-contain transition-opacity duration-300 ease-in-out group-data-[collapsible=icon]:opacity-0"
+            src="/sbsi-logo1.png"
+            alt="SBSI Logo"
+            class="h-10 w-10 shrink-0 object-contain rounded-none"
           />
-          <img
-            src="/sbsi-logo.png"
-            alt="SBSI logo"
-            class="absolute inset-0 m-auto h-10 w-10 object-contain opacity-0 transition-opacity duration-300 ease-in-out group-data-[collapsible=icon]:opacity-100"
-          />
+          <div class="min-w-0 flex flex-col font-poppins text-white select-none group-data-[collapsible=icon]:hidden">
+            <span class="text-xs font-bold leading-tight text-white tracking-wide uppercase">CONTRACT</span>
+            <span class="text-[10px] font-normal leading-tight text-white/80 tracking-tight">MANAGEMENT SYSTEM</span>
+          </div>
         </div>
       </SidebarHeader>
 
@@ -162,7 +173,7 @@ const homeUrl = window.location.origin + '/';
         <!-- Contracts group -->
         <SidebarGroup v-if="hasPermission('cms.contracts.view') || hasPermission('cms.contracts.create')" class="mb-1 p-0">
           <SidebarGroupLabel
-            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"
+            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden font-secondary"
           >Contracts</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu class="gap-0.5">
@@ -217,11 +228,11 @@ const homeUrl = window.location.origin + '/';
         <!-- Vendor Management (Partners) group — shown only when permitted -->
         <SidebarGroup v-if="hasPermission('cms.partners.view')" class="mb-1 p-0">
           <SidebarGroupLabel
-            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"
+            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden font-secondary"
           >Vendor Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu class="gap-0.5">
-              <SidebarMenuItem>
+              <SidebarMenuItem v-if="hasPermission('cms.partners.view')">
                 <SidebarMenuButton as-child :is-active="route.path === '/sales/partners'" class="h-auto p-0 rounded-lg">
                   <router-link
                     to="/sales/partners"
@@ -252,7 +263,7 @@ const homeUrl = window.location.origin + '/';
 
         <SidebarGroup class="mb-1 p-0">
           <SidebarGroupLabel
-            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden"
+            class="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/25 group-data-[collapsible=icon]:hidden font-secondary"
           >General</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu class="gap-0.5">
@@ -293,21 +304,22 @@ const homeUrl = window.location.origin + '/';
     </Sidebar>
 
     <!-- ── Main Content ── -->
-    <main class="flex-1 flex flex-col min-w-0 bg-[#F5F6FA] min-h-screen">
+    <main class="flex-1 flex flex-col min-w-0 bg-[#F5F6FA] min-h-screen print:min-h-0 print:bg-white print:p-0 print:overflow-visible">
       <!-- Top Header -->
-      <header class="h-16 flex items-center justify-between px-6 bg-white border-b border-black/10 shrink-0">
-        <div class="flex items-center gap-3 flex-1">
-          <SidebarTrigger class="text-black/60" />
-          <div class="relative w-full max-w-md hidden"></div>
+      <header class="h-16 flex items-center justify-between px-6 bg-white border-b border-black/10 shrink-0 print:hidden">
+        <div class="flex items-center gap-3.5 flex-1 min-w-0 mr-4">
+          <SidebarTrigger class="text-black/60 shrink-0" />
+          <div class="h-4 w-px bg-black/10 shrink-0 hidden sm:block"></div>
+          <AppBreadcrumbs />
         </div>
 
         <div class="flex items-center gap-3">
-          <Popover>
+          <Popover v-model:open="isNotifOpen">
             <PopoverTrigger as-child>
               <button class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors text-black/60 relative">
                 <Bell class="w-4.5 h-4.5" />
                 <span v-if="unreadCount > 0"
-                  class="absolute top-1 right-1 min-w-[16px] h-4 rounded-full bg-[#2E85D8] border-2 border-white flex items-center justify-center text-[9px] font-bold text-white px-0.5">
+                  class="absolute top-1 right-1 min-w-[16px] h-4 rounded-full bg-brand-blue border-2 border-white flex items-center justify-center text-[9px] font-bold text-white px-0.5">
                   {{ unreadCount > 9 ? '9+' : unreadCount }}
                 </span>
               </button>
@@ -316,7 +328,7 @@ const homeUrl = window.location.origin + '/';
               <div class="flex items-center justify-between px-4 py-3 border-b border-black/6">
                 <p class="text-sm font-semibold text-black">Notifications</p>
                 <button v-if="unreadCount > 0" @click="markAllRead"
-                  class="text-xs text-[#2E85D8] hover:text-[#252578] transition-colors font-medium">
+                  class="text-xs text-brand-blue hover:text-brand-navy transition-colors font-medium">
                   Mark all read
                 </button>
               </div>
@@ -326,20 +338,20 @@ const homeUrl = window.location.origin + '/';
               </div>
               <ul v-else class="divide-y divide-black/4 max-h-72 overflow-y-auto">
                 <li v-for="n in recentNotifs" :key="n.id"
-                  class="flex items-start gap-3 px-4 py-3 hover:bg-black/2 transition-colors cursor-pointer"
-                  :class="{ 'bg-[#2E85D8]/[0.06]': !n.isRead }"
+                  class="flex items-start gap-3 px-4 py-3 hover:bg-black/2 transition-colors cursor-pointer min-w-0"
+                  :class="{ 'bg-brand-blue/[0.06]': !n.isRead }"
                   @click="openNotification(n)">
                   <span class="mt-0.5 w-1.5 h-1.5 rounded-full shrink-0"
-                    :class="n.isRead ? 'bg-transparent' : 'bg-[#2E85D8]'" />
-                  <p class="text-xs leading-relaxed line-clamp-2"
+                    :class="n.isRead ? 'bg-transparent' : 'bg-brand-blue'" />
+                  <p class="text-xs leading-relaxed line-clamp-2 font-secondary min-w-0 break-words"
                     :class="n.isRead ? 'text-black/45' : 'text-black font-medium'">{{ n.message }}</p>
                 </li>
               </ul>
               <div class="px-4 py-2.5 border-t border-black/6">
-                <button @click="router.push('/sales/notifications')"
-                  class="w-full text-xs text-center text-[#2E85D8] hover:text-[#252578] font-medium transition-colors">
+                <router-link to="/sales/notifications" @click="isNotifOpen = false"
+                  class="block w-full text-xs text-center text-brand-blue hover:text-brand-navy font-medium transition-colors font-secondary">
                   View all notifications
-                </button>
+                </router-link>
               </div>
             </PopoverContent>
           </Popover>
@@ -347,14 +359,14 @@ const homeUrl = window.location.origin + '/';
           <Popover>
             <PopoverTrigger as-child>
               <div class="flex items-center gap-2.5 cursor-pointer hover:bg-black/5 rounded-lg px-2 py-1 transition-colors">
-                <Avatar class="w-9 h-9 ring-2 ring-[#252578]/20">
-                  <AvatarFallback class="bg-[#252578] text-white text-sm font-bold">
+                <Avatar class="w-9 h-9 ring-2 ring-brand-navy/20">
+                  <AvatarFallback class="bg-brand-navy text-white text-sm font-bold">
                     {{ displayUser.initials }}
                   </AvatarFallback>
                 </Avatar>
                 <div class="hidden sm:block text-left">
                   <p class="text-sm font-semibold text-black leading-tight">{{ displayUser.name }}</p>
-                  <p class="text-xs text-black/50">{{ displayUser.role }}</p>
+                  <p class="text-xs text-black/50 font-secondary">{{ displayUser.role }}</p>
                 </div>
               </div>
             </PopoverTrigger>
@@ -362,17 +374,17 @@ const homeUrl = window.location.origin + '/';
               <div class="space-y-1">
                 <div class="px-2 py-1.5 border-b border-black/5">
                   <p class="text-sm font-semibold text-black">{{ displayUser.name }}</p>
-                  <p class="text-xs text-black/50">{{ displayUser.email }}</p>
+                  <p class="text-xs text-black/50 font-secondary">{{ displayUser.email }}</p>
                 </div>
                 <button @click="router.push('/sales/profile')"
                   class="w-full flex items-center gap-3 px-2 py-2 text-sm text-black hover:bg-black/5 rounded-lg transition-colors text-left">
                   <User class="w-4 h-4 text-black/60" />
                   <span>My Profile</span>
                 </button>
-                <a :href="homeUrl"
+                <a href="/home"
                   class="w-full flex items-center gap-3 px-2 py-2 text-sm text-black hover:bg-black/5 rounded-lg transition-colors text-left no-underline">
                   <Home class="w-4 h-4 text-black/60" />
-                  <span>Back to Home</span>
+                  <span>Back to Operations Hub</span>
                 </a>
                 <div class="border-t border-black/5 my-1"></div>
                 <button @click="logout" class="w-full flex items-center gap-3 px-2 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors text-left">

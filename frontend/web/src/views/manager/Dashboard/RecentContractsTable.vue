@@ -40,7 +40,7 @@ function getStatusDisplay(c: Contract) {
       </h3>
       <button
         @click="router.push('/manager/contracts')"
-        class="flex items-center gap-1 text-xs font-semibold text-[#2E85D8] hover:text-[#252578] transition-colors"
+        class="flex items-center gap-1 text-xs font-semibold text-brand-blue hover:text-brand-navy transition-colors"
       >
         View all <ArrowRight class="w-3.5 h-3.5" />
       </button>

@@ -19,10 +19,10 @@ const fullName = computed(() =>
 
 <template>
   <div class="bg-white rounded-lg border border-black/8 shadow-sm overflow-hidden">
-    <div class="h-24 bg-gradient-to-r from-[#252578] to-[#2E85D8]" />
+    <div class="h-24 bg-gradient-to-r from-brand-navy to-brand-blue" />
     <div class="px-6 pb-6">
       <div class="flex items-end justify-between -mt-10 mb-4">
-        <div class="w-20 h-20 rounded-2xl bg-[#252578] border-4 border-white flex items-center justify-center text-white text-2xl font-bold select-none shadow-md">
+        <div class="w-20 h-20 rounded-2xl bg-brand-navy border-4 border-white flex items-center justify-center text-white text-2xl font-bold select-none shadow-md">
           {{ initials }}
         </div>
         <span class="mb-1 text-xs font-semibold px-3 py-1 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">

@@ -10,7 +10,7 @@ const LABELS: Record<LoaderAction, string> = {
   saving:   'Saving…',
 }
 
-const isLoading = ref(true)
+const isLoading = ref(false)
 const action    = ref<LoaderAction>('loading')
 const label     = ref(LABELS.loading)
 

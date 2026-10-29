@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { Upload } from 'lucide-vue-next'
+import { exportToExcel } from '@/utils/excelExport'
 import { Button } from '@/components/ui/button'
-import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import AuditLogFilters from './AuditLogFilters.vue'
@@ -143,19 +143,7 @@ async function executeExport() {
         'Description': l.description,
         'Timestamp': new Date(l.performed_at).toLocaleString()
       }))
-      const ws = XLSX.utils.json_to_sheet(rows)
-      ws['!cols'] = [
-        { wch: 12 },
-        { wch: 20 },
-        { wch: 25 },
-        { wch: 12 },
-        { wch: 18 },
-        { wch: 35 },
-        { wch: 25 }
-      ]
-      const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, 'Audit Log')
-      XLSX.writeFile(wb, 'audit-log.xlsx')
+      await exportToExcel('audit-log.xlsx', 'Audit Log', rows)
       showSuccess('Export complete', `${data.data.length} logs exported to audit-log.xlsx`)
     } else {
       showError('Export failed', 'Could not retrieve data for export.')
@@ -173,7 +161,9 @@ async function executeExport() {
     <div class="flex items-start justify-between">
       <div>
         <h1 class="text-xl font-semibold text-black">Audit Log</h1>
-        <p class="text-sm text-black/40 mt-0.5">Monitor all system activity and user actions across SBSI.</p>
+        <p class="text-sm text-black/40 mt-0.5">
+          Monitor all system activity and user actions across SBSI. Records are automatically retained for 90 days in accordance with data retention policy.
+        </p>
       </div>
       <Button @click="exportXLSX" variant="outline"
         class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">

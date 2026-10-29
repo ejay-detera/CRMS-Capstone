@@ -30,6 +30,8 @@ final class UpdateEmailPreferenceRequest extends FormRequest
             'system_alerts_enabled' => ['required', 'boolean'],
             'sms_notifications_enabled' => ['required', 'boolean'],
             'login_alerts_enabled' => ['required', 'boolean'],
+            'ai_risk_assessment_enabled' => ['sometimes', 'boolean'],
+            'ai_vendor_suggestions_enabled' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -43,7 +45,9 @@ final class UpdateEmailPreferenceRequest extends FormRequest
             $this->boolean('contract_expiry_alerts'),
             $this->boolean('system_alerts_enabled'),
             $this->boolean('sms_notifications_enabled'),
-            $this->boolean('login_alerts_enabled')
+            $this->boolean('login_alerts_enabled'),
+            $this->has('ai_risk_assessment_enabled') ? $this->boolean('ai_risk_assessment_enabled') : true,
+            $this->has('ai_vendor_suggestions_enabled') ? $this->boolean('ai_vendor_suggestions_enabled') : true,
         );
     }
 }

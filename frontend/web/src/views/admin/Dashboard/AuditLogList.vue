@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 type LogType = 'create' | 'update' | 'approve' | 'delete'
@@ -15,9 +14,9 @@ const props = defineProps<{
 }>()
 
 const logDot: Record<LogType, string> = {
-  create:  'bg-[#2E85D8]',
-  update:  'bg-[#2F2F73]',
-  approve: 'bg-[#252578]',
+  create:  'bg-brand-blue',
+  update:  'bg-brand-dark',
+  approve: 'bg-brand-navy',
   delete:  'bg-black/30',
 }
 </script>
@@ -27,7 +26,7 @@ const logDot: Record<LogType, string> = {
     <div>
       <div class="px-6 pt-5 pb-4 border-b border-black/5 flex items-center justify-between">
         <h3 class="text-sm font-semibold text-black">Audit log</h3>
-        <button @click="router.push('/admin/audit-log')" class="text-xs font-semibold text-[#2E85D8] hover:text-[#252578] transition-colors">
+        <button @click="router.push('/admin/audit-log')" class="text-xs font-semibold text-brand-blue hover:text-brand-navy transition-colors">
           See all
         </button>
       </div>

@@ -1,21 +1,85 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { LayoutDashboard, Sparkles, TrendingUp } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { useApiCache } from '@/composables/useApiCache'
 import { useToast } from '@/composables/useToast'
 import { remainingDays } from '@/types/contract'
-import DashboardStats          from './DashboardStats.vue'
-import ContractTrendChart      from './ContractTrendChart.vue'
-import ContractStatusChart     from './ContractStatusChart.vue'
-import ContractsByRegionChart  from './ContractsByRegionChart.vue'
-import RecentContractsTable    from './RecentContractsTable.vue'
-import ExpiringContractsList   from './ExpiringContractsList.vue'
+import DashboardOverviewTab from './DashboardOverviewTab.vue'
+import DiagnosticInsightsTab from '@/components/dashboard/insights/DiagnosticInsightsTab.vue'
+import PredictiveInsightsTab from '@/components/dashboard/insights/PredictiveInsightsTab.vue'
 
 const { state: authState, hasPermission } = useAuth()
 const { state: cacheState, fetchDashboard } = useApiCache()
 const { error } = useToast()
 
 const canViewContracts = computed(() => hasPermission('cms.contracts.view'))
+const canUseAiInsights = computed(() => hasPermission('cms.ai.risk_assessment'))
+const canViewPartners = computed(() => hasPermission('cms.partners.view'))
+
+type Tab = 'overview' | 'diagnostic' | 'predictive'
+const activeTab = ref<Tab>('overview')
+
+interface PartnerItem {
+  id: string
+  name: string
+  region: string
+  status: string
+  type: 'Partner' | 'Supplier'
+  createdAt: string | null
+}
+
+const partners = ref<PartnerItem[]>([])
+
+async function fetchPartnersAndSuppliers() {
+  const vendorApiUrl = import.meta.env.VITE_VENDOR_API_URL || 'http://localhost:8001/api'
+  const token = authState.token
+  const headers = { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+
+  try {
+    const pList: PartnerItem[] = []
+    const [partnersRes, suppliersRes] = await Promise.all([
+      fetch(`${vendorApiUrl}/partners?per_page=100`, { headers }),
+      fetch(`${vendorApiUrl}/suppliers?per_page=100`, { headers }),
+    ])
+
+    if (partnersRes.ok) {
+      const data = await partnersRes.json()
+      if (data.data) {
+        data.data.forEach((item: any) => {
+          pList.push({
+            id: item.bp_code || `BP-${item.partner_id}`,
+            name: item.partner_name || '',
+            region: item.region || 'Luzon',
+            status: item.status || 'Active',
+            type: 'Partner',
+            createdAt: item.created_at ?? null,
+          })
+        })
+      }
+    }
+
+    if (suppliersRes.ok) {
+      const data = await suppliersRes.json()
+      if (data.data) {
+        data.data.forEach((item: any) => {
+          pList.push({
+            id: `SP-${item.supplier_id}`,
+            name: item.supplier_name || '',
+            region: item.region || 'Luzon',
+            status: item.status || 'Active',
+            type: 'Supplier',
+            createdAt: item.created_at ?? null,
+          })
+        })
+      }
+    }
+
+    partners.value = pList
+  } catch (err) {
+    console.error('Failed to fetch partners/suppliers for manager dashboard:', err)
+  }
+}
 
 const now = ref(new Date())
 let timer: ReturnType<typeof setInterval>
@@ -57,6 +121,12 @@ watch(canViewContracts, (canView) => {
     fetchDashboardData()
   }
 }, { immediate: true })
+
+watch(canViewPartners, (canView) => {
+  if (canView) {
+    fetchPartnersAndSuppliers()
+  }
+}, { immediate: true })
 </script>
 
 <template>
@@ -74,7 +144,37 @@ watch(canViewContracts, (canView) => {
       </div>
     </div>
 
-    <!-- KPI Cards (Skeletal loading or Real cards) -->
+    <!-- Tabs -->
+    <div v-if="canViewContracts" class="flex items-center gap-1 bg-black/4 rounded-xl p-1 w-fit border border-black/5">
+      <button
+        @click="activeTab = 'overview'"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all"
+        :class="activeTab === 'overview' ? 'bg-white text-black shadow-xs' : 'text-black/50 hover:text-black'"
+      >
+        <LayoutDashboard class="w-4 h-4 text-brand-navy" />
+        Overview
+      </button>
+      <button
+        v-if="canUseAiInsights"
+        @click="activeTab = 'diagnostic'"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all"
+        :class="activeTab === 'diagnostic' ? 'bg-white text-black shadow-xs' : 'text-black/50 hover:text-black'"
+      >
+        <Sparkles class="w-4 h-4 text-brand-blue" />
+        Diagnostic
+      </button>
+      <button
+        v-if="canUseAiInsights"
+        @click="activeTab = 'predictive'"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all"
+        :class="activeTab === 'predictive' ? 'bg-white text-black shadow-xs' : 'text-black/50 hover:text-black'"
+      >
+        <TrendingUp class="w-4 h-4 text-brand-navy" />
+        Predictive
+      </button>
+    </div>
+
+    <!-- KPI Cards skeleton -->
     <template v-if="loading">
       <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <div v-for="i in 4" :key="i" class="bg-white rounded-lg border border-black/8 px-5 py-5 shadow-sm animate-pulse">
@@ -88,52 +188,11 @@ watch(canViewContracts, (canView) => {
         </div>
       </div>
     </template>
-    <DashboardStats v-else-if="canViewContracts" :contracts="withDays" />
 
-    <!-- Trend chart + Status donut -->
-    <template v-if="loading">
-      <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        <div class="xl:col-span-3 bg-white rounded-lg border border-black/8 p-6 h-[280px] animate-pulse flex flex-col justify-between">
-          <div class="h-4 w-32 bg-black/5 rounded"></div>
-          <div class="h-40 w-full bg-black/5 rounded"></div>
-        </div>
-        <div class="xl:col-span-2 bg-white rounded-lg border border-black/8 p-6 h-[280px] animate-pulse flex flex-col justify-between">
-          <div class="h-4 w-24 bg-black/5 rounded"></div>
-          <div class="h-40 w-full bg-black/5 rounded"></div>
-        </div>
-      </div>
-    </template>
-    <div v-else-if="canViewContracts" class="grid grid-cols-1 xl:grid-cols-5 gap-6">
-      <div class="xl:col-span-3"><ContractTrendChart :contracts="contracts" /></div>
-      <div class="xl:col-span-2"><ContractStatusChart :contracts="contracts" /></div>
-    </div>
+    <DashboardOverviewTab v-else-if="activeTab === 'overview' && canViewContracts" :contracts="withDays" :partners="partners" />
 
-    <!-- Recent contracts table + Expiring soon list -->
-    <template v-if="loading">
-      <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        <div class="xl:col-span-3 bg-white rounded-lg border border-black/8 p-6 h-[320px] animate-pulse flex flex-col justify-between">
-          <div class="h-4 w-36 bg-black/5 rounded"></div>
-          <div class="h-48 w-full bg-black/5 rounded"></div>
-        </div>
-        <div class="xl:col-span-2 bg-white rounded-lg border border-black/8 p-6 h-[320px] animate-pulse flex flex-col justify-between">
-          <div class="h-4 w-28 bg-black/5 rounded"></div>
-          <div class="h-48 w-full bg-black/5 rounded"></div>
-        </div>
-      </div>
-    </template>
-    <div v-else-if="canViewContracts" class="grid grid-cols-1 xl:grid-cols-5 gap-6">
-      <div class="xl:col-span-3"><RecentContractsTable :contracts="contracts" /></div>
-      <div class="xl:col-span-2"><ExpiringContractsList :contracts="withDays" /></div>
-    </div>
-
-    <!-- Grouped bar: category × region -->
-    <template v-if="loading">
-      <div class="bg-white rounded-lg border border-black/8 p-6 h-[280px] animate-pulse flex flex-col justify-between">
-        <div class="h-4 w-48 bg-black/5 rounded"></div>
-        <div class="h-40 w-full bg-black/5 rounded"></div>
-      </div>
-    </template>
-    <ContractsByRegionChart v-else-if="canViewContracts" :contracts="contracts" />
+    <DiagnosticInsightsTab v-else-if="activeTab === 'diagnostic' && canUseAiInsights" />
+    <PredictiveInsightsTab v-else-if="activeTab === 'predictive' && canUseAiInsights" />
 
     <div v-if="!canViewContracts" class="bg-white p-8 rounded-xl border border-black/10 text-center">
       <p class="text-black/40">You do not have permission to view contract data.</p>

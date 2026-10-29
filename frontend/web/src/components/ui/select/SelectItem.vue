@@ -24,21 +24,24 @@ const forwardedProps = useForwardProps(delegatedProps)
     v-bind="forwardedProps"
     :class="
       cn(
-        'focus:bg-accent focus:text-accent-foreground [&_svg:not([class*=\'text-\'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=\'size-\'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2',
+        'relative flex w-full cursor-pointer items-center justify-between rounded-md py-2 px-3 text-sm font-poppins text-[#1E293B] outline-none select-none transition-colors',
+        'hover:bg-slate-100 hover:text-[#0F172A] focus:bg-slate-100 focus:text-[#0F172A]',
+        'data-[state=checked]:bg-[#2E85D8] data-[state=checked]:text-[#FFFFFF] data-[state=checked]:font-medium',
+        'data-[disabled]:pointer-events-none data-[disabled]:opacity-40',
         props.class,
       )
     "
   >
-    <span class="absolute right-2 flex size-3.5 items-center justify-center">
-      <SelectItemIndicator>
-        <slot name="indicator-icon">
-          <Check class="size-4" />
-        </slot>
-      </SelectItemIndicator>
-    </span>
-
     <SelectItemText>
       <slot />
     </SelectItemText>
+
+    <span class="flex size-4 items-center justify-center">
+      <SelectItemIndicator>
+        <slot name="indicator-icon">
+          <Check class="size-4 text-white" />
+        </slot>
+      </SelectItemIndicator>
+    </span>
   </SelectItem>
 </template>

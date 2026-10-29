@@ -82,7 +82,7 @@ const recentContracts = computed(() => {
             class="border-b border-black/4 last:border-0 hover:bg-black/1.2 transition-colors cursor-pointer"
             @click="router.push('/admin/contracts/' + contract.id)"
           >
-            <TableCell class="pl-6 py-3.5 text-xs font-medium text-[#252578]/70">{{ contract.id }}</TableCell>
+            <TableCell class="pl-6 py-3.5 text-xs font-medium text-brand-navy/70">{{ contract.id }}</TableCell>
             <TableCell class="py-3.5 text-sm text-black">{{ contract.partner }}</TableCell>
             <TableCell class="py-3.5 text-sm text-black/40">{{ contract.category }}</TableCell>
             <TableCell class="py-3.5">
@@ -98,7 +98,7 @@ const recentContracts = computed(() => {
     </div>
 
     <div class="px-6 py-3 border-t border-black/5">
-      <button @click="router.push('/admin/contracts')" class="flex items-center gap-1.5 text-xs font-semibold text-[#2E85D8] hover:text-[#252578] transition-colors">
+      <button @click="router.push('/admin/contracts')" class="flex items-center gap-1.5 text-xs font-semibold text-brand-blue hover:text-brand-navy transition-colors">
         View all contracts <ArrowRight class="w-3.5 h-3.5" />
       </button>
     </div>

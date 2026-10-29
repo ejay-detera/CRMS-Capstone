@@ -59,7 +59,7 @@ const expiringSoon = computed(() =>
       </div>
       <div class="px-5 py-4 space-y-2.5">
         <Button v-if="hasPermission('cms.contracts.create')" @click="router.push('/sales/contracts/create')"
-          class="w-full h-9 justify-start gap-2.5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
+          class="w-full h-9 justify-start gap-2.5 text-sm bg-brand-navy hover:bg-brand-dark text-white">
           <Plus class="w-4 h-4" /> New Contract Request
         </Button>
         <Button @click="router.push('/sales/contracts')" variant="outline"

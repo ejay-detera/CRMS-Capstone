@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
 test.describe('Contract Module', () => {
 
@@ -23,11 +23,11 @@ test.describe('Contract Module', () => {
         await page.getByRole('textbox', { name: 'Email' }).fill('sales-marketing-manager@example.com');
         await page.getByRole('textbox', { name: 'Password' }).fill('password');
         await page.getByRole('button', { name: 'Sign In' }).click();
-        await page.waitForURL(/(?!.*login).*/, { timeout: 15000 });
-        await expect(page.locator('h1')).toContainText('Sales Marketing Manager Manager', { timeout: 15000 });
+        await page.waitForURL(/^(?!.*login).*$/, { timeout: 15000 });
+        await expect(page.locator('nav')).toContainText('Sales Marketing Manager', { timeout: 15000 });
 
         // 2. Navigate and Create Contract
-        await page.getByText('Open module').first().click();
+        await page.locator('.glass-card', { hasText: 'Contract Management' }).getByRole('button', { name: 'Launch System' }).click();
         await page.waitForURL(/.*manager.*/, { timeout: 15000 });
         await page.getByRole('button', { name: 'Contracts' }).click();
         await page.getByRole('button').nth(4).click();
@@ -41,6 +41,10 @@ test.describe('Contract Module', () => {
         await page.locator('input[type="date"]').first().fill(contract.startDate);
         await page.locator('input[type="date"]').nth(1).fill(contract.endDate);
         await page.getByRole('button', { name: 'Create Contract' }).click();
+
+        // Confirm creation dialog
+        await expect(page.locator('text=Create Contract').first()).toBeVisible({ timeout: 10000 });
+        await page.getByRole('button', { name: 'Create' }).click();
 
         // 3. Edit Contract
         await page.getByRole('button', { name: 'Edit Contract' }).click();
@@ -57,11 +61,11 @@ test.describe('Contract Module', () => {
         await page.getByRole('textbox', { name: 'Email' }).fill('sales-marketing-admin@example.com');
         await page.getByRole('textbox', { name: 'Password' }).fill('password');
         await page.getByRole('button', { name: 'Sign In' }).click();
-        await page.waitForURL(/(?!.*login).*/, { timeout: 15000 });
-        await expect(page.locator('h1')).toContainText('Sales Marketing Administrator Admin', { timeout: 15000 });
+        await page.waitForURL(/^(?!.*login).*$/, { timeout: 15000 });
+        await expect(page.locator('nav')).toContainText('Sales Marketing Administrator', { timeout: 15000 });
 
         // 6. Delete Contract
-        await page.getByText('Open module').first().click();
+        await page.locator('.glass-card', { hasText: 'Contract Management' }).getByRole('button', { name: 'Launch System' }).click();
         await page.waitForURL(/.*admin.*/, { timeout: 15000 });
         await page.getByRole('link', { name: 'Contracts' }).click();
         const contractRow = page.getByRole('row').filter({ hasText: contract.updatedVendorName });
@@ -83,10 +87,10 @@ test.describe('Contract Module', () => {
         await page.getByRole('textbox', { name: 'Email' }).fill('sales-marketing-manager@example.com');
         await page.getByRole('textbox', { name: 'Password' }).fill('password');
         await page.getByRole('button', { name: 'Sign In' }).click();
-        await page.waitForURL(/(?!.*login).*/, { timeout: 15000 });
+        await page.waitForURL(/^(?!.*login).*$/, { timeout: 15000 });
 
         // 2. Navigate to Create Contract Page
-        await page.getByText('Open module').first().click();
+        await page.locator('.glass-card', { hasText: 'Contract Management' }).getByRole('button', { name: 'Launch System' }).click();
         await page.waitForURL(/.*manager.*/, { timeout: 15000 });
         await page.getByRole('button', { name: 'Contracts' }).click();
         await page.getByRole('button').nth(4).click();

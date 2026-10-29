@@ -9,8 +9,14 @@ defineEmits<{ 'update:open': [v: boolean] }>()
 
 const displayId = computed(() => {
   if (!props.partner) return ''
-  const prefix = props.activeTab === 'partners' ? 'BP' : 'SP'
-  return `${prefix}-${String(props.partner.id).padStart(4, '0')}`
+  if (props.activeTab === 'partners') {
+    const raw = props.partner.bpCode || String(props.partner.id)
+    if (raw.startsWith('BP-')) return raw.replace(/^(BP-)+/i, 'BP-')
+    return `BP-${String(props.partner.db_id || props.partner.id).padStart(4, '0')}`
+  }
+  const raw = String(props.partner.id)
+  if (raw.startsWith('SP-')) return raw.replace(/^(SP-)+/i, 'SP-')
+  return `SP-${String(props.partner.db_id || props.partner.id).padStart(4, '0')}`
 })
 
 const statusClass = computed(() => {
@@ -32,7 +38,7 @@ const statusClass = computed(() => {
         <!-- Header -->
         <div class="px-5 pt-5 pb-4 border-b border-black/6">
           <div class="flex items-start gap-3.5">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 bg-[#252578]">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 bg-brand-navy">
               <component :is="activeTab === 'partners' ? Building2 : Truck" class="w-5 h-5" />
             </div>
             <div class="flex-1 min-w-0 pr-6">
@@ -78,7 +84,7 @@ const statusClass = computed(() => {
             <Mail class="w-3.5 h-3.5 text-black/25 shrink-0" />
             <div class="flex-1 min-w-0 flex items-baseline justify-between gap-4">
               <span class="text-[10px] font-semibold text-black/35 uppercase tracking-wider shrink-0">Email</span>
-              <span class="text-sm text-[#2E85D8] truncate text-right">{{ partner.email || '—' }}</span>
+              <span class="text-sm text-brand-blue truncate text-right">{{ partner.email || '—' }}</span>
             </div>
           </div>
 

@@ -7,7 +7,10 @@ use App\Models\ContractCategory;
 use App\Models\ContractStatus;
 use App\Models\ContractApprovalStatus;
 use App\Models\ContractRegion;
+use App\Models\ApprovalInstance;
+use App\Models\WorkflowStepRole;
 use App\Services\AuditLogService;
+use App\Services\ApprovalEngineService;
 use App\Jobs\SyncContractToMeilisearch;
 use App\Jobs\RemoveContractFromMeilisearch;
 use Illuminate\Http\Request;
@@ -19,17 +22,24 @@ class ContractController extends Controller
 {
     protected AuditLogService $auditLogService;
     protected \App\Services\AuthService $authService;
+    protected ApprovalEngineService $approvalEngine;
 
-    public function __construct(AuditLogService $auditLogService, \App\Services\AuthService $authService)
-    {
+    public function __construct(
+        AuditLogService $auditLogService,
+        \App\Services\AuthService $authService,
+        ApprovalEngineService $approvalEngine
+    ) {
         $this->auditLogService = $auditLogService;
         $this->authService = $authService;
+        $this->approvalEngine = $approvalEngine;
     }
 
     private function formatContract(Contract $contract): array
     {
         return [
-            'contract_id'     => $contract->contract_id,
+            'contract_id'     => $contract->contract_code ?? (string) $contract->contract_id,
+            'contract_db_id'  => $contract->contract_id,
+            'contract_code'   => $contract->contract_code,
             'bp_name'         => $contract->bp_name,
             'category'        => $contract->category?->category_name,
             'approval_status' => $contract->approvalStatus?->status_name,
@@ -72,7 +82,8 @@ class ContractController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('bp_name', 'like', $search . '%')
                   ->orWhere('item_code', 'like', $search . '%')
-                  ->orWhere('contract_id', 'like', $search . '%');
+                  ->orWhere('contract_id', 'like', $search . '%')
+                  ->orWhere('contract_code', 'like', $search . '%');
             });
         }
 
@@ -131,7 +142,9 @@ class ContractController extends Controller
             $query->where('created_by', $request->get('auth_id'));
         }
 
-        $query->orderBy('contract_id', 'desc');
+        // Rejected contracts (approval_status_id = 3) always appear at the bottom of the list
+        $query->orderByRaw('CASE WHEN approval_status_id = 3 THEN 1 ELSE 0 END ASC')
+              ->orderBy('contract_id', 'desc');
 
         if ($request->has('paginate') && $request->paginate === 'true') {
             $perPage = (int) $request->get('per_page', 10);
@@ -337,13 +350,25 @@ class ContractController extends Controller
         $role = $request->get('auth_role');
         $isManagerRole = in_array($role, ['Manager', 'Admin']);
 
+        // Dynamic Approval Workflow Engine (Phase 5): if this contract type
+        // has an active workflow, it must start out Pending regardless of
+        // who created it — the engine (not the creator's role) decides the
+        // outcome. Only applies when a chain actually exists; categories
+        // without one keep the legacy manager-auto-approve behavior.
+        // Resolved once here and reused below (store()) to avoid a second
+        // round-trip for the same lookup.
+        $activeWorkflow = $this->approvalEngine->isEnabled()
+            ? $this->approvalEngine->resolveActiveWorkflow((int) $cat->category_id)
+            : null;
+        $routedByEngine = $activeWorkflow !== null;
+
         // Resolve Approval Status and Workflow status
-        if ($isManagerRole) {
+        if ($isManagerRole && !$routedByEngine) {
             $approvalStatusName = 'Approved';
             $workflowStatusName = $incoming['status'] ?? 'SBSI Review';
         } else {
             $approvalStatusName = 'Pending';
-            $workflowStatusName = $incoming['status'] ?? null;
+            $workflowStatusName = $routedByEngine ? null : ($incoming['status'] ?? null);
         }
 
         $approvalStatus = ContractApprovalStatus::firstOrCreate(['status_name' => $approvalStatusName]);
@@ -405,6 +430,15 @@ class ContractController extends Controller
 
         $contract->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
 
+        // Dynamic Approval Workflow Engine (Phase 5) — additive only. If
+        // disabled, or the contract's category has no ACTIVE workflow,
+        // this is a no-op and the contract keeps the legacy
+        // Approved/Pending status set above (decision #9's fallback).
+        if ($activeWorkflow) {
+            $this->approvalEngine->startInstance($contract, $activeWorkflow);
+            $contract->refresh()->load(['documents', 'category', 'approvalStatus', 'workflowStatus', 'region']);
+        }
+
         SyncContractToMeilisearch::dispatch($this->formatContract($contract));
 
         // Notify Manager if an Employee in Sales & Marketing department creates a contract
@@ -441,7 +475,9 @@ class ContractController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $contract = Contract::find($id);
+        $contract = Contract::where('contract_code', $id)
+            ->orWhere('contract_id', $id)
+            ->first();
 
         if (!$contract) {
             return response()->json(['message' => 'Contract not found.'], 404);
@@ -477,7 +513,7 @@ class ContractController extends Controller
             'status'          => 'nullable|string|max:255',
             'item_code'       => 'required|string|max:255',
             'description'     => 'required|string',
-            'serial_number'   => "required|string|max:255|unique:contracts,serial_number,{$id},contract_id",
+            'serial_number'   => "required|string|max:255|unique:contracts,serial_number,{$contract->contract_id},contract_id",
             'sbu_number'      => 'required|string|max:255',
             'region'          => 'required|string|in:Luzon,Visayas,Mindanao',
             'start_date'      => 'required|date',
@@ -527,12 +563,23 @@ class ContractController extends Controller
         }
 
         // Reset approval status to pending if the contract was rejected and is being edited by the employee/sales owner
-        if (in_array($role, ['Sales', 'Employee']) && $contract->approvalStatus?->status_name === 'Rejected') {
+        $wasRejected = $contract->approvalStatus?->status_name === 'Rejected';
+        if (in_array($role, ['Sales', 'Employee']) && $wasRejected) {
             $pendingStatus = ContractApprovalStatus::firstOrCreate(['status_name' => 'Pending']);
             $updatePayload['approval_status_id'] = $pendingStatus->approval_status_id;
         }
 
         $contract->update($updatePayload);
+
+        // Dynamic Approval Workflow Engine (Phase 5): if this contract has
+        // a prior rejected run through the engine, resubmitting creates a
+        // new ApprovalInstance per the workflow's resubmit_mode (restart
+        // at step 1, or resume at the step that rejected). No-op for
+        // contracts never routed through the engine, or whose latest run
+        // isn't in revisions_required.
+        if ($wasRejected && $this->approvalEngine->isEnabled()) {
+            $this->approvalEngine->resubmit($contract->refresh());
+        }
 
         // Link MongoDB documents and delete removed ones
         $incomingDocIds = $incoming['document_ids'] ?? [];
@@ -615,7 +662,9 @@ class ContractController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        $contract = Contract::find($id);
+        $contract = Contract::where('contract_code', $id)
+            ->orWhere('contract_id', $id)
+            ->first();
 
         if (!$contract) {
             return response()->json(['message' => 'Contract not found.'], 404);
@@ -645,20 +694,21 @@ class ContractController extends Controller
         }
 
         $oldData = $contract->toArray();
+        $contractId = $contract->contract_id;
         $contract->delete();
 
         // Audit Logging
         $this->auditLogService->log(
             'deleted',
             'Contract',
-            $id,
+            $contractId,
             $userId,
             $oldData,
             [],
             $request->get('auth_department')
         );
 
-        RemoveContractFromMeilisearch::dispatch((int) $id);
+        RemoveContractFromMeilisearch::dispatch((int) $contractId);
 
         return response()->json(['message' => 'Contract deleted successfully.']);
     }
@@ -677,7 +727,9 @@ class ContractController extends Controller
             $query->where('created_by', $request->get('auth_id'));
         }
 
-        $contracts = $query->orderByDesc('contract_id')->get();
+        $contracts = $query->orderByRaw('CASE WHEN approval_status_id = 3 THEN 1 ELSE 0 END ASC')
+                           ->orderByDesc('contract_id')
+                           ->get();
 
         $userIds = $contracts->pluck('created_by')->filter()->unique()->toArray();
         $users = $this->authService->getUsersBatch($userIds);
@@ -692,7 +744,9 @@ class ContractController extends Controller
                 }
 
                 return [
-                    'contract_id'     => $c->contract_id,
+                    'contract_id'     => $c->contract_code ?? (string) $c->contract_id,
+                    'contract_db_id'  => $c->contract_id,
+                    'contract_code'   => $c->contract_code,
                     'bp_name'         => $c->bp_name,
                     'category'        => $c->category?->category_name,
                     'approval_status' => $c->approvalStatus?->status_name,
@@ -768,7 +822,9 @@ class ContractController extends Controller
             'approvalStatus',
             'workflowStatus',
             'region',
-        ])->findOrFail($id);
+        ])->where('contract_code', $id)
+          ->orWhere('contract_id', $id)
+          ->firstOrFail();
 
         $role = $request->get('auth_role');
         if (in_array($role, ['Sales', 'Employee']) && $contract->created_by !== $request->get('auth_id')) {
@@ -790,13 +846,41 @@ class ContractController extends Controller
 
     public function updateStatus(Request $request, $id)
     {
-        $contract = Contract::findOrFail($id);
+        $contract = Contract::where('contract_code', $id)
+            ->orWhere('contract_id', $id)
+            ->firstOrFail();
+
+        // Dynamic Approval Workflow Engine (Phase 5): this legacy endpoint
+        // is for the single-manager-approval flow only. A contract with an
+        // in-progress (or awaiting-resubmission) engine instance must be
+        // actioned via POST /contracts/{id}/approval-tasks/{taskId}/decision
+        // instead — throws a 409 pointing there.
+        $this->approvalEngine->guardLegacyStatusUpdate((int) $contract->contract_id);
 
         $request->validate([
             'approval_status' => 'required|string|in:Approved,Rejected',
             'workflow_status' => 'nullable|string',
             'rejection_reason' => 'nullable|string',
         ]);
+
+        // US-023: Mandatory approval gate for High/Critical-risk contracts —
+        // DISABLED BY DEFAULT (config('services.features.high_risk_approval_gate_enabled')).
+        // AI Risk Assessment is currently advisory only: it surfaces a
+        // flag/warning on the contract but never blocks approval. This gate
+        // is kept in the codebase, inert, so it can be re-enabled later
+        // (set HIGH_RISK_APPROVAL_GATE_ENABLED=true) without further code changes.
+        if ($request->approval_status === 'Approved' && config('services.features.high_risk_approval_gate_enabled')) {
+            $gateResult = app(\App\Services\HighRiskApprovalGateService::class)
+                ->checkGate((int) $contract->contract_id);
+
+            if ($gateResult['blocked']) {
+                return response()->json([
+                    'message' => 'This contract is High/Critical risk and requires a recorded high-risk approval (with rationale) before it can be marked Approved.',
+                    'risk_level' => $gateResult['risk_level'],
+                    'requires_high_risk_approval' => true,
+                ], 422);
+            }
+        }
 
         $approvalStatusId = DB::table('contract_approval_statuses')
             ->where('status_name', $request->approval_status)
@@ -896,9 +980,23 @@ class ContractController extends Controller
         );
     }
 
-    public function notifyManager(Request $request, $id)
+    /**
+     * Phase 7 (decision #13): generalized nudge — notifies the role(s)
+     * currently responsible for the contract. Engine-routed contracts
+     * target every role at the instance's current step (type
+     * `approval_step_nudge`); legacy contracts keep the exact historic
+     * manager-targeted behavior (`manager_approval_request` → Manager,Admin).
+     * Rate limiting reuses the legacy per-contract `notify_manager_count`
+     * counter (max 2 → 429); the engine resets it on every step advance
+     * in ApprovalEngineService::enterStep(), so each step gets a fresh
+     * allowance. Both /notify-step (canonical) and /notify-manager (alias)
+     * routes point here.
+     */
+    public function notifyResponsibleRole(Request $request, $id)
     {
-        $contract = Contract::findOrFail($id);
+        $contract = Contract::where('contract_code', $id)
+            ->orWhere('contract_id', $id)
+            ->firstOrFail();
 
         if ($contract->notify_manager_count >= 2) {
             return response()->json(['message' => 'The manager is already notified, please wait.'], 429);
@@ -912,20 +1010,78 @@ class ContractController extends Controller
             $userName = $authUser['username'] ?? 'An Employee';
         }
 
-        $message = "Employee {$userName} asked for approval on Contract {$contract->bp_name} ({$contract->item_code}).";
+        $instance = ApprovalInstance::where('contract_id', $contract->contract_id)
+            ->whereIn('status', ['in_progress', 'revisions_required'])
+            ->orderByDesc('run_number')
+            ->first();
+
+        $targetRoles = [];
+        if ($instance && $instance->current_step_id) {
+            $targetRoles = WorkflowStepRole::where('step_id', $instance->current_step_id)
+                ->get()
+                ->map(fn ($sr) => $this->resolveLiveRoleName($sr))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        if (!empty($targetRoles)) {
+            $targetRolesStr = implode(',', $targetRoles);
+            $type = 'approval_step_nudge';
+            $message = "Employee {$userName} is requesting approval on Contract {$contract->bp_name} ({$contract->item_code}) — awaiting {$targetRolesStr}.";
+            $successMessage = 'Responsible role notified successfully.';
+        } else {
+            $targetRolesStr = 'Manager,Admin';
+            $type = 'manager_approval_request';
+            $message = "Employee {$userName} asked for approval on Contract {$contract->bp_name} ({$contract->item_code}).";
+            $successMessage = 'Manager notified successfully.';
+        }
 
         try {
             app(\App\Services\NotificationService::class)->push(
                 (int) $contract->contract_id,
-                'manager_approval_request',
+                $type,
                 $message,
-                'Manager,Admin'
+                $targetRolesStr
             );
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Failed to push notify manager notification: " . $e->getMessage());
-            return response()->json(['message' => 'Failed to notify manager.'], 500);
+            \Illuminate\Support\Facades\Log::error("Failed to push notify responsible-role notification: " . $e->getMessage());
+            return response()->json(['message' => 'Failed to notify responsible role.'], 500);
         }
 
-        return response()->json(['message' => 'Manager notified successfully.', 'count' => $contract->notify_manager_count]);
+        return response()->json(['message' => $successMessage, 'count' => $contract->notify_manager_count, 'targetRoles' => $targetRolesStr]);
+    }
+
+    /**
+     * Resolve a step role's LIVE current name for notification targeting
+     * (the notification service matches target_roles by exact current
+     * role name — a renamed role's stale snapshot would reach nobody).
+     * Falls back to the snapshot when auth-module is unreachable.
+     */
+    private function resolveLiveRoleName(WorkflowStepRole $stepRole): ?string
+    {
+        try {
+            $describe = app(\App\Services\RoleProxyService::class)->describeRole((int) $stepRole->auth_role_id);
+            if (!empty($describe['current_name'])) {
+                return $describe['current_name'];
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Role name resolution failed, using snapshot', [
+                'role_id' => $stepRole->auth_role_id,
+            ]);
+        }
+
+        return $stepRole->role_name_snapshot;
+    }
+
+    /**
+     * Legacy alias: /notify-manager behaves identically to /notify-step
+     * (same method, same rate limit). Kept so cached frontends and the
+     * existing NotifyManagerTest keep working untouched.
+     */
+    public function notifyManager(Request $request, $id)
+    {
+        return $this->notifyResponsibleRole($request, $id);
     }
 }

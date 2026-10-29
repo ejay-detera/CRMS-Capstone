@@ -37,7 +37,7 @@ async function saveChanges() {
       <button
         @click="saveChanges"
         :disabled="loading"
-        class="flex items-center gap-2 bg-[#252578] hover:bg-[#2F2F73] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50"
+        class="flex items-center gap-2 bg-brand-navy hover:bg-brand-dark text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50"
       >
         <Save class="w-4 h-4" />
         {{ loading ? 'Saving...' : 'Save Changes' }}

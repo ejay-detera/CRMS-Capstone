@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Upload } from 'lucide-vue-next'
+import { Upload, Plus } from 'lucide-vue-next'
+import { exportToExcel } from '@/utils/excelExport'
 import { Button } from '@/components/ui/button'
-import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
 import { useApiCache } from '@/composables/useApiCache'
 import ContractsTable       from './ContractsTable.vue'
 import ConfirmationDialog   from '@/components/shared/ConfirmationDialog.vue'
 import { remainingDays } from '@/types/contract'
-import type { Contract, FilterTab, StatusFilter } from '@/types/contract'
+import type { ContractWithDays, FilterTab, StatusFilter } from '@/types/contract'
+import { sortContractsForAll } from '@/utils/contractSort'
 
 const router = useRouter()
 const { success, error } = useToast()
-const { state: authState } = useAuth()
+const { state: authState, hasPermission } = useAuth()
 const { state: cacheState, fetchContracts: fetchContractsCached } = useApiCache()
 
 const contracts = computed(() => cacheState.contracts || [])
@@ -39,41 +40,74 @@ const withDays = computed(() =>
 
 const statCards = computed(() => {
   return {
-    total:    cacheState.contractsStats?.total ?? 0,
-    active:   cacheState.contractsStats?.active ?? 0,
-    inactive: cacheState.contractsStats?.inactive ?? 0,
-    expiring: cacheState.contractsStats?.expiring ?? 0,
-    expired:  cacheState.contractsStats?.expired ?? 0,
+    total:    cacheState.contractsStats?.total ?? withDays.value.length,
+    active:   cacheState.contractsStats?.active ?? withDays.value.filter(c => c.days > 30 && c.approvalStatus === 'Approved').length,
+    inactive: cacheState.contractsStats?.inactive ?? withDays.value.filter(c => c.approvalStatus !== 'Approved').length,
+    expiring: cacheState.contractsStats?.expiring ?? withDays.value.filter(c => c.days >= 0 && c.days <= 30 && c.approvalStatus === 'Approved').length,
+    expired:  cacheState.contractsStats?.expired ?? withDays.value.filter(c => c.days < 0 && c.approvalStatus === 'Approved').length,
   }
 })
 
 const statCardList = computed(() => [
-  { label: 'Total Contracts', value: statCards.value.total,    valueClass: 'text-black', change: '+2.1%', positive: true, filter: 'all' as FilterTab },
-  { label: 'Active',          value: statCards.value.active,   valueClass: 'text-black', change: '+4.0%', positive: true, filter: 'active' as FilterTab },
-  { label: 'Inactive',        value: statCards.value.inactive, valueClass: 'text-black', change: '+0.5%', positive: true, filter: 'inactive' as FilterTab },
-  { label: 'Expiring Soon',   value: statCards.value.expiring, valueClass: 'text-black', change: '+5.2%', positive: true, filter: 'expiring' as FilterTab },
-  { label: 'Expired',         value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false, filter: 'expired' as FilterTab },
+  { label: 'Total Contracts', value: statCards.value.total,    valueClass: 'text-black', change: '+2.1%', positive: true },
+  { label: 'Active',          value: statCards.value.active,   valueClass: 'text-black', change: '+4.0%', positive: true },
+  { label: 'Inactive',        value: statCards.value.inactive, valueClass: 'text-black', change: '+0.5%', positive: true },
+  { label: 'Expiring Soon',   value: statCards.value.expiring, valueClass: 'text-black', change: '+5.2%', positive: true },
+  { label: 'Expired',         value: statCards.value.expired,  valueClass: 'text-black', change: '-1.3%', positive: false },
 ])
 
-const filtered = computed(() => withDays.value)
-const paginated = computed(() => withDays.value)
-const totalItems = computed(() => cacheState.contractsPagination?.total ?? 0)
+const approvalStatuses = new Set(['Pending', 'Approved', 'Rejected'])
+
+const filtered = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  const cat = categoryFilter.value
+  const reg = regionFilter.value
+  const sf = statusFilter.value
+  const startD = startDateFilter.value
+  const endD = endDateFilter.value
+
+  const list = withDays.value.filter(c => {
+    const bySearch = !q
+      || c.id.toLowerCase().includes(q)
+      || (c.contractCode && c.contractCode.toLowerCase().includes(q))
+      || c.businessPartner.toLowerCase().includes(q)
+      || c.category.toLowerCase().includes(q)
+      || c.itemCode.toLowerCase().includes(q)
+
+    const byTab =
+      activeFilter.value === 'all'      ? true :
+      activeFilter.value === 'active'   ? (c.days > 30 && c.approvalStatus === 'Approved') :
+      activeFilter.value === 'expiring' ? (c.days >= 0 && c.days <= 30 && c.approvalStatus === 'Approved') :
+      activeFilter.value === 'expired'  ? (c.days < 0 && c.approvalStatus === 'Approved') :
+      (c.approvalStatus !== 'Approved')
+
+    const byCategory = !cat || c.category === cat
+    const byRegion = !reg || c.region === reg
+    const byStatus = !sf
+      ? true
+      : approvalStatuses.has(sf)
+        ? c.approvalStatus === sf
+        : c.workflowStatus === sf
+
+    const byStartDate = !startD || (c.startDate && c.startDate >= startD)
+    const byEndDate = !endD || (c.endDate && c.endDate <= endD)
+
+    return bySearch && byTab && byCategory && byRegion && byStatus && byStartDate && byEndDate
+  })
+
+  return sortContractsForAll(list)
+})
+
+const totalItems = computed(() => filtered.value.length)
+
+const paginated = computed(() =>
+  filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage)
+)
 
 async function fetchContracts() {
   if (!authState.user) return
   try {
-    await fetchContractsCached(undefined, true, {
-      paginate: true,
-      page: currentPage.value,
-      per_page: itemsPerPage,
-      search: searchQuery.value,
-      category: categoryFilter.value,
-      region: regionFilter.value,
-      status: statusFilter.value,
-      lifecycle_status: activeFilter.value !== 'all' ? activeFilter.value : undefined,
-      start_date: startDateFilter.value,
-      end_date: endDateFilter.value,
-    })
+    await fetchContractsCached(undefined, true)
   } catch (err) {
     console.error('Failed to fetch contracts:', err)
     error('Fetch failed', 'Could not load contracts from server.')
@@ -84,35 +118,15 @@ onMounted(() => {
   fetchContracts()
 })
 
-let debounceTimeout: any = null
-
-async function handleFilterChange(resetPage = false) {
-  if (resetPage) {
-    currentPage.value = 1
-  }
-  await fetchContracts()
-}
-
-watch([activeFilter, categoryFilter, regionFilter, statusFilter, startDateFilter, endDateFilter], () => {
-  handleFilterChange(true)
+watch([activeFilter, categoryFilter, regionFilter, statusFilter, startDateFilter, endDateFilter, searchQuery], () => {
+  currentPage.value = 1
 })
 
-watch(currentPage, () => {
-  handleFilterChange(false)
-})
-
-watch(searchQuery, () => {
-  if (debounceTimeout) clearTimeout(debounceTimeout)
-  debounceTimeout = setTimeout(() => {
-    handleFilterChange(true)
-  }, 350)
-})
-
-function openDetail(c: Contract & { days: number }) {
+function openDetail(c: ContractWithDays) {
   router.push(`/admin/contracts/${c.id}`)
 }
 
-function openEdit(c: Contract & { days: number }) {
+function openEdit(c: ContractWithDays) {
   router.push(`/admin/contracts/${c.id}?edit=1`)
 }
 
@@ -163,7 +177,7 @@ function exportXLSX() {
   showExportConfirm.value = true
 }
 
-function executeExport() {
+async function executeExport() {
   showExportConfirm.value = false
   const rows = filtered.value.map(c => ({
     'Contract ID': c.id, 'Business Partner': c.businessPartner, 'Category': c.category,
@@ -172,10 +186,7 @@ function executeExport() {
     'Remaining Days': c.days, 'Approval Status': c.approvalStatus,
     'Workflow Status': c.workflowStatus ?? '', 'Sales Rep': c.createdBy,
   }))
-  const ws = XLSX.utils.json_to_sheet(rows)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Contracts')
-  XLSX.writeFile(wb, 'sbsi-contracts.xlsx')
+  await exportToExcel('sbsi-contracts.xlsx', 'Contracts', rows)
   success('Export complete', `${filtered.value.length} contracts exported.`)
 }
 </script>
@@ -193,12 +204,15 @@ function executeExport() {
         <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
+        <Button v-if="hasPermission('cms.contracts.create')" @click="router.push('/admin/contracts/create')" class="group h-9 w-9 p-0 bg-brand-navy hover:bg-brand-dark text-white rounded-lg shadow-sm transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center">
+          <Plus class="w-5 h-5 transition-transform duration-300 group-hover:rotate-90" />
+        </Button>
       </div>
     </div>
 
     <!-- Stat cards -->
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-      <template v-if="loading">
+      <template v-if="loading && contracts.length === 0">
         <div v-for="i in 5" :key="i"
           class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm">
           <div class="h-3.5 w-24 bg-black/5 animate-pulse rounded mb-4"></div>
@@ -212,9 +226,7 @@ function executeExport() {
         <div
           v-for="card in statCardList"
           :key="card.label"
-          @click="activeFilter = card.filter"
-          class="bg-white rounded-lg border px-6 py-5 shadow-sm block hover:shadow-md cursor-pointer transition-all duration-200"
-          :class="activeFilter === card.filter ? 'border-[#2E85D8]' : 'border-black/8'"
+          class="bg-white rounded-lg border border-black/8 px-6 py-5 shadow-sm"
         >
           <p class="text-xs font-medium text-black/40 uppercase tracking-wide mb-3">{{ card.label }}</p>
           <div class="flex items-end justify-between gap-2">

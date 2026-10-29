@@ -20,6 +20,11 @@ const SLUG_UI_MAP: Record<string, { category: string; label: string }> = {
   'cms.partners.edit':   { category: 'partners', label: 'Edit' },
   'cms.partners.delete': { category: 'partners', label: 'Delete' },
 
+  // AI Features
+  'cms.ai.risk_assessment':    { category: 'ai_features', label: 'AI Risk Assessment' },
+  'cms.ai.vendor_suggestions': { category: 'ai_features', label: 'AI Vendor Suggestions' },
+  'cms.ai.ocr':                { category: 'ai_features', label: 'OCR Autofill' },
+  'cms.ai.contract_generator': { category: 'ai_features', label: 'AI Contract Generator' },
 }
 
 // The fixed UI category structure (labels stay exactly as designed)
@@ -43,6 +48,16 @@ export const UI_CATEGORIES: Category[] = [
       { key: 'cms.partners.create', label: 'Create' },
       { key: 'cms.partners.edit',   label: 'Edit' },
       { key: 'cms.partners.delete', label: 'Delete' },
+    ],
+  },
+  {
+    key: 'ai_features',
+    label: 'AI Features',
+    permissions: [
+      { key: 'cms.ai.risk_assessment',    label: 'AI Risk Assessment' },
+      { key: 'cms.ai.vendor_suggestions', label: 'AI Vendor Suggestions' },
+      { key: 'cms.ai.ocr',                label: 'OCR Autofill' },
+      { key: 'cms.ai.contract_generator', label: 'AI Contract Generator' },
     ],
   },
 ]
@@ -84,7 +99,7 @@ export function useRolePermissions() {
   const roles           = ref<ApiRole[]>([])
   const allPermissions  = ref<ApiPermission[]>([])
   // rolePermissionIds[roleId] = Set of permission IDs currently assigned
-  const rolePermissionIds = ref<Record<number, Set<number>>>({})
+  const rolePermissionIds  = ref<Record<number, Set<number>>>({})
   const isLoading       = ref(false)
   const error           = ref<string | null>(null)
 
@@ -104,8 +119,17 @@ export function useRolePermissions() {
     const data = await apiFetch<any>('/admin/permissions?per_page=100')
     const permissionsArray = Array.isArray(data) ? data : (data.data || [])
     // Only keep CMS CRUD permissions that appear in the UI map
-    allPermissions.value = permissionsArray.filter((p: ApiPermission) => SLUG_UI_MAP[p.slug] !== undefined)
+    const dbPerms = permissionsArray.filter((p: ApiPermission) => SLUG_UI_MAP[p.slug] !== undefined)
     
+    // Inject frontend-only virtual permissions
+    const virtualPerms: ApiPermission[] = [
+      { id: -1, name: 'AI Risk Assessment', slug: 'cms.ai.risk_assessment', system: 'cms' },
+      { id: -2, name: 'AI Vendor Suggestions', slug: 'cms.ai.vendor_suggestions', system: 'cms' },
+      { id: -3, name: 'OCR Autofill', slug: 'cms.ai.ocr', system: 'cms' },
+      { id: -4, name: 'AI Contract Generator', slug: 'cms.ai.contract_generator', system: 'cms' },
+    ]
+    
+    allPermissions.value = [...dbPerms, ...virtualPerms]
   }
 
   /** Load permissions already assigned to a single role */
@@ -124,10 +148,15 @@ export function useRolePermissions() {
       if (localSaved) {
         const savedIds: number[] = JSON.parse(localSaved)
         savedIds.forEach(id => {
-          if (id === -1 || id === -2) {
+          if (id < 0) {
             set.add(id)
           }
         })
+      } else {
+        if (roleName === 'Sales') {
+          set.add(-3) // OCR Autofill
+          set.add(-4) // AI Contract Generator
+        }
       }
     }
     
@@ -179,13 +208,13 @@ export function useRolePermissions() {
   /** Persist current state for a role to the backend */
   async function saveRolePermissions(roleId: number): Promise<void> {
     const permIds = [...(rolePermissionIds.value[roleId] ?? new Set())]
-    
-    const backendIds = permIds.filter(id => id > 0)
+
+    const backendIds  = permIds.filter(id => id > 0)
     const frontendIds = permIds.filter(id => id < 0)
-    
-    // Save frontend-only permissions in localStorage
+
     const roleName = roles.value.find(r => r.id === roleId)?.name
     if (roleName) {
+      // Save frontend-only AI permissions
       localStorage.setItem(`cms_frontend_perms_${roleName}`, JSON.stringify(frontendIds))
     }
     

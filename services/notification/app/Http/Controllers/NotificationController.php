@@ -126,7 +126,9 @@ class NotificationController extends Controller
             ->filter(function (Notification $n) use ($userRole, $userId) {
                 if (!$n->target_roles) return false;
                 $roles = array_map('trim', explode(',', $n->target_roles));
-                if (!in_array($userRole, $roles, true)) return false;
+                $isAdminRole = in_array($userRole, ['Admin', 'Super Admin', 'CEO'], true);
+                $matchesRole = in_array($userRole, $roles, true) || ($isAdminRole && in_array('Admin', $roles, true));
+                if (!$matchesRole) return false;
                 if ($n->target_user_id !== null && (int) $n->target_user_id !== (int) $userId) return false;
                 return true;
             })
@@ -139,7 +141,10 @@ class NotificationController extends Controller
             ->get()
             ->keyBy('notification_id');
 
-        $result = $notifications->map(function (Notification $n) use ($reads) {
+        $result = $notifications->filter(function (Notification $n) use ($reads) {
+            $read = $reads->get($n->notification_id);
+            return !($read?->is_deleted ?? false);
+        })->map(function (Notification $n) use ($reads) {
             $read = $reads->get($n->notification_id);
             return [
                 'id'                => (string) $n->notification_id,
@@ -151,7 +156,7 @@ class NotificationController extends Controller
                 'is_archived'       => $read?->is_archived ?? false,
                 'is_favorite'       => $read?->is_favorite ?? false,
             ];
-        });
+        })->values();
 
         return response()->json(['data' => $result]);
     }
@@ -235,5 +240,42 @@ class NotificationController extends Controller
         $read->save();
 
         return response()->json(['message' => 'State updated.']);
+    }
+
+    /**
+     * DELETE /notifications/{id} — permanently delete a notification for the current user.
+     */
+    public function destroy(Request $request, $id)
+    {
+        $userId = $request->input('auth_id');
+
+        $read = NotificationRead::firstOrNew(
+            ['notification_id' => $id, 'user_id' => $userId]
+        );
+        $read->is_deleted = true;
+        $read->save();
+
+        return response()->json(['message' => 'Notification permanently deleted.']);
+    }
+
+    /**
+     * POST /notifications/batch-delete — permanently delete multiple notifications for the current user.
+     */
+    public function batchDestroy(Request $request)
+    {
+        $userId = $request->input('auth_id');
+        $ids = $request->input('ids', []);
+
+        if (is_array($ids)) {
+            foreach ($ids as $id) {
+                $read = NotificationRead::firstOrNew(
+                    ['notification_id' => $id, 'user_id' => $userId]
+                );
+                $read->is_deleted = true;
+                $read->save();
+            }
+        }
+
+        return response()->json(['message' => 'Selected notifications permanently deleted.']);
     }
 }

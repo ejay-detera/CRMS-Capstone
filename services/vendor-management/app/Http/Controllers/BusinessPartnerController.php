@@ -37,13 +37,33 @@ class BusinessPartnerController extends Controller
             $query->where('partner_name', 'like', $request->partner_name . '%');
         }
 
-        if ($request->has('status')) {
+        if ($request->filled('industry') && $request->industry !== 'All') {
+            $query->where('industry', $request->industry);
+        }
+
+        if ($request->filled('status') && $request->status !== 'All') {
             $query->where('status', $request->status);
         }
 
         $perPage = min((int) $request->input('per_page', 15), 100);
 
-        return response()->json($query->paginate($perPage));
+        // Newest first so a freshly created partner always lands on page 1.
+        return response()->json($query->orderByDesc('partner_id')->paginate($perPage));
+    }
+
+    /**
+     * Distinct industry values, used to populate the Industry filter.
+     */
+    public function industries()
+    {
+        $industries = BusinessPartner::query()
+            ->whereNotNull('industry')
+            ->where('industry', '!=', '')
+            ->distinct()
+            ->orderBy('industry')
+            ->pluck('industry');
+
+        return response()->json(['data' => $industries]);
     }
 
     /**
@@ -68,6 +88,14 @@ class BusinessPartnerController extends Controller
         }
 
         $data = $validator->validated();
+
+        // Normalise the industry so " Healthcare " cannot create a duplicate
+        // entry in the Industry filter.
+        if (array_key_exists('industry', $data)) {
+            $industry = trim((string) $data['industry']);
+            $data['industry'] = $industry === '' ? null : $industry;
+        }
+
         $data['created_by'] = $request->get('auth_id');
 
         // Run duplicate detection
@@ -124,7 +152,12 @@ class BusinessPartnerController extends Controller
      */
     public function show($id)
     {
-        $partner = BusinessPartner::find($id);
+        $cleanId = preg_replace('/^(BP-)+/i', 'BP-', (string) $id);
+        $partner = BusinessPartner::where('bp_code', $cleanId)
+            ->orWhere('bp_code', $id)
+            ->orWhere('partner_id', $cleanId)
+            ->orWhere('partner_id', $id)
+            ->first();
 
         if (!$partner) {
             return response()->json(['message' => 'Business partner not found.'], 404);
@@ -138,7 +171,12 @@ class BusinessPartnerController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $partner = BusinessPartner::find($id);
+        $cleanId = preg_replace('/^(BP-)+/i', 'BP-', (string) $id);
+        $partner = BusinessPartner::where('bp_code', $cleanId)
+            ->orWhere('bp_code', $id)
+            ->orWhere('partner_id', $cleanId)
+            ->orWhere('partner_id', $id)
+            ->first();
 
         if (!$partner) {
             return response()->json(['message' => 'Business partner not found.'], 404);
@@ -162,6 +200,13 @@ class BusinessPartnerController extends Controller
 
         $data = $validator->validated();
 
+        // Normalise the industry so " Healthcare " cannot create a duplicate
+        // entry in the Industry filter.
+        if (array_key_exists('industry', $data)) {
+            $industry = trim((string) $data['industry']);
+            $data['industry'] = $industry === '' ? null : $industry;
+        }
+
         // Run duplicate detection (excluding self)
         $detection = $this->duplicateDetectionService->detect(
             'business_partners',
@@ -169,7 +214,7 @@ class BusinessPartnerController extends Controller
             $data['bp_code'],
             'partner_name',
             $data['partner_name'],
-            $id,
+            $partner->partner_id,
             'partner_id'
         );
 
@@ -206,18 +251,24 @@ class BusinessPartnerController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        $partner = BusinessPartner::find($id);
+        $cleanId = preg_replace('/^(BP-)+/i', 'BP-', (string) $id);
+        $partner = BusinessPartner::where('bp_code', $cleanId)
+            ->orWhere('bp_code', $id)
+            ->orWhere('partner_id', $cleanId)
+            ->orWhere('partner_id', $id)
+            ->first();
 
         if (!$partner) {
             return response()->json(['message' => 'Business partner not found.'], 404);
         }
 
+        $partnerId = $partner->partner_id;
         $oldData = $partner->toArray();
         $partner->delete();
 
         // Audit Log
         $userId = $request->get('auth_id');
-        $this->auditLogService->log('deleted', 'BusinessPartner', $id, $userId, $oldData, [], $request->get('auth_department'));
+        $this->auditLogService->log('deleted', 'BusinessPartner', $partnerId, $userId, $oldData, [], $request->get('auth_department'));
 
         return response()->json(['message' => 'Business partner deleted successfully.']);
     }

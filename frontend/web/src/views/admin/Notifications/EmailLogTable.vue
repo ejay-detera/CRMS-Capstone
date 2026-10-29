@@ -46,7 +46,7 @@ function formatDate(dateString: string | null): string {
 
     <div class="relative">
       <div v-if="loading" class="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
-        <RefreshCw class="w-8 h-8 text-[#2E85D8] animate-spin" />
+        <RefreshCw class="w-8 h-8 text-brand-blue animate-spin" />
       </div>
 
       <Table>
@@ -65,8 +65,8 @@ function formatDate(dateString: string | null): string {
             
             <TableCell class="py-4 pl-6">
               <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-[#2E85D8]/8 flex items-center justify-center shrink-0">
-                  <Mail class="w-4 h-4 text-[#2E85D8]" />
+                <div class="w-8 h-8 rounded-lg bg-brand-blue/8 flex items-center justify-center shrink-0">
+                  <Mail class="w-4 h-4 text-brand-blue" />
                 </div>
                 <div>
                   <p class="text-sm font-semibold text-black leading-snug">{{ log.recipientEmail }}</p>

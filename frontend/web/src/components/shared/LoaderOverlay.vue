@@ -12,7 +12,7 @@ const { isLoading, label } = useLoader()
 
       <div class="flex flex-col items-center text-center px-8 py-12 max-w-sm w-full">
         <!-- Brand Title -->
-        <p class="text-[22px] font-bold text-[#252578] tracking-tight mb-10"
+        <p class="text-[22px] font-bold text-brand-navy tracking-tight mb-10"
           style="letter-spacing: -0.025em;">
           SBSI Contract Management
         </p>
@@ -39,8 +39,8 @@ const { isLoading, label } = useLoader()
 .loader-circular-spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid rgba(37, 37, 120, 0.1);
-  border-top-color: #252578;
+  border: 4px solid color-mix(in srgb, var(--brand-navy) 10%, transparent);
+  border-top-color: var(--brand-navy);
   border-radius: 9999px;
   animation: loader-spin 0.9s linear infinite;
 }

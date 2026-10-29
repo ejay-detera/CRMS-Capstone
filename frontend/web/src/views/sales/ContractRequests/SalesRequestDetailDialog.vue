@@ -42,7 +42,7 @@ function confirmFollowUp() {
         <!-- Header -->
         <div class="px-5 pt-5 pb-4 border-b border-black/6">
           <div class="flex items-start gap-3.5">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 bg-[#252578]">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 bg-brand-navy">
               <ClipboardList class="w-5 h-5" />
             </div>
             <div class="flex-1 min-w-0 pr-6">
@@ -136,7 +136,7 @@ function confirmFollowUp() {
         <div class="px-5 py-4 border-t border-black/6">
 
           <a :href="safeHref(request.contractLink)" target="_blank" rel="noopener noreferrer"
-            class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2E85D8] hover:underline mb-3">
+            class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-blue hover:underline mb-3">
             <ExternalLink class="w-3.5 h-3.5" /> View Contract PDF
           </a>
 
@@ -146,7 +146,7 @@ function confirmFollowUp() {
             <div v-if="request.status === 'Pending'" class="flex items-center gap-2">
               <Button variant="outline"
                 @click="router.push(`/sales/contract-requests/${request.id}`); $emit('update:open', false)"
-                class="h-8 px-3.5 text-xs font-semibold border-[#252578]/25 text-[#252578] hover:bg-[#252578]/5 hover:border-[#252578]/40 gap-1.5">
+                class="h-8 px-3.5 text-xs font-semibold border-brand-navy/25 text-brand-navy hover:bg-brand-navy/5 hover:border-brand-navy/40 gap-1.5">
                 <FilePenLine class="w-3.5 h-3.5" /> Edit Request
               </Button>
               <Button v-if="!isFollowedUp"

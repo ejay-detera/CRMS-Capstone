@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Building2, Truck, Search, LayoutGrid, List, Upload, Plus } from 'lucide-vue-next'
+import { Building2, Truck, Search, LayoutGrid, List, Upload, Plus, Sparkles } from 'lucide-vue-next'
+import { exportToExcel } from '@/utils/excelExport'
 import { Button } from '@/components/ui/button'
-import * as XLSX from 'xlsx'
 import { useToast } from '@/composables/useToast'
 import { useVendorService } from '@/composables/useVendorService'
 import { useAuth } from '@/composables/useAuth'
@@ -18,7 +18,9 @@ const router = useRouter()
 const { success, error } = useToast()
 const { hasPermission } = useAuth()
 const { fetchPartners, fetchSuppliers } = useVendorService()
-const { deletePartner } = usePartners()
+const { deletePartner, fetchIndustries } = usePartners()
+
+const showAiSuggestionButton = computed(() => hasPermission('cms.ai.vendor_suggestions'))
 
 const businessPartners = ref<Partner[]>([])
 const suppliersData    = ref<Partner[]>([])
@@ -53,10 +55,23 @@ const suppliersCount = computed(() => suppliersData.value.length)
 
 const source = computed(() => activeTab.value === 'partners' ? businessPartners.value : suppliersData.value)
 
+const industryOptions = ref<string[]>([])
+
+// Full industry list comes from the API (not from whatever pages happened to
+// load), so a new industry is never hidden by the current region filter.
 const industries = computed(() => {
   const vals = source.value.map(p => p.industry).filter(Boolean)
-  return ['All', ...[...new Set(vals)].sort()]
+  return ['All', ...[...new Set([...industryOptions.value, ...vals])].sort()]
 })
+
+async function loadIndustries(tab: TabKey) {
+  const values = await fetchIndustries(tab)
+  if (tab !== activeTab.value) return
+  industryOptions.value = values
+  if (industryFilter.value !== 'All' && !values.includes(industryFilter.value)) {
+    industryFilter.value = 'All'
+  }
+}
 
 const filtered = computed(() =>
   source.value.filter(p => {
@@ -79,7 +94,9 @@ watch(activeTab, () => {
   statusFilter.value   = 'All'
   industryFilter.value = 'All'
   currentPage.value    = 1
+  void loadIndustries(activeTab.value)
 })
+onMounted(() => void loadIndustries(activeTab.value))
 const paginated = computed(() => filtered.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage))
 
 const selectedIds     = ref<(string | number)[]>([])
@@ -96,16 +113,23 @@ function toggleRow(id: string | number) {
   i >= 0 ? selectedIds.value.splice(i, 1) : selectedIds.value.push(id)
 }
 
+function getPartnerCode(p: Partner): string {
+  if (activeTab.value === 'partners') {
+    const raw = p.bpCode || String(p.id)
+    if (raw.startsWith('BP-')) return raw.replace(/^(BP-)+/i, 'BP-')
+    return `BP-${String(p.db_id || p.id).padStart(4, '0')}`
+  }
+  const raw = String(p.id)
+  if (raw.startsWith('SP-')) return raw.replace(/^(SP-)+/i, 'SP-')
+  return `SP-${String(p.db_id || p.id).padStart(4, '0')}`
+}
+
 function openDetail(p: Partner) {
-  const prefix = activeTab.value === 'partners' ? 'BP' : 'SP'
-  const code   = `${prefix}-${String(p.id).padStart(4, '0')}`
-  router.push(`/sales/partners/${code}`)
+  router.push(`/sales/partners/${getPartnerCode(p)}`)
 }
 
 function openEdit(p: Partner) {
-  const prefix = activeTab.value === 'partners' ? 'BP' : 'SP'
-  const code   = `${prefix}-${String(p.id).padStart(4, '0')}`
-  router.push(`/sales/partners/${code}/edit`)
+  router.push(`/sales/partners/${getPartnerCode(p)}/edit`)
 }
 
 const showDelete   = ref(false)
@@ -134,7 +158,7 @@ function exportXLSX() {
   showExportConfirm.value = true
 }
 
-function executeExport() {
+async function executeExport() {
   showExportConfirm.value = false
   const type = activeTab.value === 'partners' ? 'Business Partner' : 'Supplier'
   const rows = filtered.value.map(p => ({
@@ -150,10 +174,7 @@ function executeExport() {
     'Address':        p.address,
     ...(activeTab.value === 'partners' ? { 'BP Code': p.bpCode ?? '' } : { 'TIN': p.tinNumber ?? '' }),
   }))
-  const ws = XLSX.utils.json_to_sheet(rows)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, type === 'Business Partner' ? 'Partners' : 'Suppliers')
-  XLSX.writeFile(wb, `sbsi-${activeTab.value}.xlsx`)
+  await exportToExcel(`sbsi-${activeTab.value}.xlsx`, type === 'Business Partner' ? 'Partners' : 'Suppliers', rows)
   success('Export complete', `${filtered.value.length} records exported.`)
 }
 </script>
@@ -170,7 +191,10 @@ function executeExport() {
         <Button @click="exportXLSX" variant="outline" class="h-9 gap-2 text-sm font-medium border-black/15 text-black/65 hover:text-black">
           <Upload class="w-4 h-4" /> Export XLSX
         </Button>
-        <Button id="add-partner-btn" v-if="hasPermission('cms.partners.create')" @click="router.push('/sales/partners/create?type=' + activeTab)" class="h-9 w-9 p-0 bg-[#252578] hover:bg-[#2F2F73] text-white rounded-lg shadow-sm">
+        <Button v-if="showAiSuggestionButton" @click="router.push('/sales/vendor-suggestions')" class="h-9 gap-2 text-sm bg-black/4 hover:bg-black/10 text-black border border-black/5 rounded-lg shadow-sm font-medium transition-colors">
+          <Sparkles class="w-4 h-4 text-black/60" /> AI Suggestions
+        </Button>
+        <Button id="add-partner-btn" v-if="hasPermission('cms.partners.create')" @click="router.push('/sales/partners/create?type=' + activeTab)" class="h-9 w-9 p-0 bg-brand-navy hover:bg-brand-dark text-white rounded-lg shadow-sm">
           <Plus class="w-5 h-5" />
         </Button>
       </div>
@@ -214,14 +238,14 @@ function executeExport() {
       <div class="relative flex-1">
         <Search class="w-3.5 h-3.5 text-black/30 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input v-model="search" type="text" :placeholder="`Search ${activeTab === 'partners' ? 'partners' : 'suppliers'}...`"
-          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none transition" />
+          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-brand-blue focus:outline-none transition" />
       </div>
       <select v-model="regionFilter"
-        class="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors">
+        class="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors">
         <option v-for="r in regions" :key="r" :value="r">{{ r === 'All' ? 'All Regions' : r }}</option>
       </select>
       <select v-model="industryFilter"
-        class="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm text-black focus:border-[#2E85D8] focus:outline-none transition-colors">
+        class="h-9 rounded-lg border border-black/10 bg-white px-3 text-sm text-black focus:border-brand-blue focus:outline-none transition-colors">
         <option v-for="ind in industries" :key="ind" :value="ind">{{ ind === 'All' ? 'All Industries' : ind }}</option>
       </select>
     </div>

@@ -10,10 +10,10 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import TablePagination from '@/components/shared/TablePagination.vue'
-import { getInitials, avatarColor, roleBadge } from '@/types/user'
-import type { User } from '@/types/user'
+import { getInitials, avatarColor, roleBadgeFor } from '@/types/user'
+import type { User, RoleTab } from '@/types/user'
 
-type TabValue = 'all' | 'Admin' | 'Manager' | 'Employee'
+type TabValue = string
 
 const props = defineProps<{
   paginatedUsers:  User[]
@@ -24,6 +24,8 @@ const props = defineProps<{
   itemsPerPage:    number
   activeTab:       TabValue
   searchQuery:     string
+  // Dynamic role tabs (built by the parent from auth role systems).
+  tabs:            RoleTab[]
 }>()
 
 const emit = defineEmits<{
@@ -36,13 +38,6 @@ const emit = defineEmits<{
   'update:activeTab':   [tab: TabValue]
   'update:searchQuery': [q: string]
 }>()
-
-const tabs: { label: string; value: TabValue }[] = [
-  { label: 'View all', value: 'all'     },
-  { label: 'Admin',    value: 'Admin'   },
-  { label: 'Manager',  value: 'Manager' },
-  { label: 'Employee', value: 'Employee'},
-]
 </script>
 
 <template>
@@ -56,7 +51,7 @@ const tabs: { label: string; value: TabValue }[] = [
 
     <div class="flex items-center justify-between px-6 py-3 border-b border-black/5">
       <div class="flex items-center gap-0.5 bg-black/4 rounded-md p-1">
-        <button v-for="tab in tabs" :key="tab.value"
+        <button v-for="tab in props.tabs" :key="tab.value"
           @click="emit('update:activeTab', tab.value)"
           class="px-4 py-1.5 text-sm rounded transition-all font-medium"
           :class="activeTab === tab.value ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'">
@@ -67,7 +62,7 @@ const tabs: { label: string; value: TabValue }[] = [
         <Search class="w-3.5 h-3.5 text-black/30 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input :value="searchQuery" @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"
           type="text" placeholder="Search..."
-          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
+          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15 transition" />
       </div>
     </div>
 
@@ -85,7 +80,7 @@ const tabs: { label: string; value: TabValue }[] = [
       <TableBody>
         <TableRow v-for="(user, index) in paginatedUsers" :key="user.id"
           class="border-b border-black/4 last:border-0 transition-colors"
-          :class="selectedIds.includes(user.id) ? 'bg-[#252578]/2.5' : 'hover:bg-black/1.2'">
+          :class="selectedIds.includes(user.id) ? 'bg-brand-navy/2.5' : 'hover:bg-black/1.2'">
 
           <TableCell class="py-4 pl-6">
             <div class="flex items-center gap-3">
@@ -101,7 +96,7 @@ const tabs: { label: string; value: TabValue }[] = [
           </TableCell>
 
           <TableCell class="py-4">
-            <Badge variant="outline" class="text-xs font-medium rounded-full px-2.5 py-0.5" :class="roleBadge[user.role]">
+            <Badge variant="outline" class="text-xs font-medium rounded-full px-2.5 py-0.5" :class="roleBadgeFor(user.role)">
               {{ user.role }}
             </Badge>
           </TableCell>

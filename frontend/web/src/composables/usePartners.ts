@@ -15,13 +15,16 @@ export function usePartners() {
     page = 1,
     perPage = 8,
     search = '',
-    region = 'All'
+    region = 'All',
+    status = 'All',
+    industry = 'All'
   ) => {
     loading.value = true
     try {
       const apiBase = import.meta.env.VITE_VENDOR_API_URL || 'http://localhost:8001/api'
       const endpoint = type === 'partners' ? 'partners' : 'suppliers'
-      const url = new URL(`${apiBase}/${endpoint}`)
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
+      const url = new URL(`${apiBase}/${endpoint}`, origin)
       
       url.searchParams.append('page', String(page))
       url.searchParams.append('per_page', String(perPage))
@@ -30,6 +33,12 @@ export function usePartners() {
       }
       if (region && region !== 'All') {
         url.searchParams.append('region', region)
+      }
+      if (status && status !== 'All') {
+        url.searchParams.append('status', status)
+      }
+      if (industry && industry !== 'All') {
+        url.searchParams.append('industry', industry)
       }
 
       const res = await fetch(url.toString(), {
@@ -48,8 +57,10 @@ export function usePartners() {
 
       partners.value = (json.data || []).map((item: any) => {
         if (type === 'partners') {
+          const rawCode = item.bp_code || `BP-${String(item.partner_id).padStart(4, '0')}`
+          const bpCode = rawCode.replace(/^(BP-)+/i, 'BP-')
           return {
-            id: item.bp_code || `BP-${String(item.partner_id).padStart(3, '0')}`,
+            id: bpCode,
             db_id: item.partner_id,
             name: item.partner_name || '',
             industry: item.industry || 'Banking & Finance',
@@ -60,7 +71,9 @@ export function usePartners() {
             contactPerson: item.contact_person || '',
             email: item.email || '',
             phone: item.contact_number || '',
-            address: item.address || ''
+            address: item.address || '',
+            bpCode: bpCode,
+            createdAt: item.created_at ?? null,
           }
         } else {
           return {
@@ -75,7 +88,8 @@ export function usePartners() {
             contactPerson: item.contact_person || '',
             email: item.email || '',
             phone: item.contact_number || '',
-            address: item.address || ''
+            address: item.address || '',
+            createdAt: item.created_at ?? null,
           }
         }
       })
@@ -106,7 +120,7 @@ export function usePartners() {
 
       return data.map((item: any) => ({
         associationId: String(item.association_id),
-        contractId: String(item.contract_id),
+        contractId: item.contract?.contract_code || String(item.contract_id),
         description: item.contract?.description || 'No description',
         businessPartner: item.contract?.bp_name || '',
         startDate: item.contract?.start_date || '',
@@ -179,7 +193,7 @@ export function usePartners() {
     }
   }
 
-  const deletePartner = async (type: TabKey, dbId: number) => {
+  const deletePartner = async (type: TabKey, dbId: number | string) => {
     loading.value = true
     try {
       const apiBase = import.meta.env.VITE_VENDOR_API_URL || 'http://localhost:8001/api'
@@ -266,12 +280,79 @@ export function usePartners() {
     }
   }
 
+  /**
+   * Distinct industries, used to populate the Industry filter.
+   *
+   * Prefers the dedicated `/<type>/industries` endpoint. If that endpoint is
+   * unavailable (older deployment) or errors out, it falls back to walking the
+   * *unfiltered* list pages — never the caller's region/status-filtered page —
+   * so a newly created industry can never be hidden by an active region filter.
+   */
+  const fetchIndustries = async (type: TabKey): Promise<string[]> => {
+    const apiBase = import.meta.env.VITE_VENDOR_API_URL || 'http://localhost:8001/api'
+    const endpoint = type === 'partners' ? 'partners' : 'suppliers'
+    const headers = {
+      'Authorization': `Bearer ${authState.token || ''}`,
+      'Accept': 'application/json'
+    }
+
+    const collect = (values: unknown[]): string[] =>
+      Array.from(new Set(
+        values
+          .map(v => String(v ?? '').trim())
+          .filter(v => v.length > 0)
+      )).sort((a, b) => a.localeCompare(b))
+
+    try {
+      const res = await fetch(`${apiBase}/${endpoint}/industries`, { headers })
+      if (res.ok) {
+        const json = await res.json()
+        const data: unknown[] = Array.isArray(json) ? json : (json.data ?? [])
+        return collect(data)
+      } else {
+        console.warn(`[partners] ${endpoint}/industries returned ${res.status}; deriving from the unfiltered list instead.`)
+      }
+    } catch (err) {
+      console.warn(`[partners] ${endpoint}/industries request failed; deriving from the unfiltered list instead.`, err)
+    }
+
+    try {
+      const rows: unknown[] = []
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
+      let page = 1
+      let lastPage = 1
+
+      do {
+        const url = new URL(`${apiBase}/${endpoint}`, origin)
+        url.searchParams.set('page', String(page))
+        url.searchParams.set('per_page', '100')
+
+        const res = await fetch(url.toString(), { headers })
+        if (!res.ok) {
+          console.warn(`[partners] Could not load ${endpoint} page ${page} while deriving industries (${res.status}).`)
+          break
+        }
+
+        const json = await res.json()
+        rows.push(...(json.data ?? []))
+        lastPage = Number(json.last_page ?? 1)
+        page += 1
+      } while (page <= lastPage)
+
+      return collect(rows.map(row => (row as Record<string, unknown>)?.industry))
+    } catch (err) {
+      console.error(`[partners] Failed to derive ${endpoint} industries from the unfiltered list.`, err)
+      return []
+    }
+  }
+
   return {
     loading,
     partners,
     totalItems,
     lastPage,
     fetchPartners,
+    fetchIndustries,
     fetchVendorContracts,
     fetchLinkedContractIds,
     addPartner,

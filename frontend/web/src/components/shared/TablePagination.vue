@@ -46,7 +46,7 @@ function goTo(page: number) {
       @click="goTo(p)"
       class="h-8 w-8 flex items-center justify-center rounded-md text-sm font-medium transition disabled:opacity-30 disabled:pointer-events-none"
       :class="p === currentPage
-        ? 'bg-[#252578] text-white hover:bg-[#2F2F73]'
+        ? 'bg-brand-navy text-white hover:bg-brand-dark'
         : 'text-black/50 hover:bg-black/5 hover:text-black'">
       {{ p }}
     </button>

@@ -1,20 +1,29 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { FileX, X, ChevronDown, Clock } from 'lucide-vue-next'
+import { FileX, Clock } from 'lucide-vue-next'
 import { useAmendmentStore } from '@/composables/useAmendmentStore'
+import { setBreadcrumbTitle } from '@/composables/useBreadcrumbs'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { useApiCache } from '@/composables/useApiCache'
+import { useHighRiskApproval } from '@/composables/useHighRiskApproval'
+import { useEmailPreferences } from '@/composables/useEmailPreferences'
 import { remainingDays } from '@/types/contract'
 import type { ContractApprovalStatus, ContractWorkflowStatus, ContractRegion, UploadedDoc } from '@/types/contract'
 import type { StoredContract } from '@/composables/useContractStore'
 import ContractDetailHeader     from './ContractDetailHeader.vue'
 import ContractInfoSection      from './ContractInfoSection.vue'
 import ContractDocumentsSection from './ContractDocumentsSection.vue'
+import VersionHistoryDrawer     from './VersionHistoryDrawer.vue'
 import ConfirmationDialog       from '@/components/shared/ConfirmationDialog.vue'
 import RejectionReasonModal     from './RejectionReasonModal.vue'
+import HighRiskApprovalModal    from '@/components/shared/HighRiskApprovalModal.vue'
+import WorkflowTrackerModal     from '@/components/shared/ContractWorkflowTracker/WorkflowTrackerModal.vue'
+import type { WorkflowProgress } from '@/types/contractWorkflow'
+import { nudgeLabelFor } from '@/types/contractWorkflow'
+import { useApprovalProgress } from '@/composables/useApprovalProgress'
 import { AlertCircle } from 'lucide-vue-next'
 
 const route  = useRoute()
@@ -30,6 +39,114 @@ const id = route.params.id as string
 const contract        = ref<StoredContract | null>(null)
 const loadingContract = ref(true)
 const savingEdit      = ref(false)
+
+// ── Visual Contract Workflow Tracker — live data (Phase 6) ────────────────
+// Primary source is GET /contracts/{id}/approval-progress via
+// useApprovalProgress (engine:false → empty status, decision #9). The
+// `?workflowMock=A..E` scenarios below are a dev-only override for
+// exercising every visual state without seeded engine data — they apply
+// only when the query param is explicitly present.
+const { workflow: liveWorkflow, status: liveTrackerStatus, currentStepRoles, fetchProgress: fetchWorkflowProgress, retry: retryWorkflow } = useApprovalProgress()
+const workflowMockScenarios: Record<string, WorkflowProgress> = {
+  // Scenario A: normal progress — some completed, one active, rest pending.
+  A: {
+    contractId: 'CTR-1001', currentRun: 1,
+    runs: [{ runNumber: 1, groups: [
+      { id: 'g1', mode: 'sequential', nodes: [{ id: 'n1', title: 'Contract created', status: 'completed', actedAt: '2026-09-26T09:00:00Z', subText: 'Submitted by Procurement', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g2', mode: 'sequential', nodes: [{ id: 'n2', title: 'Regulatory', status: 'completed', actedAt: '2026-09-28T14:30:00Z', subText: 'Compliant with regional rules', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g3', mode: 'sequential', nodes: [{ id: 'n3', title: 'Sales', status: 'active', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g4', mode: 'sequential', nodes: [{ id: 'n4', title: 'Accounting', status: 'pending', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g5', mode: 'sequential', nodes: [{ id: 'n5', title: 'CEO (for review)', status: 'pending', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+    ] }],
+  },
+  // Scenario B: rejection — Sales rejects, downstream steps stay pending.
+  B: {
+    contractId: 'CTR-1002', currentRun: 1,
+    runs: [{ runNumber: 1, groups: [
+      { id: 'g1', mode: 'sequential', nodes: [{ id: 'n1', title: 'Contract created', status: 'completed', actedAt: '2026-09-26T09:00:00Z', subText: 'Submitted by Procurement', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g2', mode: 'sequential', nodes: [{ id: 'n2', title: 'Regulatory', status: 'completed', actedAt: '2026-09-28T14:30:00Z', subText: 'Compliant with regional rules', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g3', mode: 'sequential', nodes: [{ id: 'n3', title: 'Sales', status: 'rejected', actedAt: '2026-09-30T10:15:00Z', subText: 'Pricing terms need revision', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g4', mode: 'sequential', nodes: [{ id: 'n4', title: 'Accounting', status: 'pending', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g5', mode: 'sequential', nodes: [{ id: 'n5', title: 'CEO (for review)', status: 'pending', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+    ] }],
+  },
+  // Scenario C: parallel group + delegation on the final step, plus a
+  // renamed-role indicator on Regulatory to exercise decision #14.
+  C: {
+    contractId: 'CTR-1003', currentRun: 1,
+    runs: [{ runNumber: 1, groups: [
+      { id: 'g1', mode: 'sequential', nodes: [{ id: 'n1', title: 'Contract created', status: 'completed', actedAt: '2026-09-26T09:00:00Z', subText: 'Submitted by Procurement', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g2', mode: 'sequential', nodes: [{ id: 'n2', title: 'Regulatory Officer', status: 'completed', actedAt: '2026-09-28T14:30:00Z', subText: 'Compliant with regional rules', delegation: null, roleDeleted: false, roleRenamedFrom: 'Regulatory' }] },
+      { id: 'g3', mode: 'parallel', nodes: [
+        { id: 'n3a', title: 'Sales', status: 'completed', actedAt: '2026-09-29T11:00:00Z', subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null },
+        { id: 'n3b', title: 'Accounting', status: 'active', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null },
+      ] },
+      { id: 'g4', mode: 'sequential', nodes: [{ id: 'n4', title: 'CEO (for review)', status: 'completed', actedAt: '2026-10-01T08:00:00Z', subText: null, delegation: { delegateName: 'Alex Reyes', onBehalfOfRole: 'CEO' }, roleDeleted: false, roleRenamedFrom: null }] },
+    ] }],
+  },
+  // Scenario D: parallel rejection — Sales rejects, Accounting's sibling
+  // task is canceled (not rejected), per spec 5.4.
+  D: {
+    contractId: 'CTR-1004', currentRun: 1,
+    runs: [{ runNumber: 1, groups: [
+      { id: 'g1', mode: 'sequential', nodes: [{ id: 'n1', title: 'Contract created', status: 'completed', actedAt: '2026-09-26T09:00:00Z', subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g2', mode: 'sequential', nodes: [{ id: 'n2', title: 'Regulatory', status: 'completed', actedAt: '2026-09-28T14:30:00Z', subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g3', mode: 'parallel', nodes: [
+        { id: 'n3a', title: 'Sales', status: 'rejected', actedAt: '2026-09-30T10:15:00Z', subText: 'Pricing terms need revision', delegation: null, roleDeleted: false, roleRenamedFrom: null },
+        { id: 'n3b', title: 'Accounting', status: 'canceled', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null },
+      ] },
+      { id: 'g4', mode: 'sequential', nodes: [{ id: 'n4', title: 'CEO (for review)', status: 'pending', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+    ] }],
+  },
+  // Scenario E: restart — run 1 ended rejected (collapsed history), run 2
+  // in progress. Also exercises the deleted-role warning icon.
+  E: {
+    contractId: 'CTR-1005', currentRun: 2,
+    runs: [
+      { runNumber: 1, groups: [
+        { id: 'g1-r1', mode: 'sequential', nodes: [{ id: 'n1-r1', title: 'Contract created', status: 'completed', actedAt: '2026-08-01T09:00:00Z', subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+        { id: 'g2-r1', mode: 'sequential', nodes: [{ id: 'n2-r1', title: 'Regulatory', status: 'rejected', actedAt: '2026-08-05T10:00:00Z', subText: 'Missing permit documentation', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      ] },
+      { runNumber: 2, groups: [
+        { id: 'g1-r2', mode: 'sequential', nodes: [{ id: 'n1-r2', title: 'Contract created', status: 'completed', actedAt: '2026-09-26T09:00:00Z', subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+        { id: 'g2-r2', mode: 'sequential', nodes: [{ id: 'n2-r2', title: 'Compliance Reviewer', status: 'active', actedAt: null, subText: null, delegation: null, roleDeleted: true, roleRenamedFrom: null }] },
+      ] },
+    ],
+  },
+  // Scenario F: on-hold step — the Accounting role currently has no
+  // active holders (decision #12): amber badge, current-step emphasis.
+  F: {
+    contractId: 'CTR-1006', currentRun: 1,
+    runs: [{ runNumber: 1, groups: [
+      { id: 'g1', mode: 'sequential', nodes: [{ id: 'n1', title: 'Contract created', status: 'completed', actedAt: '2026-09-26T09:00:00Z', subText: 'Submitted by Procurement', delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g2', mode: 'sequential', nodes: [{ id: 'n2', title: 'Regulatory', status: 'completed', actedAt: '2026-09-28T14:30:00Z', subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g3', mode: 'sequential', nodes: [{ id: 'n3', title: 'Accounting', status: 'on_hold', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+      { id: 'g4', mode: 'sequential', nodes: [{ id: 'n4', title: 'CEO (for review)', status: 'pending', actedAt: null, subText: null, delegation: null, roleDeleted: false, roleRenamedFrom: null }] },
+    ] }],
+  },
+}
+
+const workflowTracker = computed<WorkflowProgress | null>(() => {
+  const scenario = route.query.workflowMock as string | undefined
+  if (scenario) return workflowMockScenarios[scenario] ?? workflowMockScenarios.A
+  return liveWorkflow.value
+})
+const workflowTrackerStatus = computed(() => {
+  if (route.query.workflowMock) return (workflowTracker.value ? 'ready' as const : 'empty' as const)
+  return liveTrackerStatus.value
+})
+function handleWorkflowRetry() {
+  retryWorkflow(id)
+}
+
+// ── Phase 7: generalized nudge (decision #13) ────────────────────────────
+// Engine-routed contracts nudge the current step's role(s) via
+// POST /notify-step; legacy contracts (empty currentStepRoles) fall back
+// to the historic manager-targeted endpoint. The button label derives
+// from the progress response, not the tracker nodes.
+const nudgeLabel = computed(() => nudgeLabelFor(currentStepRoles.value))
+const isEngineRouted = computed(() => currentStepRoles.value.length > 0)
+const showWorkflowTracker = ref(false)
 
 const amendmentStore = useAmendmentStore()
 const viewingSnapshotVersion = ref<number | null>(null)
@@ -58,6 +175,12 @@ const displayedContract = computed<StoredContract | null>(() => {
   }
 })
 
+watchEffect(() => {
+  if (displayedContract.value?.businessPartner) {
+    setBreadcrumbTitle(displayedContract.value.businessPartner)
+  }
+})
+
 const days = computed(() => displayedContract.value ? remainingDays(displayedContract.value.endDate) : 0)
 
 const backPath = computed(() => {
@@ -65,6 +188,8 @@ const backPath = computed(() => {
   if (route.path.startsWith('/manager')) return '/manager/contracts'
   return '/sales/contracts'
 })
+
+const riskAssessmentPath = computed(() => `${backPath.value}/${id}/risk-assessment`)
 
 const apiBase = import.meta.env.VITE_CONTRACT_API_URL as string
 
@@ -90,7 +215,9 @@ function mapApiToContract(data: any): StoredContract {
     : `User #${data.created_by}`
 
   return {
-    id:              String(data.contract_id),
+    id:              String(data.contract_code || data.contract_id),
+    contractCode:    data.contract_code,
+    contractDbId:    data.contract_db_id || (typeof data.contract_id === 'number' ? data.contract_id : undefined),
     businessPartner: data.bp_name ?? '',
     category:        data.category ?? '',
     itemCode:        data.item_code ?? '',
@@ -117,7 +244,11 @@ function mapApiToContract(data: any): StoredContract {
 }
 
 function loadLocalContract() {
-  const c = (cacheState.contracts || []).find(item => item.id === id)
+  const c = (cacheState.contracts || []).find(item => 
+    item.id === id || 
+    item.contractCode === id || 
+    (item.contractDbId !== undefined && String(item.contractDbId) === String(id))
+  )
   if (c) {
     contract.value = c as StoredContract
   }
@@ -137,6 +268,22 @@ async function loadContract() {
     const userId = (isAdmin || isManager) ? undefined : authState.user?.id
     await fetchContracts(userId)
     loadLocalContract()
+
+    // If contract not found or docs are empty, fetch from direct backend endpoint with documents relation
+    if (!contract.value || (contract.value.docs && contract.value.docs.length === 0)) {
+      const res = await fetch(`${apiBase}/contracts/${id}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${authState.token}`,
+        }
+      })
+      if (res.ok) {
+        const json = await res.json()
+        if (json.data) {
+          contract.value = mapApiToContract(json.data)
+        }
+      }
+    }
   } catch {
     if (!contract.value) {
       contract.value = null
@@ -148,10 +295,29 @@ async function loadContract() {
 
 const showRejectionModal = ref(false)
 
+// AI Risk Assessment is advisory only: gateState.blocked is always false
+// while the gate feature flag is off (HIGH_RISK_APPROVAL_GATE_ENABLED=false
+// on contract-management), so this never prevents approval — it only
+// carries risk_level for the flag/warning badge below. That badge is itself
+// hidden entirely if the current user has turned off "AI Risk Assessment"
+// in their own profile preferences.
+const { gateState, loading: loadingHighRiskGate, saving: highRiskSaving, fetchGateState, recordDecision } = useHighRiskApproval()
+const { preferences: aiPreferences, fetchPreferences: fetchAiPreferences } = useEmailPreferences()
+const showHighRiskModal = ref(false)
+
+const aiRiskAssessmentVisible = computed(() => aiPreferences.value.aiRiskAssessmentEnabled ?? true)
+
 onMounted(async () => {
   await loadContract()
+  if (!route.query.workflowMock) {
+    await fetchWorkflowProgress(id)
+  }
+  await fetchAiPreferences()
   if (contract.value) {
     await amendmentStore.fetchVersionHistory(contract.value.id, true)
+    if (aiRiskAssessmentVisible.value) {
+      await fetchGateState(contract.value.id)
+    }
   }
   if (route.query.snapshotVersion && contract.value) {
     const snaps = amendmentStore.versionHistory.value[contract.value.id] || []
@@ -182,10 +348,41 @@ const confirmDesc = ref('')
 const confirmAction = ref<(() => void) | null>(null)
 
 function triggerApprove() {
+  // US-023's mandatory high-risk approval gate is DISABLED for now — AI Risk
+  // Assessment is advisory only (a flag/warning on the contract), and never
+  // blocks the normal Approve flow. gateState.blocked is always false while
+  // the backend feature flag (HIGH_RISK_APPROVAL_GATE_ENABLED) is off, so
+  // this check is inert, but left in place (commented-out behavior below)
+  // so the gate can be re-enabled later without rewriting this flow.
+  //
+  // if (gateState.value?.blocked) {
+  //   showHighRiskModal.value = true
+  //   return
+  // }
   confirmTitle.value = 'Approve Contract'
   confirmDesc.value = 'Are you sure you want to approve this contract? This will change the status to Approved.'
   confirmAction.value = handleApprove
   showConfirm.value = true
+}
+
+async function handleHighRiskDecision(decision: 'approved' | 'rejected', rationale: string) {
+  if (!contract.value) return
+  const result = await recordDecision(contract.value.id, decision, rationale)
+  if (!result.ok) {
+    error('Failed to record decision', result.message ?? 'Something went wrong.')
+    return
+  }
+  showHighRiskModal.value = false
+  if (decision === 'approved') {
+    success('High-risk approval recorded', 'You can now approve the contract.')
+    // Proceed straight to the normal approve confirmation now that the gate is clear.
+    confirmTitle.value = 'Approve Contract'
+    confirmDesc.value = 'Are you sure you want to approve this contract? This will change the status to Approved.'
+    confirmAction.value = handleApprove
+    showConfirm.value = true
+  } else {
+    success('Decision recorded', 'The high-risk approval was recorded as rejected.')
+  }
 }
 
 function triggerReject() {
@@ -211,7 +408,19 @@ async function handleApprove() {
       body: JSON.stringify({ approval_status: 'Approved', workflow_status: 'SBSI Review' }),
     })
     const data = await res.json()
-    if (!res.ok) { error('Failed to approve', data.message ?? 'Something went wrong.'); return }
+    if (!res.ok) {
+      // Inert while HIGH_RISK_APPROVAL_GATE_ENABLED is off on the backend
+      // (the backend never returns requires_high_risk_approval in that
+      // state). Left in place so the gate can be re-enabled later without
+      // rewriting this handler.
+      if (res.status === 422 && data.requires_high_risk_approval) {
+        await fetchGateState(contract.value.id)
+        showHighRiskModal.value = true
+        return
+      }
+      error('Failed to approve', data.message ?? 'Something went wrong.')
+      return
+    }
 
     updateContractInCache(id, { approvalStatus: 'Approved', workflowStatus: 'SBSI Review' })
     success('Contract approved', `${contract.value.businessPartner}'s contract has been approved.`)
@@ -390,9 +599,10 @@ async function confirmSaveEdit() {
   }
 }
 
-async function handleNotifyManager() {
+async function handleNotifyStep() {
   try {
-    const res = await fetch(`${apiBase}/contracts/${id}/notify-manager`, {
+    const endpoint = isEngineRouted.value ? 'notify-step' : 'notify-manager'
+    const res = await fetch(`${apiBase}/contracts/${id}/${endpoint}`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -402,13 +612,14 @@ async function handleNotifyManager() {
     const data = await res.json()
     if (!res.ok) {
       if (res.status === 429) {
-        error('Action limited', 'The manager is already notified, please wait.')
+        error('Action limited', data.message ?? 'Already notified, please wait.')
       } else {
         error('Failed to notify', data.message ?? 'Something went wrong.')
       }
       return
     }
-    success('Success', data.message ?? 'Manager has been notified.')
+    const targetDesc = data.targetRoles ?? 'Manager'
+    success('Notified', data.message ?? `${targetDesc} has been notified.`)
   } catch {
     error('Network error', 'Could not reach the server.')
   }
@@ -640,15 +851,22 @@ const activeSnapForDiff = computed(() => {
         :reject-reason-valid="rejectReason.trim().length > 0"
         :disabled="isUploadingOrScanFailed"
         :is-snapshot="viewingSnapshotVersion !== null"
+        :risk-level="aiRiskAssessmentVisible ? (gateState?.riskLevel ?? null) : null"
+        :is-risk-loading="aiRiskAssessmentVisible && loadingHighRiskGate"
+        :approval-locked="false"
+        :nudge-label="nudgeLabel"
+        :is-engine-routed="isEngineRouted"
         @back="router.push(backPath)"
         @edit="handleEditClick"
         @open-history="showHistoryDrawer = true"
         @save="triggerSaveEdit"
         @cancel="cancelEdit"
-        @notify-manager="handleNotifyManager"
+        @notify-step="handleNotifyStep"
         @approve="triggerApprove"
         @toggle-reject="handleToggleReject"
         @confirm-reject="triggerReject"
+        @open-risk-assessment="router.push(riskAssessmentPath)"
+        @open-workflow-tracker="showWorkflowTracker = true"
       />
 
       <!-- Rejection input (manager rejecting) -->
@@ -688,7 +906,6 @@ const activeSnapForDiff = computed(() => {
         :is-approved="contract.approvalStatus === 'Approved'"
       />
       <ContractDocumentsSection
-        v-slot:default
         v-if="displayedContract"
         :docs="isEditing ? contractDocs : displayedContract.docs"
         :is-editing="isEditing"
@@ -707,144 +924,37 @@ const activeSnapForDiff = computed(() => {
       @confirm="confirmAction ? confirmAction() : undefined"
     />
 
+    <WorkflowTrackerModal
+      v-model:open="showWorkflowTracker"
+      :workflow="workflowTracker"
+      :status="workflowTrackerStatus"
+      :on-retry="handleWorkflowRetry"
+    />
+
     <RejectionReasonModal
       v-if="contract"
       v-model:open="showRejectionModal"
       :reason="contract.rejectionReason || ''"
     />
 
-    <!-- Version History Drawer Overlay -->
-    <div v-if="showHistoryDrawer" 
-      class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300"
-      @click="showHistoryDrawer = false">
-    </div>
+    <HighRiskApprovalModal
+      v-model:open="showHighRiskModal"
+      :risk-level="gateState?.riskLevel ?? null"
+      :saving="highRiskSaving"
+      @submit="handleHighRiskDecision"
+    />
 
-    <!-- Version History Drawer -->
-    <div 
-      class="fixed right-0 top-0 h-screen w-full sm:w-[480px] bg-white border-l border-black/10 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-out font-poppins"
-      :class="showHistoryDrawer ? 'translate-x-0' : 'translate-x-full'"
-    >
-      <!-- Drawer Header -->
-      <div class="p-6 border-b border-black/5 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <Clock class="w-5 h-5 text-[#2E85D8]" />
-          <h3 class="text-base font-bold text-black">Version History</h3>
-        </div>
-        <button @click="showHistoryDrawer = false" class="p-1.5 hover:bg-black/5 rounded-lg text-black/40 hover:text-black transition-colors">
-          <X class="w-5 h-5" />
-        </button>
-      </div>
-
-      <!-- Drawer Content -->
-      <div class="flex-1 overflow-y-auto p-6 space-y-4">
-        <!-- Versions Timeline -->
-        <div class="relative pl-6 border-l border-black/[0.08] space-y-8 ml-2 mt-2">
-          <!-- Current Active Version -->
-          <div class="relative">
-            <!-- Timeline dot -->
-            <div class="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#2E85D8] border-2 border-white ring-4 ring-[#2E85D8]/15"></div>
-            
-            <div 
-              @click="toggleVersionExpand(activeVersion)"
-              class="group cursor-pointer hover:bg-black/[0.02] p-3 rounded-lg border border-black/[0.04] transition-all duration-200"
-              :class="expandedVersion === activeVersion ? 'bg-[#2E85D8]/[0.02] border-[#2E85D8]/30 shadow-sm' : ''"
-            >
-              <div class="flex items-center justify-between">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-[#2E85D8]/8 text-[#2E85D8] text-[10px] font-bold uppercase tracking-wider">
-                  Version {{ activeVersion }} (Current)
-                </span>
-                <span class="text-[10px] text-black/35 font-medium">Active</span>
-              </div>
-              <h4 class="text-xs font-semibold text-black mt-1.5">Latest approved state</h4>
-              <p class="text-[11px] text-black/40 mt-0.5">Active details shown on main contract page</p>
-
-              <!-- Expanded Diff Comparison for Current vs Last historical version -->
-              <div v-if="expandedVersion === activeVersion" class="mt-4 pt-4 border-t border-black/[0.05] space-y-3 cursor-default" @click.stop>
-                <h5 class="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">Changes in this version</h5>
-                
-                <div v-if="getDiffList(activeSnapForDiff).length === 0" class="text-xs text-black/35 text-center py-2">
-                  No detail changes (only documents updated).
-                </div>
-                <div v-else class="space-y-2.5">
-                  <div v-for="diff in getDiffList(activeSnapForDiff)" :key="diff.field" class="text-xs">
-                    <span class="font-semibold text-black/50 block capitalize text-[10px]">{{ diff.field }}</span>
-                    <div class="flex flex-col gap-1 mt-1 font-mono bg-black/[0.01] p-1.5 rounded border border-black/[0.03]">
-                      <span class="text-red-600 line-through whitespace-pre-wrap shrink-0 block">
-                        - {{ diff.old }}
-                      </span>
-                      <span class="text-emerald-600 font-semibold whitespace-pre-wrap shrink-0 block">
-                        + {{ diff.new }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Historical Versions -->
-          <div v-for="snap in historicalSnapshots" :key="snap.version" class="relative">
-            <!-- Timeline dot -->
-            <div class="absolute -left-[30px] top-1.5 w-2 h-2 rounded-full bg-black/20 border border-white"></div>
-            
-            <div 
-              @click="toggleVersionExpand(snap.version)"
-              class="group cursor-pointer hover:bg-black/[0.02] p-3 rounded-lg border border-black/[0.04] transition-all duration-200"
-              :class="expandedVersion === snap.version ? 'bg-black/[0.01] border-[#2E85D8]/30 shadow-sm' : ''"
-            >
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-[#252578] uppercase tracking-wide">
-                  Version {{ snap.version }}
-                </span>
-                <span class="text-[10px] text-black/35 font-medium">{{ snap.approvedDate }}</span>
-              </div>
-              <p class="text-xs text-black/70 mt-1.5 line-clamp-2">{{ snap.reason }}</p>
-              
-              <div class="flex items-center justify-between mt-3 text-[10px] text-black/40">
-                <span>By: {{ snap.amendedBy }}</span>
-                <span class="flex items-center gap-1 font-semibold text-black/60">
-                  Approved: {{ snap.approvedBy }}
-                  <ChevronDown class="w-3.5 h-3.5 transition-transform duration-200" :class="expandedVersion === snap.version ? 'rotate-180' : ''" />
-                </span>
-              </div>
-
-              <!-- Expanded Diff Comparison -->
-              <div v-if="expandedVersion === snap.version" class="mt-4 pt-4 border-t border-black/[0.05] space-y-3 cursor-default" @click.stop>
-                <h5 class="text-[10px] font-bold uppercase tracking-widest text-black/40 mb-2">Changes in this version</h5>
-                
-                <div v-if="getDiffList(snap).length === 0" class="text-xs text-black/35 text-center py-2">
-                  No detail changes (only documents updated).
-                </div>
-                <div v-else class="space-y-2.5">
-                  <div v-for="diff in getDiffList(snap)" :key="diff.field" class="text-xs">
-                    <span class="font-semibold text-black/50 block capitalize text-[10px]">{{ diff.field }}</span>
-                    <div class="flex flex-col gap-1 mt-1 font-mono bg-black/[0.01] p-1.5 rounded border border-black/[0.03]">
-                      <span class="text-red-600 line-through whitespace-pre-wrap shrink-0 block">
-                        - {{ diff.old }}
-                      </span>
-                      <span class="text-emerald-600 font-semibold whitespace-pre-wrap shrink-0 block">
-                        + {{ diff.new }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- View Snapshot button -->
-                <div class="pt-3 border-t border-black/[0.03] flex justify-end">
-                  <Button 
-                    @click="selectSnapshot(snap.version, snap.approvedDate)"
-                    variant="outline"
-                    class="h-8 text-xs font-semibold border-[#2E85D8] text-[#2E85D8] hover:bg-[#2E85D8]/5 flex items-center gap-1.5 transition-colors"
-                  >
-                    <Clock class="w-3.5 h-3.5" />
-                    View Snapshot
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <VersionHistoryDrawer
+      :key="String(showHistoryDrawer)"
+      :open="showHistoryDrawer"
+      :snapshots="historicalSnapshots"
+      :active-version="activeVersion"
+      :active-snap-for-diff="activeSnapForDiff"
+      :expanded-version="expandedVersion"
+      :get-diff-list="getDiffList"
+      @close="showHistoryDrawer = false"
+      @toggle="toggleVersionExpand"
+      @view-snapshot="(ver, date) => selectSnapshot(ver, date)"
+    />
   </div>
 </template>

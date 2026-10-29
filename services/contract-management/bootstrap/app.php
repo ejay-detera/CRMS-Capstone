@@ -13,9 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'auth.internal' => \App\Http\Middleware\AuthenticateInternal::class,
-            'permission'    => \App\Http\Middleware\HasPermission::class,
-            'role'          => \App\Http\Middleware\HasRole::class,
+            'auth.internal'   => \App\Http\Middleware\AuthenticateInternal::class,
+            'permission'      => \App\Http\Middleware\HasPermission::class,
+            'role'            => \App\Http\Middleware\HasRole::class,
+            'internal.secret' => \App\Http\Middleware\ValidateInternalSecret::class,
         ]);
         $middleware->encryptCookies(except: [
             'session_id',

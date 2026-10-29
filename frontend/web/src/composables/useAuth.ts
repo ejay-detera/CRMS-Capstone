@@ -34,6 +34,23 @@ export function useAuth() {
     const profileRole = (state.user as any).profile?.role?.name
     return profileRole || state.user.role
   })
+
+  // The role's navigation group ("admin" | "manager" | "staff"), set by auth-module
+  // per role rather than hardcoded by role name. Drives CMS routing/layout
+  // selection so new custom roles (e.g. "Regulatory Officer") are routable
+  // just by tagging a nav_group — no CMS code change required.
+  const navGroup = computed<string | undefined>(() => {
+    if (!state.user) return undefined
+    const explicitGroup = (state.user as any).profile?.role?.nav_group
+    if (explicitGroup) return explicitGroup
+
+    // Fallback based on role name for safety before refreshPermissions finishes
+    const roleName = role.value || ''
+    if (['Admin', 'Super Admin', 'CEO', 'IT Admin'].includes(roleName)) return 'admin'
+    if (['Manager', 'Finance Manager', 'Supervisor'].includes(roleName)) return 'manager'
+    if (['Sales', 'Employee', 'Finance', 'Finance Employee', 'Accountant', 'Engineer'].includes(roleName)) return 'staff'
+    return undefined
+  })
   
   // Robustly extract and normalize permissions from state.user
   const permissions = computed<string[]>(() => {
@@ -180,8 +197,35 @@ export function useAuth() {
     window.location.href = '/'
   }
 
+  const hasFrontendPermission = (slug: string): boolean => {
+    if (role.value === 'Admin' || role.value === 'Super Admin') return true
+    const roleName = role.value
+    if (!roleName) return false
+    const FRONTEND_PERM_IDS: Record<string, number> = {
+      'cms.ai.risk_assessment':    -1,
+      'cms.ai.vendor_suggestions': -2,
+      'cms.ai.ocr':                -3,
+      'cms.ai.contract_generator': -4,
+    }
+    const stored = localStorage.getItem(`cms_frontend_perms_${roleName}`)
+    if (!stored) {
+      // Default enabled for Sales/Admin for OCR & Contract Generator
+      if (roleName === 'Sales' && (slug === 'cms.ai.contract_generator' || slug === 'cms.ai.ocr')) {
+        return true
+      }
+      return false
+    }
+    const ids: number[] = JSON.parse(stored)
+    const id = FRONTEND_PERM_IDS[slug]
+    return id !== undefined && ids.includes(id)
+  }
+
   const hasPermission = (permission: string) => {
-    if (role.value === 'Admin') return true
+    if (role.value === 'Admin' || role.value === 'Super Admin') return true
+
+    if (permission.startsWith('cms.ai.')) {
+      return hasFrontendPermission(permission)
+    }
 
     // 1. Exact match
     if (permissions.value.includes(permission)) return true
@@ -214,6 +258,7 @@ export function useAuth() {
     isAuthenticated,
     user,
     role,
+    navGroup,
     permissions,
     setAuth,
     refreshPermissions,

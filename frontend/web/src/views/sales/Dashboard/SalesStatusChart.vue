@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_HEX } from '@/constants/theme'
 import { computed } from 'vue'
 import { VisSingleContainer, VisDonut } from '@unovis/vue'
 import type { ContractRequest } from '@/types/contractRequest'
@@ -27,9 +28,9 @@ const data = computed<StatusItem[]>(() => {
   })
 
   return [
-    { label: 'Approved',          value: counts.Approved, color: '#252578' },
-    { label: 'Pending/Review',    value: counts.Pending,  color: '#2E85D8' },
-    { label: 'Rejected',          value: counts.Rejected, color: '#2F2F73' },
+    { label: 'Approved',          value: counts.Approved, color: BRAND_HEX.navy },
+    { label: 'Pending/Review',    value: counts.Pending,  color: BRAND_HEX.blue },
+    { label: 'Rejected',          value: counts.Rejected, color: BRAND_HEX.dark },
   ]
 })
 

@@ -91,7 +91,7 @@ function submit() {
 }
 
 function err(field: keyof typeof touched, extra = true) {
-  return touched[field] && extra ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15'
+  return touched[field] && extra ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15' : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15'
 }
 </script>
 
@@ -102,8 +102,8 @@ function err(field: keyof typeof touched, extra = true) {
       <!-- Header -->
       <div class="px-6 pt-6 pb-5 border-b border-black/6">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-[#252578]/8 flex items-center justify-center shrink-0">
-            <component :is="activeTab === 'partners' ? Building2 : Truck" class="w-4.5 h-4.5 text-[#252578]" />
+          <div class="w-9 h-9 rounded-lg bg-brand-navy/8 flex items-center justify-center shrink-0">
+            <component :is="activeTab === 'partners' ? Building2 : Truck" class="w-4.5 h-4.5 text-brand-navy" />
           </div>
           <DialogHeader>
             <DialogTitle class="text-base font-semibold text-black">
@@ -126,7 +126,7 @@ function err(field: keyof typeof touched, extra = true) {
             :class="['w-full h-9 rounded-md border bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 transition',
               (touched.name && (!form.name || form.name.trim().length < 2)) || isDuplicate
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-400/15'
-                : 'border-black/12 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15']" />
+                : 'border-black/12 focus:border-brand-blue focus:ring-brand-blue/15']" />
           <p v-if="touched.name && !form.name" class="text-xs text-red-500">Name is required.</p>
           <p v-else-if="touched.name && form.name.trim().length < 2" class="text-xs text-red-500">Name must be at least 2 characters.</p>
           <p v-else-if="isDuplicate" class="text-xs text-red-500">This name is already registered.</p>
@@ -144,7 +144,7 @@ function err(field: keyof typeof touched, extra = true) {
             <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">Region <span class="text-red-500">*</span></label>
             <Select v-model="form.region" @update:model-value="touched.region = true">
               <SelectTrigger class="h-9 rounded-md text-sm"
-                :class="touched.region && !form.region ? 'border-red-400' : 'border-black/12 focus:border-[#2E85D8]'">
+                :class="touched.region && !form.region ? 'border-red-400' : 'border-black/12 focus:border-brand-blue'">
                 <SelectValue placeholder="Select region" />
               </SelectTrigger>
               <SelectContent>
@@ -196,7 +196,7 @@ function err(field: keyof typeof touched, extra = true) {
         <div v-if="activeTab === 'suppliers'" class="space-y-1.5">
           <label class="text-xs font-semibold text-black/55 uppercase tracking-wide">TIN Number</label>
           <input v-model="form.tinNumber" type="text" placeholder="000-000-000-000" maxlength="100"
-            class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 focus:border-[#2E85D8] focus:ring-[#2E85D8]/15 transition" />
+            class="w-full h-9 rounded-md border border-black/12 bg-white px-3 text-sm placeholder:text-black/25 focus:outline-none focus:ring-2 focus:border-brand-blue focus:ring-brand-blue/15 transition" />
         </div>
 
         <!-- Status -->
@@ -217,7 +217,7 @@ function err(field: keyof typeof touched, extra = true) {
           <DialogFooter>
             <Button type="button" variant="outline" class="h-9 px-4 text-sm border-black/15 text-black/60 hover:text-black"
               @click="$emit('update:open', false)">Cancel</Button>
-            <Button type="submit" class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
+            <Button type="submit" class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white">
               {{ isEdit ? 'Save Changes' : `Add ${activeTab === 'partners' ? 'Partner' : 'Supplier'}` }}
             </Button>
           </DialogFooter>

@@ -6,16 +6,22 @@ const BASE_URL = import.meta.env.VITE_NOTIFICATION_API_URL as string
 
 function makeHeaders(): HeadersInit {
   const { state } = useAuth()
-  return {
+  const headers: Record<string, string> = {
     'Accept':        'application/json',
     'Content-Type':  'application/json',
-    ...(state.token ? { 'Authorization': `Bearer ${state.token}` } : {}),
   }
+  if (state.token && state.token !== 'null' && state.token !== 'undefined') {
+    headers['Authorization'] = `Bearer ${state.token}`
+  }
+  return headers
 }
 
 function apiTypeToNotifType(notifType: string | undefined): NotifType {
   if (notifType === 'expiry_90' || notifType === 'expiry_30' || notifType === 'expiry_1') {
     return 'reminder'
+  }
+  if (notifType === 'email_dispatch' || notifType === 'new_vendor') {
+    return 'system'
   }
   return 'contract'
 }
@@ -63,7 +69,10 @@ export function useNotifications() {
   async function fetchNotifications(): Promise<void> {
     loading.value = true
     try {
-      const res  = await fetch(`${BASE_URL}/notifications`, { headers: makeHeaders() })
+      const res  = await fetch(`${BASE_URL}/notifications`, {
+        headers: makeHeaders(),
+        credentials: 'same-origin',
+      })
       const json = await res.json()
       if (res.ok) {
         notifications.value = (json.data ?? []).map(mapNotification)
@@ -80,8 +89,9 @@ export function useNotifications() {
     if (notif) notif.isRead = true
     try {
       await fetch(`${BASE_URL}/notifications/${id}/read`, {
-        method:  'PATCH',
-        headers: makeHeaders(),
+        method:      'PATCH',
+        headers:     makeHeaders(),
+        credentials: 'same-origin',
       })
     } catch (e) {
       console.error('Failed to mark read', e)
@@ -92,8 +102,9 @@ export function useNotifications() {
     notifications.value.forEach(n => { if (!n.isArchived) n.isRead = true })
     try {
       await fetch(`${BASE_URL}/notifications/read-all`, {
-        method:  'PATCH',
-        headers: makeHeaders(),
+        method:      'PATCH',
+        headers:     makeHeaders(),
+        credentials: 'same-origin',
       })
     } catch (e) {
       console.error('Failed to mark all read', e)
@@ -108,15 +119,44 @@ export function useNotifications() {
     }
     try {
       await fetch(`${BASE_URL}/notifications/${id}/state`, {
-        method:  'PATCH',
-        headers: makeHeaders(),
-        body:    JSON.stringify({
+        method:      'PATCH',
+        headers:     makeHeaders(),
+        credentials: 'same-origin',
+        body:        JSON.stringify({
           is_archived: patch.isArchived,
           is_favorite: patch.isFavorite,
         }),
       })
     } catch (e) {
       console.error('Failed to update notification state', e)
+    }
+  }
+
+  async function deletePermanent(id: string): Promise<void> {
+    notifications.value = notifications.value.filter(n => n.id !== id)
+    try {
+      await fetch(`${BASE_URL}/notifications/${id}`, {
+        method:      'DELETE',
+        headers:     makeHeaders(),
+        credentials: 'same-origin',
+      })
+    } catch (e) {
+      console.error('Failed to permanently delete notification', e)
+    }
+  }
+
+  async function deletePermanentBatch(ids: string[]): Promise<void> {
+    const idSet = new Set(ids)
+    notifications.value = notifications.value.filter(n => !idSet.has(n.id))
+    try {
+      await fetch(`${BASE_URL}/notifications/batch-delete`, {
+        method:      'POST',
+        headers:     makeHeaders(),
+        credentials: 'same-origin',
+        body:        JSON.stringify({ ids }),
+      })
+    } catch (e) {
+      console.error('Failed to permanently delete notifications', e)
     }
   }
 
@@ -128,5 +168,7 @@ export function useNotifications() {
     markRead,
     markAllRead,
     updateState,
+    deletePermanent,
+    deletePermanentBatch,
   }
 }

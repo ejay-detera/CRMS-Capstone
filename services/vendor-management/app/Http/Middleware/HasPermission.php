@@ -21,9 +21,40 @@ class HasPermission
      */
     public function handle(Request $request, Closure $next, string $permission): Response
     {
-        $permissions = $request->get('auth_permissions', []);
+        $role = $request->get('auth_role');
+        if (in_array($role, ['Admin', 'Super Admin'], true)) {
+            return $next($request);
+        }
 
-        if (!in_array($permission, $permissions)) {
+        $permissions = $request->get('auth_permissions', []);
+        $requiredPerms = array_map('trim', explode('|', $permission));
+
+        $allowed = false;
+        foreach ($requiredPerms as $req) {
+            if (in_array($req, $permissions, true)) {
+                $allowed = true;
+                break;
+            }
+            if (preg_match('/^cms\.([^.]+)\.([^.]+)$/', $req, $matches)) {
+                $resource = $matches[1];
+                $action = $matches[2];
+                $alts = [
+                    "{$action}-{$resource}",
+                    "{$resource}.{$action}",
+                    "{$action}_{$resource}",
+                    "{$resource}-{$action}",
+                    "{$action} {$resource}",
+                ];
+                foreach ($alts as $alt) {
+                    if (in_array($alt, $permissions, true)) {
+                        $allowed = true;
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        if (!$allowed) {
             // Log permission denial
             $userId = $request->get('auth_id');
             $this->auditLogService->log(

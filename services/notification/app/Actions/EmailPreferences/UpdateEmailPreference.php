@@ -22,6 +22,8 @@ final readonly class UpdateEmailPreference
             'system_alerts_enabled' => (bool)$oldPreference->system_alerts_enabled,
             'sms_notifications_enabled' => (bool)$oldPreference->sms_notifications_enabled,
             'login_alerts_enabled' => (bool)$oldPreference->login_alerts_enabled,
+            'ai_risk_assessment_enabled' => (bool)$oldPreference->ai_risk_assessment_enabled,
+            'ai_vendor_suggestions_enabled' => (bool)$oldPreference->ai_vendor_suggestions_enabled,
         ] : null;
 
         $preference = EmailPreference::updateOrCreate(
@@ -32,6 +34,8 @@ final readonly class UpdateEmailPreference
                 'system_alerts_enabled' => $payload->systemAlertsEnabled,
                 'sms_notifications_enabled' => $payload->smsNotificationsEnabled,
                 'login_alerts_enabled' => $payload->loginAlertsEnabled,
+                'ai_risk_assessment_enabled' => $payload->aiRiskAssessmentEnabled,
+                'ai_vendor_suggestions_enabled' => $payload->aiVendorSuggestionsEnabled,
             ]
         );
 
@@ -41,6 +45,8 @@ final readonly class UpdateEmailPreference
             'system_alerts_enabled' => (bool)$payload->systemAlertsEnabled,
             'sms_notifications_enabled' => (bool)$payload->smsNotificationsEnabled,
             'login_alerts_enabled' => (bool)$payload->loginAlertsEnabled,
+            'ai_risk_assessment_enabled' => (bool)$payload->aiRiskAssessmentEnabled,
+            'ai_vendor_suggestions_enabled' => (bool)$payload->aiVendorSuggestionsEnabled,
         ];
 
         $name = $actor['name'] ?? null;

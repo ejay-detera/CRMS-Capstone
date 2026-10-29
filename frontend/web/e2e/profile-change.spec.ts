@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 
 const LOGIN_URL = 'http://localhost:5173/';
 const DASHBOARD_URL = 'http://localhost:5173/cms/sales/dashboard?state=/cms/sales/dashboard';
@@ -11,7 +11,7 @@ async function loginAndGoToDashboard(page: any) {
     await page.getByRole('textbox', { name: 'Email' }).fill(EMAIL);
     await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
     await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.waitForURL(/(?!.*login).*/, { timeout: 15000 });
+    await page.waitForURL(/^(?!.*login).*$/, { timeout: 15000 });
     await page.goto(DASHBOARD_URL);
     await page.waitForLoadState('networkidle', { timeout: 15000 });
 }

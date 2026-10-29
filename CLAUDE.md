@@ -2,12 +2,27 @@
 
 ## Required References
 
-**Always consult these two files before writing any frontend code:**
+**Always consult these canonical references before writing any code:**
 
-- **Vue expert skill** — `frontend/web/skills/vue-expert/SKILL.md` (and its `references/` folder)
-- **Frontend rules** — `context/frontend-skills/frontend-rule.md`
+- **Canonical ONE UI Design System** — `DESIGN.md`. **The single source of truth for all frontend visuals**: colors, typography, 8px spacing, elevation, component anatomy, states, skeletons/spinners, toasts, badges, and layout. If any other doc disagrees, `DESIGN.md` wins.
+- **Vue expert skill** — `frontend/web/skills/vue-expert/SKILL.md` (and its `references/` folder) — Vue 3 / TypeScript conventions.
+- **Backend tasks** — `LARAVEL-SKILL.md` and `DATABASE_TABLES.md`.
 
-These override any default behavior. Read them at the start of every frontend task.
+> `context/frontend-skills/frontend-rule.md` is **legacy/secondary** and not required reading — `DESIGN.md` supersedes it for all design decisions.
+
+## Stack Pinning
+
+- `frontend/web` = Vue 3 + Vite + TypeScript + **Tailwind CSS v4** (`@tailwindcss/vite`, tokens live in `src/style.css`) + reka-ui/shadcn-vue primitives + `lucide-vue-next`.
+- **Do not downgrade to Tailwind 3.4.** That pin applies only to the external `web-interface` (Auth module) project.
+- State lives in composables (`src/composables/use*.ts`). Pinia is not installed — do not add it.
+
+## Runtime Facts
+
+- `frontend/web` — Vue 3 + Vite, port `5001`, base path `/cms/`, Tailwind **v4**.
+- Gateway lives in the sibling `capstone-auth-module` repo on `5173` (`/cms/` + `/api/*`); required for login and all `VITE_*_API_URL` calls.
+- `docker compose up -d` is enough — containers auto-run `composer install`, `artisan migrate`, queue workers, and `artisan serve`.
+- Root `.env`, `services/*/.env`, and `frontend/web/.env` are git-ignored and already exist locally — do not recreate them.
+- Demo data comes only from `database/seeders/`.
 
 ## Component Architecture
 
@@ -24,7 +39,7 @@ views/admin/PageName/
 Rules:
 - `index.vue` holds `ref`, `reactive`, `computed`, and event handlers. Its template is a short composition of sub-components.
 - Sub-components receive data via `defineProps<T>()` and communicate up via `defineEmits<T>()`.
-- Dialogs own their internal form state (touched, validation, reset). They emit `submit` with the final data; the parent mutates the list.
+- Dialogs own their internal form state (touched, validation, reset). They emit `submit` with the final data; the parent calls the service through its composable, then refreshes/reconciles the list from the API response.
 - Shared types go in `src/types/<domain>.ts` and are imported everywhere — never re-declare interfaces across files.
 - Shared UI patterns (toggle switches, setting cards, etc.) go in `src/components/shared/`.
 
@@ -37,11 +52,12 @@ Rules:
 
 ## Design System
 
+- Follow `DESIGN.md` for everything visual. No local reinterpretation of tokens.
 - Brand colors only: `#252578` (navy), `#2E85D8` (blue), `#2F2F73` (dark navy). No off-brand colors.
-- Avatar palette restricted to those three colors.
-- Font: Poppins.
+- Fonts: **Poppins** primary (headings, buttons, nav, table headers, forms); **Montserrat** secondary (descriptions, helper text, timestamps).
+- Avatar palette restricted to the three brand colors.
 - Table headers: `bg-black/[0.018]` background, `border-black/[0.04]` bottom border.
-- Pagination: use `<TablePagination>` (`src/components/shared/TablePagination.vue`) — a centered `< 1 2 3 4 5 >` control with a sliding 5-page window; out-of-range page numbers are visible but disabled. All tables use 15 records per page.
+- Pagination: use `<TablePagination>` (`src/components/shared/TablePagination.vue`) — a centered `< 1 2 3 4 5 >` control with a sliding 5-page window; out-of-range page numbers are visible but disabled. All tables use 15 records per page (`PAGE_SIZE = 15`, sent as `per_page`).
 
 ## Dependencies
 
@@ -50,9 +66,14 @@ Install new packages via Docker only:
 docker compose exec web npm install <package>
 ```
 
-## Dummy Data
+## Data & API Integration
 
-All views use local `ref<T[]>([...])` dummy data until backend integration. No API calls yet.
+**No dummy data in views — this project is API-backed.**
+
+- Views/components load data through `src/composables/use*.ts`, which call the microservices via the shared gateway (`VITE_*_API_URL` in `frontend/web/.env` → `http://localhost:5173/api/...`).
+- Sample/test data belongs in `services/<service>/database/seeders/` and `database/factories/` only.
+- Only keep explicitly labelled dev fallbacks where a record may not exist yet (e.g. `?workflowMock=`), never as the default path.
+- Follow the Laravel response shapes from `LARAVEL-SKILL.md`; surface errors via the standard toast pattern.
 
 ## Task Workflow
 

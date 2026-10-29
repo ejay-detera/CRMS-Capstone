@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BRAND_HEX } from '@/constants/theme'
 import { computed, ref } from 'vue'
 import { VisXYContainer, VisLine, VisArea, VisAxis, VisTooltip, VisCrosshair } from '@unovis/vue'
 import type { Contract } from '@/types/contract'
@@ -92,7 +93,7 @@ const tooltipTemplate = (d: any) =>
           </button>
         </div>
         <div class="flex items-center gap-1.5">
-          <div class="w-2.5 h-0.5 bg-[#2E85D8]"></div>
+          <div class="w-2.5 h-0.5 bg-brand-blue"></div>
           <span class="text-xs text-black/40">Contracts Trend</span>
         </div>
       </div>
@@ -109,12 +110,12 @@ const tooltipTemplate = (d: any) =>
           '--vis-font-family': 'inherit',
         }"
       >
-        <VisArea :x="x" :y="y" color="#2E85D8" :opacity="0.1" />
-        <VisLine :x="x" :y="y" color="#2E85D8" :thickness="2" />
+        <VisArea :x="x" :y="y" :color="BRAND_HEX.blue" :opacity="0.1" />
+        <VisLine :x="x" :y="y" :color="BRAND_HEX.blue" :thickness="2" />
         <VisAxis type="x" :tick-format="xTickFormat" :tickValues="trendData.map((_, i) => i)" />
         <VisAxis type="y" />
         <VisTooltip :horizontal-shift="20" />
-        <VisCrosshair :template="tooltipTemplate" color="#2E85D8" />
+        <VisCrosshair :template="tooltipTemplate" :color="BRAND_HEX.blue" />
       </VisXYContainer>
     </div>
   </div>

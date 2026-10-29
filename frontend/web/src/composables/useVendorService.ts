@@ -13,8 +13,10 @@ function makeHeaders(): HeadersInit {
 }
 
 function mapPartner(d: any): Partner {
+  const rawCode = d.bp_code || `BP-${String(d.partner_id).padStart(4, '0')}`
+  const code = String(rawCode).replace(/^(BP-)+/i, 'BP-')
   return {
-    id:            d.partner_id,
+    id:            code,
     db_id:         d.partner_id,
     name:          d.partner_name   ?? '',
     industry:      d.industry       ?? '',
@@ -24,7 +26,7 @@ function mapPartner(d: any): Partner {
     email:         d.email          ?? '',
     phone:         d.contact_number ?? '',
     address:       d.address        ?? '',
-    bpCode:        d.bp_code        ?? null,
+    bpCode:        code,
     tinNumber:     null,
   }
 }
@@ -46,6 +48,11 @@ function mapSupplier(d: any): Partner {
   }
 }
 
+function toUrl(path: string): URL {
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
+  return new URL(path, origin)
+}
+
 async function fetchAllPages(firstUrl: string): Promise<any[]> {
   let url: string | null = firstUrl
   const all: any[] = []
@@ -54,13 +61,23 @@ async function fetchAllPages(firstUrl: string): Promise<any[]> {
     if (!res.ok) throw new Error(`Request failed: ${res.status}`)
     const json = await res.json()
     all.push(...(json.data ?? []))
-    url = json.next_page_url ?? null
+    if (json.next_page_url) {
+      try {
+        const next = toUrl(json.next_page_url)
+        const cleanPath = next.pathname.replace(/^\/api/, '')
+        url = toUrl(`${BASE_URL}${cleanPath}${next.search}`).toString()
+      } catch {
+        url = null
+      }
+    } else {
+      url = null
+    }
   }
   return all
 }
 
 async function fetchPartners(region?: string): Promise<Partner[]> {
-  const url = new URL(`${BASE_URL}/partners`)
+  const url = toUrl(`${BASE_URL}/partners`)
   if (region) url.searchParams.set('region', region)
   const rows = await fetchAllPages(url.toString())
   return rows.map(mapPartner)
@@ -108,8 +125,9 @@ async function updatePartner(id: number, form: AddPartnerForm, bpCode: string | 
   return { partner: mapPartner(json.data), warnings: json.warnings ?? [] }
 }
 
-async function fetchPartnerById(id: number): Promise<Partner> {
-  const res = await fetch(`${BASE_URL}/partners/${id}`, { headers: makeHeaders() })
+async function fetchPartnerById(id: number | string): Promise<Partner> {
+  const cleanId = String(id).replace(/^(BP-)+/i, 'BP-')
+  const res = await fetch(`${BASE_URL}/partners/${cleanId}`, { headers: makeHeaders() })
   const json = await res.json()
   if (!res.ok) throw json
   return mapPartner(json.data)
@@ -127,7 +145,7 @@ async function deletePartner(id: number): Promise<void> {
 }
 
 async function fetchSuppliers(region?: string): Promise<Partner[]> {
-  const url = new URL(`${BASE_URL}/suppliers`)
+  const url = toUrl(`${BASE_URL}/suppliers`)
   if (region) url.searchParams.set('region', region)
   const rows = await fetchAllPages(url.toString())
   return rows.map(mapSupplier)

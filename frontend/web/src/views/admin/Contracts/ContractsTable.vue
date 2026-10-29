@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { BRAND_PALETTE } from '@/constants/theme'
 import { ref, watch, computed } from 'vue'
-import { Search, MoreHorizontal, Eye, Pencil, Trash2, Filter, X } from 'lucide-vue-next'
+import { Search, MoreHorizontal, Eye, Pencil, Trash2, Filter, X, Flag } from 'lucide-vue-next'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { useAuth } from '@/composables/useAuth'
 import { Button } from '@/components/ui/button'
@@ -16,10 +17,21 @@ import {
 } from '@/components/ui/select'
 import TablePagination from '@/components/shared/TablePagination.vue'
 import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus, formatRemainingTime } from '@/types/contract'
-import type { Contract, FilterTab, StatusFilter } from '@/types/contract'
+import type { ContractWithDays, FilterTab, StatusFilter } from '@/types/contract'
+import { contractGroup, CONTRACT_GROUPS, groupCounts } from '@/utils/contractSort'
+import type { ContractGroupKey } from '@/utils/contractSort'
 import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
+import { useRiskAssessment } from '@/composables/useRiskAssessment'
+import type { RiskLevel } from '@/types/riskAssessment'
+import { severityIconColor, severityLabel } from '@/types/riskAssessment'
 
-type ContractWithDays = Contract & { days: number }
+const { fetchBulkLevels } = useRiskAssessment()
+const { hasPermission } = useAuth()
+
+const aiRiskAssessmentVisible = computed(() => hasPermission('cms.ai.risk_assessment'))
+const riskLevels = ref<Record<string, { riskLevel: RiskLevel, findingsCount: number, status: string }>>({})
+const loadingRisk = ref(false)
+
 
 const props = defineProps<{
   paginated:      ContractWithDays[]
@@ -48,8 +60,43 @@ const emit = defineEmits<{
   'update:statusFilter':   [v: StatusFilter]
   'update:currentPage':    [v: number]
   'update:startDateFilter': [v: string]
-  'update:endDateFilter':   [v: string]
+  'update:endDateFilter':  [v: string]
+  openActivity: [id: string]
 }>()
+
+watch(() => props.paginated, async (list) => {
+  if (!aiRiskAssessmentVisible.value) return
+  const ids = list.map(c => c.id)
+  if (!ids.length) {
+    riskLevels.value = {}
+    return
+  }
+  loadingRisk.value = true
+  const res = await fetchBulkLevels(ids)
+  if (res) {
+    riskLevels.value = res
+  }
+  loadingRisk.value = false
+}, { immediate: true })
+
+// ── Grouped sections (contract list ordering) ──────────────────────────
+const groupMetaByKey = computed(() =>
+  Object.fromEntries(CONTRACT_GROUPS.map(g => [g.key, g])) as Record<ContractGroupKey, typeof CONTRACT_GROUPS[number]>
+)
+const counts = computed(() => groupCounts(props.filtered))
+// Only show section headers when the current view actually spans >1 section,
+// so single-lifecycle tabs stay clean.
+const showGroupHeaders = computed(() => CONTRACT_GROUPS.filter(g => counts.value[g.key] > 0).length > 1)
+
+function rowGroup(c: ContractWithDays): ContractGroupKey {
+  return contractGroup(c)
+}
+
+// Headers repeat at the top of every page so context is never lost when paging.
+function isGroupStart(index: number): boolean {
+  if (index === 0) return true
+  return contractGroup(props.paginated[index - 1]) !== contractGroup(props.paginated[index])
+}
 
 const showFilterPopover = ref(false)
 
@@ -148,9 +195,7 @@ const statusOptions: { label: string; value: StatusFilter }[] = [
 ]
 
 
-const { hasPermission } = useAuth()
-
-const palette = ['#252578', '#2E85D8', '#2F2F73']
+const palette = BRAND_PALETTE
 function initials(name: string) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
@@ -166,7 +211,7 @@ function avatarColor(name: string) {
 
     <div class="px-6 pt-5 pb-4 border-b border-black/5">
       <h2 class="text-sm font-semibold text-black">
-        All Contracts <span class="text-black/30 font-normal">({{ loading ? 0 : (totalItems !== undefined ? totalItems : filtered.length) }})</span>
+        All Contracts <span class="text-black/30 font-normal">({{ totalItems !== undefined ? totalItems : filtered.length }})</span>
       </h2>
     </div>
 
@@ -200,7 +245,7 @@ function avatarColor(name: string) {
             <div class="space-y-1">
               <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Category</label>
               <Select :model-value="draftCategory || '__all__'" @update:model-value="(v) => draftCategory = (v === '__all__' ? '' : v as string)">
-                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
+                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-brand-blue/15">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent class="bg-white border border-black/10 shadow-lg">
@@ -214,7 +259,7 @@ function avatarColor(name: string) {
             <div class="space-y-1">
               <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Region</label>
               <Select :model-value="draftRegion || '__all__'" @update:model-value="(v) => draftRegion = (v === '__all__' ? '' : v as string)">
-                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
+                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-brand-blue/15">
                   <SelectValue placeholder="All Regions" />
                 </SelectTrigger>
                 <SelectContent class="bg-white border border-black/10 shadow-lg">
@@ -230,7 +275,7 @@ function avatarColor(name: string) {
             <div class="space-y-1">
               <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Status</label>
               <Select :model-value="draftStatus || '__all__'" @update:model-value="(v) => draftStatus = (v === '__all__' ? '' : (v as StatusFilter))">
-                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
+                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-brand-blue/15">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent class="bg-white border border-black/10 shadow-lg">
@@ -247,12 +292,12 @@ function avatarColor(name: string) {
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-[11px] font-medium text-black/65">Start Date</span>
                   <input type="date" v-model="draftStartDate"
-                    class="h-7 w-36 rounded-md border border-black/10 bg-white px-2 text-xs focus:border-[#2E85D8] focus:outline-none transition-colors" />
+                    class="h-7 w-36 rounded-md border border-black/10 bg-white px-2 text-xs focus:border-brand-blue focus:outline-none transition-colors" />
                 </div>
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-[11px] font-medium text-black/65">End Date</span>
                   <input type="date" v-model="draftEndDate"
-                    class="h-7 w-36 rounded-md border border-black/10 bg-white px-2 text-xs focus:border-[#2E85D8] focus:outline-none transition-colors" />
+                    class="h-7 w-36 rounded-md border border-black/10 bg-white px-2 text-xs focus:border-brand-blue focus:outline-none transition-colors" />
                 </div>
               </div>
             </div>
@@ -264,7 +309,7 @@ function avatarColor(name: string) {
                 Clear All
               </Button>
               <Button size="sm" @click="applyFilters"
-                class="flex-1 h-8 text-xs bg-[#252578] hover:bg-[#2F2F73] text-white font-medium shadow-sm">
+                class="flex-1 h-8 text-xs bg-brand-navy hover:bg-brand-dark text-white font-medium shadow-sm">
                 Apply Filters
               </Button>
             </div>
@@ -279,7 +324,7 @@ function avatarColor(name: string) {
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"
           type="text" placeholder="Search contracts..."
           maxlength="100"
-          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
+          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15 transition" />
       </div>
     </div>
 
@@ -348,8 +393,6 @@ function avatarColor(name: string) {
             <TableCell class="py-4">
               <div class="h-5 w-24 bg-black/5 animate-pulse rounded-full"></div>
             </TableCell>
-
-            <!-- Status -->
             <TableCell class="py-4">
               <div class="flex flex-col gap-1">
                 <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
@@ -372,13 +415,38 @@ function avatarColor(name: string) {
           </TableRow>
         </template>
         <template v-else>
-          <TableRow v-for="c in paginated" :key="c.id"
-            class="border-b border-black/4 last:border-0 transition-colors hover:bg-black/1.2 cursor-pointer"
-            @click="emit('openDetail', c)">
+          <template v-for="(c, i) in paginated" :key="c.id">
+            <TableRow v-if="showGroupHeaders && isGroupStart(i)"
+              class="border-b border-black/4 bg-black/[0.02] hover:bg-black/[0.02]">
+              <TableCell :colspan="9" class="py-2 pl-6">
+                <div class="flex items-center gap-2">
+                  <span class="w-1 h-3.5 rounded-full" :style="{ backgroundColor: groupMetaByKey[rowGroup(c)].hex }" />
+                  <span class="text-[11px] font-semibold uppercase tracking-wider text-black/45">
+                    {{ groupMetaByKey[rowGroup(c)].label }}
+                  </span>
+                  <span class="text-[10px] font-semibold text-black/35 bg-black/5 rounded px-1.5 py-0.5">
+                    {{ counts[rowGroup(c)] }}
+                  </span>
+                </div>
+              </TableCell>
+            </TableRow>
+            <TableRow
+              class="border-b border-black/4 last:border-0 transition-colors hover:bg-black/1.2 cursor-pointer"
+              @click="emit('openDetail', c)">
 
             <!-- Contract ID + Partner -->
             <TableCell class="py-4 pl-6">
-              <p class="text-sm font-medium text-black leading-snug">{{ c.businessPartner }}</p>
+              <div class="flex items-center gap-2">
+                <p class="text-sm font-medium text-black leading-snug truncate max-w-[220px]"
+                  :title="c.businessPartner">{{ c.businessPartner }}</p>
+                <Flag
+                  v-if="aiRiskAssessmentVisible && riskLevels[c.id]?.status === 'completed' && riskLevels[c.id]?.riskLevel"
+                  class="w-3.5 h-3.5 shrink-0 fill-current"
+                  :class="severityIconColor[riskLevels[c.id].riskLevel]"
+                  :title="`AI Risk: ${severityLabel[riskLevels[c.id].riskLevel]}${riskLevels[c.id].findingsCount ? ` (${riskLevels[c.id].findingsCount} flagged clause${riskLevels[c.id].findingsCount === 1 ? '' : 's'})` : ''}`"
+                />
+              </div>
+              <p class="text-xs font-mono text-black/40 mt-0.5">{{ c.contractCode || c.id }}</p>
             </TableCell>
 
             <!-- Category -->
@@ -442,10 +510,10 @@ function avatarColor(name: string) {
                   <DropdownMenuItem @click="emit('openDetail', c)" class="gap-2.5 text-sm cursor-pointer">
                     <Eye class="w-3.5 h-3.5 text-black/40" /> View details
                   </DropdownMenuItem>
-                  <DropdownMenuItem @click="emit('openEdit', c)" class="gap-2.5 text-sm cursor-pointer">
+                  <DropdownMenuItem v-if="hasPermission('cms.contracts.edit')" @click="emit('openEdit', c)" class="gap-2.5 text-sm cursor-pointer">
                     <Pencil class="w-3.5 h-3.5 text-black/40" /> Edit contract
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator v-if="hasPermission('cms.contracts.delete')" />
                   <DropdownMenuItem v-if="hasPermission('cms.contracts.delete')" @click="emit('delete', c.id)"
                     class="gap-2.5 text-sm cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
                     <Trash2 class="w-3.5 h-3.5" /> Delete
@@ -454,6 +522,7 @@ function avatarColor(name: string) {
               </DropdownMenu>
             </TableCell>
           </TableRow>
+          </template>
 
           <TableRow v-if="paginated.length === 0">
             <TableCell colspan="9" class="text-center py-16">
@@ -467,7 +536,7 @@ function avatarColor(name: string) {
 
     <!-- Pagination -->
     <div class="flex justify-center px-6 py-4 border-t border-black/5">
-      <TablePagination :current-page="currentPage" :total-items="loading ? (itemsPerPage || 15) : (totalItems !== undefined ? totalItems : filtered.length)"
+      <TablePagination :current-page="currentPage" :total-items="totalItems !== undefined ? totalItems : filtered.length"
         :items-per-page="itemsPerPage || 15" :current-page-items-count="paginated.length" @update:current-page="emit('update:currentPage', $event)" />
     </div>
 

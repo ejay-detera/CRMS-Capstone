@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search, MoreHorizontal, Eye, Pencil, Filter, X, Trash2, CheckCircle } from 'lucide-vue-next'
+import { Search, MoreHorizontal, Eye, Pencil, Filter, X, Trash2, CheckCircle, Flag } from 'lucide-vue-next'
 import { ref, watch, computed } from 'vue'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { useRouter } from 'vue-router'
@@ -18,12 +18,20 @@ import {
 import TablePagination from '@/components/shared/TablePagination.vue'
 import { approvalStatusBadge, workflowStatusBadge, fmtDate, deriveLifecycleStatus, formatRemainingTime } from '@/types/contract'
 import ContractLifecycleBadge from '@/components/shared/ContractLifecycleBadge.vue'
-import type { Contract, StatusFilter, FilterTab } from '@/types/contract'
-
-type ContractWithDays = Contract & { days: number }
+import type { ContractWithDays, StatusFilter, FilterTab } from '@/types/contract'
+import { contractGroup, CONTRACT_GROUPS, groupCounts } from '@/utils/contractSort'
+import type { ContractGroupKey } from '@/utils/contractSort'
+import { useRiskAssessment } from '@/composables/useRiskAssessment'
+import type { RiskLevel } from '@/types/riskAssessment'
+import { severityIconColor, severityLabel } from '@/types/riskAssessment'
 
 const router = useRouter()
 const { hasPermission } = useAuth()
+const { fetchBulkLevels } = useRiskAssessment()
+
+const aiRiskAssessmentVisible = computed(() => hasPermission('cms.ai.risk_assessment'))
+const riskLevels = ref<Record<string, { riskLevel: RiskLevel, findingsCount: number, status: string }>>({})
+const loadingRisk = ref(false)
 
 const props = defineProps<{
   paginated:    ContractWithDays[]
@@ -40,6 +48,38 @@ const props = defineProps<{
   loading?:      boolean
   totalItems?:   number
 }>()
+
+watch(() => props.paginated, async (list) => {
+  if (!aiRiskAssessmentVisible.value) return
+  const ids = list.map(c => c.id)
+  if (!ids.length) {
+    riskLevels.value = {}
+    return
+  }
+  loadingRisk.value = true
+  const res = await fetchBulkLevels(ids)
+  if (res) {
+    riskLevels.value = res
+  }
+  loadingRisk.value = false
+}, { immediate: true })
+
+// ── Grouped sections (contract list ordering) ──────────────────────────
+const groupMetaByKey = computed(() =>
+  Object.fromEntries(CONTRACT_GROUPS.map(g => [g.key, g])) as Record<ContractGroupKey, typeof CONTRACT_GROUPS[number]>
+)
+const counts = computed(() => groupCounts(props.filtered))
+const showGroupHeaders = computed(() => CONTRACT_GROUPS.filter(g => counts.value[g.key] > 0).length > 1)
+
+function rowGroup(c: ContractWithDays): ContractGroupKey {
+  return contractGroup(c)
+}
+
+// Headers repeat at the top of every page so context is never lost when paging.
+function isGroupStart(index: number): boolean {
+  if (index === 0) return true
+  return contractGroup(props.paginated[index - 1]) !== contractGroup(props.paginated[index])
+}
 
 const emit = defineEmits<{
   openDetail: [c: ContractWithDays]
@@ -158,7 +198,7 @@ const categories = [
 
     <div class="px-6 pt-5 pb-4 border-b border-black/5">
       <h2 class="text-sm font-semibold text-black">
-        My Contracts <span class="text-black/30 font-normal">({{ loading ? 0 : (totalItems !== undefined ? totalItems : filtered.length) }})</span>
+        My Contracts <span class="text-black/30 font-normal">({{ totalItems !== undefined ? totalItems : filtered.length }})</span>
       </h2>
     </div>
 
@@ -192,7 +232,7 @@ const categories = [
             <div class="space-y-1">
               <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Category</label>
               <Select :model-value="draftCategory || '__all__'" @update:model-value="(v) => draftCategory = (v === '__all__' ? '' : v as string)">
-                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
+                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-brand-blue/15">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent class="bg-white border border-black/10 shadow-lg">
@@ -206,7 +246,7 @@ const categories = [
             <div class="space-y-1">
               <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Region</label>
               <Select :model-value="draftRegion || '__all__'" @update:model-value="(v) => draftRegion = (v === '__all__' ? '' : v as string)">
-                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
+                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-brand-blue/15">
                   <SelectValue placeholder="All Regions" />
                 </SelectTrigger>
                 <SelectContent class="bg-white border border-black/10 shadow-lg">
@@ -222,7 +262,7 @@ const categories = [
             <div class="space-y-1">
               <label class="text-[10px] font-semibold text-black/40 uppercase tracking-wider block">Status</label>
               <Select :model-value="draftStatus || '__all__'" @update:model-value="(v) => draftStatus = (v === '__all__' ? '' : (v as StatusFilter))">
-                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-[#2E85D8]/15">
+                <SelectTrigger class="w-full h-8 rounded-md border-black/10 bg-white text-xs text-black/70 focus:ring-brand-blue/15">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent class="bg-white border border-black/10 shadow-lg">
@@ -239,12 +279,12 @@ const categories = [
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-[11px] font-medium text-black/65">Start Date</span>
                   <input type="date" v-model="draftStartDate"
-                    class="h-7 w-36 rounded-md border border-black/10 bg-white px-2 text-xs focus:border-[#2E85D8] focus:outline-none transition-colors" />
+                    class="h-7 w-36 rounded-md border border-black/10 bg-white px-2 text-xs focus:border-brand-blue focus:outline-none transition-colors" />
                 </div>
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-[11px] font-medium text-black/65">End Date</span>
                   <input type="date" v-model="draftEndDate"
-                    class="h-7 w-36 rounded-md border border-black/10 bg-white px-2 text-xs focus:border-[#2E85D8] focus:outline-none transition-colors" />
+                    class="h-7 w-36 rounded-md border border-black/10 bg-white px-2 text-xs focus:border-brand-blue focus:outline-none transition-colors" />
                 </div>
               </div>
             </div>
@@ -256,7 +296,7 @@ const categories = [
                 Clear All
               </Button>
               <Button size="sm" @click="applyFilters"
-                class="flex-1 h-8 text-xs bg-[#252578] hover:bg-[#2F2F73] text-white font-medium shadow-sm">
+                class="flex-1 h-8 text-xs bg-brand-navy hover:bg-brand-dark text-white font-medium shadow-sm">
                 Apply Filters
               </Button>
             </div>
@@ -271,7 +311,7 @@ const categories = [
           @input="emit('update:searchQuery', ($event.target as HTMLInputElement).value.trim())"
           type="text" placeholder="Search contracts..."
           maxlength="100"
-          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-[#2E85D8] focus:outline-none focus:ring-2 focus:ring-[#2E85D8]/15 transition" />
+          class="w-full h-9 rounded-lg border border-black/10 bg-white pl-8.5 pr-3 text-sm placeholder:text-black/25 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15 transition" />
       </div>
     </div>
 
@@ -308,39 +348,26 @@ const categories = [
       <TableBody>
         <template v-if="loading">
           <TableRow v-for="i in itemsPerPage" :key="i" class="border-b border-black/4 last:border-0">
-            <!-- Contract ID + Partner -->
             <TableCell class="py-4 pl-6">
               <div class="h-4 w-32 bg-black/5 animate-pulse rounded mb-1.5"></div>
               <div class="h-3 w-16 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Category -->
             <TableCell class="py-4">
               <div class="h-4 w-24 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Region -->
             <TableCell class="py-4">
               <div class="h-4 w-16 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- End Date -->
             <TableCell class="py-4">
               <div class="h-4 w-20 bg-black/5 animate-pulse rounded mb-1.5"></div>
               <div class="h-3 w-28 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Remaining Time -->
             <TableCell class="py-4">
               <div class="h-4 w-24 bg-black/5 animate-pulse rounded"></div>
             </TableCell>
-
-            <!-- Contract State -->
             <TableCell class="py-4">
               <div class="h-5 w-24 bg-black/5 animate-pulse rounded-full"></div>
             </TableCell>
-
-            <!-- Status -->
             <TableCell class="py-4">
               <div class="flex flex-col gap-1">
                 <div class="h-5 w-20 bg-black/5 animate-pulse rounded-full"></div>
@@ -355,13 +382,38 @@ const categories = [
           </TableRow>
         </template>
         <template v-else>
-          <TableRow v-for="c in paginated" :key="c.id"
-            class="border-b border-black/4 last:border-0 transition-colors hover:bg-black/1.2 cursor-pointer"
-            @click="emit('openDetail', c)">
+          <template v-for="(c, i) in paginated" :key="c.id">
+            <TableRow v-if="showGroupHeaders && isGroupStart(i)"
+              class="border-b border-black/4 bg-black/[0.02] hover:bg-black/[0.02]">
+              <TableCell :colspan="8" class="py-2 pl-6">
+                <div class="flex items-center gap-2">
+                  <span class="w-1 h-3.5 rounded-full" :style="{ backgroundColor: groupMetaByKey[rowGroup(c)].hex }" />
+                  <span class="text-[11px] font-semibold uppercase tracking-wider text-black/45">
+                    {{ groupMetaByKey[rowGroup(c)].label }}
+                  </span>
+                  <span class="text-[10px] font-semibold text-black/35 bg-black/5 rounded px-1.5 py-0.5">
+                    {{ counts[rowGroup(c)] }}
+                  </span>
+                </div>
+              </TableCell>
+            </TableRow>
+            <TableRow
+              class="border-b border-black/4 last:border-0 transition-colors hover:bg-black/1.2 cursor-pointer"
+              @click="emit('openDetail', c)">
 
             <!-- Contract ID + Partner -->
             <TableCell class="py-4 pl-6">
-              <p class="text-sm font-medium text-black leading-snug">{{ c.businessPartner }}</p>
+              <div class="flex items-center gap-2">
+                <p class="text-sm font-medium text-black leading-snug truncate max-w-[220px]"
+                  :title="c.businessPartner">{{ c.businessPartner }}</p>
+                <Flag
+                  v-if="aiRiskAssessmentVisible && riskLevels[c.id]?.status === 'completed' && riskLevels[c.id]?.riskLevel"
+                  class="w-3.5 h-3.5 shrink-0 fill-current"
+                  :class="severityIconColor[riskLevels[c.id].riskLevel]"
+                  :title="`AI Risk: ${severityLabel[riskLevels[c.id].riskLevel]}${riskLevels[c.id].findingsCount ? ` (${riskLevels[c.id].findingsCount} flagged clause${riskLevels[c.id].findingsCount === 1 ? '' : 's'})` : ''}`"
+                />
+              </div>
+              <p class="text-xs font-mono text-black/40 mt-0.5">{{ c.contractCode || c.id }}</p>
             </TableCell>
 
             <!-- Category -->
@@ -432,6 +484,7 @@ const categories = [
               </DropdownMenu>
             </TableCell>
           </TableRow>
+          </template>
 
           <TableRow v-if="paginated.length === 0">
             <TableCell colspan="8" class="text-center py-16">
@@ -445,7 +498,7 @@ const categories = [
 
     <!-- Pagination -->
     <div class="flex justify-center px-6 py-4 border-t border-black/5">
-      <TablePagination :current-page="currentPage" :total-items="loading ? itemsPerPage : (totalItems !== undefined ? totalItems : filtered.length)"
+      <TablePagination :current-page="currentPage" :total-items="totalItems !== undefined ? totalItems : filtered.length"
         :items-per-page="itemsPerPage" :current-page-items-count="paginated.length" @update:current-page="emit('update:currentPage', $event)" />
     </div>
 

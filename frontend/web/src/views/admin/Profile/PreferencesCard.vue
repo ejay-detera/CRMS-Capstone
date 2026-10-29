@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { reactive, watch, computed } from 'vue'
+import { reactive, watch } from 'vue'
 import { SlidersHorizontal } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import ToggleRow from '@/components/shared/ToggleRow.vue'
 
 const props = defineProps<{
@@ -19,8 +18,6 @@ const emit = defineEmits<{ save: [data: typeof props.preferences] }>()
 const form = reactive({ ...props.preferences })
 watch(() => props.preferences, p => Object.assign(form, p), { deep: true })
 
-const isAdmin = computed(() => props.role === 'Admin')
-
 function save() {
   emit('save', { ...form })
 }
@@ -30,8 +27,8 @@ function save() {
   <div class="bg-white rounded-lg border border-black/8 shadow-sm">
 
     <div class="px-6 pt-5 pb-4 border-b border-black/5 flex items-center gap-3">
-      <div class="w-8 h-8 rounded-lg bg-[#2E85D8]/8 flex items-center justify-center shrink-0">
-        <SlidersHorizontal class="w-4 h-4 text-[#2E85D8]" />
+      <div class="w-8 h-8 rounded-lg bg-brand-blue/8 flex items-center justify-center shrink-0">
+        <SlidersHorizontal class="w-4 h-4 text-brand-blue" />
       </div>
       <div>
         <h3 class="text-sm font-semibold text-black">Preferences</h3>
@@ -51,12 +48,13 @@ function save() {
 
       <ToggleRow label="Contract expiry alerts" description="Notify 15 days before expiry"
         :model-value="form.contractExpiry" @update:model-value="form.contractExpiry = $event" />
-      <ToggleRow v-if="isAdmin" label="Login alerts" description="Email me when a new login is detected"
+      <ToggleRow v-if="props.role === 'Admin'" label="Login alerts" description="Email me when a new login is detected"
         :model-value="form.loginAlerts" @update:model-value="form.loginAlerts = $event" />
     </div>
 
+
       <div class="px-6 pb-5 pt-2">
-        <Button @click="save" class="h-9 px-5 text-sm bg-[#252578] hover:bg-[#2F2F73] text-white">
+        <Button @click="save" class="h-9 px-5 text-sm bg-brand-navy hover:bg-brand-dark text-white">
           Save preferences
         </Button>
       </div>
