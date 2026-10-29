@@ -124,6 +124,8 @@ const user = computed(() => {
   return { name, role: currentRole, email, initials };
 });
 
+const homeUrl = window.location.origin + '/';
+
 // ── Calendar in Header ──
 
 </script>
